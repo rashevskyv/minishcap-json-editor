@@ -119,10 +119,37 @@ class MainWindowEventHandlers:
             log_debug(f"[MainWindowEventHandlers] rename_block: Block {block_index} renamed to '{new_name}'.")
             self.mw.save_settings()
 
+    def _replace_tags_based_on_original(self, pasted_segment, original_text):
+        """Замінює теги [...] на {} на основі порядку в оригіналі."""
+        pasted_tags_content = re.findall(r'\[(.*?)\]', pasted_segment)
+        original_tags_full = re.findall(r'\{.*?\}', original_text)
+
+        if len(pasted_tags_content) != len(original_tags_full):
+            log_debug(f"Warning: Tag count mismatch. Pasted: {len(pasted_tags_content)}, Original: {len(original_tags_full)}. Skipping tag replacement for this segment.")
+            log_debug(f"  Pasted segment: {repr(pasted_segment)}")
+            log_debug(f"  Original text: {repr(original_text)}")
+            return pasted_segment
+
+        modified_segment = pasted_segment
+        pasted_tags_full = re.findall(r'\[.*?\]', pasted_segment)
+
+        if len(pasted_tags_full) != len(original_tags_full):
+             log_debug(f"Warning: Full tag count mismatch during replacement. Pasted: {len(pasted_tags_full)}, Original: {len(original_tags_full)}. Skipping.")
+             return pasted_segment
+
+        for i in range(len(pasted_tags_full)):
+            tag_to_replace = pasted_tags_full[i]
+            replacement_tag = original_tags_full[i]
+            modified_segment = modified_segment.replace(tag_to_replace, replacement_tag, 1)
+
+        log_debug(f"Tag replacement done. Result: {repr(modified_segment)}")
+        return modified_segment
+
 
     def paste_block_text(self):
         """
         Отримує текст з буфера обміну, розділяє його за '{END}\n',
+        замінює теги [...] на {} на основі оригіналу, обробляє порожні рядки,
         бере потрібну кількість сегментів та застосовує до поточного блоку.
         Після вставки автоматично зберігає зміни.
         """
@@ -143,44 +170,25 @@ class MainWindowEventHandlers:
             log_debug("[MainWindowEventHandlers] paste_block_text: Clipboard is empty.")
             return
 
-        # --- Логіка розділення за '{END}\n' (з урахуванням можливих \r\n) ---
-        # Використовуємо re.split для врахування \r\n
-        # Розділяємо за {END}, за яким слідує необов'язковий \r і обов'язковий \n
-        parsed_strings = re.split(r'\{END\}\r?\n', pasted_text)
-        log_debug(f"[MainWindowEventHandlers] paste_block_text: Parsed into {len(parsed_strings)} segments using re.split('{{END}}\\r?\\n').")
+        # Розділяємо текст за '{END}\n' (з урахуванням можливих \r\n)
+        parsed_strings_raw = re.split(r'\{END\}\r?\n', pasted_text)
+        log_debug(f"[MainWindowEventHandlers] paste_block_text: Parsed into {len(parsed_strings_raw)} segments using re.split('{{END}}\\r?\\n').")
 
-        # !!! Важливо: split залишить початкові \n, якщо вони були перед першим {END}\n
-        # Потрібно видалити ОДИН початковий \n з кожного сегмента, КРІМ першого, якщо він там є
-        # А також видалити кінцеві \n, якщо вони залишились після останнього {END}\n у вхідному тексті
-        cleaned_strings = []
-        num_raw_segments = len(parsed_strings)
-        for i, segment in enumerate(parsed_strings):
-             # Видаляємо початковий \n, якщо це не перший сегмент
+        # Очищаємо початкові '\n' (крім першого сегмента) і готуємо фінальний список рядків
+        parsed_strings_intermediate = []
+        num_raw_segments = len(parsed_strings_raw)
+        for i, segment in enumerate(parsed_strings_raw):
              if i > 0 and segment.startswith('\n'):
                  cleaned_segment = segment[1:]
              else:
                  cleaned_segment = segment
 
-             # Видаляємо кінцевий \n, якщо це ОСТАННІЙ сегмент
-             # (split не залишає кінцевий роздільник, тому останній \n може бути тільки якщо він був в оригіналі)
-             # if i == num_raw_segments - 1 and cleaned_segment.endswith('\n'):
-             #      cleaned_segment = cleaned_segment[:-1]
-             # UPDATE: Логіка вище неправильна. Після split('{END}\n'), кінцевий \n вже видалено.
-             # Треба перевірити, чи НЕ ТРЕБА видаляти кінцеві \n з сегментів ПЕРЕД останнім {END}\n?
-             # Згідно з вашим бажаним результатом, кінцеві \n мають залишатися.
-             # Тому додаткове очищення кінцевих \n не потрібне.
-
-             # Додаємо сегмент, якщо це не останній порожній сегмент
-             # (що може статися, якщо текст закінчувався на {END}\n)
+             # Видаляємо останній порожній сегмент, який створює split
              if i < num_raw_segments - 1 or cleaned_segment:
-                 cleaned_strings.append(cleaned_segment)
+                 parsed_strings_intermediate.append(cleaned_segment)
 
-
-        parsed_strings = cleaned_strings # Використовуємо очищений список
-        log_debug(f"[MainWindowEventHandlers] paste_block_text: Final segments count after cleaning: {len(parsed_strings)}")
-        # for idx, s in enumerate(parsed_strings):
-        #      log_debug(f" Final Segment {idx}: {repr(s)}")
-
+        parsed_strings = parsed_strings_intermediate
+        log_debug(f"[MainWindowEventHandlers] paste_block_text: Segments count after initial cleaning: {len(parsed_strings)}")
 
         block_idx = self.mw.current_block_idx
         if not (0 <= block_idx < len(self.mw.data)) or not isinstance(self.mw.data[block_idx], list):
@@ -191,32 +199,29 @@ class MainWindowEventHandlers:
         block_data_len = len(self.mw.data[block_idx])
         log_debug(f"[MainWindowEventHandlers] paste_block_text: Target block {block_idx} has {block_data_len} original strings.")
 
-        num_segments_to_insert = len(parsed_strings)
-
-        # Перевірка розміру
         if start_string_idx < 0 or start_string_idx >= block_data_len:
              log_debug(f"[MainWindowEventHandlers] paste_block_text: Помилка: Недійсний початковий індекс рядка {start_string_idx} для блоку {block_idx}.")
              QMessageBox.warning(self.mw, "Помилка вставки", f"Недійсний початковий індекс рядка {start_string_idx}. Вставку не виконано.")
              return
 
         num_target_slots = block_data_len - start_string_idx
-        if num_segments_to_insert > num_target_slots:
+        num_segments_from_paste = len(parsed_strings)
+        num_segments_to_insert = min(num_segments_from_paste, num_target_slots)
+        segments_to_use = parsed_strings[:num_segments_to_insert]
+
+        log_debug(f"[MainWindowEventHandlers] paste_block_text: Available slots: {num_target_slots}. Segments from paste: {num_segments_from_paste}. Segments to insert: {num_segments_to_insert}.")
+
+        if num_segments_from_paste > num_target_slots:
              QMessageBox.warning(self.mw, "Забагато сегментів",
-                                f"Вставлений текст містить {num_segments_to_insert} значущих сегментів.\n"
+                                f"Вставлений текст містить {num_segments_from_paste} значущих сегментів.\n"
                                 f"Доступно лише {num_target_slots} місць для заміни, починаючи з рядка {start_string_idx}.\n"
                                 f"Буде вставлено лише перші {num_target_slots} сегментів.")
-             segments_to_use = parsed_strings[:num_target_slots] # Обрізаємо до доступного розміру
-             num_segments_to_insert = len(segments_to_use) # Оновлюємо кількість для вставки
-        elif num_segments_to_insert < num_target_slots:
+        elif num_segments_from_paste < num_target_slots and num_segments_from_paste > 0:
               QMessageBox.warning(self.mw, "Замало сегментів",
-                                f"Вставлений текст містить лише {num_segments_to_insert} значущих сегментів.\n"
+                                f"Вставлений текст містить лише {num_segments_from_paste} значущих сегментів.\n"
                                 f"Для заповнення блоку з рядка {start_string_idx} очікувалося {num_target_slots} сегментів.\n"
-                                f"Буде вставлено лише {num_segments_to_insert} сегментів.")
-              segments_to_use = parsed_strings # Використовуємо всі доступні сегменти
-        else:
-            segments_to_use = parsed_strings # Кількість збігається
+                                f"Буде вставлено лише {num_segments_from_paste} сегментів.")
 
-        log_debug(f"[MainWindowEventHandlers] paste_block_text: Will actually insert {num_segments_to_insert} segments.")
 
         if num_segments_to_insert == 0:
              log_debug("[MainWindowEventHandlers] paste_block_text: No segments left to insert. Aborting.")
@@ -230,7 +235,7 @@ class MainWindowEventHandlers:
         except TypeError: pass
 
         # Проходимося по сегментах, які будемо вставляти
-        for i, new_text in enumerate(segments_to_use):
+        for i, segment_to_insert in enumerate(segments_to_use):
             target_idx = start_string_idx + i
             edit_key = (block_idx, target_idx)
 
@@ -240,11 +245,24 @@ class MainWindowEventHandlers:
                 log_debug(f"[ActionHandlers] paste_block_text: Помилка: Неправильний індекс при отриманні оригінального тексту для вставки ({block_idx}, {target_idx}). Пропуск цього сегмента.")
                 continue
 
-            # Порівнюємо новий текст з оригінальним
-            if new_text != original_text:
-                if self.mw.edited_data.get(edit_key) != new_text:
+            # --- Заміна тегів ---
+            log_debug(f"[MainWindowEventHandlers] paste_block_text: Processing segment {i} for tag replacement.")
+            text_with_replaced_tags = self._replace_tags_based_on_original(segment_to_insert, original_text)
+
+            # --- Фінальне очищення: Видаляємо кінцевий '\n', перевіряємо на повну порожнечу ---
+            final_text = text_with_replaced_tags.rstrip('\n')
+            # Якщо після видалення кінцевих \n рядок став повністю порожнім (навіть якщо там були пробіли),
+            # присвоюємо йому ""
+            if not final_text.strip():
+                final_text = ""
+            log_debug(f"[MainWindowEventHandlers] paste_block_text: Final text for index {target_idx}: {repr(final_text)}")
+
+
+            # Порівнюємо фінальний текст з оригінальним
+            if final_text != original_text:
+                if self.mw.edited_data.get(edit_key) != final_text:
                     log_debug(f"[MainWindowEventHandlers] paste_block_text: Text for {edit_key} is different from original. Updating edited_data.")
-                    self.mw.edited_data[edit_key] = new_text
+                    self.mw.edited_data[edit_key] = final_text
                     changes_made_in_this_paste = True
             elif edit_key in self.mw.edited_data:
                  log_debug(f"[MainWindowEventHandlers] paste_block_text: Text for {edit_key} is same as original. Removing from edited_data.")
@@ -271,13 +289,13 @@ class MainWindowEventHandlers:
             self.ui_updater.populate_strings_for_block(current_b_idx)
 
             if save_success:
-                 QMessageBox.information(self.mw, "Вставка та Збереження", f"Успішно вставлено {num_segments_to_insert} сегментів тексту в блок {block_idx}, починаючи з рядка {start_string_idx}, та автоматично збережено у файл змін.")
+                 QMessageBox.information(self.mw, "Вставка та Збереження", f"Успішно вставлено {num_segments_to_insert} сегментів тексту в блок {block_idx}, починаючи з рядка {start_string_idx} (теги замінено, кінцеві \\n/порожні рядки оброблено), та автоматично збережено у файл змін.")
                  log_debug("[MainWindowEventHandlers] paste_block_text: Showed success message for paste+autosave.")
             else:
-                 QMessageBox.warning(self.mw, "Вставка (Помилка збереження)", f"Успішно вставлено {num_segments_to_insert} сегментів тексту в блок {block_idx}, починаючи з рядка {start_string_idx}, але АВТОМАТИЧНЕ ЗБЕРЕЖЕННЯ НЕ ВДАЛОСЯ. Незбережені зміни присутні.")
+                 QMessageBox.warning(self.mw, "Вставка (Помилка збереження)", f"Успішно вставлено {num_segments_to_insert} сегментів тексту в блок {block_idx}, починаючи з рядка {start_string_idx} (теги замінено, кінцеві \\n/порожні рядки оброблено), але АВТОМАТИЧНЕ ЗБЕРЕЖЕННЯ НЕ ВДАЛОСЯ. Незбережені зміни присутні.")
                  log_debug("[MainWindowEventHandlers] paste_block_text: Showed error message for paste+autosave.")
         else:
-             QMessageBox.information(self.mw, "Вставка", "Вставлений текст ідентичний оригінальному тексту в цільових рядках. Зміни не застосовано.")
+             QMessageBox.information(self.mw, "Вставка", "Вставлений текст (після обробки тегів та кінцевих \\n/порожніх рядків) ідентичний оригінальному тексту в цільових рядках. Зміни не застосовано.")
              log_debug("[MainWindowEventHandlers] paste_block_text: No changes made by paste. Showed info message.")
 
         log_debug("[MainWindowEventHandlers] paste_block_text: Finished.")
