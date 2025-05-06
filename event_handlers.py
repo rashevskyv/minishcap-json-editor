@@ -4,9 +4,10 @@ import datetime
 import re # Імпортуємо модуль регулярних виразів
 from PyQt5.QtWidgets import QMessageBox, QInputDialog, QApplication, QListWidgetItem
 from PyQt5.QtCore import Qt
-# Імпортуємо класи обробників даних та UI
 from data_state_processor import DataStateProcessor
 from ui_updater import UIUpdater
+from utils import log_debug, replace_tags_based_on_original
+from utils import clean_newline_at_end
 
 def log_debug(message):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
@@ -236,39 +237,34 @@ class MainWindowEventHandlers:
 
         # Проходимося по сегментах, які будемо вставляти
         for i, segment_to_insert in enumerate(segments_to_use):
-            target_idx = start_string_idx + i
-            edit_key = (block_idx, target_idx)
+            orig_idx = start_string_idx + i
+            # Ensure original index is valid before proceeding
+            # (Added check for robustness, assuming self.mw.data[block_idx] is a list)
+            if not (0 <= orig_idx < len(self.mw.data[block_idx])):
+                log_debug(f"[MainWindowEventHandlers] paste_block_text: Skipping invalid original index {orig_idx} during paste loop.")
+                continue # Skip this iteration if index is out of bounds
 
-            original_text = self.data_processor._get_string_from_source(block_idx, target_idx, self.mw.data, "original_data")
-
-            if original_text is None:
-                log_debug(f"[ActionHandlers] paste_block_text: Помилка: Неправильний індекс при отриманні оригінального тексту для вставки ({block_idx}, {target_idx}). Пропуск цього сегмента.")
-                continue
-
-            # --- Заміна тегів ---
-            log_debug(f"[MainWindowEventHandlers] paste_block_text: Processing segment {i} for tag replacement.")
-            text_with_replaced_tags = self._replace_tags_based_on_original(segment_to_insert, original_text)
-
-            # --- Фінальне очищення: Видаляємо кінцевий '\n', перевіряємо на повну порожнечу ---
+            original_text = self.mw.data[block_idx][orig_idx]
+            # Use the function for tag replacement
+            text_with_replaced_tags = replace_tags_based_on_original(segment_to_insert, original_text)
             final_text = text_with_replaced_tags.rstrip('\n')
-            # Якщо після видалення кінцевих \n рядок став повністю порожнім (навіть якщо там були пробіли),
-            # присвоюємо йому ""
-            if not final_text.strip():
-                final_text = ""
-            log_debug(f"[MainWindowEventHandlers] paste_block_text: Final text for index {target_idx}: {repr(final_text)}")
 
+            # Call update_edited_data and check if it resulted in a change for this item.
+            # This assumes update_edited_data returns True if self.mw.edited_data was modified for this key, False otherwise.
+            item_changed = self.data_processor.update_edited_data(block_idx, orig_idx, final_text)
 
-            # Порівнюємо фінальний текст з оригінальним
-            if final_text != original_text:
-                if self.mw.edited_data.get(edit_key) != final_text:
-                    log_debug(f"[MainWindowEventHandlers] paste_block_text: Text for {edit_key} is different from original. Updating edited_data.")
-                    self.mw.edited_data[edit_key] = final_text
-                    changes_made_in_this_paste = True
-            elif edit_key in self.mw.edited_data:
-                 log_debug(f"[MainWindowEventHandlers] paste_block_text: Text for {edit_key} is same as original. Removing from edited_data.")
-                 del self.mw.edited_data[edit_key]
-                 changes_made_in_this_paste = True
+            # Log the action based on the result from update_edited_data
+            edit_key = (block_idx, orig_idx) # Define edit_key for logging if needed
+            if item_changed:
+                log_debug(f"[MainWindowEventHandlers] paste_block_text: Change detected/applied for {edit_key} by update_edited_data.")
+                changes_made_in_this_paste = True # Aggregate changes if any item changed
+            else:
+                 log_debug(f"[MainWindowEventHandlers] paste_block_text: No effective change for {edit_key} by update_edited_data.")
 
+            # The previous if/elif block checking final_text vs original_text and modifying
+            # self.mw.edited_data directly is removed, as update_edited_data should handle this.
+
+        # After the loop, update the overall unsaved status based on the final state of edited_data
         self.mw.unsaved_changes = bool(self.mw.edited_data)
         log_debug(f"[MainWindowEventHandlers] paste_block_text: After paste loop, unsaved_changes = {self.mw.unsaved_changes}, edited_data size = {len(self.mw.edited_data)}.")
 
@@ -276,17 +272,21 @@ class MainWindowEventHandlers:
 
 
         if changes_made_in_this_paste:
-            self.update_title()
-            log_debug("[MainWindowEventHandlers] paste_block_text: Changes were made, updating title.")
+            # self.update_title() # This seems to be handled by ui_updater.update_title() in save_data
+            log_debug("[MainWindowEventHandlers] paste_block_text: Changes were made during paste.")
 
             log_debug("[MainWindowEventHandlers] paste_block_text: Calling data_processor.save_current_edits(ask_confirmation=False).")
             save_success = self.data_processor.save_current_edits(ask_confirmation=False)
             log_debug(f"[MainWindowEventHandlers] paste_block_text: data_processor.save_current_edits returned {save_success}.")
 
+            # Refresh UI after potential save
             current_b_idx = self.mw.current_block_idx
-            current_s_idx = self.mw.current_string_idx
-            log_debug(f"[MainWindowEventHandlers] paste_block_text: Re-populating UI for block {current_b_idx}, preserving string index {current_s_idx}.")
-            self.ui_updater.populate_strings_for_block(current_b_idx)
+            # current_s_idx = self.mw.current_string_idx # No need to preserve index here, populate_strings resets selection
+            log_debug(f"[MainWindowEventHandlers] paste_block_text: Re-populating UI for block {current_b_idx}.")
+            self.ui_updater.populate_strings_for_block(current_b_idx) # This will update list and trigger string_selected if needed
+
+            # Update title *after* save and UI refresh attempt
+            self.ui_updater.update_title()
 
             if save_success:
                  QMessageBox.information(self.mw, "Вставка та Збереження", f"Успішно вставлено {num_segments_to_insert} сегментів тексту в блок {block_idx}, починаючи з рядка {start_string_idx} (теги замінено, кінцеві \\n/порожні рядки оброблено), та автоматично збережено у файл змін.")

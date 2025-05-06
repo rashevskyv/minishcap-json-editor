@@ -15,6 +15,7 @@ from ui_setup import setup_main_window_ui # Імпортуємо функцію 
 from data_manager import load_json_file, save_json_file
 # Імпортуємо обробники подій (тепер це головний оркестратор обробки)
 from event_handlers import MainWindowEventHandlers # <--- Імпортуємо головний клас обробників
+from utils import clean_newline_at_end
 
 def log_debug(message):
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
@@ -323,6 +324,14 @@ if __name__ == '__main__':
     def log_debug(message):
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
         print(f"[{timestamp}] {message}")
+
+    def clean_newline_at_end(text):
+        """Видаляє \n наприкінці строки, якщо він є. Якщо строка лише '\n', повертає ''."""
+        if text == "\n":
+            return ""
+        elif text.endswith("\n"):
+            return text[:-1]
+        return text
 
     log_debug("Application starting.")
     app = QApplication(sys.argv)

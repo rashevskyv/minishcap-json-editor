@@ -1,7 +1,5 @@
 {
-    "original_file_path": "//192.168.50.168/tloz_tmc_ua/UKR-reborn_orig.json",
-    "edited_file_path": "//192.168.50.168/tloz_tmc_ua/UKR-reborn.json",
-    "block_names": {
-        "0": "Система"
-    }
+    "original_file_path": "//192.168.50.168/tloz_tmc_ua/UKR_orig.json",
+    "edited_file_path": "//192.168.50.168/tloz_tmc_ua/UKR.json",
+    "block_names": {}
 }
