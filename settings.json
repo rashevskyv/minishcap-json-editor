@@ -25,6 +25,7 @@
         "[/c]": "{Color:White}",
         "[unk10]": "{Symbol:10}"
     },
+    "bracket_tag_color_hex": "#FFA500",
     "main_splitter_state": "AAAA/wAAAAEAAAACAAAAzAAABAUB/////wEAAAABAA==",
     "right_splitter_state": "AAAA/wAAAAEAAAACAAABuAAAAW8B/////wEAAAACAA==",
     "bottom_right_splitter_state": "AAAA/wAAAAEAAAACAAABkAAAAZAB/////wEAAAABAA==",

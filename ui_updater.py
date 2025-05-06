@@ -23,8 +23,12 @@ class UIUpdater:
         log_debug(f"UIUpdater: populate_strings_for_block for block_idx: {block_idx}. Current string_idx: {self.mw.current_string_idx}")
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         
-        # Зберігаємо номери рядків, які наразі позначені як проблемні
-        # Цей список буде використано для відновлення підсвічування після setPlainText
+        # Зберігаємо поточну позицію вертикальної прокрутки для preview_edit
+        old_scrollbar_value = 0
+        if preview_edit:
+            old_scrollbar_value = preview_edit.verticalScrollBar().value()
+            log_debug(f"UIUpdater: Preview scrollbar value BEFORE update: {old_scrollbar_value}")
+
         problem_line_numbers_to_restore = []
         if preview_edit and hasattr(preview_edit, '_problem_line_selections') and preview_edit._problem_line_selections:
             problem_line_numbers_to_restore = [sel.cursor.blockNumber() for sel in preview_edit._problem_line_selections]
@@ -33,16 +37,13 @@ class UIUpdater:
         self.mw.is_programmatically_changing_text = True 
         
         if preview_edit and hasattr(preview_edit, 'clearPreviewSelectedLineHighlight'):
-            log_debug(f"UIUpdater: Clearing preview selected line highlight from {preview_edit.widget_id if hasattr(preview_edit, 'widget_id') else 'preview_edit'}.")
             preview_edit.clearPreviewSelectedLineHighlight()
 
-        # Очищаємо проблемні підсвічування ТІЛЬКИ якщо блок справді змінюється.
-        # Якщо це просто оновлення того ж блоку, проблемні підсвічування мають залишитися.
-        if self.mw.current_block_idx != block_idx:
+        if self.mw.current_block_idx != block_idx: # Тільки якщо блок реально змінився
             if preview_edit and hasattr(preview_edit, 'clearProblemLineHighlights'):
-                log_debug(f"UIUpdater: Block changed from {self.mw.current_block_idx} to {block_idx}. Clearing problem highlights.")
+                log_debug(f"UIUpdater: Block changed from {self.mw.current_block_idx} to {block_idx}. Clearing problem highlights for preview.")
                 preview_edit.clearProblemLineHighlights()
-                problem_line_numbers_to_restore = [] # Немає сенсу відновлювати, якщо блок інший
+                problem_line_numbers_to_restore = [] 
 
         preview_lines = []
         if block_idx < 0 or not self.mw.data or block_idx >= len(self.mw.data) or not isinstance(self.mw.data[block_idx], list):
@@ -50,13 +51,13 @@ class UIUpdater:
             if self.mw.current_block_idx != block_idx : self.mw.current_block_idx = -1
             self.mw.is_programmatically_changing_text = False
             self.update_text_views(); self.synchronize_original_cursor() 
+            if preview_edit: # Відновити прокрутку навіть якщо порожньо
+                preview_edit.verticalScrollBar().setValue(old_scrollbar_value)
+                log_debug(f"UIUpdater: Preview scrollbar value RESTORED (empty block) to: {old_scrollbar_value}")
             log_debug("UIUpdater: populate_strings_for_block: Invalid block_idx or no data.")
             return
 
-        self.mw.current_block_idx = block_idx # Встановлюємо/оновлюємо поточний блок
-        # Якщо блок не змінився, але current_string_idx скинувся (наприклад, після paste),
-        # то self.mw.current_string_idx вже буде -1.
-        # Якщо блок той самий і current_string_idx валідний, він не зміниться.
+        self.mw.current_block_idx = block_idx 
         
         original_block_data = self.mw.data[self.mw.current_block_idx]
         for i in range(len(original_block_data)):
@@ -66,41 +67,41 @@ class UIUpdater:
             preview_lines.append(preview_line)
         
         if preview_edit:
-            log_debug(f"UIUpdater: Setting new plain text to preview_edit.")
-            # Запам'ятовуємо, що _problem_line_selections зараз порожній у віджеті
-            # після clearProblemLineHighlights (якщо блок змінився) або на початку.
-            # Або якщо блок не змінився, то problem_line_numbers_to_restore містить їх.
             if hasattr(preview_edit, '_problem_line_selections'):
-                 preview_edit._problem_line_selections = [] # Очищаємо список об'єктів перед setPlainText
-
+                 preview_edit._problem_line_selections = [] 
             preview_edit.setPlainText("\n".join(preview_lines))
-            # setPlainText очистив усі візуальні ExtraSelections.
 
-            # Відновлюємо проблемні підсвічування, створюючи нові ExtraSelections
             if problem_line_numbers_to_restore and hasattr(preview_edit, 'addProblemLineHighlight'):
                 log_debug(f"UIUpdater: Re-queuing {len(problem_line_numbers_to_restore)} problem highlights: {problem_line_numbers_to_restore}")
                 for line_num in problem_line_numbers_to_restore:
-                    preview_edit.addProblemLineHighlight(line_num) # Це додасть до _problem_line_selections
+                    preview_edit.addProblemLineHighlight(line_num) 
             
-            # Застосовуємо всі накопичені (включаючи щойно відновлені проблемні)
             if hasattr(preview_edit, 'applyQueuedProblemHighlights'):
-                preview_edit.applyQueuedProblemHighlights() # Це викличе _apply_all_extra_selections
-            elif hasattr(preview_edit, '_apply_all_extra_selections'): # Fallback
+                preview_edit.applyQueuedProblemHighlights() 
+            elif hasattr(preview_edit, '_apply_all_extra_selections'): 
                  preview_edit._apply_all_extra_selections()
+            
+            # Відновлюємо позицію прокрутки ПІСЛЯ setPlainText та applyQueuedProblemHighlights
+            preview_edit.verticalScrollBar().setValue(old_scrollbar_value)
+            log_debug(f"UIUpdater: Preview scrollbar value RESTORED to: {old_scrollbar_value}")
 
 
         self.mw.is_programmatically_changing_text = False
         
-        # Відновлюємо підсвічування вибраного рядка (якщо є)
-        if preview_edit and self.mw.current_string_idx != -1 and hasattr(preview_edit, 'setPreviewSelectedLineHighlight'):
-            preview_edit.setPreviewSelectedLineHighlight(self.mw.current_string_idx)
-            # setPreviewSelectedLineHighlight вже викликає _apply_all_extra_selections,
-            # тому проблемні теж мають бути враховані.
+        if preview_edit:
+            if self.mw.current_string_idx != -1 and \
+               hasattr(preview_edit, 'setPreviewSelectedLineHighlight') and \
+               self.mw.current_string_idx < preview_edit.document().blockCount(): 
+                log_debug(f"UIUpdater: Setting preview selected line to {self.mw.current_string_idx}")
+                preview_edit.setPreviewSelectedLineHighlight(self.mw.current_string_idx)
+            elif hasattr(preview_edit, 'clearPreviewSelectedLineHighlight'):
+                log_debug(f"UIUpdater: Clearing preview selected line as current_string_idx is {self.mw.current_string_idx} or invalid.")
+                preview_edit.clearPreviewSelectedLineHighlight()
 
         self.update_text_views(); self.synchronize_original_cursor() 
         log_debug("UIUpdater: populate_strings_for_block: Finished.")
 
-    # ... (решта методів UIUpdater без змін для цього завдання) ...
+    # ... (решта методів UIUpdater без змін) ...
     def update_status_bar(self):
         if not hasattr(self.mw, 'edited_text_edit') or not self.mw.edited_text_edit or not hasattr(self.mw, 'pos_len_label') or not self.mw.pos_len_label: return 
         cursor = self.mw.edited_text_edit.textCursor(); block = cursor.block()
