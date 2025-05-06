@@ -1,341 +1,297 @@
 import sys
-import json
 import os
-import datetime # Імпортуємо datetime для логування
-from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QMessageBox, QListWidgetItem,
-    QInputDialog, QLabel, QFileDialog # Додано QFileDialog
-)
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QTextCursor
-# Імпортуємо віджети та UI setup
-from LineNumberedTextEdit import LineNumberedTextEdit
-from ui_setup import setup_main_window_ui # Імпортуємо функцію налаштування UI
-# Імпортуємо керування даними
-from data_manager import load_json_file, save_json_file
-# Імпортуємо обробники подій (тепер це головний оркестратор обробки)
-from event_handlers import MainWindowEventHandlers # <--- Імпортуємо головний клас обробників
-from utils import clean_newline_at_end
+import json 
+import base64 
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QFileDialog
+from PyQt5.QtCore import Qt, QByteArray 
 
-def log_debug(message):
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-    print(f"[{timestamp}] {message}")
+from LineNumberedTextEdit import LineNumberedTextEdit
+from CustomListWidget import CustomListWidget
+from ui_setup import setup_main_window_ui
+from data_state_processor import DataStateProcessor
+from ui_updater import UIUpdater
+from data_manager import load_json_file
+
+from handlers.list_selection_handler import ListSelectionHandler
+from handlers.text_operation_handler import TextOperationHandler
+from handlers.app_action_handler import AppActionHandler
+
+from utils import log_debug
 
 class MainWindow(QMainWindow):
-    SETTINGS_FILE = "settings.json" # Ім'я файлу налаштувань
-
     def __init__(self):
-        log_debug("MainWindow initialized.")
         super().__init__()
-        self.setWindowTitle("JSON Text Editor")
-        self.setGeometry(100, 100, 1200, 700)
+        log_debug("++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++")
+        self.is_programmatically_changing_text = False 
+        self.json_path = None; self.edited_json_path = None
+        self.data = []; self.edited_data = {}; self.edited_file_data = []
+        self.block_names = {}; self.current_block_idx = -1; self.current_string_idx = -1
+        self.unsaved_changes = False; self.settings_file_path = "settings.json"
+        self.main_splitter = None; self.right_splitter = None; self.bottom_right_splitter = None
+        # Add attributes for actions (will be assigned in ui_setup)
+        self.open_action = None; self.open_changes_action = None; self.save_action = None; 
+        self.save_as_action = None; self.reload_action = None; self.revert_action = None; 
+        self.exit_action = None; self.paste_block_action = None; 
 
-        # Шляхи та дані (початкові значення за замовчуванням)
-        self.json_path = "Ukraine.json"
-        self.edited_json_path = "ukranian_edited.json"
-        self.data = []
-        self.edited_file_data = []
-        self.block_names = {} # Буде завантажено з налаштувань
-        self.edited_data = {}
-        self.current_block_idx = -1
-        self.current_string_idx = -1
-        self.unsaved_changes = False
+        log_debug("MainWindow: Initializing Core Components...")
+        self.data_processor = DataStateProcessor(self)
+        self.ui_updater = UIUpdater(self, self.data_processor)
+        log_debug("MainWindow: Initializing Handlers...")
+        self.list_selection_handler = ListSelectionHandler(self, self.data_processor, self.ui_updater)
+        self.editor_operation_handler = TextOperationHandler(self, self.data_processor, self.ui_updater)
+        self.app_action_handler = AppActionHandler(self, self.data_processor, self.ui_updater)
+        log_debug("MainWindow: Setting up UI...")
+        setup_main_window_ui(self) 
+        log_debug("MainWindow: Connecting Signals...")
+        self.connect_signals()
+        log_debug("MainWindow: Loading Editor Settings...")
+        self.load_editor_settings() 
+        if not self.json_path:
+             log_debug("MainWindow: No file auto-loaded, updating initial UI state.")
+             self.ui_updater.update_title(); self.ui_updater.update_statusbar_paths()
+             self.ui_updater.populate_blocks(); self.ui_updater.populate_strings_for_block(-1)
+        log_debug("++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++")
 
-        # Атрибути UI
-        self.block_list_widget = None
-        self.string_list_widget = None
-        self.original_text_edit = None
-        self.edited_text_edit = None
-        self.statusBar = None
-        self.pos_len_label = None
-        self.selection_len_label = None
-        # Додаємо нові атрибути для міток рядка стану
-        self.original_path_label = None
-        self.edited_path_label = None
-        self.handlers = None
+    def connect_signals(self):
+        log_debug("--> MainWindow: connect_signals() started")
+        # --- List widgets ---
+        if hasattr(self, 'block_list_widget'):
+            self.block_list_widget.currentItemChanged.connect(self.list_selection_handler.block_selected)
+            self.block_list_widget.itemDoubleClicked.connect(self.list_selection_handler.rename_block)
+        if hasattr(self, 'string_list_widget'):
+            self.string_list_widget.currentItemChanged.connect(self.list_selection_handler.string_selected)
+        
+        # --- Text editor ---
+        if hasattr(self, 'edited_text_edit'):
+            self.edited_text_edit.textChanged.connect(self.editor_operation_handler.text_edited)
+            self.edited_text_edit.cursorPositionChanged.connect(self.ui_updater.update_status_bar)
+            self.edited_text_edit.selectionChanged.connect(self.ui_updater.update_status_bar_selection)
+            log_debug("Connected edited_text_edit signals.")
+        
+        # --- Actions ---
+        if hasattr(self, 'paste_block_action'): self.paste_block_action.triggered.connect(self.editor_operation_handler.paste_block_text); log_debug("Connected paste_block_action.")
+        if hasattr(self, 'open_action'): self.open_action.triggered.connect(self.open_file_dialog_action); log_debug("Connected open_action.")
+        # --- CONNECT NEW ACTION ---
+        if hasattr(self, 'open_changes_action'): 
+            self.open_changes_action.triggered.connect(self.open_changes_file_dialog_action) # New method
+            log_debug("Connected open_changes_action.")
+        # --- END CONNECT NEW ACTION ---
+        if hasattr(self, 'save_action'): self.save_action.triggered.connect(self.trigger_save_action); log_debug("Connected save_action.")
+        if hasattr(self, 'reload_action'): self.reload_action.triggered.connect(self.reload_original_data_action); log_debug("Connected reload_action.")
+        if hasattr(self, 'save_as_action'): self.save_as_action.triggered.connect(self.save_as_dialog_action); log_debug("Connected save_as_action.")
+        if hasattr(self, 'revert_action'): self.revert_action.triggered.connect(self.trigger_revert_action); log_debug("Connected revert_action.")
+        
+        log_debug("--> MainWindow: connect_signals() finished")
 
-        # --- 1. Завантажуємо налаштування (шляхи та імена блоків) ---
-        self.load_settings()
+    # ... (trigger_save_action, trigger_revert_action) ...
+    def trigger_save_action(self):
+        log_debug("<<<<<<<<<< ACTION: Save Triggered >>>>>>>>>>")
+        self.app_action_handler.save_data_action(ask_confirmation=True) 
 
-        # --- 2. Налаштовуємо UI ---
-        log_debug("MainWindow: Calling setup_main_window_ui.")
-        setup_main_window_ui(self) # Створює віджети ТА мітки в рядку стану
-        log_debug("MainWindow: setup_main_window_ui finished.")
+    def trigger_revert_action(self):
+        log_debug("<<<<<<<<<< ACTION: Revert Changes File Triggered >>>>>>>>>>")
+        self.data_processor.revert_edited_file_to_original()
 
-        # --- 3. Створюємо головний обробник подій ---
-        log_debug("MainWindow: Creating MainWindowEventHandlers instance.")
-        self.handlers = MainWindowEventHandlers(self)
-        log_debug("MainWindow: MainWindowEventHandlers instance created.")
+    # --- NEW METHOD ---
+    def open_changes_file_dialog_action(self):
+        """Allows user to manually select the _edited.json file."""
+        log_debug("--> ACTION: Open Changes File Dialog Triggered")
+        if not self.json_path:
+            QMessageBox.warning(self, "Open Changes File", "Please open an original file first.")
+            log_debug("<-- ACTION: Open Changes File finished (No original open).")
+            return
+            
+        # Suggest starting directory based on current edited path or original path
+        start_dir = ""
+        if self.edited_json_path:
+            start_dir = os.path.dirname(self.edited_json_path)
+        elif self.json_path:
+            start_dir = os.path.dirname(self.json_path)
+            
+        log_debug(f"Opening file dialog for changes file, starting directory: '{start_dir}'")
+        path, _ = QFileDialog.getOpenFileName(self, "Open Changes (Edited) JSON File", start_dir, "JSON Files (*.json);;All Files (*)")
 
-        # --- 4. Підключаємо сигнали до handlers ---
-        log_debug("MainWindow: Connecting signals to handlers.")
-        self.block_list_widget.currentItemChanged.connect(self.handlers.block_selected)
-        self.block_list_widget.itemDoubleClicked.connect(self.handlers.rename_block)
-        self.string_list_widget.currentItemChanged.connect(self.handlers.string_selected)
-        self.edited_text_edit.textChanged.connect(self.handlers.text_edited)
-        self.edited_text_edit.cursorPositionChanged.connect(self.handlers.update_status_bar)
-        self.edited_text_edit.selectionChanged.connect(self.handlers.update_status_bar_selection)
+        if path:
+            log_debug(f"User selected changes file: {path}")
+            
+            # Check for unsaved changes before overwriting memory
+            if self.unsaved_changes:
+                 reply = QMessageBox.question(self, 'Unsaved Changes',
+                                             "Loading a new changes file will discard current unsaved edits. Proceed?",
+                                             QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                 if reply == QMessageBox.No:
+                     log_debug("User cancelled loading changes file due to unsaved edits.")
+                     log_debug("<-- ACTION: Open Changes File finished (Cancelled).")
+                     return
 
-        # Підключаємо дії меню
-        menubar = self.menuBar()
-        for action in menubar.actions():
-            menu_title = action.text()
-            if menu_title == '&Файл':
-                for file_action in action.menu().actions():
-                    action_text = file_action.text()
-                    if action_text != 'Вихід': # Відключаємо всі, крім Вихід
-                        try: file_action.triggered.disconnect()
-                        except TypeError: pass
-
-                    if action_text == '&Відкрити файл оригіналу...':
-                        file_action.triggered.connect(self.open_original_file_dialog)
-                    elif action_text == '&Зберегти зміни':
-                        file_action.triggered.connect(self.handlers.save_data)
-                    elif action_text == 'Зберегти зміни &як...':
-                        file_action.triggered.connect(self.save_as_file_dialog)
-                    elif action_text == 'Перезавантажити оригінал':
-                        file_action.triggered.connect(self.reload_original_data_action)
-                    log_debug(f"MainWindow: Connected File menu action: '{action_text}'.")
-
-            elif menu_title == '&Редагування':
-                 for edit_action in action.menu().actions():
-                      if edit_action.text() == '&Вставити блок':
-                           try: edit_action.triggered.disconnect()
-                           except TypeError: pass
-                           edit_action.triggered.connect(self.handlers.paste_block_text)
-                           log_debug("MainWindow: Connected Edit menu action: '&Вставити блок'.")
-
-        log_debug("MainWindow: Signal connections complete.")
-
-        # --- 5. Завантажуємо дані з файлів ---
-        log_debug("MainWindow: Loading initial data.")
-        self.load_original_data()
-        self.load_edited_data()
-        log_debug("MainWindow: Initial data loading finished.")
-
-        # --- 6. Заповнюємо початкові дані UI через handlers ---
-        log_debug("MainWindow: Populating initial UI.")
-        self.handlers.populate_blocks()
-        self.handlers.clear_status_bar()
-        self.handlers.update_title() # Оновлюємо заголовок з урахуванням шляхів
-        self.handlers.update_statusbar_paths() # <--- ВИКЛИКАЄМО ОНОВЛЕННЯ ШЛЯХІВ
-        log_debug("MainWindow initialization complete.")
-
-    # --- Методи для роботи з налаштуваннями ---
-    def load_settings(self):
-        # ... (код load_settings без змін) ...
-        log_debug(f"MainWindow: Loading settings from {self.SETTINGS_FILE}.")
-        if os.path.exists(self.SETTINGS_FILE):
-            try:
-                with open(self.SETTINGS_FILE, 'r', encoding='utf-8') as f:
-                    settings = json.load(f)
-                self.json_path = settings.get('original_file_path', self.json_path)
-                self.edited_json_path = settings.get('edited_file_path', self.edited_json_path)
-                loaded_block_names = settings.get('block_names', {})
-                self.block_names = {int(k): v for k, v in loaded_block_names.items() if k.isdigit()}
-                log_debug(f"MainWindow: Settings loaded. Original: '{self.json_path}', Edited: '{self.edited_json_path}', Block names: {len(self.block_names)} items.")
-            except json.JSONDecodeError:
-                log_debug(f"MainWindow: Error decoding JSON from {self.SETTINGS_FILE}. Using default settings.")
-            except Exception as e:
-                log_debug(f"MainWindow: Error loading settings from {self.SETTINGS_FILE}: {e}. Using default settings.")
-        else:
-            log_debug(f"MainWindow: Settings file {self.SETTINGS_FILE} not found. Using default settings.")
-
-
-    def save_settings(self):
-        # ... (код save_settings без змін) ...
-        log_debug(f"MainWindow: Saving settings to {self.SETTINGS_FILE}.")
-        settings = {
-            'original_file_path': self.json_path,
-            'edited_file_path': self.edited_json_path,
-            'block_names': {str(k): v for k, v in self.block_names.items()}
-        }
-        try:
-            with open(self.SETTINGS_FILE, 'w', encoding='utf-8') as f:
-                json.dump(settings, f, ensure_ascii=False, indent=4)
-            log_debug("MainWindow: Settings saved successfully.")
-        except Exception as e:
-            log_debug(f"MainWindow: Error saving settings to {self.SETTINGS_FILE}: {e}")
-            QMessageBox.warning(self, "Помилка збереження налаштувань",
-                                f"Не вдалося зберегти налаштування у файл {self.SETTINGS_FILE}:\n{e}")
-
-
-    # --- Методи для роботи з файлами ---
-
-    def open_original_file_dialog(self):
-        """Відкриває діалог вибору файлу оригіналу JSON."""
-        log_debug("MainWindow: open_original_file_dialog called.")
-        if self.unsaved_changes:
-            reply = QMessageBox.question(self, 'Незбережені зміни',
-                                         "Відкриття нового файлу призведе до втрати незбережених змін.\nПродовжити?",
-                                         QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-            if reply == QMessageBox.No:
-                log_debug("MainWindow: open_original_file_dialog cancelled by user due to unsaved changes.")
+            # Load data from the selected changes file
+            new_edited_data, error = load_json_file(path, parent_widget=self, expected_type=list)
+            if error:
+                QMessageBox.critical(self, "Load Error", f"Failed to load selected changes file:\n{path}\n\n{error}")
+                log_debug(f"Error loading selected changes file: {error}")
+                log_debug("<-- ACTION: Open Changes File finished (Load Error).")
                 return
 
-        options = QFileDialog.Options()
-        start_dir = os.path.dirname(self.json_path) if os.path.exists(self.json_path) else ""
-        fileName, _ = QFileDialog.getOpenFileName(self, "Відкрити файл JSON оригіналу", start_dir,
-                                                  "JSON Files (*.json);;All Files (*)", options=options)
-        if fileName:
-            log_debug(f"MainWindow: User selected original file: {fileName}")
-            self.json_path = fileName
-            base, ext = os.path.splitext(fileName)
-            self.edited_json_path = f"{base}_edited{ext}"
-            log_debug(f"MainWindow: New edited file path set to: {self.edited_json_path}")
+            log_debug("Successfully loaded new changes file data. Updating state...")
+            self.edited_json_path = path # Update the path
+            self.edited_file_data = new_edited_data # Update the cached data
+            self.edited_data = {} # Clear any previous in-memory edits
+            self.unsaved_changes = False # Reset unsaved flag
 
-            self.block_names = {}
-            log_debug("MainWindow: Reset block names.")
+            # Refresh the UI completely to reflect the new changes file
+            self.ui_updater.update_title()
+            self.ui_updater.update_statusbar_paths()
+            # Need to refresh block and string lists as the source for 'Editable Text' has changed
+            log_debug("Refreshing UI after loading new changes file...")
+            self.is_programmatically_changing_text = True
+            # Re-populate blocks (list itself doesn't change, but good practice) 
+            # and strings (will now use new edited_file_data)
+            current_block = self.current_block_idx # Preserve selection
+            current_string = self.current_string_idx
+            self.ui_updater.populate_blocks() 
+            self.current_block_idx = current_block # Restore selection
+            self.current_string_idx = current_string
+            if current_block != -1: # If a block was selected, refresh strings for it
+                self.ui_updater.populate_strings_for_block(current_block)
+            else: # Otherwise, ensure string view is cleared
+                 self.ui_updater.populate_strings_for_block(-1)
+            self.is_programmatically_changing_text = False
+            log_debug("UI refreshed.")
 
-            log_debug("MainWindow: Reloading data after opening new original file.")
-            self.load_original_data()
-            self.load_edited_data()
-
-            if self.handlers:
-                self.handlers.populate_blocks()
-                self.handlers.block_selected(None, None)
-                self.handlers.update_title()
-                self.handlers.update_statusbar_paths() # <--- ОНОВЛЮЄМО ШЛЯХИ В СТАТУСІ
-                self.handlers.clear_status_bar() # Очищаємо позицію/виділення
-
-            self.save_settings() # Зберігаємо нові шляхи та порожні імена блоків
-
-    def save_as_file_dialog(self):
-        """Відкриває діалог збереження файлу змін."""
-        log_debug("MainWindow: save_as_file_dialog called.")
-        options = QFileDialog.Options()
-        start_dir = os.path.dirname(self.edited_json_path) if os.path.exists(self.edited_json_path) else ""
-        fileName, _ = QFileDialog.getSaveFileName(self, "Зберегти зміни як...", start_dir,
-                                                  "JSON Files (*.json);;All Files (*)", options=options)
-        if fileName:
-            log_debug(f"MainWindow: User selected file to save as: {fileName}")
-            if not fileName.lower().endswith('.json'):
-                fileName += '.json'
-                log_debug(f"MainWindow: Appended .json extension: {fileName}")
-
-            old_edited_path = self.edited_json_path
-            self.edited_json_path = fileName
-
-            log_debug("MainWindow: Calling handlers.save_data(ask_confirmation=False) for Save As.")
-            if self.handlers and self.handlers.save_data(ask_confirmation=False):
-                self.handlers.update_title()
-                self.handlers.update_statusbar_paths() # <--- ОНОВЛЮЄМО ШЛЯХИ В СТАТУСІ
-                self.save_settings() # Зберігаємо новий шлях edited_json_path
-                log_debug(f"MainWindow: Saved successfully to {fileName}.")
-                QMessageBox.information(self, "Збережено як", f"Зміни успішно збережено у\n{fileName}")
-            else:
-                log_debug(f"MainWindow: Failed to save to {fileName}. Reverting edited_json_path.")
-                self.edited_json_path = old_edited_path
-                # Повідомлення про помилку вже мало бути показане
         else:
-            log_debug("MainWindow: Save As dialog cancelled by user.")
+            log_debug("User cancelled changes file dialog.")
+        log_debug("<-- ACTION: Open Changes File finished.")
+    # --- END NEW METHOD ---
 
+    # ... (rest of MainWindow methods: _derive_edited_path, load_all_data_for_path, etc.) ...
+    def _derive_edited_path(self, original_path):
+        if not original_path: return None
+        base, ext = os.path.splitext(os.path.basename(original_path))
+        dir_name = os.path.dirname(original_path)
+        if not dir_name: dir_name = "." 
+        return os.path.join(dir_name, f"{base}_edited{ext}")
 
-    # Методи завантаження даних (без змін з попередньої версії)
-    def load_original_data(self):
-        """Завантажує дані з основного файлу JSON, використовуючи data_manager."""
-        log_debug(f"MainWindow: Loading original data from {self.json_path}.")
-        loaded_data, error_message = load_json_file(self.json_path, parent_widget=self, expected_type=list)
-        if loaded_data is not None and isinstance(loaded_data, list): # Перевіряємо тип
-             self.data = loaded_data
-             log_debug(f"MainWindow: Original data loaded successfully. Size: {len(self.data)} blocks.")
-             # Скидаємо незбережені зміни та прапорець при перезавантаженні оригіналу
-             self.edited_data = {}
-             self.unsaved_changes = False
-             log_debug("MainWindow: Reset edited_data and unsaved_changes.")
-        else:
-            # Якщо була помилка або невірний тип, data буде порожнім списком
-            self.data = []
-            log_debug(f"MainWindow: Error loading original data or invalid format: {error_message}. Resetting data to [].")
-
-        if error_message and "не знайдено" in error_message:
-             log_debug(f"MainWindow: Original file not found: {error_message}.")
-             # QMessageBox вже показано load_json_file
-
-    def load_edited_data(self):
-        """Завантажує дані з файлу зі змінами, використовуючи data_manager."""
-        log_debug(f"MainWindow: Loading edited data from {self.edited_json_path}.")
-        show_error_box = os.path.exists(self.edited_json_path)
-        parent_for_errors = self if show_error_box else None
-        loaded_data, error_message = load_json_file(self.edited_json_path, parent_widget=parent_for_errors, expected_type=list)
-
-        if loaded_data is not None and isinstance(loaded_data, list): # Перевіряємо тип
-             self.edited_file_data = loaded_data
-             log_debug(f"MainWindow: Edited data loaded successfully. Size: {len(self.edited_file_data) if self.edited_file_data else 0}).")
-        else:
-            # Якщо була помилка або невірний тип, edited_file_data буде порожнім списком
-            self.edited_file_data = []
-            log_debug(f"MainWindow: Error loading edited data or invalid format: {error_message}. Resetting edited_file_data to [].")
-
-        if not show_error_box and error_message and "не знайдено" in error_message:
-             log_debug(f"MainWindow: Edited file not found: {error_message}. Will be created on save.")
-        elif error_message and show_error_box:
-             log_debug(f"MainWindow: Error loading existing edited file: {error_message}.")
-             # QMessageBox вже показано load_json_file
-
-
-    # --- Метод перезавантаження (підключений до меню) ---
-    def reload_original_data_action(self):
-        """Дія для перезавантаження оригінального файлу."""
-        log_debug("MainWindow: reload_original_data_action called.")
+    def open_file_dialog_action(self):
+        log_debug("--> ACTION: Open File Dialog Triggered")
         if self.unsaved_changes:
-             reply = QMessageBox.question(self, 'Незбережені зміни',
-                                          "Перезавантаження оригінального файлу призведе до втрати незбережених змін.\nПродовжити?",
-                                          QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-             if reply == QMessageBox.No:
-                 log_debug("MainWindow: reload_original_data_action cancelled by user due to unsaved changes.")
-                 return
+            reply = QMessageBox.question(self, 'Unsaved Changes', "Save before opening new file?", QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel, QMessageBox.Cancel)
+            if reply == QMessageBox.Save:
+                if not self.app_action_handler.save_data_action(ask_confirmation=True): return
+            elif reply == QMessageBox.Cancel: return
+        start_dir = os.path.dirname(self.json_path) if self.json_path else ""
+        path, _ = QFileDialog.getOpenFileName(self, "Open Original JSON", start_dir, "JSON (*.json);;All (*)")
+        if path: self.load_all_data_for_path(path)
+        else: log_debug("User cancelled file dialog.")
+        log_debug("<-- ACTION: Open File Dialog Finished")
+            
+    def save_as_dialog_action(self):
+        log_debug("--> ACTION: Save As Dialog Triggered")
+        if not self.json_path: QMessageBox.warning(self, "Save As Error", "No original file open."); return
+        current_edited_path = self.edited_json_path if self.edited_json_path else self._derive_edited_path(self.json_path)
+        if not current_edited_path: current_edited_path = "" 
+        new_edited_path, _ = QFileDialog.getSaveFileName(self, "Save Changes As...", current_edited_path, "JSON (*.json);;All (*)")
+        if new_edited_path:
+            original_edited_path_backup = self.edited_json_path
+            self.edited_json_path = new_edited_path
+            save_success = self.app_action_handler.save_data_action(ask_confirmation=False) 
+            if save_success: QMessageBox.information(self, "Saved As", f"Changes saved to:\n{self.edited_json_path}")
+            else: QMessageBox.critical(self, "Save As Error", f"Failed to save to:\n{self.edited_json_path}"); self.edited_json_path = original_edited_path_backup; self.ui_updater.update_statusbar_paths()
+        else: log_debug("Save As cancelled by user.")
+        log_debug("<-- ACTION: Save As Finished")
 
-        log_debug("MainWindow: Proceeding with reload_original_data.")
-        self.load_original_data()
-        self.load_edited_data()
+    def load_all_data_for_path(self, original_file_path, manually_set_edited_path=None):
+        log_debug(f"--> MainWindow: load_all_data_for_path START. Original: '{original_file_path}', Manual Edit Path: '{manually_set_edited_path}'")
+        self.is_programmatically_changing_text = True; log_debug("Set flag True")
+        data, error = load_json_file(original_file_path, parent_widget=self, expected_type=list)
+        if error:
+            log_debug(f"ERROR loading original: {error}"); QMessageBox.critical(self, "Load Error", f"Failed: {original_file_path}\n{error}")
+            self.json_path = None; self.edited_json_path = None; self.data = []
+            self.edited_data = {}; self.edited_file_data = []; self.unsaved_changes = False
+            self.ui_updater.update_title(); self.ui_updater.update_statusbar_paths()
+            self.ui_updater.populate_blocks(); self.ui_updater.populate_strings_for_block(-1)
+            self.is_programmatically_changing_text = False; log_debug("Set flag False")
+            log_debug("<-- MainWindow: load_all_data_for_path FINISHED (Error)")
+            return
+        self.json_path = original_file_path; self.data = data
+        self.edited_data = {}; self.unsaved_changes = False
+        self.edited_json_path = manually_set_edited_path if manually_set_edited_path else self._derive_edited_path(self.json_path)
+        if self.edited_json_path and os.path.exists(self.edited_json_path):
+            edited_data_from_file, edit_error = load_json_file(self.edited_json_path, parent_widget=self, expected_type=list)
+            if edit_error: QMessageBox.warning(self, "Edited Load Warning", f"Could not load: {self.edited_json_path}\n{edit_error}"); self.edited_file_data = []
+            else: self.edited_file_data = edited_data_from_file
+        else: self.edited_file_data = []
+        self.current_block_idx = -1; self.current_string_idx = -1
+        self.block_list_widget.clear(); self.string_list_widget.clear()
+        self.original_text_edit.clear(); self.edited_text_edit.clear()
+        self.ui_updater.populate_blocks()
+        self.ui_updater.update_title(); self.ui_updater.update_statusbar_paths()
+        if self.block_list_widget.count() > 0: self.block_list_widget.setCurrentRow(0)
+        else: self.ui_updater.populate_strings_for_block(-1)
+        self.is_programmatically_changing_text = False; log_debug("Set flag False")
+        log_debug(f"<-- MainWindow: load_all_data_for_path FINISHED (Success)")
 
-        if self.handlers:
-            self.handlers.populate_blocks()
-            self.handlers.block_selected(None, None)
-            self.handlers.update_title()
-            self.handlers.update_statusbar_paths() # <--- ОНОВЛЮЄМО ШЛЯХИ В СТАТУСІ
-            self.handlers.clear_status_bar()
-            QMessageBox.information(self, "Перезавантажено", f"Оригінальний файл {self.json_path} перезавантажено.")
-            log_debug("MainWindow: reload_original_data_action finished successfully.")
-        else:
-             log_debug("MainWindow: Handlers not initialized, cannot complete UI update after reload.")
-             QMessageBox.warning(self, "Помилка", "Не вдалося оновити UI після перезавантаження оригінального файлу.")
+    def reload_original_data_action(self):
+        log_debug("--> ACTION: Reload Original Triggered")
+        if not self.json_path: QMessageBox.information(self, "Reload", "No file open."); return
+        if self.unsaved_changes:
+            reply = QMessageBox.question(self, 'Unsaved Changes', "Reload discards unsaved. Proceed?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if reply == QMessageBox.No: log_debug("<-- ACTION: Reload Aborted"); return
+        self.load_all_data_for_path(self.json_path, manually_set_edited_path=self.edited_json_path)
+        log_debug("<-- ACTION: Reload Original Finished")
 
+    def load_editor_settings(self):
+        log_debug(f"--> MainWindow: load_editor_settings from {self.settings_file_path}")
+        if not os.path.exists(self.settings_file_path): log_debug("Settings file not found."); return
+        try:
+            with open(self.settings_file_path, 'r', encoding='utf-8') as f: settings_data = json.load(f)
+        except Exception as e: log_debug(f"ERROR reading settings: {e}"); return
+        window_geom = settings_data.get("window_geometry")
+        if window_geom and isinstance(window_geom, dict) and all(k in window_geom for k in ('x', 'y', 'width', 'height')):
+            try: self.setGeometry(window_geom['x'], window_geom['y'], window_geom['width'], window_geom['height'])
+            except Exception as e: log_debug(f"WARN: Failed to restore window geometry: {e}")
+        try:
+            if self.main_splitter and "main_splitter_state" in settings_data: self.main_splitter.restoreState(QByteArray(base64.b64decode(settings_data["main_splitter_state"])))
+            if self.right_splitter and "right_splitter_state" in settings_data: self.right_splitter.restoreState(QByteArray(base64.b64decode(settings_data["right_splitter_state"])))
+            if self.bottom_right_splitter and "bottom_right_splitter_state" in settings_data: self.bottom_right_splitter.restoreState(QByteArray(base64.b64decode(settings_data["bottom_right_splitter_state"])))
+        except Exception as e: log_debug(f"WARN: Failed to restore splitter state(s): {e}")
+        self.block_names = {str(k): v for k, v in settings_data.get("block_names", {}).items()}
+        last_original_file = settings_data.get("original_file_path"); last_edited_file = settings_data.get("edited_file_path")
+        if last_original_file and os.path.exists(last_original_file):
+            effective_edited_path = last_edited_file if last_edited_file and os.path.exists(last_edited_file) else None
+            self.load_all_data_for_path(last_original_file, manually_set_edited_path=effective_edited_path)
+        elif last_original_file: log_debug(f"Last file '{last_original_file}' not found.")
+        log_debug("<-- MainWindow: load_editor_settings finished")
+
+    def save_editor_settings(self):
+        log_debug(f"--> MainWindow: save_editor_settings to {self.settings_file_path}")
+        settings_data = {"block_names": {str(k): v for k, v in self.block_names.items()}}
+        geom = self.geometry(); settings_data["window_geometry"] = {"x": geom.x(), "y": geom.y(), "width": geom.width(), "height": geom.height()}
+        try:
+            if self.main_splitter: settings_data["main_splitter_state"] = base64.b64encode(self.main_splitter.saveState().data()).decode('ascii')
+            if self.right_splitter: settings_data["right_splitter_state"] = base64.b64encode(self.right_splitter.saveState().data()).decode('ascii')
+            if self.bottom_right_splitter: settings_data["bottom_right_splitter_state"] = base64.b64encode(self.bottom_right_splitter.saveState().data()).decode('ascii')
+        except Exception as e: log_debug(f"WARN: Failed to save splitter state(s): {e}")
+        if self.json_path: settings_data["original_file_path"] = self.json_path
+        if self.edited_json_path: settings_data["edited_file_path"] = self.edited_json_path
+        try:
+            with open(self.settings_file_path, 'w', encoding='utf-8') as f: json.dump(settings_data, f, indent=4, ensure_ascii=False)
+        except Exception as e: log_debug(f"ERROR saving settings: {e}")
+        log_debug("<-- MainWindow: save_editor_settings finished")
 
     def closeEvent(self, event):
-        """Перенаправляє подію закриття до обробника ТА ЗБЕРІГАЄ НАЛАШТУВАННЯ."""
-        log_debug("MainWindow: closeEvent called.")
-        if self.handlers:
-            self.handlers.closeEvent(event)
-            if event.isAccepted():
-                log_debug("MainWindow: closeEvent accepted. Saving settings.")
-                self.save_settings()
-            else:
-                 log_debug("MainWindow: closeEvent ignored (e.g., user cancelled save). Settings not saved.")
-        else:
-            log_debug("MainWindow: Handlers not initialized during closeEvent. Accepting event without checking changes.")
-            event.accept()
-            # Налаштування не зберігаються, якщо програма закрилась до ініціалізації handlers
-
+        log_debug("--> MainWindow: closeEvent received.")
+        self.app_action_handler.handle_close_event(event)
+        if event.isAccepted(): log_debug("Close accepted. Saving settings."); self.save_editor_settings(); super().closeEvent(event)
+        else: log_debug("Close ignored.")
+        log_debug("<-- MainWindow: closeEvent finished.")
 
 if __name__ == '__main__':
-    import datetime
-    def log_debug(message):
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-        print(f"[{timestamp}] {message}")
-
-    def clean_newline_at_end(text):
-        """Видаляє \n наприкінці строки, якщо він є. Якщо строка лише '\n', повертає ''."""
-        if text == "\n":
-            return ""
-        elif text.endswith("\n"):
-            return text[:-1]
-        return text
-
-    log_debug("Application starting.")
+    log_debug("================= Application Start =================")
     app = QApplication(sys.argv)
-    mainWin = MainWindow()
-    mainWin.show()
-    log_debug("Application exec().")
-    sys.exit(app.exec_())
+    window = MainWindow()
+    window.show()
+    log_debug("Starting Qt event loop...")
+    exit_code = app.exec_()
+    log_debug(f"Qt event loop finished with exit code: {exit_code}")
+    log_debug("================= Application End =================")
+    sys.exit(exit_code)

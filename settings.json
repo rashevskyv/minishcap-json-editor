@@ -1,5 +1,17 @@
 {
+    "block_names": {
+        "0": "Системні",
+        "1": "Титри"
+    },
+    "window_geometry": {
+        "x": 705,
+        "y": 159,
+        "width": 1256,
+        "height": 871
+    },
+    "main_splitter_state": "AAAA/wAAAAEAAAACAAAAzAAABAUB/////wEAAAABAA==",
+    "right_splitter_state": "AAAA/wAAAAEAAAACAAABuAAAAW8B/////wEAAAACAA==",
+    "bottom_right_splitter_state": "AAAA/wAAAAEAAAACAAABkAAAAZAB/////wEAAAABAA==",
     "original_file_path": "//192.168.50.168/tloz_tmc_ua/UKR_orig.json",
-    "edited_file_path": "//192.168.50.168/tloz_tmc_ua/UKR.json",
-    "block_names": {}
+    "edited_file_path": "//192.168.50.168/tloz_tmc_ua/UKR.json"
 }
