@@ -1,9 +1,9 @@
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QSplitter,
-    QLabel, QAction, QStatusBar, QMenu
+    QLabel, QAction, QStatusBar, QMenu, QPlainTextEdit, QToolBar # Додано QToolBar
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QTextOption # Потрібно для setTextInteractionFlags
+from PyQt5.QtGui import QIcon # Для іконок, якщо є
 from LineNumberedTextEdit import LineNumberedTextEdit
 from CustomListWidget import CustomListWidget
 from utils import log_debug
@@ -12,41 +12,29 @@ def setup_main_window_ui(main_window):
     log_debug("setup_main_window_ui: Starting UI setup.")
     central_widget = QWidget(); main_window.setCentralWidget(central_widget)
     main_layout = QHBoxLayout(central_widget)
+    # ... (решта UI як раніше) ...
     left_panel = QWidget(); left_layout = QVBoxLayout(left_panel)
     left_layout.addWidget(QLabel("Blocks (double-click to rename):"))
     main_window.block_list_widget = CustomListWidget(); left_layout.addWidget(main_window.block_list_widget)
     main_window.right_splitter = QSplitter(Qt.Vertical) 
-    
-    top_right_panel = QWidget()
-    top_right_layout = QVBoxLayout(top_right_panel) 
+    top_right_panel = QWidget(); top_right_layout = QVBoxLayout(top_right_panel) 
     top_right_layout.addWidget(QLabel("Strings in block (click line to select):")) 
-    
     main_window.preview_text_edit = LineNumberedTextEdit(main_window) 
     main_window.preview_text_edit.setReadOnly(True)
-    # Для preview_text_edit також можна увімкнути виділення, якщо потрібно
     main_window.preview_text_edit.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
     top_right_layout.addWidget(main_window.preview_text_edit) 
-    
     main_window.right_splitter.addWidget(top_right_panel) 
-    
     main_window.bottom_right_splitter = QSplitter(Qt.Horizontal)
     bottom_left_panel = QWidget(); bottom_left_layout = QVBoxLayout(bottom_left_panel)
     bottom_left_layout.addWidget(QLabel("Original (Read-Only):"))
     main_window.original_text_edit = LineNumberedTextEdit(main_window) 
     main_window.original_text_edit.setReadOnly(True)
-    # --- УВІМКНЕННЯ ВИДІЛЕННЯ ТЕКСТУ ДЛЯ READ-ONLY ПОЛЯ ---
     main_window.original_text_edit.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
-    # Qt.TextSelectableByKeyboard дозволяє виділяти за допомогою Shift + стрілки
-    # Якщо потрібне лише виділення мишею: Qt.TextSelectableByMouse
-    # --- КІНЕЦЬ ЗМІНИ ---
     bottom_left_layout.addWidget(main_window.original_text_edit); main_window.bottom_right_splitter.addWidget(bottom_left_panel)
-    
     bottom_right_panel = QWidget(); bottom_right_layout = QVBoxLayout(bottom_right_panel)
     bottom_right_layout.addWidget(QLabel("Editable Text:"))
     main_window.edited_text_edit = LineNumberedTextEdit(main_window) 
-    # Для edited_text_edit прапорці взаємодії встановлені за замовчуванням (редагування, виділення тощо)
     bottom_right_layout.addWidget(main_window.edited_text_edit); main_window.bottom_right_splitter.addWidget(bottom_right_panel)
-    
     main_window.right_splitter.addWidget(main_window.bottom_right_splitter)
     main_window.right_splitter.setSizes([150, 450]); main_window.bottom_right_splitter.setSizes([400, 400])
     main_window.main_splitter = QSplitter(Qt.Horizontal)
@@ -63,30 +51,61 @@ def setup_main_window_ui(main_window):
     # --- Menu ---
     menubar = main_window.menuBar()
     file_menu = menubar.addMenu('&File')
+    # ... (File menu actions як раніше) ...
+    main_window.open_action = QAction('&Open Original File...', main_window); file_menu.addAction(main_window.open_action)
+    main_window.open_changes_action = QAction('Open &Changes File...', main_window); file_menu.addAction(main_window.open_changes_action)
+    file_menu.addSeparator()
+    main_window.save_action = QAction('&Save Changes', main_window); main_window.save_action.setShortcut('Ctrl+S'); file_menu.addAction(main_window.save_action)
+    main_window.save_as_action = QAction('Save Changes &As...', main_window); file_menu.addAction(main_window.save_as_action)
+    file_menu.addSeparator()
+    main_window.reload_action = QAction('Reload Original', main_window); file_menu.addAction(main_window.reload_action)
+    main_window.revert_action = QAction('&Revert Changes File to Original...', main_window); file_menu.addAction(main_window.revert_action)
+    file_menu.addSeparator()
+    main_window.exit_action = QAction('E&xit', main_window); main_window.exit_action.triggered.connect(main_window.close); file_menu.addAction(main_window.exit_action)
 
-    main_window.open_action = QAction('&Open Original File...', main_window)
-    file_menu.addAction(main_window.open_action)
-    main_window.open_changes_action = QAction('Open &Changes File...', main_window)
-    file_menu.addAction(main_window.open_changes_action)
-    file_menu.addSeparator()
-    main_window.save_action = QAction('&Save Changes', main_window)
-    main_window.save_action.setShortcut('Ctrl+S')
-    file_menu.addAction(main_window.save_action)
-    main_window.save_as_action = QAction('Save Changes &As...', main_window)
-    file_menu.addAction(main_window.save_as_action)
-    file_menu.addSeparator()
-    main_window.reload_action = QAction('Reload Original', main_window)
-    file_menu.addAction(main_window.reload_action)
-    main_window.revert_action = QAction('&Revert Changes File to Original...', main_window)
-    file_menu.addAction(main_window.revert_action)
-    file_menu.addSeparator()
-    main_window.exit_action = QAction('E&xit', main_window)
-    main_window.exit_action.triggered.connect(main_window.close)
-    file_menu.addAction(main_window.exit_action)
 
     edit_menu = menubar.addMenu('&Edit')
+    
+    # --- ДІЇ UNDO/REDO ДЛЯ МЕНЮ ТА ПАНЕЛІ ІНСТРУМЕНТІВ ---
+    main_window.undo_typing_action = QAction(QIcon.fromTheme("edit-undo"), '&Undo Typing', main_window) # Використовуємо стандартну іконку, якщо доступна
+    main_window.undo_typing_action.setShortcut('Ctrl+Z')
+    if hasattr(main_window, 'edited_text_edit'):
+        main_window.undo_typing_action.triggered.connect(main_window.edited_text_edit.undo)
+        # Динамічне ввімкнення/вимкнення на основі стану edited_text_edit
+        main_window.undo_typing_action.setEnabled(main_window.edited_text_edit.document().isUndoAvailable())
+        main_window.edited_text_edit.undoAvailable.connect(main_window.undo_typing_action.setEnabled)
+
+    main_window.redo_typing_action = QAction(QIcon.fromTheme("edit-redo"), '&Redo Typing', main_window)
+    main_window.redo_typing_action.setShortcut('Ctrl+Y') 
+    if hasattr(main_window, 'edited_text_edit'):
+        main_window.redo_typing_action.triggered.connect(main_window.edited_text_edit.redo)
+        main_window.redo_typing_action.setEnabled(main_window.edited_text_edit.document().isRedoAvailable())
+        main_window.edited_text_edit.redoAvailable.connect(main_window.redo_typing_action.setEnabled)
+
+    main_window.undo_paste_action = QAction(QIcon.fromTheme("edit-undo"), 'Undo &Paste Block', main_window) # Можна іншу іконку
+    main_window.undo_paste_action.setShortcut('Ctrl+Shift+Z') 
+    main_window.undo_paste_action.setEnabled(False) # Керується логікою MainWindow
+
+    edit_menu.addAction(main_window.undo_typing_action)
+    edit_menu.addAction(main_window.redo_typing_action)
+    edit_menu.addSeparator()
+    edit_menu.addAction(main_window.undo_paste_action)
+    edit_menu.addSeparator()
+    # --- КІНЕЦЬ ДІЙ UNDO/REDO ---
+
     main_window.paste_block_action = QAction('&Paste Block Text', main_window)
     main_window.paste_block_action.setShortcut('Ctrl+Shift+V')
     edit_menu.addAction(main_window.paste_block_action)
         
+    # --- ПАНЕЛЬ ІНСТРУМЕНТІВ ---
+    toolbar = QToolBar("Main Toolbar")
+    main_window.addToolBar(toolbar)
+    toolbar.addAction(main_window.open_action)
+    toolbar.addAction(main_window.save_action)
+    toolbar.addSeparator()
+    toolbar.addAction(main_window.undo_typing_action) # Додаємо стандартне Undo
+    toolbar.addAction(main_window.redo_typing_action) # Додаємо стандартне Redo
+    toolbar.addAction(main_window.undo_paste_action)  # Додаємо Undo для Paste
+    # --- КІНЕЦЬ ПАНЕЛІ ІНСТРУМЕНТІВ ---
+
     log_debug("setup_main_window_ui: UI setup complete.")

@@ -10,19 +10,16 @@ class TextOperationHandler(BaseHandler):
 
     def text_edited(self):
         if self.mw.is_programmatically_changing_text: 
-            log_debug("TextEdited: Programmatic change, text_edited is skipped.")
+            # log_debug("TextEdited: Programmatic change, text_edited is skipped.")
             return 
         
         if self.mw.current_block_idx == -1 or self.mw.current_string_idx == -1: 
-            # log_debug("TextEdited: No active string/block, skipping.") # Може бути занадто часто
             return
         
         block_idx = self.mw.current_block_idx
         string_idx_in_block = self.mw.current_string_idx
         
-        # Зберігаємо поточну позицію курсору в edited_text_edit
         saved_cursor = self.mw.edited_text_edit.textCursor()
-        # log_debug(f"TextEdited: User edit. Saved cursor pos: {saved_cursor.position()}")
         
         text_from_ui_with_dots = self.mw.edited_text_edit.toPlainText() 
         actual_text_with_spaces = text_from_ui_with_dots
@@ -40,38 +37,48 @@ class TextOperationHandler(BaseHandler):
                     log_debug(f"TextEdited: Line {string_idx_in_block} in block {block_idx} no longer contains [...] tags. Removing problem highlight.")
                     if hasattr(preview_edit, 'removeProblemLineHighlight'):
                         preview_edit.removeProblemLineHighlight(string_idx_in_block)
+                    
                     if hasattr(preview_edit, 'applyQueuedProblemHighlights'):
                          preview_edit.applyQueuedProblemHighlights()
+
                     if hasattr(preview_edit, 'hasProblemHighlight') and not preview_edit.hasProblemHighlight():
                         log_debug(f"TextEdited: No more problem lines in block {block_idx}. Clearing block highlight.")
                         self.ui_updater.highlight_problem_block(block_idx, False)
         
         # Встановлюємо прапор, бо populate_strings_for_block оновить ВСІ текстові поля
-        # (original, preview, і edited - для синхронізації крапок/пробілів)
         self.mw.is_programmatically_changing_text = True
-        self.ui_updater.populate_strings_for_block(block_idx) 
+        self.ui_updater.populate_strings_for_block(block_idx) # Це оновить preview та edited_text_edit (для крапок)
         self.mw.is_programmatically_changing_text = False
 
-        # Відновлюємо курсор в edited_text_edit після всіх оновлень
-        if saved_cursor:
+        if saved_cursor: # Відновлюємо курсор в edited_text_edit
             self.mw.edited_text_edit.setTextCursor(saved_cursor)
-            # log_debug(f"TextEdited: Restored cursor in edited_text_edit to pos {saved_cursor.position()}")
+        # log_debug(f"TextEdited: Finished for ({block_idx}, {string_idx_in_block}).")
 
-        # Статус-бар оновиться через synchronize_original_cursor, який викликається з populate_strings_for_block -> update_text_views
-        log_debug(f"TextEdited: Finished for ({block_idx}, {string_idx_in_block}).")
 
     def paste_block_text(self):
-        # ... (код методу paste_block_text залишається таким, як у попередній версії) ...
         log_debug("--> TextOperationHandler: paste_block_text triggered.")
-        if self.mw.current_block_idx == -1: QMessageBox.warning(self.mw, "Paste Error", "Please select a block."); return
+        if self.mw.current_block_idx == -1:
+            QMessageBox.warning(self.mw, "Paste Error", "Please select a block.")
+            return
+
+        # Зберігаємо поточний стан self.mw.edited_data для можливого Undo
+        self.mw.before_paste_edited_data_snapshot = dict(self.mw.edited_data)
+        self.mw.before_paste_block_idx_affected = self.mw.current_block_idx # Зберігаємо блок, куди вставляємо
+        # Також можна зберегти self.mw.edited_file_data, якщо paste_block_text його змінює,
+        # або якщо Undo має відкочувати і стан файлу (що складніше).
+        log_debug(f"PasteBlock: Stored snapshot for undo. edited_data items: {len(self.mw.before_paste_edited_data_snapshot)}")
+
+
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         if preview_edit and hasattr(preview_edit, 'clearProblemLineHighlights'):
             preview_edit.clearProblemLineHighlights()
         if hasattr(self.ui_updater, 'clear_all_problem_block_highlights'):
             self.ui_updater.clear_all_problem_block_highlights()
+
         start_string_idx = self.mw.current_string_idx if self.mw.current_string_idx != -1 else 0
         pasted_text_raw = QApplication.clipboard().text()
         if not pasted_text_raw: QMessageBox.information(self.mw, "Paste", "Clipboard empty."); return
+        
         segments_from_clipboard_raw = re.split(r'\{END\}\r?\n', pasted_text_raw)
         parsed_strings = []; num_raw_segments = len(segments_from_clipboard_raw)
         for i, segment in enumerate(segments_from_clipboard_raw):
@@ -79,11 +86,13 @@ class TextOperationHandler(BaseHandler):
             if i > 0 and segment.startswith('\n'): cleaned_segment = segment[1:]
             if cleaned_segment or i < num_raw_segments - 1: parsed_strings.append(cleaned_segment)
         if parsed_strings and not parsed_strings[-1] and num_raw_segments > 1 and segments_from_clipboard_raw[-1] == '': parsed_strings.pop()
-        if not parsed_strings: QMessageBox.information(self.mw, "Paste", "No valid segments found in clipboard after parsing."); return
+        if not parsed_strings: QMessageBox.information(self.mw, "Paste", "No valid segments found."); return
+        
         block_idx = self.mw.current_block_idx
         if not (0 <= block_idx < len(self.mw.data)) or not isinstance(self.mw.data[block_idx], list):
-             QMessageBox.warning(self.mw, "Paste Error", f"Block data invalid for selected block {block_idx}."); return
+             QMessageBox.warning(self.mw, "Paste Error", f"Block data invalid for block {block_idx}."); return
         original_block_len = len(self.mw.data[block_idx])
+        
         problematic_lines_info = []; successfully_processed_count = 0; any_change_applied_to_data = False
         
         self.mw.is_programmatically_changing_text = True 
@@ -95,13 +104,16 @@ class TextOperationHandler(BaseHandler):
             original_text_for_tags = self.mw.data[block_idx][current_target_string_idx]
             processed_text, tags_ok, tag_error_msg = replace_tags_based_on_original(segment_to_insert_raw, original_text_for_tags, self.mw.default_tag_mappings)
             successfully_processed_count +=1; final_text_to_apply = processed_text.rstrip('\n')
-            if tags_ok: 
-                current_text_in_data, _ = self.data_processor.get_current_string_text(block_idx, current_target_string_idx)
-                if final_text_to_apply != current_text_in_data:
-                    self.data_processor.update_edited_data(block_idx, current_target_string_idx, final_text_to_apply); any_change_applied_to_data = True
-            else: 
+            
+            # Завжди оновлюємо дані, навіть якщо tags_ok=False
+            current_text_in_data, _ = self.data_processor.get_current_string_text(block_idx, current_target_string_idx)
+            if final_text_to_apply != current_text_in_data:
+                 self.data_processor.update_edited_data(block_idx, current_target_string_idx, final_text_to_apply)
+                 any_change_applied_to_data = True
+
+            if not tags_ok: 
                 problematic_lines_info.append((current_target_string_idx, tag_error_msg))
-                self.data_processor.update_edited_data(block_idx, current_target_string_idx, final_text_to_apply); any_change_applied_to_data = True
+        
         self.mw.is_programmatically_changing_text = False 
         
         if problematic_lines_info:
@@ -123,15 +135,27 @@ class TextOperationHandler(BaseHandler):
             if any_change_applied_to_data: self.mw.unsaved_changes = True; self.ui_updater.update_title()
             
             self.mw.is_programmatically_changing_text = True
-            self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
+            self.ui_updater.populate_strings_for_block(self.mw.current_block_idx) # Оновлюємо UI, щоб показати зміни і підсвічування
             self.mw.is_programmatically_changing_text = False
-            if preview_edit and hasattr(preview_edit, 'applyQueuedProblemHighlights'): preview_edit.applyQueuedProblemHighlights()
+            # Проблемні підсвічування мають відновитися/застосуватися в populate_strings_for_block
+
         elif any_change_applied_to_data: 
+            log_debug(f"Successfully pasted and processed {successfully_processed_count} segments. Auto-saving.")
             save_success = self.mw.app_action_handler.save_data_action(ask_confirmation=False)
             QMessageBox.information(self.mw, "Paste Operation", f"{successfully_processed_count} segment(s) processed. {'Pasted and saved.' if save_success else 'Pasted, but auto-save FAILED.'}")
+        
         else: 
+            log_debug("No effective changes detected from paste operation (text identical or no data changed).")
             QMessageBox.information(self.mw, "Paste", "Pasted text resulted in no changes to the data.")
             self.mw.is_programmatically_changing_text = True
             self.ui_updater.populate_strings_for_block(self.mw.current_block_idx) 
             self.mw.is_programmatically_changing_text = False
+        
+        if any_change_applied_to_data or problematic_lines_info: # Активуємо Undo, якщо були зміни або проблеми
+            self.mw.can_undo_paste = True
+            if hasattr(self.mw, 'undo_paste_action'): self.mw.undo_paste_action.setEnabled(True)
+        else:
+            self.mw.can_undo_paste = False
+            if hasattr(self.mw, 'undo_paste_action'): self.mw.undo_paste_action.setEnabled(False)
+
         log_debug("<-- TextOperationHandler: paste_block_text finished.")

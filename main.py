@@ -32,12 +32,12 @@ class MainWindow(QMainWindow):
         
         self.newline_display_symbol = "↵"
         self.newline_css = "color: #A020F0; font-weight: bold;"
-        self.tag_css = "color: #808080; font-style: italic;" # Для {...}
+        self.tag_css = "color: #808080; font-style: italic;" 
         self.show_multiple_spaces_as_dots = True 
         self.space_dot_color_hex = "#BBBBBB" 
         self.preview_wrap_lines = True  
         self.editors_wrap_lines = False 
-        self.bracket_tag_color_hex = "#FFA500" # Помаранчевий для [...]
+        self.bracket_tag_color_hex = "#FFA500" 
 
         self.default_tag_mappings = { 
             "[red]": "{Color:Red}", "[blue]": "{Color:Blue}",
@@ -49,6 +49,13 @@ class MainWindow(QMainWindow):
         self.open_action = None; self.open_changes_action = None; self.save_action = None; 
         self.save_as_action = None; self.reload_action = None; self.revert_action = None; 
         self.exit_action = None; self.paste_block_action = None; 
+        self.undo_paste_action = None 
+
+        self.can_undo_paste = False
+        self.before_paste_edited_data_snapshot = {}
+        self.before_paste_block_idx_affected = -1 
+        # self.before_paste_current_block_idx = -1 # Ці, ймовірно, не потрібні для простого Undo
+        # self.before_paste_current_string_idx = -1 
 
         log_debug("MainWindow: Initializing Core Components...")
         self.data_processor = DataStateProcessor(self)
@@ -79,14 +86,10 @@ class MainWindow(QMainWindow):
             self.block_list_widget.currentItemChanged.connect(self.list_selection_handler.block_selected)
             self.block_list_widget.itemDoubleClicked.connect(self.list_selection_handler.rename_block)
         
-        # Сигнал lineClicked з preview_text_edit використовується для вибору рядка
         if hasattr(self, 'preview_text_edit') and hasattr(self.preview_text_edit, 'lineClicked'):
             self.preview_text_edit.lineClicked.connect(self.list_selection_handler.string_selected_from_preview)
             log_debug("Connected preview_text_edit.lineClicked signal.")
         
-        # mouseReleaseEvent в LineNumberedTextEdit тепер обробляє кліки на теги,
-        # тому окремого сигналу для цього не потрібно підключати тут.
-
         if hasattr(self, 'edited_text_edit'):
             self.edited_text_edit.textChanged.connect(self.editor_operation_handler.text_edited)
             self.edited_text_edit.cursorPositionChanged.connect(self.ui_updater.update_status_bar)
@@ -101,32 +104,110 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'save_as_action'): self.save_as_action.triggered.connect(self.save_as_dialog_action); log_debug("Connected save_as_action.")
         if hasattr(self, 'revert_action'): self.revert_action.triggered.connect(self.trigger_revert_action); log_debug("Connected revert_action.")
         
+        if hasattr(self, 'undo_paste_action'): 
+            self.undo_paste_action.triggered.connect(self.trigger_undo_paste_action)
+            log_debug("Connected undo_paste_action.")
         log_debug("--> MainWindow: connect_signals() finished")
 
-    def trigger_save_action(self): log_debug("<<<<<<<<<< ACTION: Save Triggered >>>>>>>>>>"); self.app_action_handler.save_data_action(ask_confirmation=True) 
+    def trigger_save_action(self): 
+        log_debug("<<<<<<<<<< ACTION: Save Triggered >>>>>>>>>>")
+        self.app_action_handler.save_data_action(ask_confirmation=True) 
+
     def trigger_revert_action(self):
         log_debug("<<<<<<<<<< ACTION: Revert Changes File Triggered >>>>>>>>>>")
-        if self.data_processor.revert_edited_file_to_original(): log_debug("Revert successful, UI updated by DataStateProcessor.")
-        else: log_debug("Revert was cancelled or failed.")
+        if self.data_processor.revert_edited_file_to_original():
+            log_debug("Revert successful, UI updated by DataStateProcessor.")
+        else:
+            log_debug("Revert was cancelled or failed.")
+
+    def trigger_undo_paste_action(self):
+        log_debug("<<<<<<<<<< ACTION: Undo Paste Block Triggered >>>>>>>>>>")
+        if not self.can_undo_paste:
+            QMessageBox.information(self, "Undo Paste", "Nothing to undo for the last paste operation.")
+            if hasattr(self, 'statusBar'): self.statusBar.showMessage("Nothing to undo for paste.", 2000) 
+            log_debug("Undo Paste: Nothing to undo.")
+            return
+
+        log_debug(f"Undo Paste: Before restore, current edited_data (first 5 of {len(self.edited_data)} items): {list(self.edited_data.items())[:5]}")
+        log_debug(f"Undo Paste: Snapshot to restore (first 5 of {len(self.before_paste_edited_data_snapshot)} items): {list(self.before_paste_edited_data_snapshot.items())[:5]}")
+        log_debug(f"Undo Paste: Block affected by paste was: {self.before_paste_block_idx_affected}")
+
+        self.edited_data = dict(self.before_paste_edited_data_snapshot) 
+        
+        log_debug(f"Undo Paste: After restore, current edited_data (first 5 of {len(self.edited_data)} items): {list(self.edited_data.items())[:5]}")
+        
+        self.unsaved_changes = bool(self.edited_data) 
+        self.ui_updater.update_title()
+        
+        block_to_refresh_ui_for = self.before_paste_block_idx_affected 
+        log_debug(f"Undo Paste: Restored edited_data. Updating UI for affected block {block_to_refresh_ui_for}.")
+        
+        self.is_programmatically_changing_text = True
+        
+        preview_edit = getattr(self, 'preview_text_edit', None)
+        if preview_edit and hasattr(preview_edit, 'clearProblemLineHighlights'):
+            preview_edit.clearProblemLineHighlights()
+        if hasattr(self.ui_updater, 'clear_all_problem_block_highlights'):
+            self.ui_updater.clear_all_problem_block_highlights()
+
+        # Якщо поточний активний блок - це той, що змінювався, оновлюємо його.
+        # Інакше, дані все одно відкочені, і користувач побачить зміни, коли вибере той блок.
+        if self.current_block_idx == block_to_refresh_ui_for:
+            self.ui_updater.populate_strings_for_block(self.current_block_idx) 
+        else:
+            # Якщо користувач вже перейшов на інший блок, ми можемо або нічого не робити з UI
+            # для старого блоку, або примусово оновити старий (що може бути дивно),
+            # або встановити поточним старий блок і оновити.
+            # Поки що оновлюємо тільки якщо поточний блок - це той, що змінювався.
+            # Дані для block_to_refresh_ui_for все одно відкочені.
+            log_debug(f"Undo Paste: Affected block {block_to_refresh_ui_for} is not current ({self.current_block_idx}). UI for current block refreshed if it was the one.")
+            # Можливо, варто оновити поточний, якщо він був змінений тією ж операцією paste,
+            # але це ускладнить логіку знімка.
+            self.ui_updater.populate_strings_for_block(self.current_block_idx)
+
+
+        self.is_programmatically_changing_text = False
+        
+        self.can_undo_paste = False 
+        if hasattr(self, 'undo_paste_action'): 
+            self.undo_paste_action.setEnabled(False)
+        if hasattr(self, 'statusBar'): self.statusBar.showMessage("Last paste operation undone.", 2000) 
+        log_debug("Undo Paste: Operation complete.")
+
     def open_changes_file_dialog_action(self):
         log_debug("--> ACTION: Open Changes File Dialog Triggered")
-        if not self.json_path: QMessageBox.warning(self, "Open Changes File", "Please open an original file first."); return
+        if not self.json_path:
+            QMessageBox.warning(self, "Open Changes File", "Please open an original file first.")
+            return
         start_dir = os.path.dirname(self.edited_json_path) if self.edited_json_path else (os.path.dirname(self.json_path) if self.json_path else "")
         path, _ = QFileDialog.getOpenFileName(self, "Open Changes (Edited) JSON File", start_dir, "JSON Files (*.json);;All Files (*)")
         if path:
             if self.unsaved_changes:
-                 reply = QMessageBox.question(self, 'Unsaved Changes', "Loading a new changes file will discard current unsaved edits. Proceed?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-                 if reply == QMessageBox.No: return
+                reply = QMessageBox.question(self, 'Unsaved Changes', "Loading a new changes file will discard current unsaved edits. Proceed?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                if reply == QMessageBox.No:
+                    return
             new_edited_data, error = load_json_file(path, parent_widget=self, expected_type=list)
-            if error: QMessageBox.critical(self, "Load Error", f"Failed to load selected changes file:\n{path}\n\n{error}"); return
-            self.edited_json_path = path; self.edited_file_data = new_edited_data; self.edited_data = {}; self.unsaved_changes = False 
-            self.ui_updater.update_title(); self.ui_updater.update_statusbar_paths()
+            if error:
+                QMessageBox.critical(self, "Load Error", f"Failed to load selected changes file:\n{path}\n\n{error}")
+                return
+            self.edited_json_path = path
+            self.edited_file_data = new_edited_data
+            self.edited_data = {} 
+            self.unsaved_changes = False 
+            self.ui_updater.update_title()
+            self.ui_updater.update_statusbar_paths()
+            self.is_programmatically_changing_text = True
             self.ui_updater.populate_strings_for_block(self.current_block_idx) 
+            self.is_programmatically_changing_text = False
         log_debug("<-- ACTION: Open Changes File finished.")
+
     def _derive_edited_path(self, original_path):
         if not original_path: return None
-        base, ext = os.path.splitext(os.path.basename(original_path)); dir_name = os.path.dirname(original_path)
-        if not dir_name: dir_name = "."; return os.path.join(dir_name, f"{base}_edited{ext}")
+        base, ext = os.path.splitext(os.path.basename(original_path))
+        dir_name = os.path.dirname(original_path)
+        if not dir_name: dir_name = "."
+        return os.path.join(dir_name, f"{base}_edited{ext}")
+
     def open_file_dialog_action(self):
         log_debug("--> ACTION: Open File Dialog Triggered")
         if self.unsaved_changes:
@@ -138,6 +219,7 @@ class MainWindow(QMainWindow):
         path, _ = QFileDialog.getOpenFileName(self, "Open Original JSON", start_dir, "JSON (*.json);;All (*)")
         if path: self.load_all_data_for_path(path)
         log_debug("<-- ACTION: Open File Dialog Finished")
+            
     def save_as_dialog_action(self):
         log_debug("--> ACTION: Save As Dialog Triggered")
         if not self.json_path: QMessageBox.warning(self, "Save As Error", "No original file open."); return
@@ -145,18 +227,29 @@ class MainWindow(QMainWindow):
         if not current_edited_path: current_edited_path = "" 
         new_edited_path, _ = QFileDialog.getSaveFileName(self, "Save Changes As...", current_edited_path, "JSON (*.json);;All (*)")
         if new_edited_path:
-            original_edited_path_backup = self.edited_json_path; self.edited_json_path = new_edited_path
+            original_edited_path_backup = self.edited_json_path
+            self.edited_json_path = new_edited_path
             save_success = self.app_action_handler.save_data_action(ask_confirmation=False) 
-            if save_success: QMessageBox.information(self, "Saved As", f"Changes saved to:\n{self.edited_json_path}"); self.ui_updater.update_statusbar_paths() 
-            else: QMessageBox.critical(self, "Save As Error", f"Failed to save to:\n{self.edited_json_path}"); self.edited_json_path = original_edited_path_backup; self.ui_updater.update_statusbar_paths()
+            if save_success: 
+                QMessageBox.information(self, "Saved As", f"Changes saved to:\n{self.edited_json_path}")
+                self.ui_updater.update_statusbar_paths() 
+            else: 
+                QMessageBox.critical(self, "Save As Error", f"Failed to save to:\n{self.edited_json_path}")
+                self.edited_json_path = original_edited_path_backup
+                self.ui_updater.update_statusbar_paths()
         log_debug("<-- ACTION: Save As Finished")
+
     def load_all_data_for_path(self, original_file_path, manually_set_edited_path=None):
         log_debug(f"--> MainWindow: load_all_data_for_path START. Original: '{original_file_path}', Manual Edit Path: '{manually_set_edited_path}'")
+        self.is_programmatically_changing_text = True 
         data, error = load_json_file(original_file_path, parent_widget=self, expected_type=list)
         if error:
             self.json_path = None; self.edited_json_path = None; self.data = []; self.edited_data = {}; self.edited_file_data = []; self.unsaved_changes = False
             self.ui_updater.update_title(); self.ui_updater.update_statusbar_paths(); self.ui_updater.populate_blocks(); self.ui_updater.populate_strings_for_block(-1)
-            QMessageBox.critical(self, "Load Error", f"Failed: {original_file_path}\n{error}"); return
+            self.is_programmatically_changing_text = False
+            QMessageBox.critical(self, "Load Error", f"Failed: {original_file_path}\n{error}")
+            return
+        
         self.json_path = original_file_path; self.data = data; self.edited_data = {}; self.unsaved_changes = False
         self.edited_json_path = manually_set_edited_path if manually_set_edited_path else self._derive_edited_path(self.json_path)
         self.edited_file_data = [] 
@@ -164,14 +257,25 @@ class MainWindow(QMainWindow):
             edited_data_from_file, edit_error = load_json_file(self.edited_json_path, parent_widget=self, expected_type=list)
             if edit_error: QMessageBox.warning(self, "Edited Load Warning", f"Could not load changes file: {self.edited_json_path}\n{edit_error}")
             else: self.edited_file_data = edited_data_from_file
+        
         self.current_block_idx = -1; self.current_string_idx = -1 
+        if hasattr(self, 'preview_text_edit') and hasattr(self.preview_text_edit, 'clearProblemLineHighlights'):
+            self.preview_text_edit.clearProblemLineHighlights()
+        if hasattr(self.ui_updater, 'clear_all_problem_block_highlights'):
+            self.ui_updater.clear_all_problem_block_highlights()
+        if hasattr(self, 'undo_paste_action'): 
+            self.can_undo_paste = False
+            self.undo_paste_action.setEnabled(False)
+
         self.block_list_widget.clear()
         if hasattr(self, 'preview_text_edit'): self.preview_text_edit.clear() 
         self.original_text_edit.clear(); self.edited_text_edit.clear()
         self.ui_updater.populate_blocks(); self.ui_updater.update_title(); self.ui_updater.update_statusbar_paths()
         if self.block_list_widget.count() > 0: self.block_list_widget.setCurrentRow(0) 
         else: self.ui_updater.populate_strings_for_block(-1) 
+        self.is_programmatically_changing_text = False
         log_debug(f"<-- MainWindow: load_all_data_for_path FINISHED (Success)")
+
     def reload_original_data_action(self):
         log_debug("--> ACTION: Reload Original Triggered")
         if not self.json_path: QMessageBox.information(self, "Reload", "No file open."); return
@@ -181,6 +285,7 @@ class MainWindow(QMainWindow):
         current_edited_path = self.edited_json_path 
         self.load_all_data_for_path(self.json_path, manually_set_edited_path=current_edited_path)
         log_debug("<-- ACTION: Reload Original Finished")
+
     def _apply_text_wrap_settings(self):
         log_debug(f"Applying text wrap settings: Preview wrap: {self.preview_wrap_lines}, Editors wrap: {self.editors_wrap_lines}")
         preview_wrap_mode = QPlainTextEdit.WidgetWidth if self.preview_wrap_lines else QPlainTextEdit.NoWrap
@@ -188,15 +293,13 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'preview_text_edit'): self.preview_text_edit.setLineWrapMode(preview_wrap_mode)
         if hasattr(self, 'original_text_edit'): self.original_text_edit.setLineWrapMode(editors_wrap_mode)
         if hasattr(self, 'edited_text_edit'): self.edited_text_edit.setLineWrapMode(editors_wrap_mode)
+
     def _reconfigure_all_highlighters(self):
         log_debug("MainWindow: Reconfiguring all highlighters...")
         common_args = {
-            "newline_symbol": self.newline_display_symbol,
-            "newline_css_str": self.newline_css,
-            "tag_css_str": self.tag_css, 
-            "show_multiple_spaces_as_dots": self.show_multiple_spaces_as_dots, 
-            "space_dot_color_hex": self.space_dot_color_hex, 
-            "bracket_tag_color_hex": self.bracket_tag_color_hex 
+            "newline_symbol": self.newline_display_symbol, "newline_css_str": self.newline_css,
+            "tag_css_str": self.tag_css, "show_multiple_spaces_as_dots": self.show_multiple_spaces_as_dots,
+            "space_dot_color_hex": self.space_dot_color_hex, "bracket_tag_color_hex": self.bracket_tag_color_hex
         }
         text_edits_with_highlighters = []
         if hasattr(self, 'preview_text_edit') and hasattr(self.preview_text_edit, 'highlighter'): text_edits_with_highlighters.append(self.preview_text_edit)
