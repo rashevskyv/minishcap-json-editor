@@ -1,54 +1,92 @@
 import sys
 import re
 from PyQt5.QtCore import QRegExp, Qt
-from PyQt5.QtGui import QSyntaxHighlighter, QTextCharFormat, QColor, QFont
+from PyQt5.QtGui import QSyntaxHighlighter, QTextCharFormat, QColor, QFont, QPen
 
-from utils import log_debug # Assuming utils.py is in the same directory
+from utils import log_debug, SPACE_DOT_SYMBOL # Імпортуємо SPACE_DOT_SYMBOL
 
 class JsonTagHighlighter(QSyntaxHighlighter):
     def __init__(self, parent=None):
         super().__init__(parent)
         log_debug("JsonTagHighlighter initialized.")
-
         self.highlightingRules = []
+        self.space_dot_format = QTextCharFormat() # Формат для символу крапки
+        self.reconfigure_styles() 
+
+    def _apply_css_to_format(self, char_format, css_str):
+        # ... (код без змін) ...
+        if not css_str: return
+        properties = css_str.split(';')
+        for prop in properties:
+            prop = prop.strip();
+            if not prop: continue
+            parts = prop.split(':', 1);
+            if len(parts) != 2: continue
+            key, value = parts[0].strip().lower(), parts[1].strip().lower()
+            try:
+                if key == 'color': char_format.setForeground(QColor(value))
+                elif key == 'background-color': char_format.setBackground(QColor(value))
+                elif key == 'font-weight':
+                    if value == 'bold': char_format.setFontWeight(QFont.Bold)
+                    elif value == 'normal': char_format.setFontWeight(QFont.Normal)
+                    else: char_format.setFontWeight(int(value))
+                elif key == 'font-style':
+                    if value == 'italic': char_format.setFontItalic(True)
+                    elif value == 'normal': char_format.setFontItalic(False)
+            except Exception as e: log_debug(f"  Error applying CSS property '{prop}': {e}")
+                
+    def reconfigure_styles(self, newline_symbol="↵", newline_css_str="color: #A020F0; font-weight: bold;", tag_css_str="color: #808080; font-style: italic;",
+                           show_multiple_spaces_as_dots=True, space_dot_color_hex="#BBBBBB"):
+        log_debug(f"JsonTagHighlighter reconfiguring styles: nl_sym='{newline_symbol}', ..., show_spaces_as_dots='{show_multiple_spaces_as_dots}', space_dot_color='{space_dot_color_hex}'.")
+        self.highlightingRules = []
+        # self.show_multiple_spaces_as_dots = show_multiple_spaces_as_dots # Цей прапор тепер використовується в UIUpdater
 
         # Rule 1: Tags {...}
         tagFormat = QTextCharFormat()
-        tagFormat.setForeground(QColor(Qt.darkGray)) # Set color to dark gray
-        # tagFormat.setFontWeight(QFont.Bold) # Optional: make tags bold
-        # Use raw string for regex pattern
-        pattern = r"\{[^}]*\}" # Matches { followed by zero or more non-} characters, then }
-        self.highlightingRules.append((QRegExp(pattern), tagFormat))
-        log_debug(f"Added highlighting rule for tags: Pattern='{pattern}', Color='darkGray'")
+        self._apply_css_to_format(tagFormat, tag_css_str)
+        self.highlightingRules.append((QRegExp(r"\{[^}]*\}"), tagFormat))
 
-        # Rule 2: Newline character \n
+        # Rule 2: Displayed newline symbol (↵)
         newlineFormat = QTextCharFormat()
-        newlineFormat.setForeground(QColor(160, 32, 240)) # Violet color (RGB)
-        # newlineFormat.setBackground(QColor(240, 240, 200)) # Optional: subtle background for visibility
-        # Important: We need to match the literal characters '\' and 'n' if they appear in the text.
-        # QSyntaxHighlighter works on the displayed text block. The actual newline characters
-        # control block separation and are not usually part of the block's text content itself
-        # in a way that highlightBlock can easily format them directly as visible '\n'.
-        # Instead, we might highlight the *representation* if it appears, or accept we can't highlight actual newlines.
+        self._apply_css_to_format(newlineFormat, newline_css_str)
+        if newline_symbol: # Тільки якщо символ визначений
+            self.highlightingRules.append((QRegExp(re.escape(newline_symbol)), newlineFormat))
         
-        # Let's try highlighting the *literal sequence* "\n" if it appears in the string data
-        pattern_literal_newline = r"\\n" # Match backslash followed by n literally
-        self.highlightingRules.append((QRegExp(pattern_literal_newline), newlineFormat))
-        log_debug(f"Added highlighting rule for literal '\\n': Pattern='{pattern_literal_newline}', Color='Violet'")
+        # Rule 3: Literal "\\n" (якщо вони є в тексті)
+        literalNewlineFormat = QTextCharFormat()
+        literalNewlineFormat.setForeground(QColor("red")) 
+        literalNewlineFormat.setFontWeight(QFont.Bold)
+        self.highlightingRules.append((QRegExp(r"\\n"), literalNewlineFormat))
+
+        # Rule 4: Стилізація символу SPACE_DOT_SYMBOL (·)
+        # Цей прапор show_multiple_spaces_as_dots тепер керує конвертацією в UIUpdater,
+        # а хайлайтер просто стилізує крапку, якщо вона є.
+        self.space_dot_format = QTextCharFormat() # Скидаємо формат
+        try:
+            self.space_dot_format.setForeground(QColor(space_dot_color_hex))
+            log_debug(f"Set SPACE_DOT_SYMBOL ('{SPACE_DOT_SYMBOL}') foreground color to: {space_dot_color_hex}")
+        except Exception as e:
+            log_debug(f"Error setting SPACE_DOT_SYMBOL color from hex '{space_dot_color_hex}': {e}. Using default gray.")
+            self.space_dot_format.setForeground(QColor(Qt.lightGray))
+        
+        # Додаємо правило для SPACE_DOT_SYMBOL
+        # Важливо екранувати символ крапки, оскільки він є спеціальним у regex
+        self.highlightingRules.append((QRegExp(re.escape(SPACE_DOT_SYMBOL)), self.space_dot_format))
 
 
     def highlightBlock(self, text):
-        # log_debug(f"Highlighting block: '{text[:50]}...'") # Can be very verbose
-        # Apply all defined rules
-        for pattern, format in self.highlightingRules:
-            expression = QRegExp(pattern)
+        # Застосовуємо всі правила
+        for pattern, format_obj in self.highlightingRules:
+            expression = QRegExp(pattern.pattern()) 
             index = expression.indexIn(text)
             while index >= 0:
                 length = expression.matchedLength()
-                # log_debug(f"  Applying format for pattern '{pattern.pattern()}' at index {index}, length {length}")
-                self.setFormat(index, length, format)
-                index = expression.indexIn(text, index + length) # Continue searching from end of match
-
-        # Optional: Highlight multi-line comments or strings if needed later
-        # self.setCurrentBlockState(0)
-        # ... logic for multi-line states ...
+                if length == 0: 
+                    index = expression.indexIn(text, index + 1)
+                    continue
+                self.setFormat(index, length, format_obj)
+                index = expression.indexIn(text, index + length)
+        
+        # Правило для форматування самих пробілів тепер не потрібне,
+        # оскільки ми замінюємо їх на SPACE_DOT_SYMBOL в UIUpdater.
+        # Хайлайтер тепер стилізує сам SPACE_DOT_SYMBOL.

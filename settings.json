@@ -1,7 +1,9 @@
 {
     "block_names": {
         "0": "Системні",
-        "1": "Титри"
+        "1": "Титри",
+        "2": "NPC's Names",
+        "3": "Бюлетень Мечника"
     },
     "window_geometry": {
         "x": 894,
@@ -12,6 +14,8 @@
     "newline_display_symbol": "↵",
     "newline_css": "color: #A020F0; font-weight: bold;",
     "tag_css": "color: #808080; font-style: italic;",
+    "show_multiple_spaces_as_dots": true,
+    "space_dot_color_hex": "#808080",
     "main_splitter_state": "AAAA/wAAAAEAAAACAAAAzAAABAUB/////wEAAAABAA==",
     "right_splitter_state": "AAAA/wAAAAEAAAACAAABuAAAAW8B/////wEAAAACAA==",
     "bottom_right_splitter_state": "AAAA/wAAAAEAAAACAAABkAAAAZAB/////wEAAAABAA==",
