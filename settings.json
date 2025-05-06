@@ -6,9 +6,9 @@
         "3": "Бюлетень Мечника"
     },
     "window_geometry": {
-        "x": 894,
-        "y": 438,
-        "width": 1256,
+        "x": 710,
+        "y": 329,
+        "width": 1474,
         "height": 871
     },
     "newline_display_symbol": "↵",
@@ -16,6 +16,8 @@
     "tag_css": "color: #808080; font-style: italic;",
     "show_multiple_spaces_as_dots": true,
     "space_dot_color_hex": "#808080",
+    "preview_wrap_lines": true,
+    "editors_wrap_lines": false,
     "main_splitter_state": "AAAA/wAAAAEAAAACAAAAzAAABAUB/////wEAAAABAA==",
     "right_splitter_state": "AAAA/wAAAAEAAAACAAABuAAAAW8B/////wEAAAACAA==",
     "bottom_right_splitter_state": "AAAA/wAAAAEAAAACAAABkAAAAZAB/////wEAAAABAA==",
