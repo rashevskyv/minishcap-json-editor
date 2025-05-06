@@ -17,6 +17,7 @@ from handlers.text_operation_handler import TextOperationHandler
 from handlers.app_action_handler import AppActionHandler
 
 from utils import log_debug
+from CustomListItemDelegate import CustomListItemDelegate
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -41,7 +42,9 @@ class MainWindow(QMainWindow):
         self.editor_operation_handler = TextOperationHandler(self, self.data_processor, self.ui_updater)
         self.app_action_handler = AppActionHandler(self, self.data_processor, self.ui_updater)
         log_debug("MainWindow: Setting up UI...")
-        setup_main_window_ui(self) 
+        setup_main_window_ui(self)
+        # Після створення string_list_widget:
+        self.string_list_widget.setItemDelegate(CustomListItemDelegate(self.string_list_widget))
         log_debug("MainWindow: Connecting Signals...")
         self.connect_signals()
         log_debug("MainWindow: Loading Editor Settings...")
@@ -83,7 +86,6 @@ class MainWindow(QMainWindow):
         
         log_debug("--> MainWindow: connect_signals() finished")
 
-    # ... (trigger_save_action, trigger_revert_action) ...
     def trigger_save_action(self):
         log_debug("<<<<<<<<<< ACTION: Save Triggered >>>>>>>>>>")
         self.app_action_handler.save_data_action(ask_confirmation=True) 
@@ -163,7 +165,6 @@ class MainWindow(QMainWindow):
         log_debug("<-- ACTION: Open Changes File finished.")
     # --- END NEW METHOD ---
 
-    # ... (rest of MainWindow methods: _derive_edited_path, load_all_data_for_path, etc.) ...
     def _derive_edited_path(self, original_path):
         if not original_path: return None
         base, ext = os.path.splitext(os.path.basename(original_path))
@@ -255,6 +256,10 @@ class MainWindow(QMainWindow):
             if self.bottom_right_splitter and "bottom_right_splitter_state" in settings_data: self.bottom_right_splitter.restoreState(QByteArray(base64.b64decode(settings_data["bottom_right_splitter_state"])))
         except Exception as e: log_debug(f"WARN: Failed to restore splitter state(s): {e}")
         self.block_names = {str(k): v for k, v in settings_data.get("block_names", {}).items()}
+        # --- Додаємо зчитування символу та CSS для нового рядка і тегів ---
+        self.newline_display_symbol = settings_data.get("newline_display_symbol", "↵")
+        self.newline_css = settings_data.get("newline_css", "color: #A020F0; font-weight: bold;")
+        self.tag_css = settings_data.get("tag_css", "color: #808080; font-style: italic;")
         last_original_file = settings_data.get("original_file_path"); last_edited_file = settings_data.get("edited_file_path")
         if last_original_file and os.path.exists(last_original_file):
             effective_edited_path = last_edited_file if last_edited_file and os.path.exists(last_edited_file) else None
@@ -266,6 +271,10 @@ class MainWindow(QMainWindow):
         log_debug(f"--> MainWindow: save_editor_settings to {self.settings_file_path}")
         settings_data = {"block_names": {str(k): v for k, v in self.block_names.items()}}
         geom = self.geometry(); settings_data["window_geometry"] = {"x": geom.x(), "y": geom.y(), "width": geom.width(), "height": geom.height()}
+        # Додаємо збереження стилів та символу нового рядка
+        settings_data["newline_display_symbol"] = getattr(self, "newline_display_symbol", "↵")
+        settings_data["newline_css"] = getattr(self, "newline_css", "color: #A020F0; font-weight: bold;")
+        settings_data["tag_css"] = getattr(self, "tag_css", "color: #808080; font-style: italic;")
         try:
             if self.main_splitter: settings_data["main_splitter_state"] = base64.b64encode(self.main_splitter.saveState().data()).decode('ascii')
             if self.right_splitter: settings_data["right_splitter_state"] = base64.b64encode(self.right_splitter.saveState().data()).decode('ascii')

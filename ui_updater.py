@@ -1,12 +1,12 @@
 import os
+import re # Більше не потрібен тут
 from PyQt5.QtCore import Qt
-# QTextDocument більше не потрібен тут
-# from PyQt5.QtGui import QTextDocument 
 from utils import log_debug
 
-# Константи ENTER_SYMBOL та VIOLET_COLOR_HEX більше не потрібні тут
-# ENTER_SYMBOL = "↵"
-# VIOLET_COLOR_HEX = "#A020F0" 
+# Видаляємо константи та функції, пов'язані з HTML форматуванням
+# ENTER_SYMBOL = "↵" 
+# VIOLET_COLOR_HEX = "#A020F0"
+# TAG_COLOR_HEX = "#808080" 
 
 class UIUpdater:
     def __init__(self, main_window, data_processor):
@@ -14,12 +14,12 @@ class UIUpdater:
         self.mw = main_window
         self.data_processor = data_processor
 
-    # Допоміжні функції format_text_for_list та make_item_html_compatible більше не потрібні
+    # Видаляємо format_text_for_list та make_item_html_compatible
     # def format_text_for_list(self, text): ...
     # def make_item_html_compatible(self, item, html_text): ...
 
+    # --- populate_blocks (без змін) ---
     def populate_blocks(self):
-        # ... (без змін) ...
         log_debug("[UIUpdater] populate_blocks called.")
         self.mw.block_list_widget.clear()
         if not self.mw.data: log_debug("[UIUpdater] populate_blocks: No original data."); return
@@ -30,10 +30,24 @@ class UIUpdater:
             self.mw.block_list_widget.addItem(item)
         log_debug(f"[UIUpdater] populate_blocks: Added {self.mw.block_list_widget.count()} items.")
 
-
+    # --- populate_strings_for_block (використовує repr()) ---
     def populate_strings_for_block(self, block_idx):
-        # Повертаємо до логіки використання repr() або обрізання для списку
         log_debug(f"[UIUpdater] populate_strings_for_block for block_idx: {block_idx}")
+        preview_lines = []
+        if block_idx < 0 or block_idx >= len(self.mw.data):
+            self.mw.preview_text_edit.setPlainText("")
+            return
+        original_block_data = self.mw.data[block_idx]
+        for i, (text_for_preview, source) in enumerate(
+                [self.data_processor.get_current_string_text(block_idx, idx) for idx in range(len(original_block_data))]):
+            preview = str(text_for_preview)
+            # Очищення від HTML-тегів:
+            preview = re.sub(r'<[^>]+>', '', preview)
+            if preview.startswith('\n'):
+                preview = preview[1:]
+            preview = preview.replace('\n', self.mw.newline_display_symbol if hasattr(self.mw, "newline_display_symbol") else "↵")
+            preview_lines.append(f"{i+1} {preview}")
+        self.mw.preview_text_edit.setPlainText("\n".join(preview_lines))
         
         list_selection_handler = getattr(self.mw, 'list_selection_handler', None)
         string_list_signal_was_connected = False
@@ -69,30 +83,34 @@ class UIUpdater:
 
         original_block_data = self.mw.data[self.mw.current_block_idx]
         current_string_item_to_select = None
-        
         for i in range(len(original_block_data)):
             text_for_preview, source = self.data_processor.get_current_string_text(self.mw.current_block_idx, i)
-            
-            # <<< ПОВЕРНУЛИ СТАРИЙ СПОСІБ ФОРМУВАННЯ ТЕКСТУ ДЛЯ СПИСКУ >>>
-            display_text_repr = repr(text_for_preview) # Використовуємо repr() для показу \n
-            if len(display_text_repr) > 60:
-                display_text_repr = display_text_repr[:57] + '...'
-            # <<< КІНЕЦЬ ЗМІН >>>
-
-            # Створюємо елемент списку з цим текстом
-            item = self.mw.string_list_widget.create_item(f"{i}: {display_text_repr}", i) 
+            preview = str(text_for_preview)
+            if preview.startswith('\n'):
+                preview = preview[1:]
+            preview = preview.replace('\n', self.mw.newline_display_symbol if hasattr(self.mw, "newline_display_symbol") else "↵")
+            # НЕ додаємо HTML, тільки plain text!
+            item = self.mw.string_list_widget.create_item(preview, i)
+            item.setData(0, preview)  # Qt.DisplayRole = 0
             self.mw.string_list_widget.addItem(item)
-            
-            if i == self.mw.current_string_idx: 
+            if i == self.mw.current_string_idx:
                 current_string_item_to_select = item
+
+        # Додаємо стиль для виділення активного елемента
+        self.mw.string_list_widget.setStyleSheet("""
+        QListWidget::item {
+            padding: 2px 4px;
+        }
+        QListWidget::item:selected {
+            background: #a0c4ff;
+        }
+        """)
 
         # --- Reselect Item Logic (без змін) ---
         if current_string_item_to_select:
-             log_debug(f"[UIUpdater] Attempting to re-select string item index {self.mw.current_string_idx}.")
              self.mw.string_list_widget.setCurrentItem(current_string_item_to_select)
              if list_selection_handler and hasattr(list_selection_handler, 'string_selected'):
                   list_selection_handler.string_selected(current_string_item_to_select, None)
-        # ... (решта логіки вибору) ...
         elif self.mw.string_list_widget.count() > 0 and self.mw.current_string_idx == -1: pass 
         else: 
             if not current_string_item_to_select and self.mw.current_string_idx != -1: self.mw.current_string_idx = -1
@@ -108,23 +126,22 @@ class UIUpdater:
 
         log_debug("[UIUpdater] populate_strings_for_block: Finished.")
 
-
+    # --- update_string_list_item_text (використовує repr()) ---
     def update_string_list_item_text(self, string_idx, new_text_for_preview):
-        log_debug(f"[UIUpdater] update_string_list_item_text for index {string_idx}")
-        if not (0 <= string_idx < self.mw.string_list_widget.count()):
-            return # Log removed for brevity
-            
-        item = self.mw.string_list_widget.item(string_idx)
+
         if item:
-            # <<< ПОВЕРНУЛИ СТАРИЙ СПОСІБ ФОРМУВАННЯ ТЕКСТУ ДЛЯ СПИСКУ >>>
-            display_text_repr = repr(new_text_for_preview) # Використовуємо repr()
+            # --- Заміна \n на HTML-виділений символ з CSS із налаштувань ---
+            newline_html = f'<b style="{getattr(self.mw, "newline_css", "color: #A020F0; font-weight: bold;")}">{getattr(self.mw, "newline_display_symbol", "↵")}</b>'
+            display_text = str(new_text_for_preview).replace('\n', newline_html)
+            # Аналогічно можна зробити для тегів, якщо потрібно
+            display_text_repr = display_text
             if len(display_text_repr) > 60:
                 display_text_repr = display_text_repr[:57] + '...'
-            item.setText(f"{string_idx}: {display_text_repr}") # Встановлюємо текст
-            # <<< КІНЕЦЬ ЗМІН >>>
-        # else: log removed for brevity
+            item.setText(f"{string_idx}: {display_text_repr}")
+            item.setData(Qt.TextFormatRole, Qt.RichText)
+            # --- Кінець змін ---
+        # else: log removed
 
-    # ... (решта методів UIUpdater без змін) ...
     def update_status_bar(self):
         if not hasattr(self.mw, 'edited_text_edit') or not self.mw.edited_text_edit or not hasattr(self.mw, 'pos_len_label') or not self.mw.pos_len_label: return 
         cursor = self.mw.edited_text_edit.textCursor(); block = cursor.block()

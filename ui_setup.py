@@ -6,6 +6,7 @@ from PyQt5.QtCore import Qt
 from LineNumberedTextEdit import LineNumberedTextEdit
 from CustomListWidget import CustomListWidget
 from utils import log_debug
+from richtext_delegate import RichTextDelegate
 
 def setup_main_window_ui(main_window):
     # ... (початок без змін) ...
@@ -18,6 +19,11 @@ def setup_main_window_ui(main_window):
     main_window.right_splitter = QSplitter(Qt.Vertical)
     top_right_panel = QWidget(); top_right_layout = QVBoxLayout(top_right_panel)
     top_right_layout.addWidget(QLabel("Strings in block:"))
+    main_window.preview_text_edit = LineNumberedTextEdit(main_window)
+    main_window.preview_text_edit.setReadOnly(True)
+    # Додаємо preview_text_edit у потрібний layout (наприклад, у верхню частину splitter)
+    # Наприклад:
+    # main_layout.addWidget(main_window.preview_text_edit)
     main_window.string_list_widget = CustomListWidget(); top_right_layout.addWidget(main_window.string_list_widget)
     main_window.right_splitter.addWidget(top_right_panel)
     main_window.bottom_right_splitter = QSplitter(Qt.Horizontal)
@@ -72,5 +78,6 @@ def setup_main_window_ui(main_window):
     main_window.paste_block_action = QAction('&Paste Block Text', main_window)
     main_window.paste_block_action.setShortcut('Ctrl+Shift+V')
     edit_menu.addAction(main_window.paste_block_action)
+    main_window.string_list_widget.setItemDelegate(RichTextDelegate(main_window.string_list_widget))
     
     log_debug("setup_main_window_ui: UI setup complete.")
