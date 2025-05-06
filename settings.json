@@ -18,6 +18,13 @@
     "space_dot_color_hex": "#808080",
     "preview_wrap_lines": true,
     "editors_wrap_lines": false,
+    "default_tag_mappings": {
+        "[red]": "{Color:Red}",
+        "[blue]": "{Color:Blue}",
+        "[green]": "{Color:Green}",
+        "[/c]": "{Color:White}",
+        "[unk10]": "{Symbol:10}"
+    },
     "main_splitter_state": "AAAA/wAAAAEAAAACAAAAzAAABAUB/////wEAAAABAA==",
     "right_splitter_state": "AAAA/wAAAAEAAAACAAABuAAAAW8B/////wEAAAACAA==",
     "bottom_right_splitter_state": "AAAA/wAAAAEAAAACAAABkAAAAZAB/////wEAAAABAA==",

@@ -2,7 +2,7 @@ import sys
 import os
 import json 
 import base64 
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QFileDialog, QPlainTextEdit # Додано QPlainTextEdit для LineWrapMode
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QFileDialog, QPlainTextEdit
 from PyQt5.QtCore import Qt, QByteArray 
 
 from LineNumberedTextEdit import LineNumberedTextEdit
@@ -17,29 +17,38 @@ from handlers.text_operation_handler import TextOperationHandler
 from handlers.app_action_handler import AppActionHandler
 
 from utils import log_debug
+# Імпортуємо функцію заміни тегів, щоб передати їй словник відповідностей
+from tag_utils import replace_tags_based_on_original # Імпортуємо, якщо він не передається через TextOperationHandler
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         log_debug("++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++")
-        # ... (існуючі атрибути) ...
         self.is_programmatically_changing_text = False 
         self.json_path = None; self.edited_json_path = None
         self.data = []; self.edited_data = {}; self.edited_file_data = []
         self.block_names = {}; self.current_block_idx = -1; self.current_string_idx = -1
         self.unsaved_changes = False; self.settings_file_path = "settings.json"
         
-        # Стилі
+        # Стилі та налаштування відображення
         self.newline_display_symbol = "↵"
         self.newline_css = "color: #A020F0; font-weight: bold;"
         self.tag_css = "color: #808080; font-style: italic;"
         self.show_multiple_spaces_as_dots = True 
         self.space_dot_color_hex = "#BBBBBB" 
+        self.preview_wrap_lines = True  
+        self.editors_wrap_lines = False 
 
-        # --- НОВІ НАЛАШТУВАННЯ ДЛЯ ПЕРЕНОСУ РЯДКІВ ---
-        self.preview_wrap_lines = True  # За замовчуванням для preview увімкнено
-        self.editors_wrap_lines = False # За замовчуванням для original/edited вимкнено (горизонтальна прокрутка)
-        # --- КІНЕЦЬ НОВИХ НАЛАШТУВАНЬ ---
+        # --- НОВИЙ АТРИБУТ ДЛЯ ВІДПОВІДНОСТЕЙ ТЕГІВ ---
+        self.default_tag_mappings = { # Значення за замовчуванням, якщо немає в settings.json
+            "[red]": "{Color:Red}",
+            "[blue]": "{Color:Blue}",
+            "[green]": "{Color:Green}",
+            "[/c]": "{Color:White}",
+            "[unk10]": "{Symbol:10}"
+        }
+        # --- КІНЕЦЬ НОВОГО АТРИБУТУ ---
 
         self.main_splitter = None; self.right_splitter = None; self.bottom_right_splitter = None
         self.open_action = None; self.open_changes_action = None; self.save_action = None; 
@@ -50,20 +59,18 @@ class MainWindow(QMainWindow):
         self.data_processor = DataStateProcessor(self)
         self.ui_updater = UIUpdater(self, self.data_processor)
         log_debug("MainWindow: Initializing Handlers...")
+        # Передаємо словник відповідностей тегів до TextOperationHandler
         self.list_selection_handler = ListSelectionHandler(self, self.data_processor, self.ui_updater)
-        self.editor_operation_handler = TextOperationHandler(self, self.data_processor, self.ui_updater)
+        self.editor_operation_handler = TextOperationHandler(self, self.data_processor, self.ui_updater) # Будемо передавати self.default_tag_mappings через MainWindow
         self.app_action_handler = AppActionHandler(self, self.data_processor, self.ui_updater)
         
         log_debug("MainWindow: Setting up UI...")
-        # Налаштування UI тепер має враховувати значення переносу рядків,
-        # але краще це зробити після завантаження settings.json, тому поки що ui_setup створює віджети,
-        # а load_editor_settings застосує wrap mode.
         setup_main_window_ui(self) 
         
         log_debug("MainWindow: Connecting Signals...")
         self.connect_signals()
         log_debug("MainWindow: Loading Editor Settings...")
-        self.load_editor_settings() # Тут будуть застосовані режими переносу
+        self.load_editor_settings() 
         
         if not self.json_path:
              log_debug("MainWindow: No file auto-loaded, updating initial UI state.")
@@ -72,7 +79,7 @@ class MainWindow(QMainWindow):
         
         log_debug("++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++")
 
-    # ... (connect_signals та інші методи без змін щодо цього завдання) ...
+    # ... (connect_signals та інші методи до load_editor_settings) ...
     def connect_signals(self):
         # ... (код без змін) ...
         log_debug("--> MainWindow: connect_signals() started")
@@ -101,7 +108,6 @@ class MainWindow(QMainWindow):
         if self.data_processor.revert_edited_file_to_original(): log_debug("Revert successful, UI updated by DataStateProcessor.")
         else: log_debug("Revert was cancelled or failed.")
     def open_changes_file_dialog_action(self):
-        # ... (код без змін) ...
         log_debug("--> ACTION: Open Changes File Dialog Triggered")
         if not self.json_path: QMessageBox.warning(self, "Open Changes File", "Please open an original file first."); return
         start_dir = os.path.dirname(self.edited_json_path) if self.edited_json_path else (os.path.dirname(self.json_path) if self.json_path else "")
@@ -117,12 +123,10 @@ class MainWindow(QMainWindow):
             self.ui_updater.populate_strings_for_block(self.current_block_idx) 
         log_debug("<-- ACTION: Open Changes File finished.")
     def _derive_edited_path(self, original_path):
-        # ... (код без змін) ...
         if not original_path: return None
         base, ext = os.path.splitext(os.path.basename(original_path)); dir_name = os.path.dirname(original_path)
         if not dir_name: dir_name = "."; return os.path.join(dir_name, f"{base}_edited{ext}")
     def open_file_dialog_action(self):
-        # ... (код без змін) ...
         log_debug("--> ACTION: Open File Dialog Triggered")
         if self.unsaved_changes:
             reply = QMessageBox.question(self, 'Unsaved Changes', "Save before opening new file?", QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel, QMessageBox.Cancel)
@@ -134,7 +138,6 @@ class MainWindow(QMainWindow):
         if path: self.load_all_data_for_path(path)
         log_debug("<-- ACTION: Open File Dialog Finished")
     def save_as_dialog_action(self):
-        # ... (код без змін) ...
         log_debug("--> ACTION: Save As Dialog Triggered")
         if not self.json_path: QMessageBox.warning(self, "Save As Error", "No original file open."); return
         current_edited_path = self.edited_json_path if self.edited_json_path else self._derive_edited_path(self.json_path)
@@ -147,7 +150,6 @@ class MainWindow(QMainWindow):
             else: QMessageBox.critical(self, "Save As Error", f"Failed to save to:\n{self.edited_json_path}"); self.edited_json_path = original_edited_path_backup; self.ui_updater.update_statusbar_paths()
         log_debug("<-- ACTION: Save As Finished")
     def load_all_data_for_path(self, original_file_path, manually_set_edited_path=None):
-        # ... (код без змін) ...
         log_debug(f"--> MainWindow: load_all_data_for_path START. Original: '{original_file_path}', Manual Edit Path: '{manually_set_edited_path}'")
         data, error = load_json_file(original_file_path, parent_widget=self, expected_type=list)
         if error:
@@ -170,7 +172,6 @@ class MainWindow(QMainWindow):
         else: self.ui_updater.populate_strings_for_block(-1) 
         log_debug(f"<-- MainWindow: load_all_data_for_path FINISHED (Success)")
     def reload_original_data_action(self):
-        # ... (код без змін) ...
         log_debug("--> ACTION: Reload Original Triggered")
         if not self.json_path: QMessageBox.information(self, "Reload", "No file open."); return
         if self.unsaved_changes:
@@ -179,29 +180,14 @@ class MainWindow(QMainWindow):
         current_edited_path = self.edited_json_path 
         self.load_all_data_for_path(self.json_path, manually_set_edited_path=current_edited_path)
         log_debug("<-- ACTION: Reload Original Finished")
-
-
     def _apply_text_wrap_settings(self):
-        """Застосовує налаштування переносу рядків до текстових полів."""
+        # ... (код без змін) ...
         log_debug(f"Applying text wrap settings: Preview wrap: {self.preview_wrap_lines}, Editors wrap: {self.editors_wrap_lines}")
-        
-        # QPlainTextEdit.NoWrap або QPlainTextEdit.WidgetWidth
         preview_wrap_mode = QPlainTextEdit.WidgetWidth if self.preview_wrap_lines else QPlainTextEdit.NoWrap
         editors_wrap_mode = QPlainTextEdit.WidgetWidth if self.editors_wrap_lines else QPlainTextEdit.NoWrap
-
-        if hasattr(self, 'preview_text_edit'):
-            self.preview_text_edit.setLineWrapMode(preview_wrap_mode)
-            log_debug(f"Set preview_text_edit line wrap mode to: {'WidgetWidth' if self.preview_wrap_lines else 'NoWrap'}")
-
-        if hasattr(self, 'original_text_edit'):
-            self.original_text_edit.setLineWrapMode(editors_wrap_mode)
-            log_debug(f"Set original_text_edit line wrap mode to: {'WidgetWidth' if self.editors_wrap_lines else 'NoWrap'}")
-
-        if hasattr(self, 'edited_text_edit'):
-            self.edited_text_edit.setLineWrapMode(editors_wrap_mode)
-            log_debug(f"Set edited_text_edit line wrap mode to: {'WidgetWidth' if self.editors_wrap_lines else 'NoWrap'}")
-
-
+        if hasattr(self, 'preview_text_edit'): self.preview_text_edit.setLineWrapMode(preview_wrap_mode)
+        if hasattr(self, 'original_text_edit'): self.original_text_edit.setLineWrapMode(editors_wrap_mode)
+        if hasattr(self, 'edited_text_edit'): self.edited_text_edit.setLineWrapMode(editors_wrap_mode)
     def _reconfigure_all_highlighters(self):
         # ... (код без змін) ...
         log_debug("MainWindow: Reconfiguring all highlighters...")
@@ -212,27 +198,28 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'original_text_edit') and hasattr(self.original_text_edit, 'highlighter'): text_edits_with_highlighters.append(self.original_text_edit)
         if hasattr(self, 'edited_text_edit') and hasattr(self.edited_text_edit, 'highlighter'): text_edits_with_highlighters.append(self.edited_text_edit)
         for text_edit in text_edits_with_highlighters:
-            if text_edit.highlighter: 
-                text_edit.highlighter.reconfigure_styles(**common_args); text_edit.highlighter.rehighlight()
+            if text_edit.highlighter: text_edit.highlighter.reconfigure_styles(**common_args); text_edit.highlighter.rehighlight()
         log_debug("MainWindow: Highlighter reconfiguration attempt complete.")
-
 
     def load_editor_settings(self):
         log_debug(f"--> MainWindow: load_editor_settings from {self.settings_file_path}")
         
-        default_settings = {
+        # Значення за замовчуванням беруться з атрибутів, встановлених в __init__
+        default_settings_values = {
             "newline_display_symbol": self.newline_display_symbol,
             "newline_css": self.newline_css,
             "tag_css": self.tag_css,
             "show_multiple_spaces_as_dots": self.show_multiple_spaces_as_dots,
             "space_dot_color_hex": self.space_dot_color_hex,
-            "preview_wrap_lines": self.preview_wrap_lines, # Додано
-            "editors_wrap_lines": self.editors_wrap_lines  # Додано
+            "preview_wrap_lines": self.preview_wrap_lines,
+            "editors_wrap_lines": self.editors_wrap_lines,
+            "default_tag_mappings": self.default_tag_mappings # Додано
         }
 
         if not os.path.exists(self.settings_file_path): 
             log_debug("Settings file not found. Using defaults.")
-            self._apply_text_wrap_settings() # Застосувати дефолтні налаштування переносу
+            # Атрибути вже мають значення за замовчуванням
+            self._apply_text_wrap_settings() 
             self._reconfigure_all_highlighters() 
             return
             
@@ -240,12 +227,12 @@ class MainWindow(QMainWindow):
             with open(self.settings_file_path, 'r', encoding='utf-8') as f: settings_data = json.load(f)
         except Exception as e: 
             log_debug(f"ERROR reading settings: {e}. Using defaults.")
-            self._apply_text_wrap_settings() # Застосувати дефолтні налаштування переносу
+            self._apply_text_wrap_settings() 
             self._reconfigure_all_highlighters() 
             return
 
         # ... (завантаження window_geom, splitter_state, block_names) ...
-        window_geom = settings_data.get("window_geometry")
+        window_geom = settings_data.get("window_geometry"); # ... (решта коду геометрії та спліттерів) ...
         if window_geom and isinstance(window_geom, dict) and all(k in window_geom for k in ('x', 'y', 'width', 'height')):
             try: self.setGeometry(window_geom['x'], window_geom['y'], window_geom['width'], window_geom['height'])
             except Exception as e: log_debug(f"WARN: Failed to restore window geometry: {e}")
@@ -255,23 +242,30 @@ class MainWindow(QMainWindow):
             if self.bottom_right_splitter and "bottom_right_splitter_state" in settings_data: self.bottom_right_splitter.restoreState(QByteArray(base64.b64decode(settings_data["bottom_right_splitter_state"])))
         except Exception as e: log_debug(f"WARN: Failed to restore splitter state(s): {e}")
         self.block_names = {str(k): v for k, v in settings_data.get("block_names", {}).items()}
+
+
+        self.newline_display_symbol = settings_data.get("newline_display_symbol", default_settings_values["newline_display_symbol"])
+        self.newline_css = settings_data.get("newline_css", default_settings_values["newline_css"])
+        self.tag_css = settings_data.get("tag_css", default_settings_values["tag_css"])
+        self.show_multiple_spaces_as_dots = settings_data.get("show_multiple_spaces_as_dots", default_settings_values["show_multiple_spaces_as_dots"])
+        self.space_dot_color_hex = settings_data.get("space_dot_color_hex", default_settings_values["space_dot_color_hex"])
+        self.preview_wrap_lines = settings_data.get("preview_wrap_lines", default_settings_values["preview_wrap_lines"])
+        self.editors_wrap_lines = settings_data.get("editors_wrap_lines", default_settings_values["editors_wrap_lines"])
         
-        self.newline_display_symbol = settings_data.get("newline_display_symbol", default_settings["newline_display_symbol"])
-        self.newline_css = settings_data.get("newline_css", default_settings["newline_css"])
-        self.tag_css = settings_data.get("tag_css", default_settings["tag_css"])
-        self.show_multiple_spaces_as_dots = settings_data.get("show_multiple_spaces_as_dots", default_settings["show_multiple_spaces_as_dots"])
-        self.space_dot_color_hex = settings_data.get("space_dot_color_hex", default_settings["space_dot_color_hex"])
-        # --- ЗАВАНТАЖЕННЯ НОВИХ НАЛАШТУВАНЬ ---
-        self.preview_wrap_lines = settings_data.get("preview_wrap_lines", default_settings["preview_wrap_lines"])
-        self.editors_wrap_lines = settings_data.get("editors_wrap_lines", default_settings["editors_wrap_lines"])
+        # --- ЗАВАНТАЖЕННЯ СЛОВНИКА ВІДПОВІДНОСТЕЙ ТЕГІВ ---
+        loaded_mappings = settings_data.get("default_tag_mappings", default_settings_values["default_tag_mappings"])
+        if isinstance(loaded_mappings, dict):
+            self.default_tag_mappings = loaded_mappings
+        else:
+            log_debug(f"WARN: 'default_tag_mappings' in settings is not a dictionary. Using default values.")
+            self.default_tag_mappings = default_settings_values["default_tag_mappings"]
         # --- КІНЕЦЬ ЗАВАНТАЖЕННЯ ---
         
-        log_debug(f"Loaded styles and wrap: ..., preview_wrap={self.preview_wrap_lines}, editors_wrap={self.editors_wrap_lines}")
+        log_debug(f"Loaded settings. Tag mappings: {self.default_tag_mappings}")
 
-        self._apply_text_wrap_settings() # Застосувати завантажені/дефолтні налаштування переносу
+        self._apply_text_wrap_settings() 
         self._reconfigure_all_highlighters()
 
-        # ... (завантаження last_original_file, last_edited_file) ...
         last_original_file = settings_data.get("original_file_path"); last_edited_file = settings_data.get("edited_file_path")
         if last_original_file and os.path.exists(last_original_file):
             effective_edited_path = last_edited_file if last_edited_file and os.path.exists(last_edited_file) else None
@@ -290,9 +284,10 @@ class MainWindow(QMainWindow):
         settings_data["tag_css"] = self.tag_css
         settings_data["show_multiple_spaces_as_dots"] = self.show_multiple_spaces_as_dots
         settings_data["space_dot_color_hex"] = self.space_dot_color_hex
-        # --- ЗБЕРЕЖЕННЯ НОВИХ НАЛАШТУВАНЬ ---
         settings_data["preview_wrap_lines"] = self.preview_wrap_lines
         settings_data["editors_wrap_lines"] = self.editors_wrap_lines
+        # --- ЗБЕРЕЖЕННЯ СЛОВНИКА ВІДПОВІДНОСТЕЙ ТЕГІВ ---
+        settings_data["default_tag_mappings"] = self.default_tag_mappings
         # --- КІНЕЦЬ ЗБЕРЕЖЕННЯ ---
         
         try:
@@ -310,7 +305,6 @@ class MainWindow(QMainWindow):
         log_debug("<-- MainWindow: save_editor_settings finished")
 
     def closeEvent(self, event):
-        # ... (код без змін) ...
         log_debug("--> MainWindow: closeEvent received.")
         self.app_action_handler.handle_close_event(event) 
         if event.isAccepted(): 
