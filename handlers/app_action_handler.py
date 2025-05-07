@@ -1,52 +1,43 @@
 import os
-from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtWidgets import QMessageBox, QFileDialog
 from handlers.base_handler import BaseHandler
-from utils import log_debug, convert_dots_to_spaces_from_editor # Додаємо, якщо ще не було
-from tag_utils import replace_tags_based_on_original # Функція аналізу
-# Потрібна функція, що просто застосовує словник
-# Якщо її немає в tag_utils, можна додати або реалізувати тут локально
-
-def apply_default_mappings_only(text_segment: str, default_mappings: dict) -> tuple[str, bool]:
-    """
-    Просто застосовує default_mappings до тексту, замінюючи [...] на {...}.
-    Повертає (змінений_текст, чи_були_зміни).
-    """
-    if not default_mappings or not text_segment:
-        return text_segment, False
-    
-    modified_segment = str(text_segment)
-    changed = False
-    for short_tag, full_tag in default_mappings.items():
-        if short_tag in modified_segment:
-            modified_segment = modified_segment.replace(short_tag, full_tag)
-            changed = True
-            # log_debug(f"Applied mapping: '{short_tag}' -> '{full_tag}'") 
-    return modified_segment, changed
+from utils import log_debug, convert_dots_to_spaces_from_editor
+# Оновлюємо імпорт з tag_utils
+from tag_utils import apply_default_mappings_only, analyze_tags_for_issues, \
+                      TAG_STATUS_OK, TAG_STATUS_UNRESOLVED_BRACKETS, TAG_STATUS_MISMATCHED_CURLY
+from data_manager import load_json_file
 
 
 class AppActionHandler(BaseHandler):
     def __init__(self, main_window, data_processor, ui_updater):
         super().__init__(main_window, data_processor, ui_updater)
+        # Додамо атрибути для зберігання різних типів проблемних рядків
+        # Ключ: str(block_idx), Значення: set of string_indices_in_block
+        if not hasattr(self.mw, 'critical_problem_lines_per_block'):
+            self.mw.critical_problem_lines_per_block = {} # Для [...] тегів (жовтий)
+        if not hasattr(self.mw, 'warning_problem_lines_per_block'):
+            self.mw.warning_problem_lines_per_block = {}   # Для невідповідності {...} (сірий)
+
 
     def save_data_action(self, ask_confirmation=True):
         # ... (код без змін) ...
         log_debug(f"--> AppActionHandler: save_data_action called. ask_confirmation={ask_confirmation}, current unsaved={self.mw.unsaved_changes}")
         if self.mw.json_path and not self.mw.edited_json_path:
-            self.mw.edited_json_path = self.mw._derive_edited_path(self.mw.json_path)
+            self.mw.edited_json_path = self._derive_edited_path(self.mw.json_path)
             self.ui_updater.update_statusbar_paths()
         current_block_idx_before_save = self.mw.current_block_idx; current_string_idx_before_save = self.mw.current_string_idx
         save_success = self.data_processor.save_current_edits(ask_confirmation=ask_confirmation)
         if save_success:
-            self.ui_updater.update_title() 
-            self.mw.is_programmatically_changing_text = True 
+            self.ui_updater.update_title()
+            self.mw.is_programmatically_changing_text = True
             if current_block_idx_before_save != -1:
-                 self.mw.current_block_idx = current_block_idx_before_save 
+                 self.mw.current_block_idx = current_block_idx_before_save
                  self.mw.current_string_idx = current_string_idx_before_save
-                 self.ui_updater.populate_strings_for_block(self.mw.current_block_idx) 
+                 self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
             else: self.ui_updater.populate_strings_for_block(-1)
-            self.ui_updater.update_statusbar_paths() 
-            self.mw.is_programmatically_changing_text = False 
-        else: self.ui_updater.update_title() 
+            self.ui_updater.update_statusbar_paths()
+            self.mw.is_programmatically_changing_text = False
+        else: self.ui_updater.update_title()
         return save_success
 
     def handle_close_event(self, event):
@@ -62,27 +53,25 @@ class AppActionHandler(BaseHandler):
         else: event.accept()
         log_debug("<-- AppActionHandler: handle_close_event finished.")
 
-    def _perform_tag_scan_for_block(self, block_idx: int, is_single_block_scan: bool = False) -> tuple[int, bool]:
+
+    def _perform_tag_scan_for_block(self, block_idx: int, is_single_block_scan: bool = False) -> tuple[int, int, bool]:
         """
         Виконує сканування тегів для вказаного блоку.
-        1. Примусово застосовує default_mappings до тексту з edited_data, оновлює edited_data.
-        2. Аналізує оновлений текст на відповідність тегів оригіналу.
-        3. Оновлює self.mw.problem_lines_per_block.
-        Повертає (кількість проблемних рядків, чи були зроблені зміни в edited_data).
+        Повертає (кількість критичних проблем, кількість попереджень, чи були зроблені зміни в edited_data).
         """
         log_debug(f"AppActionHandler: Starting tag scan for block_idx: {block_idx}")
         if not (0 <= block_idx < len(self.mw.data)):
             log_debug(f"AppActionHandler: Invalid block_idx {block_idx} for scan.")
-            return 0, False
+            return 0, 0, False
 
         block_key = str(block_idx)
-        current_block_problem_indices = set()
+        current_block_critical_indices = set()
+        current_block_warning_indices = set()
         changes_made_to_edited_data_in_this_block = False
         
         num_strings_in_block = len(self.mw.data[block_idx])
 
         for string_idx in range(num_strings_in_block):
-            # Етап 1: Примусова нормалізація тегів у даних
             text_before_normalization, source = self.data_processor.get_current_string_text(block_idx, string_idx)
             
             normalized_text, was_normalized = apply_default_mappings_only(
@@ -91,100 +80,121 @@ class AppActionHandler(BaseHandler):
             )
             
             if was_normalized:
-                log_debug(f"Rescan Blk{block_idx}-Str{string_idx}: Normalized tags. Before: '{text_before_normalization[:60]}...', After: '{normalized_text[:60]}...'")
-                # Оновлюємо edited_data нормалізованим текстом
+                # log_debug(f"Rescan Blk{block_idx}-Str{string_idx}: Normalized tags. Before: '{text_before_normalization[:60]}...', After: '{normalized_text[:60]}...'")
                 self.data_processor.update_edited_data(block_idx, string_idx, normalized_text)
                 changes_made_to_edited_data_in_this_block = True
-                text_to_analyze = normalized_text # Для подальшого аналізу беремо вже нормалізований
+                text_to_analyze = normalized_text
             else:
-                text_to_analyze = text_before_normalization # Нормалізація нічого не змінила
+                text_to_analyze = text_before_normalization
             
-            # Етап 2: Аналіз на проблеми (вже з нормалізованим текстом)
             original_text_for_comparison = self.mw.data[block_idx][string_idx]
-
-            # replace_tags_based_on_original тепер має аналізувати текст, де [...] вже замінені на {...}
-            # Її завдання - перевірити кількість {...} та наявність залишків [...], якщо default_mappings не все покрили.
-            _processed_text_after_analysis, tags_ok, tag_error_msg = replace_tags_based_on_original(
-                text_to_analyze, # Передаємо текст, який вже пройшов default_mappings
-                original_text_for_comparison,
-                {} # Передаємо порожній словник, бо default_mappings вже застосовані
+            
+            # Використовуємо analyze_tags_for_issues
+            tag_status, tag_error_msg = analyze_tags_for_issues(
+                text_to_analyze,
+                original_text_for_comparison
             )
             
-            # log_debug(f"Rescan Blk{block_idx}-Str{string_idx}: Analysis result: tags_ok={tags_ok}, msg='{tag_error_msg}'")
-
-            if not tags_ok:
-                current_block_problem_indices.add(string_idx)
-                # log_debug(f"AppActionHandler: Tag issue found in block {block_idx}, string {string_idx}: {tag_error_msg}")
+            if tag_status == TAG_STATUS_UNRESOLVED_BRACKETS:
+                current_block_critical_indices.add(string_idx)
+                log_debug(f"AppActionHandler: CRITICAL Tag issue in block {block_idx}, string {string_idx}: {tag_error_msg}")
+            elif tag_status == TAG_STATUS_MISMATCHED_CURLY:
+                current_block_warning_indices.add(string_idx)
+                log_debug(f"AppActionHandler: WARNING Tag issue in block {block_idx}, string {string_idx}: {tag_error_msg}")
         
-        # Оновлюємо глобальний словник проблем
-        if current_block_problem_indices:
-            self.mw.problem_lines_per_block[block_key] = current_block_problem_indices
-        elif block_key in self.mw.problem_lines_per_block: 
-            del self.mw.problem_lines_per_block[block_key]
+        # Оновлюємо глобальні словники проблем
+        if current_block_critical_indices:
+            self.mw.critical_problem_lines_per_block[block_key] = current_block_critical_indices
+        elif block_key in self.mw.critical_problem_lines_per_block: 
+            del self.mw.critical_problem_lines_per_block[block_key]
+
+        if current_block_warning_indices:
+            self.mw.warning_problem_lines_per_block[block_key] = current_block_warning_indices
+        elif block_key in self.mw.warning_problem_lines_per_block:
+            del self.mw.warning_problem_lines_per_block[block_key]
         
         # Оновлюємо відображення для цього блоку (лічильник та фон)
+        # UIUpdater має враховувати обидва типи проблем
         if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
-            self.ui_updater.update_block_item_text_with_problem_count(block_idx)
+            self.ui_updater.update_block_item_text_with_problem_count(block_idx) 
+            # update_block_item_text_with_problem_count тепер має перевіряти обидва словники проблем
         
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         if is_single_block_scan and self.mw.current_block_idx == block_idx and preview_edit:
-            log_debug(f"Rescan (single block): Refreshing preview for current block {block_idx}")
-            # Важливо: populate_strings_for_block має викликатися ПІСЛЯ того, як edited_data оновлено,
-            # щоб preview відобразив зміни і правильні проблемні підсвічування.
-            # Оскільки is_programmatically_changing_text встановлюється вище, це має бути ОК.
+            # populate_strings_for_block має оновити підсвічування в preview_edit
             self.ui_updater.populate_strings_for_block(block_idx) 
         
-        return len(current_block_problem_indices), changes_made_to_edited_data_in_this_block
+        return len(current_block_critical_indices), len(current_block_warning_indices), changes_made_to_edited_data_in_this_block
 
     def rescan_tags_for_single_block(self, block_idx: int = -1):
+        # ... (логіка виклику _perform_tag_scan_for_block та повідомлень QMessageBox буде змінена)
         if block_idx == -1: block_idx = self.mw.current_block_idx
         if block_idx < 0:
             QMessageBox.information(self.mw, "Rescan Tags", "No block selected to rescan.")
             return
         log_debug(f"<<<<<<<<<< ACTION: Rescan Tags for Block {block_idx} Triggered >>>>>>>>>>")
         
-        self.mw.is_programmatically_changing_text = True # Для оновлення edited_data та UI
-        num_problems, changes_applied = self._perform_tag_scan_for_block(block_idx, is_single_block_scan=True)
+        self.mw.is_programmatically_changing_text = True
+        num_critical, num_warnings, changes_applied = self._perform_tag_scan_for_block(block_idx, is_single_block_scan=True)
         self.mw.is_programmatically_changing_text = False
 
         if changes_applied and not self.mw.unsaved_changes:
-            self.mw.unsaved_changes = True
+            self.mw.unsaved_changes = True # Позначаємо, що є незбережені зміни
             self.ui_updater.update_title()
 
-        if num_problems > 0:
-            QMessageBox.information(self.mw, "Rescan Complete", 
-                                    f"Block '{self.mw.block_names.get(str(block_idx), str(block_idx))}' has {num_problems} line(s) with tag issues (highlighted). "
-                                    f"{'Known tags were auto-corrected.' if changes_applied else 'No data was changed by this scan.'}")
+        block_name_str = self.mw.block_names.get(str(block_idx), f"Block {block_idx}")
+        message_parts = []
+        if num_critical > 0:
+            message_parts.append(f"{num_critical} line(s) with unresolved '[...]' tags (critical, yellow).")
+        if num_warnings > 0:
+            message_parts.append(f"{num_warnings} line(s) with mismatched '{{...}}' tag counts (warning, gray).")
+        
+        if not message_parts: # Немає проблем
+            message = f"No tag issues found in Block '{block_name_str}'."
+            if changes_applied:
+                message += " Known editor tags might have been standardized."
+            QMessageBox.information(self.mw, "Rescan Complete", message)
         else:
-            QMessageBox.information(self.mw, "Rescan Complete", 
-                                    f"No tag issues found in Block '{self.mw.block_names.get(str(block_idx), str(block_idx))}'. "
-                                    f"{'Known tags might have been standardized.' if changes_applied else 'No changes made.'}")
+            title = "Rescan Complete with Issues"
+            summary = f"Block '{block_name_str}':\n" + "\n".join(message_parts)
+            if changes_applied:
+                summary += "\nKnown editor tags were auto-corrected where possible."
+            QMessageBox.warning(self.mw, title, summary)
+
 
     def rescan_all_tags(self):
+        # ... (логіка виклику _perform_tag_scan_for_block та повідомлень QMessageBox буде змінена)
         log_debug("<<<<<<<<<< ACTION: Rescan All Tags Triggered >>>>>>>>>>")
         if not self.mw.data:
             QMessageBox.information(self.mw, "Rescan All Tags", "No data loaded to rescan.")
             return
 
-        total_problem_lines, total_problem_blocks = 0, 0
+        total_critical_lines, total_warning_lines = 0, 0
+        total_blocks_with_critical, total_blocks_with_warning = 0, 0
         any_changes_applied_globally = False
         
-        self.mw.problem_lines_per_block.clear()
+        # Очищення старих проблем перед скануванням
+        self.mw.critical_problem_lines_per_block.clear()
+        self.mw.warning_problem_lines_per_block.clear()
+
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
-        if preview_edit and hasattr(preview_edit, 'clearProblemLineHighlights'):
-            preview_edit.clearProblemLineHighlights()
+        if preview_edit:
+             if hasattr(preview_edit, 'clearProblemLineHighlights'): preview_edit.clearProblemLineHighlights()
+             if hasattr(preview_edit, 'clearWarningLineHighlights'): preview_edit.clearWarningLineHighlights() # Потрібно додати
+        
         if hasattr(self.ui_updater, 'clear_all_problem_block_highlights_and_text'):
-            self.ui_updater.clear_all_problem_block_highlights_and_text()
+            self.ui_updater.clear_all_problem_block_highlights_and_text() # Це оновить назви блоків
 
         self.mw.is_programmatically_changing_text = True 
         for block_idx in range(len(self.mw.data)):
-            num_block_problems, block_changes_applied = self._perform_tag_scan_for_block(block_idx, is_single_block_scan=False)
+            num_crit, num_warn, block_changes_applied = self._perform_tag_scan_for_block(block_idx, is_single_block_scan=False)
             if block_changes_applied: any_changes_applied_globally = True
-            if num_block_problems > 0:
-                total_problem_lines += num_block_problems; total_problem_blocks += 1
+            if num_crit > 0:
+                total_critical_lines += num_crit; total_blocks_with_critical += 1
+            if num_warn > 0:
+                total_warning_lines += num_warn; total_blocks_with_warning +=1
         
-        # Оновлюємо preview для поточного блоку ПІСЛЯ всіх сканувань
-        if self.mw.current_block_idx != -1:
+        if self.mw.current_block_idx != -1: # Оновлюємо preview для поточного блоку ПІСЛЯ всіх сканувань
             self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
         
         self.mw.is_programmatically_changing_text = False
@@ -193,11 +203,188 @@ class AppActionHandler(BaseHandler):
             self.mw.unsaved_changes = True
             self.ui_updater.update_title()
 
-        if total_problem_blocks > 0:
-            QMessageBox.information(self.mw, "Rescan Complete", 
-                                    f"Found {total_problem_lines} tag issue(s) across {total_problem_blocks} block(s).\n"
-                                    "Known tags were auto-corrected. Please review highlighted items.")
+        message_parts = []
+        if total_blocks_with_critical > 0:
+            message_parts.append(f"Found {total_critical_lines} critical tag issue(s) (unresolved '[...]') across {total_blocks_with_critical} block(s).")
+        if total_blocks_with_warning > 0:
+            message_parts.append(f"Found {total_warning_lines} warning(s) (mismatched '{{...}}') across {total_blocks_with_warning} block(s).")
+
+        if not message_parts:
+            message = "No tag issues found in any block."
+            if any_changes_applied_globally:
+                message += " Some known editor tags might have been standardized."
+            QMessageBox.information(self.mw, "Rescan Complete", message)
         else:
-            QMessageBox.information(self.mw, "Rescan Complete", 
-                                    f"No tag issues found in any block. "
-                                    f"{'Some known tags might have been standardized.' if any_changes_applied_globally else 'No changes made.'}")
+            title = "Rescan Complete with Issues/Warnings"
+            summary = "\n".join(message_parts)
+            if any_changes_applied_globally:
+                 summary += "\nKnown editor tags were auto-corrected where possible. Please review highlighted items."
+            QMessageBox.warning(self.mw, title, summary)
+            
+    # ... (решта методів open_file_dialog_action, save_as_dialog_action і т.д. без змін) ...
+    def _derive_edited_path(self, original_path):
+        if not original_path: return None
+        dir_name = os.path.dirname(original_path)
+        base, ext = os.path.splitext(os.path.basename(original_path))
+        return os.path.join(dir_name, f"{base}_edited{ext}")
+
+    def open_file_dialog_action(self):
+        log_debug("--> AppActionHandler: Open File Dialog Triggered")
+        if self.mw.unsaved_changes:
+            reply = QMessageBox.question(self.mw, 'Unsaved Changes', "Save before opening new file?", QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel, QMessageBox.Cancel)
+            if reply == QMessageBox.Save:
+                if not self.save_data_action(ask_confirmation=True): return
+            elif reply == QMessageBox.Cancel: return
+        
+        start_dir = os.path.dirname(self.mw.json_path) if self.mw.json_path else ""
+        path, _ = QFileDialog.getOpenFileName(self.mw, "Open Original JSON", start_dir, "JSON (*.json);;All (*)")
+        if path:
+            self.load_all_data_for_path(path)
+        log_debug("<-- AppActionHandler: Open File Dialog Finished")
+
+    def open_changes_file_dialog_action(self):
+        log_debug("--> AppActionHandler: Open Changes File Dialog Triggered")
+        if not self.mw.json_path:
+            QMessageBox.warning(self.mw, "Open Changes File", "Please open an original file first.")
+            return
+        
+        start_dir = os.path.dirname(self.mw.edited_json_path) if self.mw.edited_json_path else (os.path.dirname(self.mw.json_path) if self.mw.json_path else "")
+        path, _ = QFileDialog.getOpenFileName(self.mw, "Open Changes (Edited) JSON File", start_dir, "JSON Files (*.json);;All Files (*)")
+        
+        if path:
+            if self.mw.unsaved_changes:
+                 reply = QMessageBox.question(self.mw, 'Unsaved Changes', "Loading a new changes file will discard current unsaved edits. Proceed?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                 if reply == QMessageBox.No: return
+            
+            new_edited_data, error = load_json_file(path, parent_widget=self.mw, expected_type=list)
+            if error:
+                QMessageBox.critical(self.mw, "Load Error", f"Failed to load selected changes file:\n{path}\n\n{error}")
+                return
+            
+            self.mw.edited_json_path = path
+            self.mw.edited_file_data = new_edited_data
+            self.mw.edited_data = {}
+            self.mw.unsaved_changes = False
+            
+            # Очищаємо обидва типи проблем при завантаженні нового файлу змін
+            if hasattr(self.mw, 'critical_problem_lines_per_block'): self.mw.critical_problem_lines_per_block.clear()
+            if hasattr(self.mw, 'warning_problem_lines_per_block'): self.mw.warning_problem_lines_per_block.clear()
+
+            if hasattr(self.ui_updater, 'clear_all_problem_block_highlights_and_text'):
+                self.ui_updater.clear_all_problem_block_highlights_and_text()
+                
+            self.ui_updater.update_title()
+            self.ui_updater.update_statusbar_paths()
+            
+            self.mw.is_programmatically_changing_text = True
+            self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
+            self.mw.is_programmatically_changing_text = False
+        log_debug("<-- AppActionHandler: Open Changes File finished.")
+
+    def save_as_dialog_action(self):
+        log_debug("--> AppActionHandler: Save As Dialog Triggered")
+        if not self.mw.json_path:
+            QMessageBox.warning(self.mw, "Save As Error", "No original file open.")
+            return
+        
+        current_edited_path = self.mw.edited_json_path if self.mw.edited_json_path else self._derive_edited_path(self.mw.json_path)
+        if not current_edited_path:
+             current_edited_path = os.path.join(os.path.dirname(self.mw.json_path) if self.mw.json_path else ".", "untitled_edited.json")
+
+        new_edited_path, _ = QFileDialog.getSaveFileName(self.mw, "Save Changes As...", current_edited_path, "JSON (*.json);;All (*)")
+        
+        if new_edited_path:
+            original_edited_path_backup = self.mw.edited_json_path
+            self.mw.edited_json_path = new_edited_path
+            save_success = self.save_data_action(ask_confirmation=False)
+            
+            if save_success:
+                QMessageBox.information(self.mw, "Saved As", f"Changes saved to:\n{self.mw.edited_json_path}")
+                self.ui_updater.update_statusbar_paths()
+            else:
+                QMessageBox.critical(self.mw, "Save As Error", f"Failed to save to:\n{self.mw.edited_json_path}")
+                self.mw.edited_json_path = original_edited_path_backup
+                self.ui_updater.update_statusbar_paths()
+        log_debug("<-- AppActionHandler: Save As Finished")
+
+    def load_all_data_for_path(self, original_file_path, manually_set_edited_path=None,
+                                 is_initial_load_from_settings=False):
+        log_debug(f"--> AppActionHandler: load_all_data_for_path START. Original: '{original_file_path}', Manual Edit Path: '{manually_set_edited_path}', InitialLoad: {is_initial_load_from_settings}")
+        self.mw.is_programmatically_changing_text = True
+        data, error = load_json_file(original_file_path, parent_widget=self.mw, expected_type=list)
+        
+        if error:
+            self.mw.json_path = None; self.mw.edited_json_path = None
+            self.mw.data = []; self.mw.edited_data = {}; self.mw.edited_file_data = []
+            self.mw.unsaved_changes = False
+            if not is_initial_load_from_settings:
+                if hasattr(self.mw, 'critical_problem_lines_per_block'): self.mw.critical_problem_lines_per_block.clear()
+                if hasattr(self.mw, 'warning_problem_lines_per_block'): self.mw.warning_problem_lines_per_block.clear()
+
+            self.ui_updater.update_title(); self.ui_updater.update_statusbar_paths()
+            self.ui_updater.populate_blocks(); self.ui_updater.populate_strings_for_block(-1)
+            if hasattr(self.ui_updater, 'clear_all_problem_block_highlights_and_text') and not is_initial_load_from_settings:
+                self.ui_updater.clear_all_problem_block_highlights_and_text()
+            self.mw.is_programmatically_changing_text = False
+            QMessageBox.critical(self.mw, "Load Error", f"Failed to load: {original_file_path}\n{error}")
+            return
+
+        self.mw.json_path = original_file_path; self.mw.data = data
+        self.mw.edited_data = {}; self.mw.unsaved_changes = False
+        self.mw.edited_json_path = manually_set_edited_path if manually_set_edited_path else self._derive_edited_path(self.mw.json_path)
+        self.mw.edited_file_data = []
+        
+        if self.mw.edited_json_path and os.path.exists(self.mw.edited_json_path):
+            edited_data_from_file, edit_error = load_json_file(self.mw.edited_json_path, parent_widget=self.mw, expected_type=list)
+            if edit_error: QMessageBox.warning(self.mw, "Edited Load Warning", f"Could not load changes file: {self.mw.edited_json_path}\n{edit_error}")
+            else: self.mw.edited_file_data = edited_data_from_file
+        
+        self.mw.current_block_idx = -1; self.mw.current_string_idx = -1
+        
+        if not is_initial_load_from_settings:
+            if hasattr(self.mw, 'critical_problem_lines_per_block'): self.mw.critical_problem_lines_per_block.clear()
+            if hasattr(self.mw, 'warning_problem_lines_per_block'): self.mw.warning_problem_lines_per_block.clear()
+            
+            preview_edit = getattr(self.mw, 'preview_text_edit', None)
+            if preview_edit:
+                if hasattr(preview_edit, 'clearProblemLineHighlights'): preview_edit.clearProblemLineHighlights()
+                if hasattr(preview_edit, 'clearWarningLineHighlights'): preview_edit.clearWarningLineHighlights() # Додано
+            if hasattr(self.ui_updater, 'clear_all_problem_block_highlights_and_text'):
+                self.ui_updater.clear_all_problem_block_highlights_and_text()
+            
+        if hasattr(self.mw, 'undo_paste_action'):
+            self.mw.can_undo_paste = False
+            self.mw.undo_paste_action.setEnabled(False)
+
+        self.mw.block_list_widget.clear()
+        if hasattr(self.mw, 'preview_text_edit'): self.mw.preview_text_edit.clear()
+        if hasattr(self.mw, 'original_text_edit'): self.mw.original_text_edit.clear()
+        if hasattr(self.mw, 'edited_text_edit'): self.mw.edited_text_edit.clear()
+        
+        self.ui_updater.populate_blocks()
+        self.ui_updater.update_title(); self.ui_updater.update_statusbar_paths()
+        
+        if self.mw.block_list_widget.count() > 0: self.mw.block_list_widget.setCurrentRow(0)
+        else: self.ui_updater.populate_strings_for_block(-1)
+        
+        self.mw.is_programmatically_changing_text = False
+        log_debug(f"<-- AppActionHandler: load_all_data_for_path FINISHED (Success)")
+
+    def reload_original_data_action(self):
+        log_debug("--> AppActionHandler: Reload Original Triggered")
+        if not self.mw.json_path: QMessageBox.information(self.mw, "Reload", "No file open."); return
+        
+        if self.mw.unsaved_changes:
+            reply = QMessageBox.question(self.mw, 'Unsaved Changes', "Reloading will discard current unsaved edits in memory. Proceed?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if reply == QMessageBox.No: return
+        
+        current_edited_path_before_reload = self.mw.edited_json_path
+        
+        if hasattr(self.mw, 'critical_problem_lines_per_block'): self.mw.critical_problem_lines_per_block.clear()
+        if hasattr(self.mw, 'warning_problem_lines_per_block'): self.mw.warning_problem_lines_per_block.clear()
+
+        if hasattr(self.ui_updater, 'clear_all_problem_block_highlights_and_text'):
+            self.ui_updater.clear_all_problem_block_highlights_and_text()
+            
+        self.load_all_data_for_path(self.mw.json_path, manually_set_edited_path=current_edited_path_before_reload)
+        log_debug("<-- AppActionHandler: Reload Original Finished")

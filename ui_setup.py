@@ -5,18 +5,19 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon 
 from LineNumberedTextEdit import LineNumberedTextEdit
-from CustomListWidget import CustomListWidget # Переконайтеся, що цей файл існує і коректний
+from CustomListWidget import CustomListWidget
 from utils import log_debug
 
 def setup_main_window_ui(main_window):
     log_debug("setup_main_window_ui: Starting UI setup.")
     central_widget = QWidget(); main_window.setCentralWidget(central_widget)
     main_layout = QHBoxLayout(central_widget)
-    # ... (решта UI як раніше) ...
+    
     left_panel = QWidget(); left_layout = QVBoxLayout(left_panel)
     left_layout.addWidget(QLabel("Blocks (double-click to rename):"))
-    main_window.block_list_widget = CustomListWidget(main_window) # Передаємо main_window як батька і для доступу
+    main_window.block_list_widget = CustomListWidget(main_window)
     left_layout.addWidget(main_window.block_list_widget)
+    
     main_window.right_splitter = QSplitter(Qt.Vertical) 
     top_right_panel = QWidget(); top_right_layout = QVBoxLayout(top_right_panel) 
     top_right_layout.addWidget(QLabel("Strings in block (click line to select):")) 
@@ -25,6 +26,7 @@ def setup_main_window_ui(main_window):
     main_window.preview_text_edit.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
     top_right_layout.addWidget(main_window.preview_text_edit) 
     main_window.right_splitter.addWidget(top_right_panel) 
+    
     main_window.bottom_right_splitter = QSplitter(Qt.Horizontal)
     bottom_left_panel = QWidget(); bottom_left_layout = QVBoxLayout(bottom_left_panel)
     bottom_left_layout.addWidget(QLabel("Original (Read-Only):"))
@@ -32,16 +34,20 @@ def setup_main_window_ui(main_window):
     main_window.original_text_edit.setReadOnly(True)
     main_window.original_text_edit.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
     bottom_left_layout.addWidget(main_window.original_text_edit); main_window.bottom_right_splitter.addWidget(bottom_left_panel)
+    
     bottom_right_panel = QWidget(); bottom_right_layout = QVBoxLayout(bottom_right_panel)
     bottom_right_layout.addWidget(QLabel("Editable Text:"))
     main_window.edited_text_edit = LineNumberedTextEdit(main_window) 
     bottom_right_layout.addWidget(main_window.edited_text_edit); main_window.bottom_right_splitter.addWidget(bottom_right_panel)
+    
     main_window.right_splitter.addWidget(main_window.bottom_right_splitter)
     main_window.right_splitter.setSizes([150, 450]); main_window.bottom_right_splitter.setSizes([400, 400])
+    
     main_window.main_splitter = QSplitter(Qt.Horizontal)
     main_window.main_splitter.addWidget(left_panel); main_window.main_splitter.addWidget(main_window.right_splitter)
     main_window.main_splitter.setSizes([200, 800])
     main_layout.addWidget(main_window.main_splitter)
+    
     main_window.statusBar = QStatusBar(); main_window.setStatusBar(main_window.statusBar)
     main_window.original_path_label = QLabel("Original: [not specified]"); main_window.edited_path_label = QLabel("Changes: [not specified]")
     main_window.original_path_label.setToolTip("Path to the original text file"); main_window.edited_path_label.setToolTip("Path to the file where changes are saved")
@@ -60,11 +66,15 @@ def setup_main_window_ui(main_window):
     main_window.reload_action = QAction('Reload Original', main_window); file_menu.addAction(main_window.reload_action)
     main_window.revert_action = QAction('&Revert Changes File to Original...', main_window); file_menu.addAction(main_window.revert_action)
     file_menu.addSeparator()
+    # --- НОВА ДІЯ ДЛЯ ПЕРЕЗАВАНТАЖЕННЯ НАЛАШТУВАНЬ ТЕГІВ ---
+    main_window.reload_tag_mappings_action = QAction('Reload &Tag Mappings from Settings', main_window)
+    file_menu.addAction(main_window.reload_tag_mappings_action)
+    file_menu.addSeparator()
+    # --- КІНЕЦЬ НОВОЇ ДІЇ ---
     main_window.exit_action = QAction('E&xit', main_window); main_window.exit_action.triggered.connect(main_window.close); file_menu.addAction(main_window.exit_action)
 
     edit_menu = menubar.addMenu('&Edit')
     main_window.undo_typing_action = QAction(QIcon.fromTheme("edit-undo"), '&Undo Typing', main_window); main_window.undo_typing_action.setShortcut('Ctrl+Z')
-    # Підключення до edited_text_edit.undo буде в connect_signals або тут, якщо edited_text_edit вже створений
     edit_menu.addAction(main_window.undo_typing_action)
     
     main_window.redo_typing_action = QAction(QIcon.fromTheme("edit-redo"), '&Redo Typing', main_window); main_window.redo_typing_action.setShortcut('Ctrl+Y') 
@@ -82,11 +92,8 @@ def setup_main_window_ui(main_window):
     edit_menu.addAction(main_window.paste_block_action)
     edit_menu.addSeparator()
 
-    # --- НОВА ДІЯ ДЛЯ ПЕРЕСКАНУВАННЯ ВСІХ ТЕГІВ ---
     main_window.rescan_all_tags_action = QAction('Rescan All Tags for Issues', main_window)
-    # Можна додати іконку QIcon.fromTheme("system-search") або "document-revert"
     edit_menu.addAction(main_window.rescan_all_tags_action)
-    # --- КІНЕЦЬ НОВОЇ ДІЇ ---
         
     toolbar = QToolBar("Main Toolbar")
     main_window.addToolBar(toolbar)
@@ -97,6 +104,7 @@ def setup_main_window_ui(main_window):
     toolbar.addAction(main_window.redo_typing_action) 
     toolbar.addAction(main_window.undo_paste_action)
     toolbar.addSeparator()
-    toolbar.addAction(main_window.rescan_all_tags_action) # Додаємо на панель інструментів
+    toolbar.addAction(main_window.rescan_all_tags_action)
+    toolbar.addAction(main_window.reload_tag_mappings_action) # Додаємо на панель інструментів
 
     log_debug("setup_main_window_ui: UI setup complete.")
