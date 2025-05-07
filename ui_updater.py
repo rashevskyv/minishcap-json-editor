@@ -2,7 +2,6 @@ import os
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QBrush 
 from PyQt5.QtWidgets import QApplication
-# Додаємо потрібні функції з utils.py
 from utils import log_debug, convert_spaces_to_dots_for_display, convert_dots_to_spaces_from_editor 
 
 class UIUpdater:
@@ -14,12 +13,54 @@ class UIUpdater:
     def populate_blocks(self):
         log_debug("[UIUpdater] populate_blocks called.")
         self.mw.block_list_widget.clear()
-        if not self.mw.data: log_debug("[UIUpdater] populate_blocks: No original data."); return
+        if not self.mw.data: 
+            log_debug("[UIUpdater] populate_blocks: No original data.")
+            return
+        
         for i in range(len(self.mw.data)):
-            display_name = self.mw.block_names.get(str(i), f"Block {i}") 
-            item = self.mw.block_list_widget.create_item(display_name, i)
+            base_display_name = self.mw.block_names.get(str(i), f"Block {i}")
+            
+            problem_count = 0
+            if hasattr(self.mw, 'problem_lines_per_block'): 
+                problem_count = len(self.mw.problem_lines_per_block.get(str(i), set()))
+            
+            display_name_with_issues = base_display_name
+            if problem_count > 0:
+                display_name_with_issues = f"{base_display_name} ({problem_count} issues)"
+                
+            item = self.mw.block_list_widget.create_item(display_name_with_issues, i)
             self.mw.block_list_widget.addItem(item)
+
+            if problem_count > 0:
+                self.highlight_problem_block(i, True)
+            else: 
+                self.highlight_problem_block(i, False)
+
         log_debug(f"[UIUpdater] populate_blocks: Added {self.mw.block_list_widget.count()} items.")
+
+    def update_block_item_text_with_problem_count(self, block_idx: int):
+        if not hasattr(self.mw, 'block_list_widget') or not (0 <= block_idx < self.mw.block_list_widget.count()):
+            return
+        
+        item = self.mw.block_list_widget.item(block_idx)
+        if not item:
+            return
+
+        base_display_name = self.mw.block_names.get(str(block_idx), f"Block {block_idx}")
+        problem_count = 0
+        if hasattr(self.mw, 'problem_lines_per_block'):
+            problem_count = len(self.mw.problem_lines_per_block.get(str(block_idx), set()))
+
+        display_name_with_issues = base_display_name
+        if problem_count > 0:
+            display_name_with_issues = f"{base_display_name} ({problem_count} issues)"
+        
+        current_item_text = item.text()
+        if current_item_text != display_name_with_issues:
+            item.setText(display_name_with_issues)
+            log_debug(f"UIUpdater: Updated block {block_idx} display text to: '{display_name_with_issues}'")
+        
+        self.highlight_problem_block(block_idx, problem_count > 0)
 
     def populate_strings_for_block(self, block_idx):
         log_debug(f"UIUpdater: populate_strings_for_block for block_idx: {block_idx}. Current string_idx: {self.mw.current_string_idx}")
@@ -30,19 +71,25 @@ class UIUpdater:
             old_scrollbar_value = preview_edit.verticalScrollBar().value()
 
         problem_line_numbers_to_restore = []
-        if preview_edit and hasattr(preview_edit, '_problem_line_selections') and preview_edit._problem_line_selections:
-            problem_line_numbers_to_restore = [sel.cursor.blockNumber() for sel in preview_edit._problem_line_selections]
+        if preview_edit and hasattr(self.mw, 'problem_lines_per_block'):
+            problem_line_numbers_to_restore = list(self.mw.problem_lines_per_block.get(str(block_idx), set()))
 
+        # Встановлюємо прапор, оскільки цей метод завжди програмно змінює текст
+        # (як мінімум preview_text_edit, а також edited/original через update_text_views)
         self.mw.is_programmatically_changing_text = True 
         
         if preview_edit and hasattr(preview_edit, 'clearPreviewSelectedLineHighlight'):
             preview_edit.clearPreviewSelectedLineHighlight()
 
+        # Очищаємо візуальні проблемні підсвічування в preview_edit перед перемалюванням.
+        # Список self.mw.problem_lines_per_block залишається недоторканим тут;
+        # він оновлюється в TextOperationHandler або при завантаженні/зміні блоку.
+        # Якщо блок змінився, то problem_line_numbers_to_restore має бути порожнім.
         if self.mw.current_block_idx != block_idx: 
             if preview_edit and hasattr(preview_edit, 'clearProblemLineHighlights'):
                 log_debug(f"UIUpdater: Block changed from {self.mw.current_block_idx} to {block_idx}. Clearing problem highlights for preview.")
                 preview_edit.clearProblemLineHighlights()
-                problem_line_numbers_to_restore = [] 
+                problem_line_numbers_to_restore = [] # Якщо блок новий, немає старих проблем для відновлення
 
         preview_lines = []
         if block_idx < 0 or not self.mw.data or block_idx >= len(self.mw.data) or not isinstance(self.mw.data[block_idx], list):
@@ -65,28 +112,31 @@ class UIUpdater:
             preview_lines.append(preview_line)
         
         if preview_edit:
+            # Очищаємо ТІЛЬКИ список об'єктів виділень в preview_edit, а не self.mw.problem_lines_per_block
             if hasattr(preview_edit, '_problem_line_selections'):
                  preview_edit._problem_line_selections = [] 
             preview_edit.setPlainText("\n".join(preview_lines))
 
+            # Відновлюємо проблемні підсвічування для поточного блоку
             if problem_line_numbers_to_restore and hasattr(preview_edit, 'addProblemLineHighlight'):
+                log_debug(f"UIUpdater: Re-queuing {len(problem_line_numbers_to_restore)} problem highlights for block {block_idx}: {problem_line_numbers_to_restore}")
                 for line_num in problem_line_numbers_to_restore:
                     preview_edit.addProblemLineHighlight(line_num) 
             
+            # Застосовуємо всі виділення (проблемні, вибраний рядок тощо)
+            # setPreviewSelectedLineHighlight також викличе _apply_all_extra_selections
             if hasattr(preview_edit, 'applyQueuedProblemHighlights'):
-                preview_edit.applyQueuedProblemHighlights() 
-            elif hasattr(preview_edit, '_apply_all_extra_selections'): 
-                 preview_edit._apply_all_extra_selections()
+                preview_edit.applyQueuedProblemHighlights()
             
-            preview_edit.verticalScrollBar().setValue(old_scrollbar_value)
-        
-        if preview_edit:
             if self.mw.current_string_idx != -1 and \
                hasattr(preview_edit, 'setPreviewSelectedLineHighlight') and \
                self.mw.current_string_idx < preview_edit.document().blockCount(): 
                 preview_edit.setPreviewSelectedLineHighlight(self.mw.current_string_idx)
-            elif hasattr(preview_edit, 'clearPreviewSelectedLineHighlight'):
-                preview_edit.clearPreviewSelectedLineHighlight()
+            # Якщо applyQueuedProblemHighlights не викликав _apply_all_extra_selections, або для певності:
+            elif hasattr(preview_edit, '_apply_all_extra_selections'): 
+                 preview_edit._apply_all_extra_selections()
+
+            preview_edit.verticalScrollBar().setValue(old_scrollbar_value)
         
         self.update_text_views(); self.synchronize_original_cursor() 
         self.mw.is_programmatically_changing_text = False 
@@ -96,12 +146,10 @@ class UIUpdater:
         if not hasattr(self.mw, 'edited_text_edit') or not self.mw.edited_text_edit or \
            not hasattr(self.mw, 'pos_len_label') or not self.mw.pos_len_label:
             return 
-        
         cursor = self.mw.edited_text_edit.textCursor()
         block = cursor.block()
         pos_in_block = cursor.positionInBlock()
         line_text_len = len(block.text())
-        
         self.mw.pos_len_label.setText(f"{pos_in_block}/{line_text_len}")
         self.synchronize_original_cursor()
 
@@ -142,33 +190,47 @@ class UIUpdater:
         if 0 <= block_idx < self.mw.block_list_widget.count():
             item = self.mw.block_list_widget.item(block_idx)
             if item:
-                if highlight: item.setBackground(QBrush(self.problem_block_color)); log_debug(f"Highlighted problem block: {block_idx}")
-                else: item.setBackground(QBrush(Qt.transparent)); log_debug(f"Cleared highlight for block: {block_idx}")
+                if highlight: item.setBackground(QBrush(self.problem_block_color))
+                else: item.setBackground(QBrush(Qt.transparent))
+                # log_debug(f"{'Highlighted' if highlight else 'Cleared highlight for'} problem block: {block_idx}")
 
-    def clear_all_problem_block_highlights(self):
+
+    def clear_all_problem_block_highlights_and_text(self): 
         if not hasattr(self.mw, 'block_list_widget'): return
         for i in range(self.mw.block_list_widget.count()):
             item = self.mw.block_list_widget.item(i)
-            if item: item.setBackground(QBrush(Qt.transparent))
+            if item:
+                item.setBackground(QBrush(Qt.transparent))
+                base_display_name = self.mw.block_names.get(str(i), f"Block {i}")
+                if item.text() != base_display_name: # Оновлюємо текст, тільки якщо він містив лічильник
+                    item.setText(base_display_name)
+        log_debug("UIUpdater: Cleared all problem block highlights and count texts.")
             
     def update_title(self):
-        title = "JSON Text Editor";
-        if self.mw.json_path: title += f" - [{os.path.basename(self.mw.json_path)}]"
-        else: title += " - [No File Open]"
-        if self.mw.unsaved_changes: title += " *"; self.mw.setWindowTitle(title)
+        title = "JSON Text Editor"
+        if self.mw.json_path: 
+            title += f" - [{os.path.basename(self.mw.json_path)}]"
+        else: 
+            title += " - [No File Open]"
+        if self.mw.unsaved_changes: 
+            title += " *"
+        self.mw.setWindowTitle(title)
 
     def update_statusbar_paths(self):
         if hasattr(self.mw, 'original_path_label') and self.mw.original_path_label:
             orig_filename = os.path.basename(self.mw.json_path) if self.mw.json_path else "[not specified]"
-            self.mw.original_path_label.setText(f"Original: {orig_filename}"); self.mw.original_path_label.setToolTip(self.mw.json_path if self.mw.json_path else "Path to original file")
+            self.mw.original_path_label.setText(f"Original: {orig_filename}")
+            self.mw.original_path_label.setToolTip(self.mw.json_path if self.mw.json_path else "Path to original file")
         if hasattr(self.mw, 'edited_path_label') and self.mw.edited_path_label:
             edited_filename = os.path.basename(self.mw.edited_json_path) if self.mw.edited_json_path else "[not specified]"
-            self.mw.edited_path_label.setText(f"Changes: {edited_filename}"); self.mw.edited_path_label.setToolTip(self.mw.edited_json_path if self.mw.edited_json_path else "Path to changes file")
+            self.mw.edited_path_label.setText(f"Changes: {edited_filename}")
+            self.mw.edited_path_label.setToolTip(self.mw.edited_json_path if self.mw.edited_json_path else "Path to changes file")
             
     def update_text_views(self): 
         is_programmatic_call = self.mw.is_programmatically_changing_text
         
-        original_text_raw = ""; edited_text_raw = ""
+        original_text_raw = ""
+        edited_text_raw = ""
         if self.mw.current_block_idx != -1 and self.mw.current_string_idx != -1:
             original_text_raw = self.data_processor._get_string_from_source(self.mw.current_block_idx, self.mw.current_string_idx, self.mw.data, "original_data") or "[ORIGINAL DATA ERROR]"
             edited_text_raw, _ = self.data_processor.get_current_string_text(self.mw.current_block_idx, self.mw.current_string_idx)
@@ -176,20 +238,47 @@ class UIUpdater:
         original_text_for_display = convert_spaces_to_dots_for_display(original_text_raw, self.mw.show_multiple_spaces_as_dots)
         edited_text_for_display_converted = convert_spaces_to_dots_for_display(edited_text_raw, self.mw.show_multiple_spaces_as_dots)
         
-        orig_text_edit_cursor = self.mw.original_text_edit.textCursor()
-        self.mw.original_text_edit.setPlainText(original_text_for_display)
-        self.mw.original_text_edit.setTextCursor(orig_text_edit_cursor)
-        
-        text_in_widget_for_display = self.mw.edited_text_edit.toPlainText()
+        # Зберігаємо і відновлюємо курсор для original_text_edit
+        orig_edit = self.mw.original_text_edit
+        orig_text_edit_cursor_pos = orig_edit.textCursor().position()
+        orig_anchor_pos = orig_edit.textCursor().anchor()
+        orig_has_selection = orig_edit.textCursor().hasSelection()
 
-        # Оновлюємо edited_text_edit, якщо це програмний виклик АБО якщо текст для відображення
-        # (з урахуванням крапок) відрізняється від того, що зараз у віджеті.
+        if orig_edit.toPlainText() != original_text_for_display:
+            orig_edit.setPlainText(original_text_for_display)
+        
+        new_orig_cursor = orig_edit.textCursor()
+        new_orig_cursor.setPosition(min(orig_anchor_pos, len(original_text_for_display)))
+        if orig_has_selection:
+            new_orig_cursor.setPosition(min(orig_text_edit_cursor_pos, len(original_text_for_display)), QTextCursor.KeepAnchor)
+        else:
+            new_orig_cursor.setPosition(min(orig_text_edit_cursor_pos, len(original_text_for_display)))
+        orig_edit.setTextCursor(new_orig_cursor)
+        
+        
+        edited_widget = self.mw.edited_text_edit
+        text_in_widget_for_display = edited_widget.toPlainText()
+
         if is_programmatic_call or (text_in_widget_for_display != edited_text_for_display_converted):
             if text_in_widget_for_display != edited_text_for_display_converted :
                  log_debug(f"UIUpdater: update_text_views - Content mismatch or programmatic call. Updating edited_text_edit.")
 
-            saved_edited_cursor = self.mw.edited_text_edit.textCursor()
-            self.mw.edited_text_edit.setPlainText(edited_text_for_display_converted)
-            self.mw.edited_text_edit.setTextCursor(saved_edited_cursor)
+            saved_edited_cursor_pos = edited_widget.textCursor().position()
+            saved_edited_anchor_pos = edited_widget.textCursor().anchor()
+            saved_edited_has_selection = edited_widget.textCursor().hasSelection()
+
+            edited_widget.setPlainText(edited_text_for_display_converted)
+            
+            restored_cursor = edited_widget.textCursor()
+            new_edited_anchor_pos = min(saved_edited_anchor_pos, len(edited_text_for_display_converted))
+            new_edited_cursor_pos = min(saved_edited_cursor_pos, len(edited_text_for_display_converted))
+
+            restored_cursor.setPosition(new_edited_anchor_pos)
+            if saved_edited_has_selection:
+                 restored_cursor.setPosition(new_edited_cursor_pos, QTextCursor.KeepAnchor)
+            else:
+                restored_cursor.setPosition(new_edited_cursor_pos)
+            edited_widget.setTextCursor(restored_cursor)
         
-        self.update_status_bar(); self.update_status_bar_selection()
+        self.update_status_bar()
+        self.update_status_bar_selection()

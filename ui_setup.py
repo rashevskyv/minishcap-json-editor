@@ -1,11 +1,11 @@
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QSplitter,
-    QLabel, QAction, QStatusBar, QMenu, QPlainTextEdit, QToolBar # Додано QToolBar
+    QLabel, QAction, QStatusBar, QMenu, QPlainTextEdit, QToolBar 
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon # Для іконок, якщо є
+from PyQt5.QtGui import QIcon 
 from LineNumberedTextEdit import LineNumberedTextEdit
-from CustomListWidget import CustomListWidget
+from CustomListWidget import CustomListWidget # Переконайтеся, що цей файл існує і коректний
 from utils import log_debug
 
 def setup_main_window_ui(main_window):
@@ -15,7 +15,8 @@ def setup_main_window_ui(main_window):
     # ... (решта UI як раніше) ...
     left_panel = QWidget(); left_layout = QVBoxLayout(left_panel)
     left_layout.addWidget(QLabel("Blocks (double-click to rename):"))
-    main_window.block_list_widget = CustomListWidget(); left_layout.addWidget(main_window.block_list_widget)
+    main_window.block_list_widget = CustomListWidget(main_window) # Передаємо main_window як батька і для доступу
+    left_layout.addWidget(main_window.block_list_widget)
     main_window.right_splitter = QSplitter(Qt.Vertical) 
     top_right_panel = QWidget(); top_right_layout = QVBoxLayout(top_right_panel) 
     top_right_layout.addWidget(QLabel("Strings in block (click line to select):")) 
@@ -48,10 +49,8 @@ def setup_main_window_ui(main_window):
     main_window.statusBar.addWidget(main_window.original_path_label); main_window.statusBar.addWidget(QLabel("|")); main_window.statusBar.addWidget(main_window.edited_path_label)
     main_window.statusBar.addPermanentWidget(main_window.pos_len_label); main_window.statusBar.addPermanentWidget(main_window.selection_len_label)
 
-    # --- Menu ---
     menubar = main_window.menuBar()
     file_menu = menubar.addMenu('&File')
-    # ... (File menu actions як раніше) ...
     main_window.open_action = QAction('&Open Original File...', main_window); file_menu.addAction(main_window.open_action)
     main_window.open_changes_action = QAction('Open &Changes File...', main_window); file_menu.addAction(main_window.open_changes_action)
     file_menu.addSeparator()
@@ -63,49 +62,41 @@ def setup_main_window_ui(main_window):
     file_menu.addSeparator()
     main_window.exit_action = QAction('E&xit', main_window); main_window.exit_action.triggered.connect(main_window.close); file_menu.addAction(main_window.exit_action)
 
-
     edit_menu = menubar.addMenu('&Edit')
-    
-    # --- ДІЇ UNDO/REDO ДЛЯ МЕНЮ ТА ПАНЕЛІ ІНСТРУМЕНТІВ ---
-    main_window.undo_typing_action = QAction(QIcon.fromTheme("edit-undo"), '&Undo Typing', main_window) # Використовуємо стандартну іконку, якщо доступна
-    main_window.undo_typing_action.setShortcut('Ctrl+Z')
-    if hasattr(main_window, 'edited_text_edit'):
-        main_window.undo_typing_action.triggered.connect(main_window.edited_text_edit.undo)
-        # Динамічне ввімкнення/вимкнення на основі стану edited_text_edit
-        main_window.undo_typing_action.setEnabled(main_window.edited_text_edit.document().isUndoAvailable())
-        main_window.edited_text_edit.undoAvailable.connect(main_window.undo_typing_action.setEnabled)
-
-    main_window.redo_typing_action = QAction(QIcon.fromTheme("edit-redo"), '&Redo Typing', main_window)
-    main_window.redo_typing_action.setShortcut('Ctrl+Y') 
-    if hasattr(main_window, 'edited_text_edit'):
-        main_window.redo_typing_action.triggered.connect(main_window.edited_text_edit.redo)
-        main_window.redo_typing_action.setEnabled(main_window.edited_text_edit.document().isRedoAvailable())
-        main_window.edited_text_edit.redoAvailable.connect(main_window.redo_typing_action.setEnabled)
-
-    main_window.undo_paste_action = QAction(QIcon.fromTheme("edit-undo"), 'Undo &Paste Block', main_window) # Можна іншу іконку
-    main_window.undo_paste_action.setShortcut('Ctrl+Shift+Z') 
-    main_window.undo_paste_action.setEnabled(False) # Керується логікою MainWindow
-
+    main_window.undo_typing_action = QAction(QIcon.fromTheme("edit-undo"), '&Undo Typing', main_window); main_window.undo_typing_action.setShortcut('Ctrl+Z')
+    # Підключення до edited_text_edit.undo буде в connect_signals або тут, якщо edited_text_edit вже створений
     edit_menu.addAction(main_window.undo_typing_action)
+    
+    main_window.redo_typing_action = QAction(QIcon.fromTheme("edit-redo"), '&Redo Typing', main_window); main_window.redo_typing_action.setShortcut('Ctrl+Y') 
     edit_menu.addAction(main_window.redo_typing_action)
     edit_menu.addSeparator()
+    
+    main_window.undo_paste_action = QAction(QIcon.fromTheme("edit-undo"), 'Undo &Paste Block', main_window)
+    main_window.undo_paste_action.setShortcut('Ctrl+Shift+Z') 
+    main_window.undo_paste_action.setEnabled(False) 
     edit_menu.addAction(main_window.undo_paste_action)
     edit_menu.addSeparator()
-    # --- КІНЕЦЬ ДІЙ UNDO/REDO ---
-
+    
     main_window.paste_block_action = QAction('&Paste Block Text', main_window)
     main_window.paste_block_action.setShortcut('Ctrl+Shift+V')
     edit_menu.addAction(main_window.paste_block_action)
+    edit_menu.addSeparator()
+
+    # --- НОВА ДІЯ ДЛЯ ПЕРЕСКАНУВАННЯ ВСІХ ТЕГІВ ---
+    main_window.rescan_all_tags_action = QAction('Rescan All Tags for Issues', main_window)
+    # Можна додати іконку QIcon.fromTheme("system-search") або "document-revert"
+    edit_menu.addAction(main_window.rescan_all_tags_action)
+    # --- КІНЕЦЬ НОВОЇ ДІЇ ---
         
-    # --- ПАНЕЛЬ ІНСТРУМЕНТІВ ---
     toolbar = QToolBar("Main Toolbar")
     main_window.addToolBar(toolbar)
     toolbar.addAction(main_window.open_action)
     toolbar.addAction(main_window.save_action)
     toolbar.addSeparator()
-    toolbar.addAction(main_window.undo_typing_action) # Додаємо стандартне Undo
-    toolbar.addAction(main_window.redo_typing_action) # Додаємо стандартне Redo
-    toolbar.addAction(main_window.undo_paste_action)  # Додаємо Undo для Paste
-    # --- КІНЕЦЬ ПАНЕЛІ ІНСТРУМЕНТІВ ---
+    toolbar.addAction(main_window.undo_typing_action) 
+    toolbar.addAction(main_window.redo_typing_action) 
+    toolbar.addAction(main_window.undo_paste_action)
+    toolbar.addSeparator()
+    toolbar.addAction(main_window.rescan_all_tags_action) # Додаємо на панель інструментів
 
     log_debug("setup_main_window_ui: UI setup complete.")
