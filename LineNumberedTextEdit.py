@@ -1,12 +1,16 @@
 from PyQt5.QtWidgets import QWidget, QPlainTextEdit, QHBoxLayout, QTextEdit, QStyle, QApplication, QMainWindow
 from PyQt5.QtGui import (QPainter, QColor, QFont, QTextBlockFormat, 
                          QTextFormat, QPen, QMouseEvent, QTextCursor, 
-                         QTextCharFormat)
-from PyQt5.QtCore import Qt, QRect, QSize, QRectF, pyqtSignal, QTimer 
+                         QTextCharFormat, QPaintEvent)
+from PyQt5.QtCore import Qt, QRect, QSize, QRectF, pyqtSignal, QTimer, QPoint 
 from utils import log_debug 
 from syntax_highlighter import JsonTagHighlighter 
 import re 
 from typing import Optional, Tuple 
+
+# Константи для тегу гравця (будуть отримані з MainWindow)
+EDITOR_PLAYER_TAG_DEFAULT = "[ІМ'Я ГРАВЦЯ]"
+ORIGINAL_PLAYER_TAG_DEFAULT = "{Player}"
 
 class LineNumberArea(QWidget):
     def __init__(self, editor):
@@ -24,6 +28,7 @@ class LineNumberArea(QWidget):
 
 class LineNumberedTextEdit(QPlainTextEdit):
     lineClicked = pyqtSignal(int) 
+    addTagMappingRequest = pyqtSignal(str, str) 
 
     def __init__(self, parent=None): 
         super().__init__(parent)
@@ -44,18 +49,14 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.highlighter = JsonTagHighlighter(self.document())
         
         self.ensurePolished() 
-        self.current_line_color = QColor("#E8F2FE") # Для edited_text_edit (FullWidth)
-        
-        # Для original_text_edit (фон блоку) - МАЄ БУТИ FullWidth
+        self.current_line_color = QColor("#E8F2FE") 
         self.linked_cursor_block_color = QColor("#F0F8FF") 
-        self.linked_cursor_pos_color = QColor(Qt.blue).lighter(160) # Маленьке виділення позиції
+        self.linked_cursor_pos_color = QColor(Qt.blue).lighter(160) 
         
-        self.critical_problem_line_color = QColor(Qt.yellow).lighter(130) # НЕ FullWidth (тільки під текстом)
-        self.warning_problem_line_color = QColor("#DDDDDD") # НЕ FullWidth (тільки під текстом)
+        self.critical_problem_line_color = QColor(Qt.yellow).lighter(130) 
+        self.warning_problem_line_color = QColor("#DDDDDD") 
 
-        # Для preview_text_edit (вибраний рядок) - МАЄ БУТИ FullWidth
         self.preview_selected_line_color = QColor("#E6F7FF") 
-        
         self.tag_interaction_highlight_color = QColor(Qt.green).lighter(150)
 
         self._active_line_selections = [] 
@@ -65,24 +66,32 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self._preview_selected_line_selections = []
         self._tag_interaction_selections = []
         
+        self.character_limit_line_position = 35 
+        self.character_limit_line_color = QColor(0, 0, 0, 70) 
+        self.character_limit_line_width = 1
+        
+        # Отримуємо константи тегу гравця з батьківського вікна, якщо можливо
+        self.editor_player_tag = EDITOR_PLAYER_TAG_DEFAULT
+        self.original_player_tag = ORIGINAL_PLAYER_TAG_DEFAULT
+        if parent and isinstance(parent, QMainWindow):
+            self.editor_player_tag = getattr(parent, 'EDITOR_PLAYER_TAG', EDITOR_PLAYER_TAG_DEFAULT)
+            self.original_player_tag = getattr(parent, 'ORIGINAL_PLAYER_TAG', ORIGINAL_PLAYER_TAG_DEFAULT)
+
 
     def _create_block_background_selection(self, block: QTextBlockFormat, color: QColor, use_full_width: bool = False) -> Optional[QTextEdit.ExtraSelection]:
-        if not block.isValid():
-            return None
+        if not block.isValid(): return None
         selection = QTextEdit.ExtraSelection()
         selection.format.setBackground(color)
-        
         cursor = QTextCursor(block)
-        if use_full_width: # Для current_line, linked_cursor_block, preview_selected_line
+        if use_full_width: 
             selection.format.setProperty(QTextFormat.FullWidthSelection, True)
             selection.cursor = cursor 
-            selection.cursor.clearSelection() # Важливо для FullWidthSelection, щоб не було виділення тексту
-        else: # Для critical_problem, warning_problem
+            selection.cursor.clearSelection() 
+        else: 
             cursor.select(QTextCursor.BlockUnderCursor) 
             selection.cursor = cursor
         return selection
 
-    # ... (get_tag_at_cursor, _momentary_highlight_tag, clearTagInteractionHighlight, mouseReleaseEvent без змін) ...
     def get_tag_at_cursor(self, cursor: QTextCursor, pattern: str) -> Tuple[Optional[str], int, int]:
         block = cursor.block()
         if not block.isValid(): return None, -1, -1
@@ -114,52 +123,72 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
     def mouseReleaseEvent(self, event: QMouseEvent): 
         super().mouseReleaseEvent(event) 
+
         if event.button() == Qt.LeftButton:
             text_cursor_at_click = self.cursorForPosition(event.pos())
-            actual_main_window = self
-            while hasattr(actual_main_window, 'parent') and actual_main_window.parent() is not None \
-                  and not isinstance(actual_main_window, QMainWindow):
-                actual_main_window = actual_main_window.parent()
+            actual_main_window = self.window() # Більш надійний спосіб отримати MainWindow
             if not isinstance(actual_main_window, QMainWindow): return 
 
             if self.isReadOnly() and hasattr(actual_main_window, 'original_text_edit') and self == actual_main_window.original_text_edit:
-                tag_text, tag_start, tag_end = self.get_tag_at_cursor(text_cursor_at_click, r"\{[^}]*\}")
-                if tag_text:
-                    QApplication.clipboard().setText(tag_text)
-                    if hasattr(actual_main_window, 'statusBar'): actual_main_window.statusBar.showMessage(f"Copied: {tag_text}", 2000)
-                    self._momentary_highlight_tag(text_cursor_at_click.block(), tag_start, len(tag_text))
+                tag_text_curly, tag_start, tag_end = self.get_tag_at_cursor(text_cursor_at_click, r"\{[^}]*\}")
+                if tag_text_curly:
+                    text_to_copy = tag_text_curly
+                    if tag_text_curly == self.original_player_tag: # Використовуємо атрибут класу
+                        text_to_copy = self.editor_player_tag
+                        log_debug(f"LNET ({self.widget_id} - original_text_edit): Copied '{self.original_player_tag}' as '{self.editor_player_tag}'")
+                    else:
+                        log_debug(f"LNET ({self.widget_id} - original_text_edit): Copied tag: {tag_text_curly}")
+                    
+                    QApplication.clipboard().setText(text_to_copy)
+                    if hasattr(actual_main_window, 'statusBar'): 
+                        actual_main_window.statusBar.showMessage(f"Copied to clipboard: {text_to_copy}", 2000)
+                    self._momentary_highlight_tag(text_cursor_at_click.block(), tag_start, len(tag_text_curly))
                     event.accept(); return
             elif not self.isReadOnly() and hasattr(actual_main_window, 'edited_text_edit') and self == actual_main_window.edited_text_edit:
-                clicked_tag_text, tag_start_in_block_text, _ = self.get_tag_at_cursor(text_cursor_at_click, r"\[[^\]]*\]")
-                if clicked_tag_text:
-                    clipboard_text = QApplication.clipboard().text()
+                clicked_bracket_tag, tag_start_in_block, _ = self.get_tag_at_cursor(text_cursor_at_click, r"\[[^\]]*\]")
+                clipboard_text = QApplication.clipboard().text()
+
+                if event.modifiers() & Qt.ControlModifier and clicked_bracket_tag:
                     if re.fullmatch(r"\{[^}]*\}", clipboard_text):
+                        self.addTagMappingRequest.emit(clicked_bracket_tag, clipboard_text)
+                        if hasattr(actual_main_window, 'statusBar'):
+                            actual_main_window.statusBar.showMessage(f"Requested to map: {clicked_bracket_tag} -> {clipboard_text}", 3000)
+                        self._momentary_highlight_tag(text_cursor_at_click.block(), tag_start_in_block, len(clicked_bracket_tag))
+                        event.accept(); return 
+                    else:
+                        if hasattr(actual_main_window, 'statusBar'):
+                            actual_main_window.statusBar.showMessage(f"Ctrl+Click: Clipboard does not contain a valid {{...}} tag to map with '{clicked_bracket_tag}'.", 3000)
+                        event.accept(); return
+                elif clicked_bracket_tag: 
+                    is_curly_tag_in_clipboard = re.fullmatch(r"\{[^}]*\}", clipboard_text)
+                    # Дозволяємо вставляти і наш спеціальний редакторський тег гравця
+                    is_editor_player_tag_in_clipboard = (clipboard_text == self.editor_player_tag)
+
+                    if is_curly_tag_in_clipboard or is_editor_player_tag_in_clipboard:
                         current_block = text_cursor_at_click.block(); modify_cursor = QTextCursor(current_block)
-                        modify_cursor.setPosition(current_block.position() + tag_start_in_block_text)
-                        modify_cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, len(clicked_tag_text))
-                        new_cursor_pos_in_block = tag_start_in_block_text + len(clipboard_text)
+                        modify_cursor.setPosition(current_block.position() + tag_start_in_block)
+                        modify_cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, len(clicked_bracket_tag))
+                        new_cursor_pos_in_block = tag_start_in_block + len(clipboard_text)
                         modify_cursor.beginEditBlock(); modify_cursor.insertText(clipboard_text); modify_cursor.endEditBlock()
                         final_cursor = QTextCursor(current_block); final_cursor.setPosition(current_block.position() + new_cursor_pos_in_block); self.setTextCursor(final_cursor)
-                        if hasattr(actual_main_window, 'statusBar'): actual_main_window.statusBar.showMessage(f"Replaced '{clicked_tag_text}' with '{clipboard_text}'", 2000)
-                        self._momentary_highlight_tag(current_block, tag_start_in_block_text, len(clipboard_text))
+                        if hasattr(actual_main_window, 'statusBar'): actual_main_window.statusBar.showMessage(f"Replaced '{clicked_bracket_tag}' with '{clipboard_text}'", 2000)
+                        self._momentary_highlight_tag(current_block, tag_start_in_block, len(clipboard_text))
                     else:
-                        if hasattr(actual_main_window, 'statusBar'): actual_main_window.statusBar.showMessage(f"Clipboard does not contain a valid {{...}} tag.", 2000)
+                        if hasattr(actual_main_window, 'statusBar'): actual_main_window.statusBar.showMessage(f"Clipboard does not contain a valid tag for replacement.", 2000)
                     event.accept(); return
 
+    # ... (решта коду без змін) ...
     def _apply_all_extra_selections(self):
         all_selections = []
-        if self._active_line_selections: all_selections.extend(list(self._active_line_selections)) # FullWidth
-        if self._linked_cursor_selections: # Може містити FullWidth (фон блоку) та Not FullWidth (позиція курсора)
+        if self._active_line_selections: all_selections.extend(list(self._active_line_selections))
+        if self._linked_cursor_selections: 
             all_selections.extend([s for s in self._linked_cursor_selections if s.format.property(QTextFormat.FullWidthSelection)])
-        if self._preview_selected_line_selections: all_selections.extend(list(self._preview_selected_line_selections)) # FullWidth
-        
-        if self._critical_problem_selections: all_selections.extend(list(self._critical_problem_selections)) # Not FullWidth
-        if self._warning_problem_selections: all_selections.extend(list(self._warning_problem_selections)) # Not FullWidth
-        
-        if self._linked_cursor_selections: # Позиція курсора (Not FullWidth)
+        if self._preview_selected_line_selections: all_selections.extend(list(self._preview_selected_line_selections))
+        if self._critical_problem_selections: all_selections.extend(list(self._critical_problem_selections))
+        if self._warning_problem_selections: all_selections.extend(list(self._warning_problem_selections))
+        if self._linked_cursor_selections: 
             all_selections.extend([s for s in self._linked_cursor_selections if not s.format.property(QTextFormat.FullWidthSelection)])
-            
-        if self._tag_interaction_selections: all_selections.extend(list(self._tag_interaction_selections)) # Not FullWidth
+        if self._tag_interaction_selections: all_selections.extend(list(self._tag_interaction_selections))
         super().setExtraSelections(all_selections)
 
     def highlightCurrentLine(self): 
@@ -167,7 +196,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
         if not self.isReadOnly():
             selection = QTextEdit.ExtraSelection()
             selection.format.setBackground(self.current_line_color) 
-            selection.format.setProperty(QTextFormat.FullWidthSelection, True)
+            selection.format.setProperty(QTextFormat.FullWidthSelection, True) 
             selection.cursor = self.textCursor()
             selection.cursor.clearSelection()
             new_selections.append(selection)
@@ -181,10 +210,8 @@ class LineNumberedTextEdit(QPlainTextEdit):
         if line_number >= 0 and line_number < doc.blockCount():
             block = doc.findBlockByNumber(line_number)
             if block.isValid():
-                # Підсвічування блоку - FullWidth
                 line_sel = self._create_block_background_selection(block, self.linked_cursor_block_color, use_full_width=True) 
                 if line_sel: new_linked_selections.append(line_sel)
-
                 line_text_length = len(block.text()); actual_column = min(column_number, line_text_length)
                 pos_sel_obj = QTextEdit.ExtraSelection()
                 cursor_for_pos = QTextCursor(block)
@@ -203,7 +230,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
                     if not temp_cursor_highlight.hasSelection() and actual_column == line_text_length:
                          pos_sel_obj.cursor.setPosition(cursor_for_pos.position()) 
                     new_linked_selections.append(pos_sel_obj)
-        
         if self._linked_cursor_selections != new_linked_selections:
             self._linked_cursor_selections = new_linked_selections
             self._apply_all_extra_selections()
@@ -213,15 +239,12 @@ class LineNumberedTextEdit(QPlainTextEdit):
         doc = self.document()
         if line_number >= 0 and line_number < doc.blockCount():
             block = doc.findBlockByNumber(line_number)
-            # Підсвічування вибраного рядка - FullWidth
             selection = self._create_block_background_selection(block, self.preview_selected_line_color, use_full_width=True)
             if selection: new_selections.append(selection)
-        
         if self._preview_selected_line_selections != new_selections:
             self._preview_selected_line_selections = new_selections
             self._apply_all_extra_selections()
 
-    # ... (решта методів без змін) ...
     def clearPreviewSelectedLineHighlight(self):
         if self._preview_selected_line_selections:
             self._preview_selected_line_selections = []
@@ -294,25 +317,46 @@ class LineNumberedTextEdit(QPlainTextEdit):
         else: 
             self._active_line_selections = []
             self._apply_all_extra_selections() 
-        self.lineNumberArea.update()
+        self.viewport().update() 
 
     def lineNumberAreaWidth(self):
         digits = 1; max_val = max(1, self.blockCount())
         while max_val >= 10: max_val //= 10; digits += 1
         return self.fontMetrics().horizontalAdvance('9') * (digits + 1) + 6 
 
-    def updateLineNumberAreaWidth(self, _): self.setViewportMargins(self.lineNumberAreaWidth(), 0, 0, 0)
+    def updateLineNumberAreaWidth(self, _): 
+        self.setViewportMargins(self.lineNumberAreaWidth(), 0, 0, 0)
+        self.viewport().update() 
+
     def updateLineNumberArea(self, rect: QRectF, dy: int):
         if dy: self.lineNumberArea.scroll(0, dy)
         else: self.lineNumberArea.update(0, 0, self.lineNumberArea.width(), self.lineNumberArea.height())
         if rect.contains(self.viewport().rect()): self.updateLineNumberAreaWidth(0)    
-    def resizeEvent(self, event):
-        super().resizeEvent(event); cr = self.contentsRect()
+    
+    def resizeEvent(self, event): 
+        super().resizeEvent(event)
+        cr = self.contentsRect()
         self.lineNumberArea.setGeometry(QRect(cr.left(), cr.top(), self.lineNumberAreaWidth(), cr.height()))
+        self.viewport().update()
+
+    def paintEvent(self, event: QPaintEvent): 
+        super().paintEvent(event) 
+        if not self.isReadOnly():
+            painter = QPainter(self.viewport())
+            char_width = self.fontMetrics().horizontalAdvance('0') 
+            text_margin = self.document().documentMargin() 
+            x_pos = int(text_margin + (self.character_limit_line_position * char_width))
+            x_pos -= self.horizontalScrollBar().value()
+            pen = QPen(self.character_limit_line_color, self.character_limit_line_width)
+            pen.setStyle(Qt.SolidLine) 
+            painter.setPen(pen)
+            painter.drawLine(x_pos, 0, x_pos, self.viewport().height())
+
     def mousePressEvent(self, event: QMouseEvent): 
         super().mousePressEvent(event) 
         if event.button() == Qt.LeftButton:
             self.lineClicked.emit(self.cursorForPosition(event.pos()).blockNumber())
+
     def lineNumberAreaPaintEvent(self, event):
         painter = QPainter(self.lineNumberArea)
         base_bg_color = self.palette().base().color()

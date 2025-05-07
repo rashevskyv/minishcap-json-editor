@@ -12,13 +12,15 @@ class JsonTagHighlighter(QSyntaxHighlighter):
         self.highlightingRules = []
         self.space_dot_format = QTextCharFormat() 
         
-        # Значення за замовчуванням, які будуть перезаписані reconfigure_styles
-        self.bracket_tag_color_hex = "#FFA500" # Помаранчевий
+        # Оновлюємо колір і стиль для bracket_tag_format за замовчуванням
+        self.bracket_tag_color_hex = "#FF8C00" # DarkOrange - трохи яскравіший помаранчевий
         self.bracket_tag_format = QTextCharFormat()
         try:
             self.bracket_tag_format.setForeground(QColor(self.bracket_tag_color_hex))
+            self.bracket_tag_format.setFontWeight(QFont.Bold) # Додаємо жирний шрифт
         except: # noqa
-            self.bracket_tag_format.setForeground(QColor(255,165,0))
+            self.bracket_tag_format.setForeground(QColor(255,140,0)) # Fallback
+            self.bracket_tag_format.setFontWeight(QFont.Bold)
 
 
         self.reconfigure_styles() 
@@ -47,45 +49,41 @@ class JsonTagHighlighter(QSyntaxHighlighter):
     def reconfigure_styles(self, newline_symbol="↵", 
                            newline_css_str="color: #A020F0; font-weight: bold;", 
                            tag_css_str="color: #808080; font-style: italic;", 
-                           show_multiple_spaces_as_dots=True, # Не використовується тут, але приймається
+                           show_multiple_spaces_as_dots=True,
                            space_dot_color_hex="#BBBBBB",
-                           bracket_tag_color_hex="#FFA500"):
+                           bracket_tag_color_hex="#FF8C00"): # Змінено значення за замовчуванням
         log_debug(f"JsonTagHighlighter reconfiguring styles: ..., curly_tag_css='{tag_css_str}', bracket_tag_color='{bracket_tag_color_hex}'")
         self.highlightingRules = []
         
-        # Rule 1: Теги {...} (колір з tag_css_str)
         curly_tag_format = QTextCharFormat()
         self._apply_css_to_format(curly_tag_format, tag_css_str) 
         self.highlightingRules.append((QRegExp(r"\{[^}]*\}"), curly_tag_format))
 
-        # Rule 2: Displayed newline symbol (↵)
         newlineFormat = QTextCharFormat()
         self._apply_css_to_format(newlineFormat, newline_css_str)
         if newline_symbol: 
             self.highlightingRules.append((QRegExp(re.escape(newline_symbol)), newlineFormat))
         
-        # Rule 3: Literal "\\n"
         literalNewlineFormat = QTextCharFormat()
         literalNewlineFormat.setForeground(QColor("red")); literalNewlineFormat.setFontWeight(QFont.Bold)
         self.highlightingRules.append((QRegExp(r"\\n"), literalNewlineFormat))
 
-        # Rule 4: Стилізація символу SPACE_DOT_SYMBOL (·)
         self.space_dot_format = QTextCharFormat()
-        try:
-            self.space_dot_format.setForeground(QColor(space_dot_color_hex))
+        try: self.space_dot_format.setForeground(QColor(space_dot_color_hex))
         except Exception: self.space_dot_format.setForeground(QColor(Qt.lightGray))
         if SPACE_DOT_SYMBOL: 
              self.highlightingRules.append((QRegExp(re.escape(SPACE_DOT_SYMBOL)), self.space_dot_format))
 
-        # Rule 5: Теги [...] (колір з bracket_tag_color_hex)
         self.bracket_tag_color_hex = bracket_tag_color_hex 
-        self.bracket_tag_format = QTextCharFormat()
+        self.bracket_tag_format = QTextCharFormat() # Перестворюємо, щоб застосувати нові стилі
         try:
             self.bracket_tag_format.setForeground(QColor(self.bracket_tag_color_hex))
-            log_debug(f"Set BRACKET_TAG [...] foreground color to: {self.bracket_tag_color_hex}")
+            self.bracket_tag_format.setFontWeight(QFont.Bold) # Додаємо жирний шрифт
+            log_debug(f"Set BRACKET_TAG [...] style: color={self.bracket_tag_color_hex}, bold=True")
         except Exception as e:
-            log_debug(f"Error setting BRACKET_TAG color from hex '{self.bracket_tag_color_hex}': {e}. Using default orange.")
-            self.bracket_tag_format.setForeground(QColor(255, 165, 0)) 
+            log_debug(f"Error setting BRACKET_TAG style from hex '{self.bracket_tag_color_hex}': {e}. Using default.")
+            self.bracket_tag_format.setForeground(QColor(255, 140, 0)) # DarkOrange fallback
+            self.bracket_tag_format.setFontWeight(QFont.Bold)
         pattern_bracket_tag = r"\[[^\]]*\]" 
         self.highlightingRules.append((QRegExp(pattern_bracket_tag), self.bracket_tag_format))
 

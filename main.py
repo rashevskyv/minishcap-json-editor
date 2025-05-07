@@ -4,7 +4,7 @@ import json
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QPlainTextEdit
 from PyQt5.QtCore import Qt
 
-from LineNumberedTextEdit import LineNumberedTextEdit
+from LineNumberedTextEdit import LineNumberedTextEdit 
 from CustomListWidget import CustomListWidget
 from ui_setup import setup_main_window_ui
 from data_state_processor import DataStateProcessor
@@ -17,10 +17,19 @@ from handlers.app_action_handler import AppActionHandler
 
 from utils import log_debug
 
+# Константи для тегу гравця
+EDITOR_PLAYER_TAG = "[ІМ'Я ГРАВЦЯ]"
+ORIGINAL_PLAYER_TAG = "{Player}"
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         log_debug("++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++")
+        
+        # Встановлюємо атрибути класу ДО того, як вони можуть бути використані в __init__ віджетів
+        self.EDITOR_PLAYER_TAG = EDITOR_PLAYER_TAG 
+        self.ORIGINAL_PLAYER_TAG = ORIGINAL_PLAYER_TAG
+
         self.is_programmatically_changing_text = False
         self.json_path = None; self.edited_json_path = None
         self.data = []; self.edited_data = {}; self.edited_file_data = []
@@ -34,24 +43,23 @@ class MainWindow(QMainWindow):
         self.space_dot_color_hex = "#BBBBBB"
         self.preview_wrap_lines = True
         self.editors_wrap_lines = False
-        self.bracket_tag_color_hex = "#FFA500"
+        self.bracket_tag_color_hex = "#FF8C00" 
 
         self.default_tag_mappings = {
-            "[red]": "{Color:Red}", "[blue]": "{Color:Blue}",
-            "[green]": "{Color:Green}", "[/c]": "{Color:White}",
-            "[unk10]": "{Symbol:10}"
+            "[red]": "{Color:Red}",
+            "[blue]": "{Color:Blue}",
+            "[green]": "{Color:Green}",
+            "[/c]": "{Color:White}",
+            "[unk10]": "{Symbol:10}",
+            # Додаємо мапінг для тегу гравця
+            self.EDITOR_PLAYER_TAG: self.ORIGINAL_PLAYER_TAG 
         }
-        # Старий problem_lines_per_block більше не потрібен для основної логіки.
-        # AppActionHandler тепер ініціалізує critical_ та warning_ словники.
-        # self.problem_lines_per_block = {} # Можна видалити або залишити, якщо використовується десь ще (малоймовірно)
-        self.critical_problem_lines_per_block = {} # Будуть ініціалізовані AppActionHandler
-        self.warning_problem_lines_per_block = {}  # Будуть ініціалізовані AppActionHandler
-
+        self.critical_problem_lines_per_block = {} 
+        self.warning_problem_lines_per_block = {}  
 
         self.can_undo_paste = False
         self.before_paste_edited_data_snapshot = {}
         self.before_paste_block_idx_affected = -1
-        # Зберігаємо снепшоти для обох типів проблем
         self.before_paste_critical_problems_snapshot = {} 
         self.before_paste_warning_problems_snapshot = {}
 
@@ -72,16 +80,16 @@ class MainWindow(QMainWindow):
         log_debug("MainWindow: Initializing Handlers...")
         self.list_selection_handler = ListSelectionHandler(self, self.data_processor, self.ui_updater)
         self.editor_operation_handler = TextOperationHandler(self, self.data_processor, self.ui_updater)
-        self.app_action_handler = AppActionHandler(self, self.data_processor, self.ui_updater) # Ініціалізує critical/warning problem_lines_per_block
+        self.app_action_handler = AppActionHandler(self, self.data_processor, self.ui_updater) 
 
         log_debug("MainWindow: Setting up UI...")
-        setup_main_window_ui(self)
+        setup_main_window_ui(self) # LineNumberedTextEdit тут створюється і може спробувати отримати атрибути
 
         log_debug("MainWindow: Connecting Signals...")
         self.connect_signals()
 
         log_debug("MainWindow: Loading Editor Settings via SettingsManager...")
-        self.settings_manager.load_settings() # Це також завантажить problem_lines_per_block з файлу, якщо є
+        self.settings_manager.load_settings() 
 
         if not self.json_path:
              log_debug("MainWindow: No file auto-loaded, updating initial UI state.")
@@ -91,68 +99,50 @@ class MainWindow(QMainWindow):
 
         log_debug("++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++")
 
+    # ... (решта коду без змін) ...
     def connect_signals(self):
-        # ... (код без змін) ...
         log_debug("--> MainWindow: connect_signals() started")
-        
         if hasattr(self, 'block_list_widget'):
             self.block_list_widget.currentItemChanged.connect(self.list_selection_handler.block_selected)
             self.block_list_widget.itemDoubleClicked.connect(self.list_selection_handler.rename_block)
-        
         if hasattr(self, 'preview_text_edit') and hasattr(self.preview_text_edit, 'lineClicked'):
             self.preview_text_edit.lineClicked.connect(self.list_selection_handler.string_selected_from_preview)
-        
         if hasattr(self, 'edited_text_edit'):
             self.edited_text_edit.textChanged.connect(self.editor_operation_handler.text_edited)
             self.edited_text_edit.cursorPositionChanged.connect(self.ui_updater.update_status_bar)
             self.edited_text_edit.selectionChanged.connect(self.ui_updater.update_status_bar_selection)
-            if hasattr(self, 'undo_typing_action'):
-                 self.edited_text_edit.undoAvailable.connect(self.undo_typing_action.setEnabled)
-            if hasattr(self, 'redo_typing_action'):
-                 self.edited_text_edit.redoAvailable.connect(self.redo_typing_action.setEnabled)
-        
+            if hasattr(self, 'undo_typing_action'): self.edited_text_edit.undoAvailable.connect(self.undo_typing_action.setEnabled)
+            if hasattr(self, 'redo_typing_action'): self.edited_text_edit.redoAvailable.connect(self.redo_typing_action.setEnabled)
+            if hasattr(self.edited_text_edit, 'addTagMappingRequest'):
+                self.edited_text_edit.addTagMappingRequest.connect(self.handle_add_tag_mapping_request)
+                log_debug("Connected edited_text_edit.addTagMappingRequest signal.")
         if hasattr(self, 'paste_block_action'): self.paste_block_action.triggered.connect(self.editor_operation_handler.paste_block_text)
-        
         if hasattr(self, 'open_action'): self.open_action.triggered.connect(self.app_action_handler.open_file_dialog_action)
         if hasattr(self, 'open_changes_action'): self.open_changes_action.triggered.connect(self.app_action_handler.open_changes_file_dialog_action)
         if hasattr(self, 'save_action'): self.save_action.triggered.connect(self.trigger_save_action)
         if hasattr(self, 'reload_action'): self.reload_action.triggered.connect(self.app_action_handler.reload_original_data_action)
         if hasattr(self, 'save_as_action'): self.save_as_action.triggered.connect(self.app_action_handler.save_as_dialog_action)
-        
         if hasattr(self, 'revert_action'): self.revert_action.triggered.connect(self.trigger_revert_action)
-        
-        if hasattr(self, 'undo_paste_action'):
-            self.undo_paste_action.triggered.connect(self.trigger_undo_paste_action)
-        
-        if hasattr(self, 'rescan_all_tags_action'):
-            self.rescan_all_tags_action.triggered.connect(self.app_action_handler.rescan_all_tags)
-
+        if hasattr(self, 'undo_paste_action'): self.undo_paste_action.triggered.connect(self.trigger_undo_paste_action)
+        if hasattr(self, 'rescan_all_tags_action'): self.rescan_all_tags_action.triggered.connect(self.app_action_handler.rescan_all_tags)
         if hasattr(self, 'reload_tag_mappings_action'):
             self.reload_tag_mappings_action.triggered.connect(self.trigger_reload_tag_mappings)
             log_debug("Connected reload_tag_mappings_action.")
-
         log_debug("--> MainWindow: connect_signals() finished")
 
-
     def trigger_save_action(self):
-        # ... (код без змін) ...
         log_debug("<<<<<<<<<< ACTION: Save Triggered (via MainWindow proxy) >>>>>>>>>>")
         self.app_action_handler.save_data_action(ask_confirmation=True)
-
 
     def trigger_revert_action(self):
         log_debug("<<<<<<<<<< ACTION: Revert Changes File Triggered >>>>>>>>>>")
         if self.data_processor.revert_edited_file_to_original():
             log_debug("Revert successful, UI updated by DataStateProcessor.")
-            # Очищаємо обидва словники проблем
             if hasattr(self, 'critical_problem_lines_per_block'): self.critical_problem_lines_per_block.clear()
             if hasattr(self, 'warning_problem_lines_per_block'): self.warning_problem_lines_per_block.clear()
-            
             if hasattr(self.ui_updater, 'clear_all_problem_block_highlights_and_text'):
                 self.ui_updater.clear_all_problem_block_highlights_and_text()
-        else:
-            log_debug("Revert was cancelled or failed.")
-
+        else: log_debug("Revert was cancelled or failed.")
 
     def trigger_undo_paste_action(self):
         log_debug("<<<<<<<<<< ACTION: Undo Paste Block Triggered >>>>>>>>>>")
@@ -160,56 +150,33 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "Undo Paste", "Nothing to undo for the last paste operation.")
             if hasattr(self, 'statusBar'): self.statusBar.showMessage("Nothing to undo for paste.", 2000)
             return
-
         self.edited_data = dict(self.before_paste_edited_data_snapshot)
-        
-        # Відновлюємо обидва типи проблем
-        self.critical_problem_lines_per_block = {
-            k: set(v) for k, v in json.loads(json.dumps(self.before_paste_critical_problems_snapshot)).items()
-        }
-        self.warning_problem_lines_per_block = {
-            k: set(v) for k, v in json.loads(json.dumps(self.before_paste_warning_problems_snapshot)).items()
-        }
-
+        self.critical_problem_lines_per_block = { k: set(v) for k, v in json.loads(json.dumps(self.before_paste_critical_problems_snapshot)).items() }
+        self.warning_problem_lines_per_block = { k: set(v) for k, v in json.loads(json.dumps(self.before_paste_warning_problems_snapshot)).items() }
         self.unsaved_changes = bool(self.edited_data)
         is_different_from_file = False
         if self.edited_file_data:
             if self.edited_data: is_different_from_file = True
-        elif self.edited_data:
-            is_different_from_file = True
+        elif self.edited_data: is_different_from_file = True
         self.unsaved_changes = is_different_from_file
         self.ui_updater.update_title()
-        
         block_to_refresh_ui_for = self.before_paste_block_idx_affected
         self.is_programmatically_changing_text = True
-        
         preview_edit = getattr(self, 'preview_text_edit', None)
-        if preview_edit and hasattr(preview_edit, 'clearAllProblemTypeHighlights'): # Використовуємо новий метод
-            preview_edit.clearAllProblemTypeHighlights()
-        
-        # Оновлюємо лічильник та фон для блоку, що був змінений
-        if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
-            self.ui_updater.update_block_item_text_with_problem_count(block_to_refresh_ui_for)
-
-        # Перемальовуємо поточний блок (це також відновить підсвічування рядків)
+        if preview_edit and hasattr(preview_edit, 'clearAllProblemTypeHighlights'): preview_edit.clearAllProblemTypeHighlights()
+        if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'): self.ui_updater.update_block_item_text_with_problem_count(block_to_refresh_ui_for)
         self.ui_updater.populate_strings_for_block(self.current_block_idx)
-        
-        # Якщо блок, що був змінений, не є поточним, оновлюємо і його лічильник/фон
         if self.current_block_idx != block_to_refresh_ui_for:
-            if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
-                 self.ui_updater.update_block_item_text_with_problem_count(block_to_refresh_ui_for)
-
+            if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'): self.ui_updater.update_block_item_text_with_problem_count(block_to_refresh_ui_for)
         self.is_programmatically_changing_text = False
         self.can_undo_paste = False
         if hasattr(self, 'undo_paste_action'): self.undo_paste_action.setEnabled(False)
         if hasattr(self, 'statusBar'): self.statusBar.showMessage("Last paste operation undone.", 2000)
 
     def trigger_reload_tag_mappings(self):
-        # ... (код без змін) ...
         log_debug("<<<<<<<<<< ACTION: Reload Tag Mappings Triggered >>>>>>>>>>")
         if self.settings_manager.reload_default_tag_mappings():
             QMessageBox.information(self, "Tag Mappings Reloaded", "Default tag mappings have been reloaded from settings.json.")
-            
             if self.current_block_idx != -1:
                 block_name = self.block_names.get(str(self.current_block_idx), f"Block {self.current_block_idx}")
                 if QMessageBox.question(self, "Rescan Tags", 
@@ -221,18 +188,42 @@ class MainWindow(QMainWindow):
                                        "No block is currently selected. Do you want to rescan all tags in all blocks?",
                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.No) == QMessageBox.Yes: 
                     self.app_action_handler.rescan_all_tags()
-        else:
-            QMessageBox.warning(self, "Reload Error", "Could not reload tag mappings. Check settings.json or console logs.")
+        else: QMessageBox.warning(self, "Reload Error", "Could not reload tag mappings. Check settings.json or console logs.")
 
+    def handle_add_tag_mapping_request(self, bracket_tag: str, curly_tag: str):
+        log_debug(f"MainWindow: Received request to map '{bracket_tag}' -> '{curly_tag}'")
+        if not bracket_tag or not curly_tag:
+            log_debug("  Error: Empty bracket_tag or curly_tag.")
+            QMessageBox.warning(self, "Add Tag Mapping Error", "Both tags must be non-empty.")
+            return
+        if not hasattr(self, 'default_tag_mappings'): self.default_tag_mappings = {}
+        if bracket_tag in self.default_tag_mappings and self.default_tag_mappings[bracket_tag] == curly_tag:
+            QMessageBox.information(self, "Add Tag Mapping", f"Mapping '{bracket_tag}' -> '{curly_tag}' already exists.")
+            return
+        reply = QMessageBox.Yes
+        if bracket_tag in self.default_tag_mappings:
+            reply = QMessageBox.question(self, "Confirm Overwrite",
+                                         f"Tag '{bracket_tag}' is already mapped to '{self.default_tag_mappings[bracket_tag]}'.\n"
+                                         f"Overwrite with '{curly_tag}'?",
+                                         QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            self.default_tag_mappings[bracket_tag] = curly_tag
+            log_debug(f"  Added/Updated mapping: {bracket_tag} -> {curly_tag}. Total mappings: {len(self.default_tag_mappings)}")
+            QMessageBox.information(self, "Tag Mapping Added", 
+                                    f"Mapping '{bracket_tag}' -> '{curly_tag}' has been added/updated.\n"
+                                    "This change will be saved to settings.json when the application is closed.")
+            if self.current_block_idx != -1:
+                block_name = self.block_names.get(str(self.current_block_idx), f"Block {self.current_block_idx}")
+                if QMessageBox.question(self, "Rescan Tags", 
+                                       f"Do you want to rescan tags in the current block ('{block_name}') with the new mapping now?",
+                                       QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes) == QMessageBox.Yes:
+                    self.app_action_handler.rescan_tags_for_single_block(self.current_block_idx)
+        else: log_debug("  User cancelled overwrite or no action taken.")
 
-    def load_all_data_for_path(self, original_file_path, manually_set_edited_path=None,
-                                 is_initial_load_from_settings=False):
-        # ... (код без змін) ...
+    def load_all_data_for_path(self, original_file_path, manually_set_edited_path=None, is_initial_load_from_settings=False):
         self.app_action_handler.load_all_data_for_path(original_file_path, manually_set_edited_path, is_initial_load_from_settings)
 
-
     def _apply_text_wrap_settings(self):
-        # ... (код без змін) ...
         log_debug(f"Applying text wrap settings: Preview wrap: {self.preview_wrap_lines}, Editors wrap: {self.editors_wrap_lines}")
         preview_wrap_mode = QPlainTextEdit.WidgetWidth if self.preview_wrap_lines else QPlainTextEdit.NoWrap
         editors_wrap_mode = QPlainTextEdit.WidgetWidth if self.editors_wrap_lines else QPlainTextEdit.NoWrap
@@ -240,9 +231,7 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'original_text_edit'): self.original_text_edit.setLineWrapMode(editors_wrap_mode)
         if hasattr(self, 'edited_text_edit'): self.edited_text_edit.setLineWrapMode(editors_wrap_mode)
 
-
     def _reconfigure_all_highlighters(self):
-        # ... (код без змін) ...
         log_debug("MainWindow: Reconfiguring all highlighters...")
         common_args = {
             "newline_symbol": self.newline_display_symbol, "newline_css_str": self.newline_css,
@@ -259,24 +248,20 @@ class MainWindow(QMainWindow):
                 text_edit.highlighter.rehighlight()
         log_debug("MainWindow: Highlighter reconfiguration attempt complete.")
 
-
     def closeEvent(self, event):
-        # ... (код без змін) ...
         log_debug("--> MainWindow: closeEvent received.")
         self.app_action_handler.handle_close_event(event)
         if event.isAccepted():
             log_debug("Close accepted. Saving editor settings via SettingsManager.")
-            self.settings_manager.save_settings() # SettingsManager тепер сам обробляє, які problem_lines зберігати
+            self.settings_manager.save_settings() 
             super().closeEvent(event)
-        else:
-            log_debug("Close ignored by user or handler.")
+        else: log_debug("Close ignored by user or handler.")
         log_debug("<-- MainWindow: closeEvent finished.")
-
 
 if __name__ == '__main__':
     log_debug("================= Application Start =================")
     app = QApplication(sys.argv)
-    window = MainWindow()
+    window = MainWindow() # MainWindow тепер визначає EDITOR_PLAYER_TAG та ORIGINAL_PLAYER_TAG як атрибути екземпляра
     window.show()
     log_debug("Starting Qt event loop...")
     exit_code = app.exec_()
