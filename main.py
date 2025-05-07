@@ -1,6 +1,7 @@
 import sys
 import os
 import json
+import copy # <--- ДОДАНО ІМПОРТ
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QPlainTextEdit
 from PyQt5.QtCore import Qt
 
@@ -17,7 +18,6 @@ from handlers.app_action_handler import AppActionHandler
 
 from utils import log_debug
 
-# Константи для тегу гравця
 EDITOR_PLAYER_TAG = "[ІМ'Я ГРАВЦЯ]"
 ORIGINAL_PLAYER_TAG = "{Player}"
 
@@ -26,7 +26,6 @@ class MainWindow(QMainWindow):
         super().__init__()
         log_debug("++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++")
         
-        # Встановлюємо атрибути класу ДО того, як вони можуть бути використані в __init__ віджетів
         self.EDITOR_PLAYER_TAG = EDITOR_PLAYER_TAG 
         self.ORIGINAL_PLAYER_TAG = ORIGINAL_PLAYER_TAG
 
@@ -51,7 +50,6 @@ class MainWindow(QMainWindow):
             "[green]": "{Color:Green}",
             "[/c]": "{Color:White}",
             "[unk10]": "{Symbol:10}",
-            # Додаємо мапінг для тегу гравця
             self.EDITOR_PLAYER_TAG: self.ORIGINAL_PLAYER_TAG 
         }
         self.critical_problem_lines_per_block = {} 
@@ -83,7 +81,7 @@ class MainWindow(QMainWindow):
         self.app_action_handler = AppActionHandler(self, self.data_processor, self.ui_updater) 
 
         log_debug("MainWindow: Setting up UI...")
-        setup_main_window_ui(self) # LineNumberedTextEdit тут створюється і може спробувати отримати атрибути
+        setup_main_window_ui(self) 
 
         log_debug("MainWindow: Connecting Signals...")
         self.connect_signals()
@@ -99,7 +97,6 @@ class MainWindow(QMainWindow):
 
         log_debug("++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++")
 
-    # ... (решта коду без змін) ...
     def connect_signals(self):
         log_debug("--> MainWindow: connect_signals() started")
         if hasattr(self, 'block_list_widget'):
@@ -150,24 +147,33 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "Undo Paste", "Nothing to undo for the last paste operation.")
             if hasattr(self, 'statusBar'): self.statusBar.showMessage("Nothing to undo for paste.", 2000)
             return
-        self.edited_data = dict(self.before_paste_edited_data_snapshot)
-        self.critical_problem_lines_per_block = { k: set(v) for k, v in json.loads(json.dumps(self.before_paste_critical_problems_snapshot)).items() }
-        self.warning_problem_lines_per_block = { k: set(v) for k, v in json.loads(json.dumps(self.before_paste_warning_problems_snapshot)).items() }
+        
+        self.edited_data = dict(self.before_paste_edited_data_snapshot) # dict.copy() or dict() is a shallow copy
+        
+        self.critical_problem_lines_per_block = copy.deepcopy(self.before_paste_critical_problems_snapshot)
+        self.warning_problem_lines_per_block = copy.deepcopy(self.before_paste_warning_problems_snapshot)
+        
         self.unsaved_changes = bool(self.edited_data)
         is_different_from_file = False
         if self.edited_file_data:
             if self.edited_data: is_different_from_file = True
         elif self.edited_data: is_different_from_file = True
         self.unsaved_changes = is_different_from_file
+        
         self.ui_updater.update_title()
         block_to_refresh_ui_for = self.before_paste_block_idx_affected
+        
         self.is_programmatically_changing_text = True
         preview_edit = getattr(self, 'preview_text_edit', None)
         if preview_edit and hasattr(preview_edit, 'clearAllProblemTypeHighlights'): preview_edit.clearAllProblemTypeHighlights()
+        
         if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'): self.ui_updater.update_block_item_text_with_problem_count(block_to_refresh_ui_for)
-        self.ui_updater.populate_strings_for_block(self.current_block_idx)
+        
+        self.ui_updater.populate_strings_for_block(self.current_block_idx) 
+        
         if self.current_block_idx != block_to_refresh_ui_for:
             if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'): self.ui_updater.update_block_item_text_with_problem_count(block_to_refresh_ui_for)
+            
         self.is_programmatically_changing_text = False
         self.can_undo_paste = False
         if hasattr(self, 'undo_paste_action'): self.undo_paste_action.setEnabled(False)
@@ -261,7 +267,7 @@ class MainWindow(QMainWindow):
 if __name__ == '__main__':
     log_debug("================= Application Start =================")
     app = QApplication(sys.argv)
-    window = MainWindow() # MainWindow тепер визначає EDITOR_PLAYER_TAG та ORIGINAL_PLAYER_TAG як атрибути екземпляра
+    window = MainWindow() 
     window.show()
     log_debug("Starting Qt event loop...")
     exit_code = app.exec_()

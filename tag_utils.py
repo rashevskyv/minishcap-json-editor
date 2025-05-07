@@ -6,7 +6,6 @@ TAG_STATUS_CRITICAL = "CRITICAL_ERROR"
 TAG_STATUS_UNRESOLVED_BRACKETS = "UNRESOLVED_BRACKETS" 
 TAG_STATUS_MISMATCHED_CURLY = "MISMATCHED_CURLY"     
 TAG_STATUS_WARNING = "WARNING" 
-# TAG_STATUS_OK_BUT_HAD_BRACKETS - видалено
 
 ORIGINAL_PLAYER_TAG = "{Player}"
 PLAYER_PSEUDO_TAG_FOR_COUNTING = "{PLAYER_CONSTRUCT_INTERNAL}" 
@@ -17,7 +16,6 @@ PLAYER_REPLACEMENT_CURLY_PATTERN = re.compile(
     r"(\{Color:[^}]+\}|Sound:[^}]+\}|Symbol:[^}]+\}|\{[^}:]+\}|\{\/c\})", 
     re.IGNORECASE
 )
-# IGNORED_BRACKET_TAG_PATTERN ВИДАЛЕНО
 ANY_TAG_PATTERN = re.compile(r'\[[^\]]*\]|\{[^}]*\}')
 
 def apply_default_mappings_only(text_segment: str, default_mappings: dict) -> tuple[str, bool]:
@@ -46,8 +44,6 @@ def analyze_tags_for_issues(processed_text: str, original_text: str, editor_play
         temp_processed_text = new_text 
         temp_original_text = temp_original_text.replace(ORIGINAL_PLAYER_TAG, PLAYER_PSEUDO_TAG_FOR_COUNTING)
     
-    # Шукаємо всі [...] теги, крім самого editor_player_tag (якщо він ще не замінений)
-    # Більше не фільтруємо IGNORED_BRACKET_TAG_PATTERN
     remaining_brackets = [
         tag for tag in ANY_TAG_PATTERN.findall(temp_processed_text) 
         if tag.startswith('[') and tag != editor_player_tag
@@ -72,12 +68,10 @@ def process_segment_tags_aggressively(
     default_mappings: dict,
     editor_player_tag_const: str 
 ) -> tuple[str, str, str]:
-    log_debug(f"Aggressive Processing V13: Input Segment='{segment_to_insert[:80]}', Original='{original_text_for_tags[:80]}'")
+    log_debug(f"Aggressive Processing V14 (default_mappings ignored for step 1): Input Segment='{segment_to_insert[:80]}', Original='{original_text_for_tags[:80]}'")
     
     current_segment_state = str(segment_to_insert)
 
-    # 0. Обробка /00 та /
-    # ... (без змін) ...
     segment_had_slash00 = "/00" in current_segment_state
     original_had_slash00 = "/00" in original_text_for_tags
     if segment_had_slash00 and not original_had_slash00: current_segment_state = current_segment_state.replace("/00", "")
@@ -85,34 +79,29 @@ def process_segment_tags_aggressively(
     text_without_any_tags = re.sub(r'\[[^\]]*\]|\{[^}]*\}', '', current_segment_state)
     if '/' in text_without_any_tags: return current_segment_state, TAG_STATUS_CRITICAL, "Segment contains '/' outside of tags."
 
-    # 1. Застосовуємо default_mappings СПОЧАТКУ.
-    segment_after_defaults, _ = apply_default_mappings_only(current_segment_state, default_mappings)
-    log_debug(f"  Segment after initial default mappings: '{segment_after_defaults[:80]}'")
+    segment_for_analysis = current_segment_state
+    log_debug(f"  Segment prepared for analysis (default_mappings step bypassed): '{segment_for_analysis[:80]}'")
 
-    # 2. Тепер аналізуємо те, що вийшло, за допомогою analyze_tags_for_issues.
-    status, msg = analyze_tags_for_issues(segment_after_defaults, original_text_for_tags, editor_player_tag_const)
+    status, msg = analyze_tags_for_issues(segment_for_analysis, original_text_for_tags, editor_player_tag_const)
 
     if status == TAG_STATUS_OK:
-        log_debug(f"  - SUCCESS (OK after defaults mapping): '{segment_after_defaults[:80]}'")
-        return segment_after_defaults, TAG_STATUS_OK, msg 
+        log_debug(f"  - SUCCESS (OK on initial analysis): '{segment_for_analysis[:80]}'")
+        return segment_for_analysis, TAG_STATUS_OK, msg 
     
     elif status == TAG_STATUS_UNRESOLVED_BRACKETS:
-        # Залишилися [...] теги. Спробуємо заміну по порядку.
         log_debug(f"  - UNRESOLVED BRACKETS: {msg}. Attempting order-based replacement.")
         
-        # Знаходимо всі залишкові [...] теги (включно з [->...])
-        pasted_bracket_tags_remaining = re.findall(r'\[[^\]]*\]', segment_after_defaults) 
+        pasted_bracket_tags_remaining = re.findall(r'\[[^\]]*\]', segment_for_analysis) 
         original_curly_tags_list = re.findall(r'\{[^}]*\}', original_text_for_tags)
 
         if len(pasted_bracket_tags_remaining) == len(original_curly_tags_list):
             log_debug(f"    - Counts match for order-based: {len(pasted_bracket_tags_remaining)}")
             
-            temp_segment = str(segment_after_defaults)
+            temp_segment = str(segment_for_analysis)
             current_curly_idx = 0
             def replace_bracket_by_order_func(match_obj):
                 nonlocal current_curly_idx
                 tag_to_replace = match_obj.group(0)
-                # Замінюємо всі [...], які не є тегом гравця (він мав замінитися раніше)
                 if tag_to_replace != editor_player_tag_const: 
                     if current_curly_idx < len(original_curly_tags_list):
                         replacement_tag = original_curly_tags_list[current_curly_idx]
@@ -126,20 +115,17 @@ def process_segment_tags_aggressively(
             status_after_order, msg_after_order = analyze_tags_for_issues(segment_fully_replaced, original_text_for_tags, editor_player_tag_const)
             if status_after_order == TAG_STATUS_OK:
                 log_debug(f"    - SUCCESS after order-based replacement: '{segment_fully_replaced[:80]}'")
-                # Повертаємо OK, бо всі [...] були успішно замінені
                 return segment_fully_replaced, TAG_STATUS_OK, "" 
-            else: # Залишились проблеми навіть після заміни по порядку
-                log_debug(f"    - CRITICAL: Order-based failed final check: {msg_after_order}. Fallback to after_defaults.")
-                # Повертаємо те, що було після default_mappings, і помилку з analyze_tags_for_issues
-                return segment_after_defaults, status_after_order, msg_after_order
-        else: # Кількість залишкових [...] не збігається з кількістю {...}
+            else: 
+                log_debug(f"    - CRITICAL: Order-based failed final check: {msg_after_order}. Fallback to segment_for_analysis.")
+                return segment_for_analysis, status_after_order, msg_after_order
+        else: 
             log_debug(f"    - CRITICAL: Count mismatch for order-based. Left_Brackets={len(pasted_bracket_tags_remaining)}, Orig_Curly={len(original_curly_tags_list)}.")
-            # Повертаємо текст після default_mappings і статус UNRESOLVED_BRACKETS
-            return segment_after_defaults, TAG_STATUS_UNRESOLVED_BRACKETS, msg 
+            return segment_for_analysis, TAG_STATUS_UNRESOLVED_BRACKETS, msg 
             
     elif status == TAG_STATUS_MISMATCHED_CURLY:
-        log_debug(f"  - WARNING (MISMATCHED_CURLY after defaults): {msg}")
-        return segment_after_defaults, TAG_STATUS_WARNING, msg 
-    else: # Інші можливі статуси
+        log_debug(f"  - WARNING (MISMATCHED_CURLY on initial analysis): {msg}")
+        return segment_for_analysis, TAG_STATUS_WARNING, msg 
+    else: 
         log_debug(f"  - {status} (from analyze_tags_for_issues): {msg}")
-        return segment_after_defaults, status, msg
+        return segment_for_analysis, status, msg
