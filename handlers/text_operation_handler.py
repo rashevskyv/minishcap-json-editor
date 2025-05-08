@@ -1,41 +1,34 @@
 import re
 from PyQt5.QtWidgets import QMessageBox, QApplication
 from PyQt5.QtGui import QTextCursor, QTextBlock 
-# Додаємо QTimer
+# Переконаймося, що QTimer імпортовано правильно
 from PyQt5.QtCore import QTimer 
 from handlers.base_handler import BaseHandler
 from utils import log_debug, convert_dots_to_spaces_from_editor, convert_spaces_to_dots_for_display 
+# Перевіряємо цей імпорт
 from tag_utils import apply_default_mappings_only, analyze_tags_for_issues, \
                       process_segment_tags_aggressively, \
                       TAG_STATUS_OK, TAG_STATUS_CRITICAL, \
                       TAG_STATUS_MISMATCHED_CURLY, TAG_STATUS_UNRESOLVED_BRACKETS, \
                       TAG_STATUS_WARNING
 
-# Константа для затримки оновлення preview (в мілісекундах)
 PREVIEW_UPDATE_DELAY = 250 
 
+# Перевіряємо визначення класу
 class TextOperationHandler(BaseHandler):
     def __init__(self, main_window, data_processor, ui_updater):
         super().__init__(main_window, data_processor, ui_updater)
-        # Створюємо таймер для відкладеного оновлення preview
         self.preview_update_timer = QTimer()
-        self.preview_update_timer.setSingleShot(True) # Таймер спрацює лише раз
+        self.preview_update_timer.setSingleShot(True) 
         self.preview_update_timer.timeout.connect(self._update_preview_content)
 
     def _update_preview_content(self):
-        """Оновлює вміст preview_text_edit."""
         log_debug("Timer timeout: Updating preview content.")
-        # Зберігаємо скролбар перед оновленням
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         old_scrollbar_value = preview_edit.verticalScrollBar().value() if preview_edit else 0
-        
-        # Викликаємо повне оновлення
         self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
-        
-        # Відновлюємо скролбар
         if preview_edit: preview_edit.verticalScrollBar().setValue(old_scrollbar_value)
         log_debug("Preview content update finished.")
-
 
     def text_edited(self):
         if self.mw.is_programmatically_changing_text: return 
@@ -55,7 +48,6 @@ class TextOperationHandler(BaseHandler):
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         problems_updated = False 
 
-        # --- Аналіз тегів та оновлення стану проблем (залишається) ---
         if preview_edit: 
             original_text_for_comparison = self.data_processor._get_string_from_source(block_idx, string_idx_in_block, self.mw.data, "original_for_text_edited_check")
             if original_text_for_comparison is not None:
@@ -88,20 +80,12 @@ class TextOperationHandler(BaseHandler):
                     
                     if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'): 
                         self.ui_updater.update_block_item_text_with_problem_count(block_idx)
-        # -------------------------------------------------------------------
 
-        # --- Запускаємо таймер для відкладеного оновлення preview ---
-        # log_debug("Scheduling preview update...") # Можна додати лог, якщо потрібно
         self.preview_update_timer.start(PREVIEW_UPDATE_DELAY)
-        # -----------------------------------------------------------
-
-        # --- НЕГАЙНО оновлюємо статус-бар і синхронізуємо курсор ---
         self.ui_updater.update_status_bar()
         self.ui_updater.synchronize_original_cursor()
-        # ---------------------------------------------------------
 
     def paste_block_text(self):
-        # ... (без змін) ...
         log_debug(f"--> TextOperationHandler: paste_block_text (AGRESSIVE MODE V13) triggered.")
         if self.mw.current_block_idx == -1: QMessageBox.warning(self.mw, "Paste Error", "Please select a block."); return
         
@@ -204,7 +188,6 @@ class TextOperationHandler(BaseHandler):
         log_debug("<-- TextOperationHandler: paste_block_text (AGRESSIVE MODE V13) finished.")
 
     def revert_single_line(self, line_index: int):
-        # ... (без змін) ...
         block_idx = self.mw.current_block_idx
         if block_idx == -1:
              log_debug("Revert single line: No block selected.")
