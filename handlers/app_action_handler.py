@@ -25,13 +25,7 @@ class AppActionHandler(BaseHandler):
         
         any_changes_applied_globally = False 
         for block_idx in range(len(self.mw.data)):
-            # При початковому скануванні default_mappings НЕ застосовуються агресивно,
-            # бо ми хочемо бачити проблеми "як є" з файлу.
-            # Якщо default_mappings потрібні для аналізу, вони мають бути частиною analyze_tags_for_issues,
-            # або ми маємо чітко вирішити, коли їх застосовувати для зміни даних.
-            # Поточна логіка _perform_tag_scan_for_block: застосовує default_mappings ЯКЩО use_default_mappings=True
-            # Для початкового сканування, можливо, краще їх не застосовувати для зміни даних.
-            _num_crit, _num_warn, block_changes_applied = self._perform_tag_scan_for_block(block_idx, is_single_block_scan=False, use_default_mappings_in_scan=False) # <--- Змінено
+            _num_crit, _num_warn, block_changes_applied = self._perform_tag_scan_for_block(block_idx, is_single_block_scan=False, use_default_mappings_in_scan=False) 
             if block_changes_applied:
                 any_changes_applied_globally = True
         
@@ -78,7 +72,7 @@ class AppActionHandler(BaseHandler):
         else: event.accept()
         log_debug("<-- AppActionHandler: handle_close_event finished.")
 
-    def _perform_tag_scan_for_block(self, block_idx: int, is_single_block_scan: bool = False, use_default_mappings_in_scan: bool = False) -> tuple[int, int, bool]: # <--- Додано параметр
+    def _perform_tag_scan_for_block(self, block_idx: int, is_single_block_scan: bool = False, use_default_mappings_in_scan: bool = False) -> tuple[int, int, bool]: 
         log_debug(f"AppActionHandler: Starting tag scan for block_idx: {block_idx}, use_default_mappings: {use_default_mappings_in_scan}")
         if not (0 <= block_idx < len(self.mw.data)):
             log_debug(f"AppActionHandler: Invalid block_idx {block_idx} for scan.")
@@ -101,9 +95,8 @@ class AppActionHandler(BaseHandler):
                     self.mw.default_tag_mappings 
                 )
                 if was_normalized:
-                    # Тільки якщо default_mappings щось змінили, оновлюємо дані та unsaved_changes
                     if self.data_processor.update_edited_data(block_idx, string_idx, normalized_text):
-                        self.ui_updater.update_title() # Оновлюємо заголовок, якщо статус unsaved_changes змінився
+                        self.ui_updater.update_title() 
                     changes_made_to_edited_data_in_this_block = True
                     text_to_analyze = normalized_text
             
@@ -139,35 +132,37 @@ class AppActionHandler(BaseHandler):
         
         return len(current_block_critical_indices), len(current_block_warning_indices), changes_made_to_edited_data_in_this_block
 
-    def rescan_tags_for_single_block(self, block_idx: int = -1):
+    # Додаємо параметр show_message
+    def rescan_tags_for_single_block(self, block_idx: int = -1, show_message: bool = True): 
         if block_idx == -1: block_idx = self.mw.current_block_idx
         if block_idx < 0:
-            QMessageBox.information(self.mw, "Rescan Tags", "No block selected to rescan.")
+            if show_message: # Показуємо повідомлення тільки якщо show_message=True
+                QMessageBox.information(self.mw, "Rescan Tags", "No block selected to rescan.")
             return
-        log_debug(f"<<<<<<<<<< ACTION: Rescan Tags for Block {block_idx} Triggered (with default_mappings) >>>>>>>>>>") # <--- Оновлено лог
-        self.mw.is_programmatically_changing_text = True
-        # Примусово використовуємо default_mappings для сканування окремого блоку
-        num_critical, num_warnings, changes_applied = self._perform_tag_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=True) # <--- Змінено
-        self.mw.is_programmatically_changing_text = False
-        # changes_applied вже враховує зміни в edited_data та оновлення unsaved_changes всередині _perform_tag_scan_for_block
             
-        block_name_str = self.mw.block_names.get(str(block_idx), f"Block {block_idx}")
-        message_parts = []
-        if num_critical > 0: message_parts.append(f"{num_critical} line(s) with unresolved '[...]' tags (critical, yellow).")
-        if num_warnings > 0: message_parts.append(f"{num_warnings} line(s) with mismatched '{{...}}' tag counts (warning, gray).")
-        
-        if not message_parts: 
-            message = f"No tag issues found in Block '{block_name_str}'."
-            if changes_applied: message += "\nKnown editor tags were standardized using default mappings."
-            QMessageBox.information(self.mw, "Rescan Complete", message)
-        else:
-            title = "Rescan Complete with Issues"
-            summary = f"Block '{block_name_str}':\n" + "\n".join(message_parts)
-            if changes_applied: summary += "\nKnown editor tags were standardized using default mappings where possible."
-            QMessageBox.warning(self.mw, title, summary)
+        log_debug(f"<<<<<<<<<< ACTION: Rescan Tags for Block {block_idx} Triggered (with default_mappings) >>>>>>>>>>") 
+        self.mw.is_programmatically_changing_text = True
+        num_critical, num_warnings, changes_applied = self._perform_tag_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=True) 
+        self.mw.is_programmatically_changing_text = False
+            
+        if show_message: # Показуємо повідомлення тільки якщо show_message=True
+            block_name_str = self.mw.block_names.get(str(block_idx), f"Block {block_idx}")
+            message_parts = []
+            if num_critical > 0: message_parts.append(f"{num_critical} line(s) with unresolved '[...]' tags (critical, yellow).")
+            if num_warnings > 0: message_parts.append(f"{num_warnings} line(s) with mismatched '{{...}}' tag counts (warning, gray).")
+            
+            if not message_parts: 
+                message = f"No tag issues found in Block '{block_name_str}'."
+                if changes_applied: message += "\nKnown editor tags were standardized using default mappings."
+                QMessageBox.information(self.mw, "Rescan Complete", message)
+            else:
+                title = "Rescan Complete with Issues"
+                summary = f"Block '{block_name_str}':\n" + "\n".join(message_parts)
+                if changes_applied: summary += "\nKnown editor tags were standardized using default mappings where possible."
+                QMessageBox.warning(self.mw, title, summary)
 
-    def rescan_all_tags(self): # Цей метод тепер для "Rescan All Tags" з меню
-        log_debug("<<<<<<<<<< ACTION: Rescan All Tags Triggered (NO default_mappings applied to data) >>>>>>>>>>") # <--- Оновлено лог
+    def rescan_all_tags(self): 
+        log_debug("<<<<<<<<<< ACTION: Rescan All Tags Triggered (NO default_mappings applied to data) >>>>>>>>>>") 
         if not self.mw.data:
             QMessageBox.information(self.mw, "Rescan All Tags", "No data loaded to rescan.")
             return
@@ -180,26 +175,9 @@ class AppActionHandler(BaseHandler):
             preview_edit.clearAllProblemTypeHighlights()
         
         if hasattr(self.ui_updater, 'clear_all_problem_block_highlights_and_text'):
-             self.ui_updater.clear_all_problem_block_highlights_and_text()
+             self.ui_updater.clear_all_problem_block_highlights_and_text() 
 
-        # При повному скануванні НЕ використовуємо default_mappings для АКТИВНОЇ зміни даних,
-        # бо це може бути деструктивно, якщо користувач не очікує.
-        # Ми просто аналізуємо поточний стан.
-        self.mw.is_programmatically_changing_text = True
-        any_standardization_would_occur = False
-        for block_idx in range(len(self.mw.data)):
-            # use_default_mappings_in_scan=False, щоб не змінювати дані, лише аналізувати
-             _nc, _nw, block_changes_would_apply = self._perform_tag_scan_for_block(block_idx, is_single_block_scan=False, use_default_mappings_in_scan=False)
-             if block_changes_would_apply: # Це якщо б default_mappings були застосовані і щось змінили
-                any_standardization_would_occur = True # Тут помилка, бо block_changes_applied завжди False якщо use_default_mappings_in_scan=False
-                                                       # Потрібно переробити логіку відстеження "змін, ЯКЩО Б"
-                                                       # Або просто прибрати це повідомлення для "Rescan All"
-        self.mw.is_programmatically_changing_text = False
-        
-        # Оновлюємо UI після сканування
-        self.ui_updater.populate_blocks()
-        if self.mw.current_block_idx != -1:
-            self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
+        self._perform_initial_silent_scan() 
 
         total_critical_lines = sum(len(s) for s in self.mw.critical_problem_lines_per_block.values())
         total_warning_lines = sum(len(s) for s in self.mw.warning_problem_lines_per_block.values())
@@ -294,7 +272,7 @@ class AppActionHandler(BaseHandler):
             self.mw.json_path = None; self.mw.edited_json_path = None
             self.mw.data = []; self.mw.edited_data = {}; self.mw.edited_file_data = []
             self.mw.unsaved_changes = False
-            if not is_initial_load_from_settings : # Очищаємо тільки якщо це не завантаження з налаштувань, де ми хочемо зберегти завантажені проблеми
+            if not is_initial_load_from_settings : 
                 self.mw.critical_problem_lines_per_block.clear()
                 self.mw.warning_problem_lines_per_block.clear()
             self.ui_updater.update_title(); self.ui_updater.update_statusbar_paths()
@@ -336,16 +314,9 @@ class AppActionHandler(BaseHandler):
         
         self.ui_updater.update_title(); self.ui_updater.update_statusbar_paths()
         
-        # Якщо це не початкове завантаження з settings.json, АБО якщо словники проблем порожні після завантаження з settings.json
-        # тоді виконуємо _perform_initial_silent_scan.
-        # SettingsManager тепер сам викликає _perform_initial_silent_scan, якщо проблеми не завантажені.
-        # Тут ми викликаємо його, якщо це НЕ is_initial_load_from_settings
         if not is_initial_load_from_settings and self.mw.data:
-            self._perform_initial_silent_scan() # Цей метод оновить UI списку блоків і preview
+            self._perform_initial_silent_scan() 
         else:
-            # Якщо це is_initial_load_from_settings, то проблеми вже (можливо) завантажені
-            # або SettingsManager вже викликав _perform_initial_silent_scan.
-            # Просто оновлюємо UI.
             self.ui_updater.populate_blocks()
 
         if self.mw.block_list_widget.count() > 0: 

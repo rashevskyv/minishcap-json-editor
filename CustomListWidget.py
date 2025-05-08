@@ -1,6 +1,8 @@
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QMenu
 from PyQt5.QtCore import Qt, QPoint
 from utils import log_debug 
+# Імпортуємо делегат
+from CustomListItemDelegate import CustomListItemDelegate 
 
 class CustomListWidget(QListWidget):
     def __init__(self, parent=None):
@@ -8,6 +10,8 @@ class CustomListWidget(QListWidget):
         log_debug(f"CustomListWidget initialized with parent: {parent}")
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_context_menu)
+        # Встановлюємо кастомний делегат
+        self.setItemDelegate(CustomListItemDelegate(self))
 
     def create_item(self, text, data, role=Qt.UserRole):
         item = QListWidgetItem(text)
@@ -20,29 +24,21 @@ class CustomListWidget(QListWidget):
             return
 
         block_idx = item.data(Qt.UserRole)
-        block_name = item.text().split(" (")[0] # Отримуємо чисту назву блоку
+        # Спробуємо отримати чисту назву блоку надійніше
+        main_window = self.window()
+        block_name = item.text() # Початковий текст
+        if hasattr(main_window, 'block_names'):
+             block_name = main_window.block_names.get(str(block_idx), f"Block {block_idx}") # Беремо назву з даних, якщо є
 
         menu = QMenu(self)
         
         rename_action = menu.addAction(f"Rename '{block_name}'")
-        # Потрібно отримати доступ до MainWindow або його методу
-        main_window = self.window() # Спроба отримати батьківське вікно
         if hasattr(main_window, 'list_selection_handler') and hasattr(main_window.list_selection_handler, 'rename_block'):
-            rename_action.triggered.connect(lambda: main_window.list_selection_handler.rename_block(item))
+            # Передаємо саме item, rename_block сам розбереться з індексом і текстом
+            rename_action.triggered.connect(lambda checked=False, item=item: main_window.list_selection_handler.rename_block(item))
         
-        # Дія для пересканування тегів у цьому блоці
         if hasattr(main_window, 'app_action_handler') and hasattr(main_window.app_action_handler, 'rescan_tags_for_single_block'):
-            rescan_action = menu.addAction(f"Rescan Tags in '{block_name}'")
-            rescan_action.triggered.connect(lambda: main_window.app_action_handler.rescan_tags_for_single_block(block_idx))
+            rescan_action = menu.addAction(f"Rescan Tags in '{block_name}' (use default mappings)")
+            rescan_action.triggered.connect(lambda checked=False, idx=block_idx: main_window.app_action_handler.rescan_tags_for_single_block(idx))
             
-            # Перевіряємо, чи є проблеми в цьому блоці, щоб активувати/деактивувати дію
-            has_problems = False
-            if hasattr(main_window, 'problem_lines_per_block'):
-                has_problems = bool(main_window.problem_lines_per_block.get(str(block_idx)))
-            
-            # Можна деактивувати, якщо немає проблем, або залишити активною завжди
-            # rescan_action.setEnabled(has_problems) # Наприклад
-            
-        # Можна додати інші дії
-        
         menu.exec_(self.mapToGlobal(pos))
