@@ -28,10 +28,9 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.current_line_color = QColor("#E8F2FE") 
         self.linked_cursor_block_color = QColor("#F0F8FF") 
         self.linked_cursor_pos_color = QColor(Qt.blue).lighter(160) 
-        # Змінюємо колір підсвітки вибраного рядка в preview на більш насичений
-        self.preview_selected_line_color = QColor("#CDE8FF") # Був "#E6F7FF"
+        self.preview_selected_line_color = QColor("#CDE8FF") 
         self.critical_problem_line_color = QColor(Qt.yellow).lighter(130) 
-        self.warning_problem_line_color = QColor("#DDDDDD") # Цей колір більше не буде використовуватися для фону preview
+        self.warning_problem_line_color = QColor("#DDDDDD") 
         self.tag_interaction_highlight_color = QColor(Qt.green).lighter(150)
         self.search_match_highlight_color = QColor(255, 165, 0) # Orange
         self.width_exceeded_line_color = QColor(Qt.red).lighter(160) 
@@ -73,7 +72,12 @@ class LineNumberedTextEdit(QPlainTextEdit):
             self.original_player_tag = getattr(parent, 'ORIGINAL_PLAYER_TAG', ORIGINAL_PLAYER_TAG_DEFAULT)
             self.font_map = getattr(parent, 'font_map', {})
             self.GAME_DIALOG_MAX_WIDTH_PIXELS = getattr(parent, 'GAME_DIALOG_MAX_WIDTH_PIXELS', 240)
+            # На цьому етапі parent.LINE_WIDTH_WARNING_THRESHOLD_PIXELS ще може бути значенням за замовчуванням з MainWindow
             self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = getattr(parent, 'LINE_WIDTH_WARNING_THRESHOLD_PIXELS', DEFAULT_LINE_WIDTH_WARNING_THRESHOLD)
+            log_debug(f"LNET {self.objectName()} __init__: LINE_WIDTH_WARNING_THRESHOLD_PIXELS initially set to {self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS} (from parent's current value or default).")
+        else:
+            log_debug(f"LNET {self.objectName()} __init__: Parent is not MainWindow or no parent, LINE_WIDTH_WARNING_THRESHOLD_PIXELS set to default {self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS}.")
+
         
         self.pixel_width_display_area_width = self.fontMetrics().horizontalAdvance("999") + 6 
         self.preview_indicator_area_width = (self.lineNumberArea.preview_indicator_width + self.lineNumberArea.preview_indicator_spacing) * 3 + 2 
@@ -231,42 +235,34 @@ class LineNumberedTextEdit(QPlainTextEdit):
         return self.highlightManager.hasCriticalProblemHighlight(line_number)
 
     def addWarningLineHighlight(self, line_number: int):
-        # Більше не використовуємо для фонової підсвітки preview
         if self.objectName() != "preview_text_edit":
             self.highlightManager.addWarningLineHighlight(line_number)
 
     def removeWarningLineHighlight(self, line_number: int) -> bool:
-        # Більше не використовуємо для фонової підсвітки preview
         if self.objectName() != "preview_text_edit":
             return self.highlightManager.removeWarningLineHighlight(line_number)
         return False
 
     def clearWarningLineHighlights(self):
-         # Більше не використовуємо для фонової підсвітки preview
         if self.objectName() != "preview_text_edit":
             self.highlightManager.clearWarningLineHighlights()
 
     def hasWarningLineHighlight(self, line_number: Optional[int] = None) -> bool:
-        # Більше не використовуємо для фонової підсвітки preview
         if self.objectName() != "preview_text_edit":
             return self.highlightManager.hasWarningLineHighlight(line_number)
         return False
         
     def addWidthExceededHighlight(self, line_number: int):
-        # Фонова підсвітка для width_exceeded більше не потрібна, є маркер
         pass
 
 
     def removeWidthExceededHighlight(self, line_number: int) -> bool:
-        # Фонова підсвітка для width_exceeded більше не потрібна
         return False
 
     def clearWidthExceededHighlights(self):
-        # Фонова підсвітка для width_exceeded більше не потрібна
         pass
 
     def hasWidthExceededHighlight(self, line_number: Optional[int] = None) -> bool:
-        # Фонова підсвітка для width_exceeded більше не потрібна
         return False
 
     def setPreviewSelectedLineHighlight(self, line_number: int): 
@@ -288,7 +284,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
     def removeProblemLineHighlight(self, line_number: int) -> bool: return self.removeCriticalProblemHighlight(line_number)
     def clearProblemLineHighlights(self): self.clearAllProblemTypeHighlights()
     def hasProblemHighlight(self, line_number: Optional[int] = None) -> bool: 
-        # Перевіряємо тільки ті, що використовуються для фонової підсвітки
         return self.highlightManager.hasCriticalProblemHighlight(line_number)
 
 
@@ -404,13 +399,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
                 data_line_index_for_this_q_block = current_q_block_number 
                 if self.objectName() in ["original_text_edit", "edited_text_edit"]:
                     data_line_index_for_this_q_block = active_data_line_idx if active_data_line_idx != -1 else -1
-
-                is_this_qblock_part_of_active_data_line = False
-                if active_data_line_idx != -1: 
-                    if self.objectName() == "preview_text_edit":
-                        is_this_qblock_part_of_active_data_line = (current_q_block_number == active_data_line_idx)
-                    elif self.objectName() in ["original_text_edit", "edited_text_edit"]:
-                        is_this_qblock_part_of_active_data_line = True 
                 
                 display_number_for_line_area = str(current_q_block_number + 1)
                 line_num_rect = QRect(0, top, number_part_width - 3, line_height) 
@@ -434,6 +422,10 @@ class LineNumberedTextEdit(QPlainTextEdit):
                         pixel_width = calculate_string_width(text_for_width_calc, self.font_map)
                         width_str = str(pixel_width)
                         text_color_for_extra_part = QColor(Qt.black)
+                        
+                        # Логування для відстеження порогу
+                        # if self.objectName() == "edited_text_edit":
+                        #     log_debug(f"LNET {self.objectName()} paintEvent: qBlk {current_q_block_number}, width {pixel_width}, threshold {self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS}")
 
                         if pixel_width > self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
                             bg_for_extra_part = width_exceeded_bg_color_const

@@ -4,7 +4,7 @@ import json
 import copy
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QPlainTextEdit, QVBoxLayout
 from PyQt5.QtCore import Qt, QEvent
-from PyQt5.QtGui import QKeyEvent, QTextCursor # Додано QTextCursor
+from PyQt5.QtGui import QKeyEvent, QTextCursor 
 
 from LineNumberArea import LineNumberArea
 from CustomListWidget import CustomListWidget
@@ -46,7 +46,6 @@ class MainWindow(QMainWindow):
         self.unsaved_changes = False
         self.unsaved_block_indices = set()
 
-        # Атрибути для збереження стану UI
         self.last_selected_block_index = -1
         self.last_selected_string_index = -1
         self.last_cursor_position_in_edited = 0
@@ -55,7 +54,7 @@ class MainWindow(QMainWindow):
         self.last_preview_text_edit_scroll_value_v = 0
         self.last_original_text_edit_scroll_value_v = 0
         self.last_original_text_edit_scroll_value_h = 0
-        self.initial_load_path = None # Для шляху з settings.json
+        self.initial_load_path = None 
         self.initial_edited_load_path = None
 
 
@@ -130,11 +129,14 @@ class MainWindow(QMainWindow):
         self.connect_signals()
 
         log_debug("MainWindow: Loading Editor Settings via SettingsManager...")
-        self.settings_manager.load_settings() # Це встановить атрибути, такі як self.last_selected_block_index
+        self.settings_manager.load_settings() 
         
+        log_debug(f"MainWindow: After load_settings, self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = {self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS}")
+
         for editor_widget in [self.preview_text_edit, self.original_text_edit, self.edited_text_edit]:
             if editor_widget:
                 editor_widget.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
+                log_debug(f"MainWindow: Set {editor_widget.objectName()}.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to {editor_widget.LINE_WIDTH_WARNING_THRESHOLD_PIXELS}")
                 editor_widget.font_map = self.font_map 
                 editor_widget.GAME_DIALOG_MAX_WIDTH_PIXELS = self.GAME_DIALOG_MAX_WIDTH_PIXELS
                 if hasattr(editor_widget, 'updateLineNumberAreaWidth'):
@@ -142,34 +144,42 @@ class MainWindow(QMainWindow):
 
         if self.initial_load_path:
             log_debug(f"MainWindow: Attempting to load initial file from settings: {self.initial_load_path}")
+            # is_initial_load_from_settings=True, оскільки ці шляхи прийшли з settings
             self.app_action_handler.load_all_data_for_path(self.initial_load_path, self.initial_edited_load_path, is_initial_load_from_settings=True)
-            # Відновлення стану після завантаження даних
+            
             if self.data and 0 <= self.last_selected_block_index < len(self.data):
                 self.block_list_widget.setCurrentRow(self.last_selected_block_index)
-                # block_selected викличе populate_strings_for_block
-                # Потрібно переконатися, що string_selected викликається після populate_strings_for_block
-                QApplication.processEvents() # Даємо подіям обробитися
-                if 0 <= self.last_selected_string_index < len(self.data[self.last_selected_block_index]):
-                    self.list_selection_handler.string_selected_from_preview(self.last_selected_string_index)
-                    QApplication.processEvents() 
-                    if self.edited_text_edit:
-                        doc_len = self.edited_text_edit.document().characterCount() -1 
-                        pos_to_set = min(self.last_cursor_position_in_edited, doc_len if doc_len > 0 else 0)
-                        cursor = self.edited_text_edit.textCursor()
-                        cursor.setPosition(pos_to_set)
-                        self.edited_text_edit.setTextCursor(cursor)
-                        self.edited_text_edit.ensureCursorVisible()
-                        # Відновлення скролу
-                        self.edited_text_edit.verticalScrollBar().setValue(self.last_edited_text_edit_scroll_value_v)
-                        self.edited_text_edit.horizontalScrollBar().setValue(self.last_edited_text_edit_scroll_value_h)
-                        if self.preview_text_edit:
-                            self.preview_text_edit.verticalScrollBar().setValue(self.last_preview_text_edit_scroll_value_v)
-                        if self.original_text_edit:
-                            self.original_text_edit.verticalScrollBar().setValue(self.last_original_text_edit_scroll_value_v)
-                            self.original_text_edit.horizontalScrollBar().setValue(self.last_original_text_edit_scroll_value_h)
+                QApplication.processEvents() 
+                if self.block_list_widget.currentItem() and \
+                   0 <= self.last_selected_string_index < len(self.data[self.last_selected_block_index]):
+                    # Переконуємося, що блок дійсно вибраний і string_selected_from_preview не викличе помилку
+                    if self.current_block_idx == self.last_selected_block_index : # Додаткова перевірка
+                        self.list_selection_handler.string_selected_from_preview(self.last_selected_string_index)
+                        QApplication.processEvents() 
+                        if self.edited_text_edit:
+                            doc_len = self.edited_text_edit.document().characterCount() -1 
+                            pos_to_set = min(self.last_cursor_position_in_edited, doc_len if doc_len >= 0 else 0) # Змінено doc_len > 0 на doc_len >= 0
+                            cursor = self.edited_text_edit.textCursor()
+                            cursor.setPosition(pos_to_set)
+                            self.edited_text_edit.setTextCursor(cursor)
+                            self.edited_text_edit.ensureCursorVisible()
+                            
+                            self.edited_text_edit.verticalScrollBar().setValue(self.last_edited_text_edit_scroll_value_v)
+                            self.edited_text_edit.horizontalScrollBar().setValue(self.last_edited_text_edit_scroll_value_h)
+                            if self.preview_text_edit:
+                                self.preview_text_edit.verticalScrollBar().setValue(self.last_preview_text_edit_scroll_value_v)
+                            if self.original_text_edit:
+                                self.original_text_edit.verticalScrollBar().setValue(self.last_original_text_edit_scroll_value_v)
+                                self.original_text_edit.horizontalScrollBar().setValue(self.last_original_text_edit_scroll_value_h)
+                        log_debug(f"MainWindow: Restored selection to block {self.last_selected_block_index}, string {self.last_selected_string_index}, cursor {self.last_cursor_position_in_edited}")
+                    else:
+                        log_debug(f"MainWindow: current_block_idx ({self.current_block_idx}) != last_selected_block_index ({self.last_selected_block_index}). Skipping string/cursor restore for safety.")
+                else:
+                    log_debug(f"MainWindow: last_selected_string_index ({self.last_selected_string_index}) is out of bounds for block {self.last_selected_block_index}. Skipping string/cursor restore.")
+            else:
+                log_debug(f"MainWindow: last_selected_block_index ({self.last_selected_block_index}) is out of bounds or no data. Skipping selection restore.")
 
-            log_debug(f"MainWindow: Restored selection to block {self.last_selected_block_index}, string {self.last_selected_string_index}, cursor {self.last_cursor_position_in_edited}")
-        elif not self.json_path: # Якщо нічого не завантажено з settings і шляху немає
+        elif not self.json_path: 
              log_debug("MainWindow: No file auto-loaded, updating initial UI state.")
              self.ui_updater.update_title(); self.ui_updater.update_statusbar_paths()
              self.ui_updater.populate_blocks()
@@ -401,7 +411,7 @@ class MainWindow(QMainWindow):
                  if QMessageBox.question(self, "Rescan Tags",
                                        "No block is currently selected. Do you want to rescan all tags in all blocks?",
                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.No) == QMessageBox.Yes:
-                    self.app_action_handler.rescan_all_tags() # Цей метод тепер сканує все, але мапінги не застосовує до даних
+                    self.app_action_handler.rescan_all_tags() 
         else: QMessageBox.warning(self, "Reload Error", "Could not reload tag mappings. Check settings.json or console logs.")
 
 
@@ -478,7 +488,6 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         log_debug("--> MainWindow: closeEvent received.")
         
-        # Зберігаємо поточний стан перед закриттям
         self.last_selected_block_index = self.current_block_idx
         self.last_selected_string_index = self.current_string_idx
         if self.edited_text_edit:
