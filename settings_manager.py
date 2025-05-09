@@ -44,23 +44,24 @@ class SettingsManager:
             "editors_wrap_lines": getattr(self.mw, 'editors_wrap_lines', False),
             "default_tag_mappings": dict(self.initial_default_tag_mappings),
             "bracket_tag_color_hex": getattr(self.mw, 'bracket_tag_color_hex', "#FF8C00"),
+            "search_history": [], # Додаємо значення за замовчуванням для історії пошуку
         }
         
         settings_data = {}
-        # Ініціалізуємо порожніми за замовчуванням
         self.mw.critical_problem_lines_per_block = {}
         self.mw.warning_problem_lines_per_block = {}
+        self.mw.search_history_to_save = [] # Ініціалізуємо тут
 
         if not os.path.exists(self.settings_file_path):
             log_debug(f"Settings file '{self.settings_file_path}' not found. Using default values for core settings.")
             for key, value in default_settings_values.items():
                 setattr(self.mw, key, value)
+            self.mw.search_history_to_save = default_settings_values["search_history"]
         else:
             try:
                 with open(self.settings_file_path, 'r', encoding='utf-8') as f:
                     settings_data = json.load(f)
                 
-                # Завантажуємо основні налаштування
                 window_geom = settings_data.get("window_geometry")
                 if window_geom and isinstance(window_geom, dict) and all(k in window_geom for k in ('x', 'y', 'width', 'height')):
                     try: self.mw.setGeometry(window_geom['x'], window_geom['y'], window_geom['width'], window_geom['height'])
@@ -74,8 +75,18 @@ class SettingsManager:
                 self.mw.block_names = {str(k): v for k, v in settings_data.get("block_names", {}).items()}
                 for key, default_value in default_settings_values.items():
                     setattr(self.mw, key, settings_data.get(key, default_value))
+                
+                # Присвоюємо завантажену історію до self.mw.search_history_to_save
+                # щоб потім MainWindow міг передати її в SearchPanelWidget
+                loaded_search_history = settings_data.get("search_history", [])
+                if isinstance(loaded_search_history, list):
+                    self.mw.search_history_to_save = loaded_search_history
+                    log_debug(f"Loaded search_history from settings: {len(self.mw.search_history_to_save)} items.")
+                else:
+                    self.mw.search_history_to_save = []
+                    log_debug("WARN: 'search_history' in settings is not a list. Using empty list.")
 
-                # Завантажуємо інформацію про проблеми, ЯКЩО вона була збережена (тобто unsaved_changes було False)
+
                 crit_problems = settings_data.get("critical_problem_lines_per_block")
                 if isinstance(crit_problems, dict): 
                     self.mw.critical_problem_lines_per_block = {k: set(v) for k, v in crit_problems.items() if isinstance(v, list)}
@@ -93,8 +104,9 @@ class SettingsManager:
             except Exception as e:
                 log_debug(f"ERROR reading settings file '{self.settings_file_path}': {e}. Using all default values for core settings.")
                 for key, value in default_settings_values.items(): setattr(self.mw, key, value)
-                self.mw.critical_problem_lines_per_block = {} # Переконуємося, що вони порожні при помилці
+                self.mw.critical_problem_lines_per_block = {} 
                 self.mw.warning_problem_lines_per_block = {}
+                self.mw.search_history_to_save = default_settings_values["search_history"]
         
         log_debug(f"Settings loaded. Initial critical problems: {len(self.mw.critical_problem_lines_per_block)}, Initial warning problems: {len(self.mw.warning_problem_lines_per_block)}")
         
@@ -106,15 +118,10 @@ class SettingsManager:
         
         if last_original_file and os.path.exists(last_original_file):
             effective_edited_path = last_edited_file if last_edited_file and os.path.exists(last_edited_file) else None
-            # is_initial_load_from_settings=True означає, що load_all_data_for_path НЕ буде сам очищати і перескановувати проблеми.
-            # Він покладатиметься на те, що ми завантажили з settings.json (або залишили порожніми).
             self.mw.load_all_data_for_path(last_original_file, manually_set_edited_path=effective_edited_path, is_initial_load_from_settings=True)
             
-            # Після завантаження файлів, якщо словники проблем порожні (бо їх не було в settings.json або файл налаштувань новий),
-            # можливо, варто запустити сканування, щоб користувач одразу бачив актуальний стан.
             if not self.mw.critical_problem_lines_per_block and not self.mw.warning_problem_lines_per_block and self.mw.data:
                 log_debug("SettingsManager: Problem line data was not in settings or empty. Performing initial scan.")
-                # Викликаємо "тихе" сканування з AppActionHandler, якщо він доступний
                 if hasattr(self.mw, 'app_action_handler') and hasattr(self.mw.app_action_handler, '_perform_initial_silent_scan'):
                      self.mw.app_action_handler._perform_initial_silent_scan()
                 else:
@@ -130,7 +137,6 @@ class SettingsManager:
     def save_settings(self):
         log_debug(f"--> SettingsManager: save_settings to {self.settings_file_path}")
         settings_data = {} 
-        # Зберігаємо основні налаштування
         settings_data["default_tag_mappings"] = self.mw.default_tag_mappings
         settings_data["block_names"] = {str(k): v for k, v in self.mw.block_names.items()}
         geom = self.mw.geometry(); settings_data["window_geometry"] = {"x": geom.x(), "y": geom.y(), "width": geom.width(), "height": geom.height()}
@@ -139,6 +145,14 @@ class SettingsManager:
         settings_data["space_dot_color_hex"] = self.mw.space_dot_color_hex; settings_data["preview_wrap_lines"] = self.mw.preview_wrap_lines
         settings_data["editors_wrap_lines"] = self.mw.editors_wrap_lines; settings_data["bracket_tag_color_hex"] = self.mw.bracket_tag_color_hex 
         
+        # Зберігаємо історію пошуку
+        if hasattr(self.mw, 'search_history_to_save') and isinstance(self.mw.search_history_to_save, list):
+            settings_data["search_history"] = self.mw.search_history_to_save
+            log_debug(f"Saving search_history: {len(self.mw.search_history_to_save)} items.")
+        else:
+            log_debug("No search_history_to_save found or not a list, not saving search history.")
+
+
         try: 
             if self.mw.main_splitter: settings_data["main_splitter_state"] = base64.b64encode(self.mw.main_splitter.saveState().data()).decode('ascii')
             if self.mw.right_splitter: settings_data["right_splitter_state"] = base64.b64encode(self.mw.right_splitter.saveState().data()).decode('ascii')
@@ -148,17 +162,15 @@ class SettingsManager:
         if self.mw.json_path: settings_data["original_file_path"] = self.mw.json_path
         if self.mw.edited_json_path: settings_data["edited_file_path"] = self.mw.edited_json_path
 
-        # Зберігаємо інформацію про проблеми ТІЛЬКИ ЯКЩО немає незбережених змін
         if not self.mw.unsaved_changes:
-            crit_to_save = {k: list(v) for k, v in self.mw.critical_problem_lines_per_block.items() if v} # Зберігаємо тільки якщо є проблеми
+            crit_to_save = {k: list(v) for k, v in self.mw.critical_problem_lines_per_block.items() if v} 
             if crit_to_save : settings_data["critical_problem_lines_per_block"] = crit_to_save
             
-            warn_to_save = {k: list(v) for k, v in self.mw.warning_problem_lines_per_block.items() if v} # Зберігаємо тільки якщо є проблеми
+            warn_to_save = {k: list(v) for k, v in self.mw.warning_problem_lines_per_block.items() if v} 
             if warn_to_save : settings_data["warning_problem_lines_per_block"] = warn_to_save
             log_debug(f"Saving problem line data because unsaved_changes is False. Crit entries: {len(crit_to_save)}, Warn entries: {len(warn_to_save)}")
         else:
             log_debug("Not saving problem line data because unsaved_changes is True.")
-            # Можна також видалити ці ключі з settings_data, якщо вони там випадково опинилися з попередніх версій
             settings_data.pop("critical_problem_lines_per_block", None)
             settings_data.pop("warning_problem_lines_per_block", None)
 

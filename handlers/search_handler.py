@@ -17,6 +17,7 @@ class SearchHandler(BaseHandler):
         self.current_search_index = -1
         
     def get_current_search_params(self) -> tuple[str, bool, bool]:
+        # Цей метод повертає поточні параметри, які зберігаються в SearchHandler
         return self.current_query, self.is_case_sensitive, self.search_in_original
 
     def _get_text_for_search(self, block_idx: int, string_idx: int, search_in_original_flag: bool) -> str:
@@ -34,11 +35,9 @@ class SearchHandler(BaseHandler):
     def reset_search(self, new_query: str = "", new_case_sensitive: bool = False, new_search_in_original: bool = False):
         log_debug(f"SearchHandler: Resetting search. Query: '{new_query}', Case: {new_case_sensitive}, Original: {new_search_in_original}")
         
-        # Зберігаємо тільки якщо це не просто скидання через відкриття панелі
-        if new_query or self.current_query: # Тобто, якщо був або встановлюється не порожній запит
-            self.current_query = new_query
-            self.is_case_sensitive = new_case_sensitive
-            self.search_in_original = new_search_in_original
+        self.current_query = new_query # Завжди оновлюємо параметри тут
+        self.is_case_sensitive = new_case_sensitive
+        self.search_in_original = new_search_in_original
 
         self.last_found_block = -1
         self.last_found_string = -1
@@ -49,7 +48,7 @@ class SearchHandler(BaseHandler):
         self.mw.search_match_block_indices.clear()
         if hasattr(self.mw, 'block_list_widget'):
             self.mw.block_list_widget.viewport().update()
-        if hasattr(self.mw, 'search_panel_widget'):
+        if hasattr(self.mw, 'search_panel_widget') and self.mw.search_panel_widget.isVisible(): # Оновлюємо статус, тільки якщо панель видима
             self.mw.search_panel_widget.clear_status()
 
 
@@ -64,7 +63,12 @@ class SearchHandler(BaseHandler):
         if (self.current_query != query or 
             self.is_case_sensitive != case_sensitive or 
             self.search_in_original != search_in_original):
-            self.reset_search(query, case_sensitive, search_in_original)
+            # Не викликаємо reset_search тут, бо це призведе до скидання last_found_...
+            # Параметри вже будуть оновлені на початку функції.
+            # Замість цього, якщо параметри змінилися, ми просто починаємо пошук з нуля.
+            self.last_found_block = -1
+            self.last_found_string = -1
+            self.last_found_char_pos_raw = -1
         
         self.current_query = query 
         self.is_case_sensitive = case_sensitive
@@ -108,7 +112,7 @@ class SearchHandler(BaseHandler):
                     self._navigate_to_match(b_idx, s_idx, match_pos_raw, len(self.current_query))
                     if hasattr(self.mw, 'search_panel_widget') and self.mw.search_panel_widget.isVisible():
                         self.mw.search_panel_widget.set_status_message(f"Знайдено: Б{b_idx+1}, Р{s_idx+1}")
-                    return True # Знайдено
+                    return True 
             
             start_string_data_idx = 0 
             start_char_raw_offset = 0   
@@ -118,7 +122,7 @@ class SearchHandler(BaseHandler):
         self.last_found_block = -1 
         self.last_found_string = -1
         self.last_found_char_pos_raw = -1
-        return False # Не знайдено
+        return False 
 
 
     def find_previous(self, query: str, case_sensitive: bool, search_in_original: bool) -> bool:
@@ -132,7 +136,9 @@ class SearchHandler(BaseHandler):
         if (self.current_query != query or 
             self.is_case_sensitive != case_sensitive or 
             self.search_in_original != search_in_original):
-            self.reset_search(query, case_sensitive, search_in_original)
+            self.last_found_block = -1
+            self.last_found_string = -1
+            self.last_found_char_pos_raw = -1
 
         self.current_query = query
         self.is_case_sensitive = case_sensitive
@@ -190,7 +196,7 @@ class SearchHandler(BaseHandler):
                     self._navigate_to_match(b_idx, s_idx, found_pos_raw, len(self.current_query))
                     if hasattr(self.mw, 'search_panel_widget') and self.mw.search_panel_widget.isVisible():
                         self.mw.search_panel_widget.set_status_message(f"Знайдено: Б{b_idx+1}, Р{s_idx+1}")
-                    return True # Знайдено
+                    return True 
             
             start_string_data_idx = -1 
             start_char_raw_search_from = -1   
@@ -200,7 +206,7 @@ class SearchHandler(BaseHandler):
         self.last_found_block = -1 
         self.last_found_string = -1
         self.last_found_char_pos_raw = -1
-        return False # Не знайдено
+        return False 
 
     def _find_nth_occurrence_in_display_text(self, display_text: str, display_query: str, target_occurrence: int, case_sensitive: bool) -> tuple[int, int]:
         current_occurrence = 0
@@ -285,10 +291,9 @@ class SearchHandler(BaseHandler):
         temp_pos_qblk = -1
         search_offset_qblk = 0
         
-        # Для підрахунку входжень використовуємо запит без тегів, якщо шукаємо в оригіналі АБО якщо текст блоку теж без тегів
         effective_query_for_occurrence_count = compare_raw_query_for_occurrence_base
         text_for_occurrence_count = compare_raw_qtextblock_text
-        if self.search_in_original: # Якщо пошук в оригіналі, то і запит, і текст для підрахунку - без тегів
+        if self.search_in_original: 
             effective_query_for_occurrence_count = remove_curly_tags(compare_raw_query_for_occurrence_base)
             text_for_occurrence_count = remove_curly_tags(compare_raw_qtextblock_text)
         
@@ -365,6 +370,7 @@ class SearchHandler(BaseHandler):
         self.mw.search_match_block_indices.add(block_idx_match_in_data)
         if hasattr(self.mw, 'block_list_widget'):
             self.mw.block_list_widget.viewport().update()
+
 
     def clear_all_search_highlights(self):
         log_debug("SearchHandler: Clearing all search highlights.")

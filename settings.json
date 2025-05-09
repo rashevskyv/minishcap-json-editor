@@ -183,6 +183,10 @@
     "preview_wrap_lines": false,
     "editors_wrap_lines": false,
     "bracket_tag_color_hex": "#FFA500",
+    "search_history": [
+        "123",
+        "лінк"
+    ],
     "main_splitter_state": "AAAA/wAAAAEAAAACAAABvQAAA+4B/////wEAAAABAA==",
     "right_splitter_state": "AAAA/wAAAAEAAAACAAABuAAAAW8B/////wEAAAACAA==",
     "bottom_right_splitter_state": "AAAA/wAAAAEAAAACAAABkAAAAZAB/////wEAAAABAA==",

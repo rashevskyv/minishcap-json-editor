@@ -49,6 +49,8 @@ class MainWindow(QMainWindow):
         self.preview_wrap_lines = True
         self.editors_wrap_lines = False
         self.bracket_tag_color_hex = "#FF8C00"
+        self.search_history_to_save = [] 
+
 
         self.default_tag_mappings = {
             "[red]": "{Color:Red}",
@@ -108,7 +110,16 @@ class MainWindow(QMainWindow):
         self.connect_signals()
 
         log_debug("MainWindow: Loading Editor Settings via SettingsManager...")
-        self.settings_manager.load_settings()
+        self.settings_manager.load_settings() 
+        
+        if hasattr(self, 'search_history_to_save') and self.search_panel_widget:
+            self.search_panel_widget.load_history(self.search_history_to_save)
+            if self.search_history_to_save:
+                last_query = self.search_history_to_save[0] 
+                
+                self.search_handler.current_query = last_query 
+            log_debug(f"Search history loaded into panel. Last query (if any) set in SearchHandler: {self.search_handler.current_query}")
+
 
         if not self.json_path:
              log_debug("MainWindow: No file auto-loaded, updating initial UI state.")
@@ -141,43 +152,49 @@ class MainWindow(QMainWindow):
             super().keyPressEvent(event)
 
     def execute_find_next_shortcut(self):
-        if not self.search_panel_widget.isVisible():
-            query = self.search_handler.current_query
-            if not query:
-                self.toggle_search_panel() # Show panel to enter query
-                return
-            case_sensitive = self.search_handler.is_case_sensitive
-            search_in_original = self.search_handler.search_in_original
-        else:
-            query, case_sensitive, search_in_original = self.search_panel_widget.get_search_parameters()
-            if not query:
+        query_to_use = ""
+        case_sensitive_to_use = False
+        search_in_original_to_use = False
+
+        if self.search_panel_widget.isVisible():
+            query_to_use, case_sensitive_to_use, search_in_original_to_use = self.search_panel_widget.get_search_parameters()
+            if not query_to_use:
                 self.search_panel_widget.set_status_message("Введіть запит для F3", is_error=True)
                 self.search_panel_widget.focus_search_input()
                 return
+        else: 
+            query_to_use, case_sensitive_to_use, search_in_original_to_use = self.search_handler.get_current_search_params()
+            if not query_to_use: 
+                self.toggle_search_panel() 
+                self.search_panel_widget.set_status_message("Введіть запит", is_error=True)
+                return
         
-        found = self.search_handler.find_next(query, case_sensitive, search_in_original)
-        if not found and not self.search_panel_widget.isVisible():
-            QMessageBox.information(self, "Пошук", f"Не знайдено: \"{query}\"")
+        found = self.search_handler.find_next(query_to_use, case_sensitive_to_use, search_in_original_to_use)
+        if not found and not self.search_panel_widget.isVisible(): 
+            QMessageBox.information(self, "Пошук", f"Не знайдено: \"{query_to_use}\"")
 
 
     def execute_find_previous_shortcut(self):
-        if not self.search_panel_widget.isVisible():
-            query = self.search_handler.current_query
-            if not query:
-                self.toggle_search_panel() # Show panel to enter query
-                return
-            case_sensitive = self.search_handler.is_case_sensitive
-            search_in_original = self.search_handler.search_in_original
-        else:
-            query, case_sensitive, search_in_original = self.search_panel_widget.get_search_parameters()
-            if not query:
+        query_to_use = ""
+        case_sensitive_to_use = False
+        search_in_original_to_use = False
+
+        if self.search_panel_widget.isVisible():
+            query_to_use, case_sensitive_to_use, search_in_original_to_use = self.search_panel_widget.get_search_parameters()
+            if not query_to_use:
                 self.search_panel_widget.set_status_message("Введіть запит для Shift+F3", is_error=True)
                 self.search_panel_widget.focus_search_input()
                 return
+        else: 
+            query_to_use, case_sensitive_to_use, search_in_original_to_use = self.search_handler.get_current_search_params()
+            if not query_to_use:
+                self.toggle_search_panel()
+                self.search_panel_widget.set_status_message("Введіть запит", is_error=True)
+                return
 
-        found = self.search_handler.find_previous(query, case_sensitive, search_in_original)
+        found = self.search_handler.find_previous(query_to_use, case_sensitive_to_use, search_in_original_to_use)
         if not found and not self.search_panel_widget.isVisible():
-            QMessageBox.information(self, "Пошук", f"Не знайдено: \"{query}\"")
+            QMessageBox.information(self, "Пошук", f"Не знайдено: \"{query_to_use}\"")
 
 
     def connect_signals(self):
@@ -213,31 +230,39 @@ class MainWindow(QMainWindow):
             log_debug("Connected find_action.")
         if hasattr(self, 'search_panel_widget'):
             self.search_panel_widget.close_requested.connect(self.hide_search_panel)
-            self.search_panel_widget.find_next_requested.connect(self.search_handler.find_next)
-            self.search_panel_widget.find_previous_requested.connect(self.search_handler.find_previous)
+            self.search_panel_widget.find_next_requested.connect(self.handle_panel_find_next)
+            self.search_panel_widget.find_previous_requested.connect(self.handle_panel_find_previous)
 
 
         log_debug("--> MainWindow: connect_signals() finished")
+
+    def handle_panel_find_next(self, query, case_sensitive, search_in_original):
+        self.search_handler.find_next(query, case_sensitive, search_in_original)
+
+    def handle_panel_find_previous(self, query, case_sensitive, search_in_original):
+        self.search_handler.find_previous(query, case_sensitive, search_in_original)
 
     def toggle_search_panel(self):
         if self.search_panel_widget.isVisible():
             self.hide_search_panel()
         else:
             self.search_panel_widget.setVisible(True)
-            current_query, case_sensitive, search_in_original = self.search_handler.get_current_search_params()
-            self.search_panel_widget.set_query(current_query)
-            self.search_panel_widget.case_sensitive_checkbox.setChecked(case_sensitive)
-            self.search_panel_widget.search_in_original_checkbox.setChecked(search_in_original)
+            last_query, case_sensitive, search_in_original = self.search_handler.get_current_search_params()
+            
+            self.search_panel_widget.set_query(last_query if last_query else "")
+            self.search_panel_widget.set_search_options(case_sensitive, search_in_original)
+            # Перезавантажуємо історію в комбобокс при кожному відкритті панелі,
+            # оскільки SearchPanelWidget сам не зберігає її між сесіями
+            if hasattr(self, 'search_history_to_save'):
+                 self.search_panel_widget.load_history(self.search_history_to_save)
+
+
             self.search_panel_widget.focus_search_input()
-            self.search_handler.reset_search(current_query, case_sensitive, search_in_original)
 
 
     def hide_search_panel(self):
         self.search_panel_widget.setVisible(False)
         self.search_handler.clear_all_search_highlights()
-        self.search_match_block_indices.clear()
-        if hasattr(self.mw, 'block_list_widget'):
-             self.mw.block_list_widget.viewport().update()
 
 
     def trigger_save_action(self):
@@ -377,10 +402,19 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         log_debug("--> MainWindow: closeEvent received.")
-        self.app_action_handler.handle_close_event(event)
+        
+        if self.search_panel_widget:
+            self.search_history_to_save = self.search_panel_widget.get_history()
+            log_debug(f"Preparing to save search history: {len(self.search_history_to_save)} items")
+
+        self.app_action_handler.handle_close_event(event) 
+        
         if event.isAccepted():
-            log_debug("Close accepted. Saving editor settings via SettingsManager.")
-            self.settings_manager.save_settings()
+            if not self.unsaved_changes : 
+                log_debug("Close accepted (no unsaved changes). Saving editor settings via SettingsManager.")
+                self.settings_manager.save_settings()
+            else:
+                 log_debug("Close accepted (unsaved changes were handled). Settings should have been saved by AppActionHandler or by user choice during handle_close_event.")
             super().closeEvent(event)
         else:
             log_debug("Close ignored by user or handler.")
