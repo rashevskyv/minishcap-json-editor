@@ -89,9 +89,8 @@ class LineNumberedTextEdit(QPlainTextEdit):
         is_preview_widget = hasattr(main_window, 'preview_text_edit') and self == main_window.preview_text_edit
         
         if is_preview_widget:
-            current_block_idx_data = main_window.current_block_idx # Індекс блоку даних
+            current_block_idx_data = main_window.current_block_idx 
             clicked_cursor = self.cursorForPosition(pos)
-            # Для preview_text_edit, blockNumber() курсора - це індекс рядка даних
             clicked_data_line_number = clicked_cursor.blockNumber() 
             
             if current_block_idx_data < 0 or clicked_data_line_number < 0 : 
@@ -126,7 +125,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
             
             calc_width_action = menu.addAction(f"Calculate Width for Data Line {clicked_data_line_number + 1}")
             if hasattr(main_window, 'editor_operation_handler') and hasattr(main_window.editor_operation_handler, 'calculate_width_for_data_line_action'):
-                # Передаємо індекс рядка даних
                 calc_width_action.triggered.connect(lambda checked=False, line_idx=clicked_data_line_number: main_window.editor_operation_handler.calculate_width_for_data_line_action(line_idx))
             else:
                 calc_width_action.setEnabled(False)
@@ -329,7 +327,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
     def paintEvent(self, event: QPaintEvent): 
         super().paintEvent(event) 
-        if not self.isReadOnly(): # Тільки для edited_text_edit
+        if not self.isReadOnly(): 
             painter = QPainter(self.viewport())
             char_width = self.fontMetrics().horizontalAdvance('0') 
             text_margin = self.document().documentMargin() 
@@ -350,74 +348,60 @@ class LineNumberedTextEdit(QPlainTextEdit):
     def lineNumberAreaPaintEvent(self, event, painter_device): 
         painter = QPainter(painter_device) 
         
-        base_bg_color = self.palette().base().color()
-        if self.isReadOnly(): # Для preview_text_edit та original_text_edit
-             base_bg_color = self.palette().window().color().lighter(105)
-        painter.fillRect(event.rect(), base_bg_color)
+        default_bg_color_for_area = self.palette().base().color()
+        if self.isReadOnly(): 
+             default_bg_color_for_area = self.palette().window().color().lighter(105)
+        painter.fillRect(event.rect(), default_bg_color_for_area)
         
         main_window_ref = self.window()
-        active_data_line_idx = -1 # Індекс активного рядка даних
+        active_data_line_idx = -1 
         if isinstance(main_window_ref, QMainWindow):
             active_data_line_idx = main_window_ref.current_string_idx
 
-        active_bg_color = self.lineNumberArea.active_number_background_color 
-        active_text_color = self.lineNumberArea.active_number_color 
-        odd_bg_color = self.lineNumberArea.odd_line_background
-        number_color = self.lineNumberArea.number_color
-        width_exceeded_bg_color = self.lineNumberArea.width_indicator_exceeded_color # Колір для фону ширини
+        odd_bg_color_const = self.lineNumberArea.odd_line_background
+        even_bg_color_const = default_bg_color_for_area 
+        # number_text_color_const = self.lineNumberArea.number_color # Більше не використовуємо для встановлення
+        width_exceeded_bg_color_const = self.lineNumberArea.width_indicator_exceeded_color
 
         current_q_block = self.firstVisibleBlock()
-        current_q_block_number = current_q_block.blockNumber() # Індекс поточного QTextBlcok
+        current_q_block_number = current_q_block.blockNumber() 
         top = int(self.blockBoundingGeometry(current_q_block).translated(self.contentOffset()).top())
         bottom = top + int(self.blockBoundingRect(current_q_block).height())
         
-        number_area_total_width = self.lineNumberAreaWidth()
+        total_area_width = self.lineNumberAreaWidth()
         pixel_width_part_width = 0
-        # Відображаємо поле ширини тільки для original та edited
         if self.objectName() == "original_text_edit" or self.objectName() == "edited_text_edit":
             pixel_width_part_width = self.pixel_width_display_area_width
         
-        number_part_width = number_area_total_width - pixel_width_part_width
+        number_part_width = total_area_width - pixel_width_part_width
 
         while current_q_block.isValid() and top <= event.rect().bottom():
             if current_q_block.isVisible() and bottom >= event.rect().top():
                 line_height = int(self.blockBoundingRect(current_q_block).height())
                 
-                # Визначаємо, чи є поточний QTextBlock частиною активного рядка даних
                 is_this_qblock_part_of_active_data_line = False
-                if active_data_line_idx != -1: # Якщо взагалі є активний рядок даних
+                if active_data_line_idx != -1: 
                     if self.objectName() == "preview_text_edit":
-                        # У preview_text_edit кожен QTextBlock це окремий рядок даних
                         is_this_qblock_part_of_active_data_line = (current_q_block_number == active_data_line_idx)
                     elif self.objectName() in ["original_text_edit", "edited_text_edit"]:
-                        # У original/edited всі QTextBlocks належать до одного активного рядка даних
                         is_this_qblock_part_of_active_data_line = True 
                 
-                # Малювання номера QTextBlock (або номера рядка даних для preview)
-                display_number_for_line_area = ""
-                if self.objectName() == "preview_text_edit":
-                    display_number_for_line_area = str(current_q_block_number + 1) # Номер рядка даних
-                else: # original_text_edit, edited_text_edit
-                    display_number_for_line_area = str(current_q_block_number + 1) # Номер QTextBlcok
-
+                display_number_for_line_area = str(current_q_block_number + 1)
                 line_num_rect = QRect(0, top, number_part_width - 3, line_height) 
+                
+                current_bg_for_number_part = even_bg_color_const 
+                if (current_q_block_number + 1) % 2 != 0: 
+                    current_bg_for_number_part = odd_bg_color_const
+                
+                # Якщо рядок активний, фон не змінюємо спеціально (залишається парним/непарним),
+                # але текст номера буде білим, якщо ми це захочемо (зараз він завжди чорний).
+                # Для прикладу зі скріншота, де активний рядок НЕ має синього фону в LineNumberArea,
+                # ця логіка підходить.
 
-                current_number_text_color = number_color
-                current_number_bg_color = None # Немає фону за замовчуванням
-
-                if is_this_qblock_part_of_active_data_line:
-                     current_number_bg_color = active_bg_color
-                     current_number_text_color = active_text_color 
-                elif (current_q_block_number + 1) % 2 != 0: # Непарний QTextBlcok (не активний)
-                    current_number_bg_color = odd_bg_color
-                # Для парних неактивних фон буде базовим (base_bg_color)
-
-                if current_number_bg_color:
-                    painter.fillRect(line_num_rect.adjusted(0, 0, 3, 0), current_number_bg_color)
-                painter.setPen(current_number_text_color)
+                painter.fillRect(line_num_rect.adjusted(0, 0, 3, 0), current_bg_for_number_part)
+                painter.setPen(QColor(Qt.black)) # Номер рядка завжди чорний
                 painter.drawText(line_num_rect, Qt.AlignRight | Qt.AlignVCenter, display_number_for_line_area) 
 
-                # Малювання ширини QTextBlock (тільки для original_text_edit та edited_text_edit)
                 if pixel_width_part_width > 0:
                     q_block_text_raw = current_q_block.text()
                     text_for_width_calc = convert_dots_to_spaces_from_editor(q_block_text_raw)
@@ -428,19 +412,20 @@ class LineNumberedTextEdit(QPlainTextEdit):
                     
                     width_display_rect = QRect(number_part_width, top, pixel_width_part_width -3 , line_height)
                     
-                    width_text_color = current_number_text_color # За замовчуванням той самий, що і для номера
-                    width_bg_to_fill = current_number_bg_color # За замовчуванням той самий, що і для номера
+                    bg_for_width_part = current_bg_for_number_part 
+                    text_color_for_width_part = QColor(Qt.black) # Текст ширини завжди чорний
 
                     if pixel_width > self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
-                        width_bg_to_fill = width_exceeded_bg_color
-                        width_text_color = QColor(Qt.black) # Чорний текст на червоному фоні краще видно
+                        bg_for_width_part = width_exceeded_bg_color_const
+                        # text_color_for_width_part залишається чорним для кращої читабельності на червоному
                     
-                    if width_bg_to_fill: # Якщо є фон для заливки (може не бути для парних неактивних)
-                        painter.fillRect(width_display_rect.adjusted(0,0,3,0), width_bg_to_fill)
+                    painter.fillRect(width_display_rect.adjusted(0,0,3,0), bg_for_width_part) 
                     
-                    painter.setPen(width_text_color)
+                    painter.setPen(text_color_for_width_part)
                     painter.drawText(width_display_rect, Qt.AlignRight | Qt.AlignVCenter, width_str)
-                    painter.setPen(number_color) # Відновлюємо колір пера за замовчуванням для наступних операцій
+                
+                # Відновлюємо колір пера на випадок, якщо він був змінений (хоча зараз він завжди чорний для тексту)
+                # painter.setPen(self.lineNumberArea.number_color) # Можна прибрати, якщо колір завжди чорний
 
             current_q_block = current_q_block.next()
             top = bottom
