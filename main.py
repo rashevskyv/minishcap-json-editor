@@ -3,7 +3,8 @@ import os
 import json
 import copy
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QPlainTextEdit, QVBoxLayout
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QEvent
+from PyQt5.QtGui import QKeyEvent
 
 from LineNumberArea import LineNumberArea
 from CustomListWidget import CustomListWidget
@@ -128,6 +129,57 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'block_list_widget'):
              self.block_list_widget.viewport().update()
 
+    def keyPressEvent(self, event: QKeyEvent):
+        if event.key() == Qt.Key_F3:
+            if event.modifiers() & Qt.ShiftModifier:
+                log_debug("Shift+F3 pressed - Find Previous")
+                self.execute_find_previous_shortcut()
+            else:
+                log_debug("F3 pressed - Find Next")
+                self.execute_find_next_shortcut()
+        else:
+            super().keyPressEvent(event)
+
+    def execute_find_next_shortcut(self):
+        if not self.search_panel_widget.isVisible():
+            query = self.search_handler.current_query
+            if not query:
+                self.toggle_search_panel() # Show panel to enter query
+                return
+            case_sensitive = self.search_handler.is_case_sensitive
+            search_in_original = self.search_handler.search_in_original
+        else:
+            query, case_sensitive, search_in_original = self.search_panel_widget.get_search_parameters()
+            if not query:
+                self.search_panel_widget.set_status_message("Введіть запит для F3", is_error=True)
+                self.search_panel_widget.focus_search_input()
+                return
+        
+        found = self.search_handler.find_next(query, case_sensitive, search_in_original)
+        if not found and not self.search_panel_widget.isVisible():
+            QMessageBox.information(self, "Пошук", f"Не знайдено: \"{query}\"")
+
+
+    def execute_find_previous_shortcut(self):
+        if not self.search_panel_widget.isVisible():
+            query = self.search_handler.current_query
+            if not query:
+                self.toggle_search_panel() # Show panel to enter query
+                return
+            case_sensitive = self.search_handler.is_case_sensitive
+            search_in_original = self.search_handler.search_in_original
+        else:
+            query, case_sensitive, search_in_original = self.search_panel_widget.get_search_parameters()
+            if not query:
+                self.search_panel_widget.set_status_message("Введіть запит для Shift+F3", is_error=True)
+                self.search_panel_widget.focus_search_input()
+                return
+
+        found = self.search_handler.find_previous(query, case_sensitive, search_in_original)
+        if not found and not self.search_panel_widget.isVisible():
+            QMessageBox.information(self, "Пошук", f"Не знайдено: \"{query}\"")
+
+
     def connect_signals(self):
         log_debug("--> MainWindow: connect_signals() started")
         if hasattr(self, 'block_list_widget'):
@@ -172,14 +224,20 @@ class MainWindow(QMainWindow):
             self.hide_search_panel()
         else:
             self.search_panel_widget.setVisible(True)
+            current_query, case_sensitive, search_in_original = self.search_handler.get_current_search_params()
+            self.search_panel_widget.set_query(current_query)
+            self.search_panel_widget.case_sensitive_checkbox.setChecked(case_sensitive)
+            self.search_panel_widget.search_in_original_checkbox.setChecked(search_in_original)
             self.search_panel_widget.focus_search_input()
-            self.search_handler.reset_search()
+            self.search_handler.reset_search(current_query, case_sensitive, search_in_original)
+
 
     def hide_search_panel(self):
         self.search_panel_widget.setVisible(False)
         self.search_handler.clear_all_search_highlights()
         self.search_match_block_indices.clear()
-        self.block_list_widget.viewport().update()
+        if hasattr(self.mw, 'block_list_widget'):
+             self.mw.block_list_widget.viewport().update()
 
 
     def trigger_save_action(self):

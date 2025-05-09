@@ -16,6 +16,9 @@ class SearchHandler(BaseHandler):
         self.search_results = []
         self.current_search_index = -1
         
+    def get_current_search_params(self) -> tuple[str, bool, bool]:
+        return self.current_query, self.is_case_sensitive, self.search_in_original
+
     def _get_text_for_search(self, block_idx: int, string_idx: int, search_in_original_flag: bool) -> str:
         text_to_search = ""
         if search_in_original_flag:
@@ -30,9 +33,13 @@ class SearchHandler(BaseHandler):
 
     def reset_search(self, new_query: str = "", new_case_sensitive: bool = False, new_search_in_original: bool = False):
         log_debug(f"SearchHandler: Resetting search. Query: '{new_query}', Case: {new_case_sensitive}, Original: {new_search_in_original}")
-        self.current_query = new_query
-        self.is_case_sensitive = new_case_sensitive
-        self.search_in_original = new_search_in_original
+        
+        # Зберігаємо тільки якщо це не просто скидання через відкриття панелі
+        if new_query or self.current_query: # Тобто, якщо був або встановлюється не порожній запит
+            self.current_query = new_query
+            self.is_case_sensitive = new_case_sensitive
+            self.search_in_original = new_search_in_original
+
         self.last_found_block = -1
         self.last_found_string = -1
         self.last_found_char_pos_raw = -1
@@ -46,13 +53,13 @@ class SearchHandler(BaseHandler):
             self.mw.search_panel_widget.clear_status()
 
 
-    def find_next(self, query: str, case_sensitive: bool, search_in_original: bool):
+    def find_next(self, query: str, case_sensitive: bool, search_in_original: bool) -> bool:
         log_debug(f"SearchHandler: find_next called. Q: '{query}', Case: {case_sensitive}, Original: {search_in_original}")
         
         if not query:
-            if hasattr(self.mw, 'search_panel_widget'):
+            if hasattr(self.mw, 'search_panel_widget') and self.mw.search_panel_widget.isVisible():
                 self.mw.search_panel_widget.set_status_message("Введіть запит", is_error=True)
-            return
+            return False
 
         if (self.current_query != query or 
             self.is_case_sensitive != case_sensitive or 
@@ -64,9 +71,9 @@ class SearchHandler(BaseHandler):
         self.search_in_original = search_in_original
 
         if not self.mw.data:
-            if hasattr(self.mw, 'search_panel_widget'):
+            if hasattr(self.mw, 'search_panel_widget') and self.mw.search_panel_widget.isVisible():
                 self.mw.search_panel_widget.set_status_message("Немає даних для пошуку", is_error=True)
-            return
+            return False
         
         start_block_data_idx = self.last_found_block if self.last_found_block != -1 else 0
         start_string_data_idx = self.last_found_string if self.last_found_string != -1 else 0
@@ -99,27 +106,28 @@ class SearchHandler(BaseHandler):
                     self.last_found_char_pos_raw = match_pos_raw
                     
                     self._navigate_to_match(b_idx, s_idx, match_pos_raw, len(self.current_query))
-                    if hasattr(self.mw, 'search_panel_widget'):
+                    if hasattr(self.mw, 'search_panel_widget') and self.mw.search_panel_widget.isVisible():
                         self.mw.search_panel_widget.set_status_message(f"Знайдено: Б{b_idx+1}, Р{s_idx+1}")
-                    return
+                    return True # Знайдено
             
             start_string_data_idx = 0 
             start_char_raw_offset = 0   
 
-        if hasattr(self.mw, 'search_panel_widget'):
+        if hasattr(self.mw, 'search_panel_widget') and self.mw.search_panel_widget.isVisible():
             self.mw.search_panel_widget.set_status_message("Не знайдено (кінець)")
         self.last_found_block = -1 
         self.last_found_string = -1
         self.last_found_char_pos_raw = -1
+        return False # Не знайдено
 
 
-    def find_previous(self, query: str, case_sensitive: bool, search_in_original: bool):
+    def find_previous(self, query: str, case_sensitive: bool, search_in_original: bool) -> bool:
         log_debug(f"SearchHandler: find_previous called. Q: '{query}', Case: {case_sensitive}, Original: {search_in_original}")
         
         if not query:
-            if hasattr(self.mw, 'search_panel_widget'):
+            if hasattr(self.mw, 'search_panel_widget') and self.mw.search_panel_widget.isVisible():
                 self.mw.search_panel_widget.set_status_message("Введіть запит", is_error=True)
-            return
+            return False
 
         if (self.current_query != query or 
             self.is_case_sensitive != case_sensitive or 
@@ -131,9 +139,9 @@ class SearchHandler(BaseHandler):
         self.search_in_original = search_in_original
             
         if not self.mw.data:
-            if hasattr(self.mw, 'search_panel_widget'):
+            if hasattr(self.mw, 'search_panel_widget') and self.mw.search_panel_widget.isVisible():
                 self.mw.search_panel_widget.set_status_message("Немає даних для пошуку", is_error=True)
-            return
+            return False
 
         start_block_data_idx = self.last_found_block if self.last_found_block != -1 else len(self.mw.data) - 1
         start_string_data_idx = self.last_found_string if self.last_found_string != -1 else -1 
@@ -180,18 +188,19 @@ class SearchHandler(BaseHandler):
                     self.last_found_char_pos_raw = found_pos_raw
                     
                     self._navigate_to_match(b_idx, s_idx, found_pos_raw, len(self.current_query))
-                    if hasattr(self.mw, 'search_panel_widget'):
+                    if hasattr(self.mw, 'search_panel_widget') and self.mw.search_panel_widget.isVisible():
                         self.mw.search_panel_widget.set_status_message(f"Знайдено: Б{b_idx+1}, Р{s_idx+1}")
-                    return
+                    return True # Знайдено
             
             start_string_data_idx = -1 
             start_char_raw_search_from = -1   
 
-        if hasattr(self.mw, 'search_panel_widget'):
+        if hasattr(self.mw, 'search_panel_widget') and self.mw.search_panel_widget.isVisible():
              self.mw.search_panel_widget.set_status_message("Не знайдено (початок)")
         self.last_found_block = -1 
         self.last_found_string = -1
         self.last_found_char_pos_raw = -1
+        return False # Не знайдено
 
     def _find_nth_occurrence_in_display_text(self, display_text: str, display_query: str, target_occurrence: int, case_sensitive: bool) -> tuple[int, int]:
         current_occurrence = 0
@@ -212,7 +221,7 @@ class SearchHandler(BaseHandler):
             
             current_occurrence += 1
             if current_occurrence == target_occurrence:
-                return match_pos, len(display_query) # Повертаємо довжину display_query
+                return match_pos, len(display_query) 
             
             search_start_pos = match_pos + 1 
             if search_start_pos >= len(text_to_scan): 
@@ -251,18 +260,13 @@ class SearchHandler(BaseHandler):
         
         QApplication.processEvents()
 
-        # Цей "рядок даних" може містити \n
         raw_full_string_data = self._get_text_for_search(block_idx_match_in_data, string_idx_match_in_data, self.search_in_original)
         
-        # 1. Визначаємо, в якому QTextBlock (після розбиття по \n) знаходиться наш збіг,
-        #    і яка його позиція всередині цього QTextBlock.
         target_qtextblock_idx_in_editor, char_pos_in_target_qtextblock_raw = \
             self._calculate_qtextblock_and_pos_in_block(raw_full_string_data, char_pos_in_raw_string)
         
         log_debug(f"Match is in QTextBlk(editor): {target_qtextblock_idx_in_editor}, RawCharInBlk: {char_pos_in_target_qtextblock_raw}")
 
-        # 2. Визначаємо, яке це за порядком входження запиту *всередині цього конкретного QTextBlock (сирого)*
-        # Спочатку отримуємо текст цього конкретного QTextBlock з сирих даних
         raw_qtextblocks = raw_full_string_data.split('\n')
         if target_qtextblock_idx_in_editor >= len(raw_qtextblocks):
             log_debug(f"ERROR: target_qtextblock_idx_in_editor ({target_qtextblock_idx_in_editor}) is out of bounds for raw_qtextblocks (len {len(raw_qtextblocks)})")
@@ -271,44 +275,42 @@ class SearchHandler(BaseHandler):
         raw_text_of_target_qtextblock = raw_qtextblocks[target_qtextblock_idx_in_editor]
 
         compare_raw_qtextblock_text = raw_text_of_target_qtextblock
-        compare_raw_query_for_occurrence = self.current_query # Для original_text_edit, теги з запиту треба буде видалити нижче
-
+        compare_raw_query_for_occurrence_base = self.current_query
+        
         if not self.is_case_sensitive:
             compare_raw_qtextblock_text = raw_text_of_target_qtextblock.lower()
-            compare_raw_query_for_occurrence = self.current_query.lower()
+            compare_raw_query_for_occurrence_base = self.current_query.lower()
 
         occurrence_in_qtextblock_raw = 0
         temp_pos_qblk = -1
         search_offset_qblk = 0
         
-        # Адаптуємо compare_raw_query_for_occurrence для original_text_edit
-        temp_query_for_original = remove_curly_tags(compare_raw_query_for_occurrence) if self.search_in_original else compare_raw_query_for_occurrence
-
-        if temp_query_for_original: # Використовуємо адаптований запит для підрахунку входжень
+        # Для підрахунку входжень використовуємо запит без тегів, якщо шукаємо в оригіналі АБО якщо текст блоку теж без тегів
+        effective_query_for_occurrence_count = compare_raw_query_for_occurrence_base
+        text_for_occurrence_count = compare_raw_qtextblock_text
+        if self.search_in_original: # Якщо пошук в оригіналі, то і запит, і текст для підрахунку - без тегів
+            effective_query_for_occurrence_count = remove_curly_tags(compare_raw_query_for_occurrence_base)
+            text_for_occurrence_count = remove_curly_tags(compare_raw_qtextblock_text)
+        
+        if effective_query_for_occurrence_count: 
             while search_offset_qblk <= char_pos_in_target_qtextblock_raw:
-                # Для original_text_edit, сам текст блоку теж має бути без тегів для коректного підрахунку
-                text_for_occurrence_count = remove_curly_tags(compare_raw_qtextblock_text) if self.search_in_original else compare_raw_qtextblock_text
-                
-                temp_pos_qblk = text_for_occurrence_count.find(temp_query_for_original, search_offset_qblk)
+                temp_pos_qblk = text_for_occurrence_count.find(effective_query_for_occurrence_count, search_offset_qblk)
                 
                 if temp_pos_qblk == -1 or temp_pos_qblk > char_pos_in_target_qtextblock_raw:
                     break
                 occurrence_in_qtextblock_raw += 1
-                if temp_pos_qblk == char_pos_in_target_qtextblock_raw: # Якщо знайшли точно на потрібній позиції
+                if temp_pos_qblk == char_pos_in_target_qtextblock_raw: 
                     break
                 search_offset_qblk = temp_pos_qblk + 1
         
-        if occurrence_in_qtextblock_raw == 0 and temp_query_for_original:
-            log_debug(f"ERROR: Could not determine occurrence_in_qtextblock_raw for match in raw_text_of_target_qtextblock ('{raw_text_of_target_qtextblock}') at raw_pos {char_pos_in_target_qtextblock_raw}")
-            # Спробуємо знайти хоча б перше входження, якщо точне не вдалося
+        if occurrence_in_qtextblock_raw == 0 and effective_query_for_occurrence_count:
+            log_debug(f"WARN: Could not determine exact occurrence_in_qtextblock_raw. Defaulting to 1.")
             occurrence_in_qtextblock_raw = 1 
 
-
-        log_debug(f"Match is the {occurrence_in_qtextblock_raw}-th occurrence in its raw QTextBlock.")
-
+        log_debug(f"Match is the {occurrence_in_qtextblock_raw}-th occurrence in its raw QTextBlock ('{text_for_occurrence_count[:50]}...' by query '{effective_query_for_occurrence_count}').")
 
         editors_to_process = [
-            (self.mw.preview_text_edit, True, string_idx_match_in_data),  # string_idx_match_in_data для preview
+            (self.mw.preview_text_edit, True, string_idx_match_in_data),  
             (self.mw.original_text_edit, False, target_qtextblock_idx_in_editor), 
             (self.mw.edited_text_edit, False, target_qtextblock_idx_in_editor)
         ]
@@ -358,7 +360,7 @@ class SearchHandler(BaseHandler):
                 editor.setTextCursor(cursor)
                 editor.ensureCursorVisible() 
             else:
-                log_debug(f"Could not find {occurrence_in_qtextblock_raw}-th occurrence of query in {editor_name}'s QTextBlock idx {widget_qtextblock_idx_to_use}")
+                log_debug(f"Could not find {occurrence_in_qtextblock_raw}-th occurrence of query '{display_query_for_widget}' in {editor_name}'s QTextBlock idx {widget_qtextblock_idx_to_use} (text: '{text_in_widget_qtextblock[:50]}...')")
 
         self.mw.search_match_block_indices.add(block_idx_match_in_data)
         if hasattr(self.mw, 'block_list_widget'):
