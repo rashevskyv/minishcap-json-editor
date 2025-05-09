@@ -4,7 +4,7 @@ import json
 import copy
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QPlainTextEdit, QVBoxLayout
 from PyQt5.QtCore import Qt, QEvent
-from PyQt5.QtGui import QKeyEvent
+from PyQt5.QtGui import QKeyEvent, QTextCursor # Додано QTextCursor
 
 from LineNumberArea import LineNumberArea
 from CustomListWidget import CustomListWidget
@@ -46,6 +46,18 @@ class MainWindow(QMainWindow):
         self.unsaved_changes = False
         self.unsaved_block_indices = set()
 
+        # Атрибути для збереження стану UI
+        self.last_selected_block_index = -1
+        self.last_selected_string_index = -1
+        self.last_cursor_position_in_edited = 0
+        self.last_edited_text_edit_scroll_value_v = 0
+        self.last_edited_text_edit_scroll_value_h = 0
+        self.last_preview_text_edit_scroll_value_v = 0
+        self.last_original_text_edit_scroll_value_v = 0
+        self.last_original_text_edit_scroll_value_h = 0
+        self.initial_load_path = None # Для шляху з settings.json
+        self.initial_edited_load_path = None
+
 
         self.newline_display_symbol = "↵"
         self.newline_css = "color: #A020F0; font-weight: bold;"
@@ -68,14 +80,14 @@ class MainWindow(QMainWindow):
         }
         self.critical_problem_lines_per_block = {}
         self.warning_problem_lines_per_block = {}
-        self.width_exceeded_lines_per_block = {} # Новий атрибут
+        self.width_exceeded_lines_per_block = {} 
 
         self.can_undo_paste = False
         self.before_paste_edited_data_snapshot = {}
         self.before_paste_block_idx_affected = -1
         self.before_paste_critical_problems_snapshot = {}
         self.before_paste_warning_problems_snapshot = {}
-        self.before_paste_width_exceeded_snapshot = {} # Для відкату стану перевищення ширини
+        self.before_paste_width_exceeded_snapshot = {} 
 
         self.search_match_block_indices = set()
         self.current_search_results = []
@@ -118,7 +130,7 @@ class MainWindow(QMainWindow):
         self.connect_signals()
 
         log_debug("MainWindow: Loading Editor Settings via SettingsManager...")
-        self.settings_manager.load_settings() 
+        self.settings_manager.load_settings() # Це встановить атрибути, такі як self.last_selected_block_index
         
         for editor_widget in [self.preview_text_edit, self.original_text_edit, self.edited_text_edit]:
             if editor_widget:
@@ -127,6 +139,41 @@ class MainWindow(QMainWindow):
                 editor_widget.GAME_DIALOG_MAX_WIDTH_PIXELS = self.GAME_DIALOG_MAX_WIDTH_PIXELS
                 if hasattr(editor_widget, 'updateLineNumberAreaWidth'):
                     editor_widget.updateLineNumberAreaWidth(0)
+
+        if self.initial_load_path:
+            log_debug(f"MainWindow: Attempting to load initial file from settings: {self.initial_load_path}")
+            self.app_action_handler.load_all_data_for_path(self.initial_load_path, self.initial_edited_load_path, is_initial_load_from_settings=True)
+            # Відновлення стану після завантаження даних
+            if self.data and 0 <= self.last_selected_block_index < len(self.data):
+                self.block_list_widget.setCurrentRow(self.last_selected_block_index)
+                # block_selected викличе populate_strings_for_block
+                # Потрібно переконатися, що string_selected викликається після populate_strings_for_block
+                QApplication.processEvents() # Даємо подіям обробитися
+                if 0 <= self.last_selected_string_index < len(self.data[self.last_selected_block_index]):
+                    self.list_selection_handler.string_selected_from_preview(self.last_selected_string_index)
+                    QApplication.processEvents() 
+                    if self.edited_text_edit:
+                        doc_len = self.edited_text_edit.document().characterCount() -1 
+                        pos_to_set = min(self.last_cursor_position_in_edited, doc_len if doc_len > 0 else 0)
+                        cursor = self.edited_text_edit.textCursor()
+                        cursor.setPosition(pos_to_set)
+                        self.edited_text_edit.setTextCursor(cursor)
+                        self.edited_text_edit.ensureCursorVisible()
+                        # Відновлення скролу
+                        self.edited_text_edit.verticalScrollBar().setValue(self.last_edited_text_edit_scroll_value_v)
+                        self.edited_text_edit.horizontalScrollBar().setValue(self.last_edited_text_edit_scroll_value_h)
+                        if self.preview_text_edit:
+                            self.preview_text_edit.verticalScrollBar().setValue(self.last_preview_text_edit_scroll_value_v)
+                        if self.original_text_edit:
+                            self.original_text_edit.verticalScrollBar().setValue(self.last_original_text_edit_scroll_value_v)
+                            self.original_text_edit.horizontalScrollBar().setValue(self.last_original_text_edit_scroll_value_h)
+
+            log_debug(f"MainWindow: Restored selection to block {self.last_selected_block_index}, string {self.last_selected_string_index}, cursor {self.last_cursor_position_in_edited}")
+        elif not self.json_path: # Якщо нічого не завантажено з settings і шляху немає
+             log_debug("MainWindow: No file auto-loaded, updating initial UI state.")
+             self.ui_updater.update_title(); self.ui_updater.update_statusbar_paths()
+             self.ui_updater.populate_blocks()
+             self.ui_updater.populate_strings_for_block(-1)
 
 
         if hasattr(self, 'search_history_to_save') and self.search_panel_widget:
@@ -142,12 +189,6 @@ class MainWindow(QMainWindow):
 
             log_debug(f"Search history loaded into panel. Last query (if any) set in SearchHandler: {self.search_handler.current_query}")
 
-
-        if not self.json_path:
-             log_debug("MainWindow: No file auto-loaded, updating initial UI state.")
-             self.ui_updater.update_title(); self.ui_updater.update_statusbar_paths()
-             self.ui_updater.populate_blocks()
-             self.ui_updater.populate_strings_for_block(-1)
 
         self._rebuild_unsaved_block_indices()
 
@@ -330,13 +371,12 @@ class MainWindow(QMainWindow):
         self.is_programmatically_changing_text = True
         preview_edit = getattr(self, 'preview_text_edit', None)
         if preview_edit and hasattr(preview_edit, 'clearAllProblemTypeHighlights'):
-            preview_edit.clearAllProblemTypeHighlights() # Це очистить всі, включно з width exceeded
-            # Потрібно буде відновити width exceeded highlights в populate_strings_for_block
+            preview_edit.clearAllProblemTypeHighlights() 
 
         if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
             self.ui_updater.update_block_item_text_with_problem_count(block_to_refresh_ui_for)
 
-        self.ui_updater.populate_strings_for_block(self.current_block_idx) # Це відновить потрібні підсвітки
+        self.ui_updater.populate_strings_for_block(self.current_block_idx) 
 
         if self.current_block_idx != block_to_refresh_ui_for:
             if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
@@ -356,12 +396,12 @@ class MainWindow(QMainWindow):
                 if QMessageBox.question(self, "Rescan Tags",
                                        f"Do you want to rescan tags in the current block ('{block_name}') with the new mappings now?",
                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes) == QMessageBox.Yes:
-                    self.app_action_handler.rescan_tags_for_single_block(self.current_block_idx)
+                    self.app_action_handler.rescan_issues_for_single_block(self.current_block_idx, use_default_mappings=True)
             else:
                  if QMessageBox.question(self, "Rescan Tags",
                                        "No block is currently selected. Do you want to rescan all tags in all blocks?",
                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.No) == QMessageBox.Yes:
-                    self.app_action_handler.rescan_all_tags()
+                    self.app_action_handler.rescan_all_tags() # Цей метод тепер сканує все, але мапінги не застосовує до даних
         else: QMessageBox.warning(self, "Reload Error", "Could not reload tag mappings. Check settings.json or console logs.")
 
 
@@ -392,7 +432,7 @@ class MainWindow(QMainWindow):
                 if QMessageBox.question(self, "Rescan Tags",
                                        f"Do you want to rescan tags in the current block ('{block_name}') with the new mapping now?",
                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes) == QMessageBox.Yes:
-                    self.app_action_handler.rescan_tags_for_single_block(self.current_block_idx)
+                    self.app_action_handler.rescan_issues_for_single_block(self.current_block_idx, use_default_mappings=True)
         else: log_debug("  User cancelled overwrite or no action taken.")
 
 
@@ -438,6 +478,20 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         log_debug("--> MainWindow: closeEvent received.")
         
+        # Зберігаємо поточний стан перед закриттям
+        self.last_selected_block_index = self.current_block_idx
+        self.last_selected_string_index = self.current_string_idx
+        if self.edited_text_edit:
+            self.last_cursor_position_in_edited = self.edited_text_edit.textCursor().position()
+            self.last_edited_text_edit_scroll_value_v = self.edited_text_edit.verticalScrollBar().value()
+            self.last_edited_text_edit_scroll_value_h = self.edited_text_edit.horizontalScrollBar().value()
+        if self.preview_text_edit:
+            self.last_preview_text_edit_scroll_value_v = self.preview_text_edit.verticalScrollBar().value()
+        if self.original_text_edit:
+            self.last_original_text_edit_scroll_value_v = self.original_text_edit.verticalScrollBar().value()
+            self.last_original_text_edit_scroll_value_h = self.original_text_edit.horizontalScrollBar().value()
+
+
         if self.search_panel_widget:
             self.search_history_to_save = self.search_panel_widget.get_history()
             log_debug(f"Preparing to save search history: {len(self.search_history_to_save)} items")

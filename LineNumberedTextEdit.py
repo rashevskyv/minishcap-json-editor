@@ -28,12 +28,13 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.current_line_color = QColor("#E8F2FE") 
         self.linked_cursor_block_color = QColor("#F0F8FF") 
         self.linked_cursor_pos_color = QColor(Qt.blue).lighter(160) 
-        self.preview_selected_line_color = QColor("#E6F7FF") 
+        # Змінюємо колір підсвітки вибраного рядка в preview на більш насичений
+        self.preview_selected_line_color = QColor("#CDE8FF") # Був "#E6F7FF"
         self.critical_problem_line_color = QColor(Qt.yellow).lighter(130) 
-        self.warning_problem_line_color = QColor("#DDDDDD") 
+        self.warning_problem_line_color = QColor("#DDDDDD") # Цей колір більше не буде використовуватися для фону preview
         self.tag_interaction_highlight_color = QColor(Qt.green).lighter(150)
         self.search_match_highlight_color = QColor(255, 165, 0) # Orange
-        self.width_exceeded_line_color = QColor(Qt.red).lighter(160) # Для підсвітки всього рядка preview (зараз не використовується)
+        self.width_exceeded_line_color = QColor(Qt.red).lighter(160) 
 
 
         self.highlightManager = TextHighlightManager(self) 
@@ -75,7 +76,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
             self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = getattr(parent, 'LINE_WIDTH_WARNING_THRESHOLD_PIXELS', DEFAULT_LINE_WIDTH_WARNING_THRESHOLD)
         
         self.pixel_width_display_area_width = self.fontMetrics().horizontalAdvance("999") + 6 
-        self.preview_indicator_area_width = (self.lineNumberArea.preview_indicator_width + self.lineNumberArea.preview_indicator_spacing) * 3 + 2 # Місце для ~3 індикаторів
+        self.preview_indicator_area_width = (self.lineNumberArea.preview_indicator_width + self.lineNumberArea.preview_indicator_spacing) * 3 + 2 
 
 
     def showContextMenu(self, pos: QPoint):
@@ -230,37 +231,42 @@ class LineNumberedTextEdit(QPlainTextEdit):
         return self.highlightManager.hasCriticalProblemHighlight(line_number)
 
     def addWarningLineHighlight(self, line_number: int):
-        self.highlightManager.addWarningLineHighlight(line_number)
+        # Більше не використовуємо для фонової підсвітки preview
+        if self.objectName() != "preview_text_edit":
+            self.highlightManager.addWarningLineHighlight(line_number)
 
     def removeWarningLineHighlight(self, line_number: int) -> bool:
-        return self.highlightManager.removeWarningLineHighlight(line_number)
+        # Більше не використовуємо для фонової підсвітки preview
+        if self.objectName() != "preview_text_edit":
+            return self.highlightManager.removeWarningLineHighlight(line_number)
+        return False
 
     def clearWarningLineHighlights(self):
-        self.highlightManager.clearWarningLineHighlights()
+         # Більше не використовуємо для фонової підсвітки preview
+        if self.objectName() != "preview_text_edit":
+            self.highlightManager.clearWarningLineHighlights()
 
     def hasWarningLineHighlight(self, line_number: Optional[int] = None) -> bool:
-        return self.highlightManager.hasWarningLineHighlight(line_number)
+        # Більше не використовуємо для фонової підсвітки preview
+        if self.objectName() != "preview_text_edit":
+            return self.highlightManager.hasWarningLineHighlight(line_number)
+        return False
         
     def addWidthExceededHighlight(self, line_number: int):
-        # Цей метод більше не буде викликатися з UIUpdater для preview,
-        # але може використовуватися в інших місцях, якщо потрібно підсвітити весь рядок.
-        # Зараз індикація ширини для preview робиться тільки маркером в LineNumberArea.
-        if self.objectName() == "preview_text_edit": # Тільки для preview
-            self.highlightManager.addWidthExceededHighlight(line_number)
+        # Фонова підсвітка для width_exceeded більше не потрібна, є маркер
+        pass
 
 
     def removeWidthExceededHighlight(self, line_number: int) -> bool:
-        if self.objectName() == "preview_text_edit":
-            return self.highlightManager.removeWidthExceededHighlight(line_number)
+        # Фонова підсвітка для width_exceeded більше не потрібна
         return False
 
     def clearWidthExceededHighlights(self):
-        if self.objectName() == "preview_text_edit":
-            self.highlightManager.clearWidthExceededHighlights()
+        # Фонова підсвітка для width_exceeded більше не потрібна
+        pass
 
     def hasWidthExceededHighlight(self, line_number: Optional[int] = None) -> bool:
-        if self.objectName() == "preview_text_edit":
-            return self.highlightManager.hasWidthExceededHighlight(line_number)
+        # Фонова підсвітка для width_exceeded більше не потрібна
         return False
 
     def setPreviewSelectedLineHighlight(self, line_number: int): 
@@ -282,9 +288,8 @@ class LineNumberedTextEdit(QPlainTextEdit):
     def removeProblemLineHighlight(self, line_number: int) -> bool: return self.removeCriticalProblemHighlight(line_number)
     def clearProblemLineHighlights(self): self.clearAllProblemTypeHighlights()
     def hasProblemHighlight(self, line_number: Optional[int] = None) -> bool: 
-        return self.highlightManager.hasCriticalProblemHighlight(line_number) or \
-               self.highlightManager.hasWarningLineHighlight(line_number) or \
-               self.hasWidthExceededHighlight(line_number)
+        # Перевіряємо тільки ті, що використовуються для фонової підсвітки
+        return self.highlightManager.hasCriticalProblemHighlight(line_number)
 
 
     def setReadOnly(self, ro):
@@ -396,7 +401,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
             if current_q_block.isVisible() and bottom >= event.rect().top():
                 line_height = int(self.blockBoundingRect(current_q_block).height())
                 
-                data_line_index_for_this_q_block = current_q_block_number # Для preview це індекс рядка даних
+                data_line_index_for_this_q_block = current_q_block_number 
                 if self.objectName() in ["original_text_edit", "edited_text_edit"]:
                     data_line_index_for_this_q_block = active_data_line_idx if active_data_line_idx != -1 else -1
 
@@ -444,14 +449,12 @@ class LineNumberedTextEdit(QPlainTextEdit):
                         block_key_str_for_preview = str(current_block_idx_data)
                         
                         indicators_to_draw_preview = []
-                        # Пріоритет: критичні -> попередження -> ширина
                         if data_line_index_for_this_q_block in main_window_ref.critical_problem_lines_per_block.get(block_key_str_for_preview, set()):
                             indicators_to_draw_preview.append(self.lineNumberArea.preview_critical_indicator_color)
                         elif data_line_index_for_this_q_block in main_window_ref.warning_problem_lines_per_block.get(block_key_str_for_preview, set()):
                             indicators_to_draw_preview.append(self.lineNumberArea.preview_warning_indicator_color)
                         
                         if data_line_index_for_this_q_block in main_window_ref.width_exceeded_lines_per_block.get(block_key_str_for_preview, set()):
-                            # Додаємо індикатор ширини, якщо немає більш пріоритетних або якщо хочемо кілька
                             if not indicators_to_draw_preview or \
                                (len(indicators_to_draw_preview) < 2 and self.lineNumberArea.preview_width_exceeded_indicator_color not in indicators_to_draw_preview):
                                 indicators_to_draw_preview.append(self.lineNumberArea.preview_width_exceeded_indicator_color)

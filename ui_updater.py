@@ -46,7 +46,6 @@ class UIUpdater:
 
         if 0 <= current_selection_block_idx < self.mw.block_list_widget.count():
             self.mw.block_list_widget.setCurrentRow(current_selection_block_idx)
-        # Після додавання всіх елементів, оновлюємо viewport, щоб делегат їх намалював
         self.mw.block_list_widget.viewport().update()
 
 
@@ -84,11 +83,6 @@ class UIUpdater:
             item.setText(display_name_with_issues)
             text_changed = True
         
-        # Замість встановлення фону тут, ми просто оновимо viewport,
-        # щоб делегат перемалював елемент з новими даними.
-        # Якщо текст змінився, Qt, швидше за все, сам ініціює перемальовку.
-        # Але для гарантії, особливо якщо змінилися тільки дані про проблеми,
-        # які делегат використовує, але текст залишився тим самим.
         self.mw.block_list_widget.viewport().update()
 
 
@@ -101,7 +95,8 @@ class UIUpdater:
 
         critical_lines_to_restore = set()
         warning_lines_to_restore = set()
-        width_exceeded_lines_to_restore = set() 
+        # width_exceeded_lines_to_restore не потрібне для фонового підсвічування рядка,
+        # оскільки індикація перевищення ширини тепер тільки через маркер в LineNumberArea.
         block_key_str = str(block_idx)
 
         if block_idx >=0 and preview_edit: 
@@ -109,18 +104,20 @@ class UIUpdater:
                 critical_lines_to_restore = self.mw.critical_problem_lines_per_block.get(block_key_str, set()).copy()
             if hasattr(self.mw, 'warning_problem_lines_per_block'):
                 warning_lines_to_restore = self.mw.warning_problem_lines_per_block.get(block_key_str, set()).copy()
-            if hasattr(self.mw, 'width_exceeded_lines_per_block'): # Завантажуємо дані для індикаторів
-                width_exceeded_lines_to_restore = self.mw.width_exceeded_lines_per_block.get(block_key_str, set()).copy()
-
+            # Не завантажуємо width_exceeded_lines_to_restore для фонової підсвітки самого тексту
 
         self.mw.is_programmatically_changing_text = True 
         
         if preview_edit and hasattr(preview_edit, 'clearPreviewSelectedLineHighlight'):
             preview_edit.clearPreviewSelectedLineHighlight()
 
-        if preview_edit and hasattr(preview_edit, 'clearAllProblemTypeHighlights'):
-            log_debug(f"UIUpdater: Clearing all problem highlights for preview before populating for block {block_idx}.")
-            preview_edit.clearAllProblemTypeHighlights()
+        # Очищаємо тільки ті підсвітки, які ми контролюємо для тексту (критичні та попередження по тегах)
+        if preview_edit:
+            if hasattr(preview_edit, 'clearCriticalProblemHighlights'):
+                preview_edit.clearCriticalProblemHighlights()
+            if hasattr(preview_edit, 'clearWarningLineHighlights'):
+                 preview_edit.clearWarningLineHighlights()
+            # Не викликаємо clearWidthExceededHighlights, бо це стосується фону, а не маркера
 
 
         preview_lines = []
@@ -139,11 +136,6 @@ class UIUpdater:
             preview_lines.append(preview_line)
         
         if preview_edit:
-            if hasattr(preview_edit.highlightManager, '_critical_problem_selections'): preview_edit.highlightManager._critical_problem_selections = [] 
-            if hasattr(preview_edit.highlightManager, '_warning_problem_selections'): preview_edit.highlightManager._warning_problem_selections = []
-            if hasattr(preview_edit.highlightManager, '_width_exceeded_selections'): preview_edit.highlightManager._width_exceeded_selections = []
-
-
             preview_edit.setPlainText("\n".join(preview_lines))
             
             # Застосовуємо фонові підсвітки для тегових проблем
@@ -151,11 +143,9 @@ class UIUpdater:
                 if line_num in critical_lines_to_restore:
                     if hasattr(preview_edit, 'addCriticalProblemHighlight'):
                         preview_edit.addCriticalProblemHighlight(line_num)
-                elif line_num in warning_lines_to_restore: # Тільки якщо не критична
+                elif line_num in warning_lines_to_restore: 
                     if hasattr(preview_edit, 'addWarningLineHighlight'):
                         preview_edit.addWarningLineHighlight(line_num)
-                # Фонова підсвітка для width_exceeded більше не потрібна тут,
-                # оскільки індикація тепер через маркер в LineNumberArea
             
             if hasattr(preview_edit, 'applyQueuedHighlights'): 
                 preview_edit.applyQueuedHighlights()
