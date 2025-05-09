@@ -1,20 +1,23 @@
 import sys
 import os
 import json
-import copy 
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QPlainTextEdit
+import copy
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QPlainTextEdit, QVBoxLayout
 from PyQt5.QtCore import Qt
 
-from LineNumberArea import LineNumberArea # <--- Перевірити імпорт
+from LineNumberArea import LineNumberArea
 from CustomListWidget import CustomListWidget
 from ui_setup import setup_main_window_ui
 from data_state_processor import DataStateProcessor
 from ui_updater import UIUpdater
 from settings_manager import SettingsManager
+from search_panel import SearchPanelWidget
 
 from handlers.list_selection_handler import ListSelectionHandler
 from handlers.text_operation_handler import TextOperationHandler
 from handlers.app_action_handler import AppActionHandler
+from handlers.search_handler import SearchHandler
+
 
 from utils import log_debug
 
@@ -25,8 +28,8 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         log_debug("++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++")
-        
-        self.EDITOR_PLAYER_TAG = EDITOR_PLAYER_TAG 
+
+        self.EDITOR_PLAYER_TAG = EDITOR_PLAYER_TAG
         self.ORIGINAL_PLAYER_TAG = ORIGINAL_PLAYER_TAG
 
         self.is_programmatically_changing_text = False
@@ -34,9 +37,8 @@ class MainWindow(QMainWindow):
         self.data = []; self.edited_data = {}; self.edited_file_data = []
         self.block_names = {}; self.current_block_idx = -1; self.current_string_idx = -1
         self.unsaved_changes = False
-        # --- Нова множина для відстеження незбережених блоків ---
-        self.unsaved_block_indices = set() 
-        # -------------------------------------------------------
+        self.unsaved_block_indices = set()
+
 
         self.newline_display_symbol = "↵"
         self.newline_css = "color: #A020F0; font-weight: bold;"
@@ -45,7 +47,7 @@ class MainWindow(QMainWindow):
         self.space_dot_color_hex = "#BBBBBB"
         self.preview_wrap_lines = True
         self.editors_wrap_lines = False
-        self.bracket_tag_color_hex = "#FF8C00" 
+        self.bracket_tag_color_hex = "#FF8C00"
 
         self.default_tag_mappings = {
             "[red]": "{Color:Red}",
@@ -53,71 +55,80 @@ class MainWindow(QMainWindow):
             "[green]": "{Color:Green}",
             "[/c]": "{Color:White}",
             "[unk10]": "{Symbol:10}",
-            self.EDITOR_PLAYER_TAG: self.ORIGINAL_PLAYER_TAG 
+            self.EDITOR_PLAYER_TAG: self.ORIGINAL_PLAYER_TAG
         }
-        self.critical_problem_lines_per_block = {} 
-        self.warning_problem_lines_per_block = {}  
+        self.critical_problem_lines_per_block = {}
+        self.warning_problem_lines_per_block = {}
 
         self.can_undo_paste = False
         self.before_paste_edited_data_snapshot = {}
         self.before_paste_block_idx_affected = -1
-        self.before_paste_critical_problems_snapshot = {} 
+        self.before_paste_critical_problems_snapshot = {}
         self.before_paste_warning_problems_snapshot = {}
+
+        self.search_match_block_indices = set()
+        self.current_search_results = []
+        self.current_search_index = -1
+
 
         self.main_splitter = None; self.right_splitter = None; self.bottom_right_splitter = None
         self.open_action = None; self.open_changes_action = None; self.save_action = None;
         self.save_as_action = None; self.reload_action = None; self.revert_action = None;
-        self.reload_tag_mappings_action = None 
+        self.reload_tag_mappings_action = None
         self.exit_action = None; self.paste_block_action = None;
         self.undo_typing_action = None; self.redo_typing_action = None;
         self.undo_paste_action = None
         self.rescan_all_tags_action = None
+        self.find_action = None
+        self.main_vertical_layout = None
 
         log_debug("MainWindow: Initializing Core Components...")
         self.data_processor = DataStateProcessor(self)
         self.ui_updater = UIUpdater(self, self.data_processor)
         self.settings_manager = SettingsManager(self)
 
+
         log_debug("MainWindow: Initializing Handlers...")
         self.list_selection_handler = ListSelectionHandler(self, self.data_processor, self.ui_updater)
         self.editor_operation_handler = TextOperationHandler(self, self.data_processor, self.ui_updater)
-        self.app_action_handler = AppActionHandler(self, self.data_processor, self.ui_updater) 
+        self.app_action_handler = AppActionHandler(self, self.data_processor, self.ui_updater)
+        self.search_handler = SearchHandler(self, self.data_processor, self.ui_updater)
+
 
         log_debug("MainWindow: Setting up UI...")
-        setup_main_window_ui(self) 
+        setup_main_window_ui(self)
+
+        self.search_panel_widget = SearchPanelWidget(self)
+        self.main_vertical_layout.insertWidget(0, self.search_panel_widget)
+        self.search_panel_widget.setVisible(False)
+
 
         log_debug("MainWindow: Connecting Signals...")
         self.connect_signals()
 
         log_debug("MainWindow: Loading Editor Settings via SettingsManager...")
-        self.settings_manager.load_settings() 
+        self.settings_manager.load_settings()
 
         if not self.json_path:
              log_debug("MainWindow: No file auto-loaded, updating initial UI state.")
              self.ui_updater.update_title(); self.ui_updater.update_statusbar_paths()
              self.ui_updater.populate_blocks()
              self.ui_updater.populate_strings_for_block(-1)
-             
-        # Початкове заповнення unsaved_block_indices на основі edited_data, 
-        # яке могло бути завантажене (хоча зараз логіка цього не передбачає, але про всяк випадок)
+
         self._rebuild_unsaved_block_indices()
 
         log_debug("++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++")
 
-    # --- Новий метод для оновлення множини незбережених блоків ---
+
     def _rebuild_unsaved_block_indices(self):
-        """Перебудовує множину індексів блоків з незбереженими змінами."""
         self.unsaved_block_indices.clear()
         for block_idx, _ in self.edited_data.keys():
             self.unsaved_block_indices.add(block_idx)
         log_debug(f"Rebuilt unsaved_block_indices: {self.unsaved_block_indices}")
-        # Оновлюємо відображення списку блоків, щоб маркери з'явилися/зникли
         if hasattr(self, 'block_list_widget'):
-             self.block_list_widget.viewport().update() # Примусове перемальовування списку
-    # -----------------------------------------------------------------
-        
+             self.block_list_widget.viewport().update()
+
     def connect_signals(self):
-        # ... (без змін) ...
         log_debug("--> MainWindow: connect_signals() started")
         if hasattr(self, 'block_list_widget'):
             self.block_list_widget.currentItemChanged.connect(self.list_selection_handler.block_selected)
@@ -145,13 +156,35 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'reload_tag_mappings_action'):
             self.reload_tag_mappings_action.triggered.connect(self.trigger_reload_tag_mappings)
             log_debug("Connected reload_tag_mappings_action.")
+        if hasattr(self, 'find_action'):
+            self.find_action.triggered.connect(self.toggle_search_panel)
+            log_debug("Connected find_action.")
+        if hasattr(self, 'search_panel_widget'):
+            self.search_panel_widget.close_requested.connect(self.hide_search_panel)
+            self.search_panel_widget.find_next_requested.connect(self.search_handler.find_next)
+            self.search_panel_widget.find_previous_requested.connect(self.search_handler.find_previous)
+
+
         log_debug("--> MainWindow: connect_signals() finished")
+
+    def toggle_search_panel(self):
+        if self.search_panel_widget.isVisible():
+            self.hide_search_panel()
+        else:
+            self.search_panel_widget.setVisible(True)
+            self.search_panel_widget.focus_search_input()
+            self.search_handler.reset_search()
+
+    def hide_search_panel(self):
+        self.search_panel_widget.setVisible(False)
+        self.search_handler.clear_all_search_highlights()
+        self.search_match_block_indices.clear()
+        self.block_list_widget.viewport().update()
 
 
     def trigger_save_action(self):
         log_debug("<<<<<<<<<< ACTION: Save Triggered (via MainWindow proxy) >>>>>>>>>>")
         if self.app_action_handler.save_data_action(ask_confirmation=True):
-             # Після успішного збереження перебудовуємо індекси (мають стати порожніми)
              self._rebuild_unsaved_block_indices()
 
     def trigger_revert_action(self):
@@ -160,8 +193,7 @@ class MainWindow(QMainWindow):
             log_debug("Revert successful, UI updated by DataStateProcessor.")
             if hasattr(self, 'critical_problem_lines_per_block'): self.critical_problem_lines_per_block.clear()
             if hasattr(self, 'warning_problem_lines_per_block'): self.warning_problem_lines_per_block.clear()
-            # Після відкату до оригіналу, незбережених змін немає
-            self._rebuild_unsaved_block_indices() 
+            self._rebuild_unsaved_block_indices()
             if hasattr(self.ui_updater, 'clear_all_problem_block_highlights_and_text'):
                 self.ui_updater.clear_all_problem_block_highlights_and_text()
         else: log_debug("Revert was cancelled or failed.")
@@ -172,67 +204,58 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "Undo Paste", "Nothing to undo for the last paste operation.")
             if hasattr(self, 'statusBar'): self.statusBar.showMessage("Nothing to undo for paste.", 2000)
             return
-        
-        # Запам'ятовуємо блок, який треба оновити
+
         block_to_refresh_ui_for = self.before_paste_block_idx_affected
-        
-        self.edited_data = dict(self.before_paste_edited_data_snapshot) 
+
+        self.edited_data = dict(self.before_paste_edited_data_snapshot)
         self.critical_problem_lines_per_block = copy.deepcopy(self.before_paste_critical_problems_snapshot)
         self.warning_problem_lines_per_block = copy.deepcopy(self.before_paste_warning_problems_snapshot)
-        
-        # Перебудовуємо індекси незбережених блоків після відновлення edited_data
-        self._rebuild_unsaved_block_indices() 
-        
-        self.unsaved_changes = bool(self.edited_data) # Визначаємо unsaved_changes на основі edited_data
-        # is_different_from_file логіка тут не потрібна, бо unsaved_changes це просто наявність edited_data
-        
+
+        self._rebuild_unsaved_block_indices()
+
+        self.unsaved_changes = bool(self.edited_data)
+
         self.ui_updater.update_title()
-        
+
         self.is_programmatically_changing_text = True
         preview_edit = getattr(self, 'preview_text_edit', None)
-        if preview_edit and hasattr(preview_edit, 'clearAllProblemTypeHighlights'): 
-            # Очищаємо підсвічування проблем тільки для поточного блоку, бо інші могли мати проблеми до вставки
-            preview_edit.clearCriticalProblemHighlights() 
+        if preview_edit and hasattr(preview_edit, 'clearAllProblemTypeHighlights'):
+            preview_edit.clearCriticalProblemHighlights()
             preview_edit.clearWarningLineHighlights()
-        
-        # Оновлюємо текст елемента списку (лічильники проблем)
-        if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'): 
+
+        if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
             self.ui_updater.update_block_item_text_with_problem_count(block_to_refresh_ui_for)
-        
-        # Оновлюємо вміст preview
-        self.ui_updater.populate_strings_for_block(self.current_block_idx) 
-        
-        # Оновлюємо лічильник проблем для сусіднього блоку, якщо він був зачеплений
+
+        self.ui_updater.populate_strings_for_block(self.current_block_idx)
+
         if self.current_block_idx != block_to_refresh_ui_for:
-            if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'): 
+            if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
                 self.ui_updater.update_block_item_text_with_problem_count(block_to_refresh_ui_for)
-            
+
         self.is_programmatically_changing_text = False
         self.can_undo_paste = False
         if hasattr(self, 'undo_paste_action'): self.undo_paste_action.setEnabled(False)
         if hasattr(self, 'statusBar'): self.statusBar.showMessage("Last paste operation undone.", 2000)
 
     def trigger_reload_tag_mappings(self):
-        # ... (без змін) ...
         log_debug("<<<<<<<<<< ACTION: Reload Tag Mappings Triggered >>>>>>>>>>")
         if self.settings_manager.reload_default_tag_mappings():
             QMessageBox.information(self, "Tag Mappings Reloaded", "Default tag mappings have been reloaded from settings.json.")
             if self.current_block_idx != -1:
                 block_name = self.block_names.get(str(self.current_block_idx), f"Block {self.current_block_idx}")
-                if QMessageBox.question(self, "Rescan Tags", 
+                if QMessageBox.question(self, "Rescan Tags",
                                        f"Do you want to rescan tags in the current block ('{block_name}') with the new mappings now?",
                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes) == QMessageBox.Yes:
                     self.app_action_handler.rescan_tags_for_single_block(self.current_block_idx)
             else:
-                 if QMessageBox.question(self, "Rescan Tags", 
+                 if QMessageBox.question(self, "Rescan Tags",
                                        "No block is currently selected. Do you want to rescan all tags in all blocks?",
-                                       QMessageBox.Yes | QMessageBox.No, QMessageBox.No) == QMessageBox.Yes: 
+                                       QMessageBox.Yes | QMessageBox.No, QMessageBox.No) == QMessageBox.Yes:
                     self.app_action_handler.rescan_all_tags()
         else: QMessageBox.warning(self, "Reload Error", "Could not reload tag mappings. Check settings.json or console logs.")
 
 
     def handle_add_tag_mapping_request(self, bracket_tag: str, curly_tag: str):
-        # ... (без змін) ...
         log_debug(f"MainWindow: Received request to map '{bracket_tag}' -> '{curly_tag}'")
         if not bracket_tag or not curly_tag:
             log_debug("  Error: Empty bracket_tag or curly_tag.")
@@ -251,12 +274,12 @@ class MainWindow(QMainWindow):
         if reply == QMessageBox.Yes:
             self.default_tag_mappings[bracket_tag] = curly_tag
             log_debug(f"  Added/Updated mapping: {bracket_tag} -> {curly_tag}. Total mappings: {len(self.default_tag_mappings)}")
-            QMessageBox.information(self, "Tag Mapping Added", 
+            QMessageBox.information(self, "Tag Mapping Added",
                                     f"Mapping '{bracket_tag}' -> '{curly_tag}' has been added/updated.\n"
                                     "This change will be saved to settings.json when the application is closed.")
             if self.current_block_idx != -1:
                 block_name = self.block_names.get(str(self.current_block_idx), f"Block {self.current_block_idx}")
-                if QMessageBox.question(self, "Rescan Tags", 
+                if QMessageBox.question(self, "Rescan Tags",
                                        f"Do you want to rescan tags in the current block ('{block_name}') with the new mapping now?",
                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes) == QMessageBox.Yes:
                     self.app_action_handler.rescan_tags_for_single_block(self.current_block_idx)
@@ -265,11 +288,9 @@ class MainWindow(QMainWindow):
 
     def load_all_data_for_path(self, original_file_path, manually_set_edited_path=None, is_initial_load_from_settings=False):
         self.app_action_handler.load_all_data_for_path(original_file_path, manually_set_edited_path, is_initial_load_from_settings)
-        # Після завантаження нових даних, перебудовуємо індекси незбережених (будуть порожні)
-        self._rebuild_unsaved_block_indices() 
+        self._rebuild_unsaved_block_indices()
 
     def _apply_text_wrap_settings(self):
-        # ... (без змін) ...
         log_debug(f"Applying text wrap settings: Preview wrap: {self.preview_wrap_lines}, Editors wrap: {self.editors_wrap_lines}")
         preview_wrap_mode = QPlainTextEdit.WidgetWidth if self.preview_wrap_lines else QPlainTextEdit.NoWrap
         editors_wrap_mode = QPlainTextEdit.WidgetWidth if self.editors_wrap_lines else QPlainTextEdit.NoWrap
@@ -279,7 +300,6 @@ class MainWindow(QMainWindow):
 
 
     def _reconfigure_all_highlighters(self):
-        # ... (без змін) ...
         log_debug("MainWindow: Reconfiguring all highlighters...")
         common_args = {
             "newline_symbol": self.newline_display_symbol, "newline_css_str": self.newline_css,
@@ -299,20 +319,19 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         log_debug("--> MainWindow: closeEvent received.")
-        # Перевірка unsaved_changes тепер робиться в AppActionHandler
         self.app_action_handler.handle_close_event(event)
         if event.isAccepted():
             log_debug("Close accepted. Saving editor settings via SettingsManager.")
-            self.settings_manager.save_settings() 
+            self.settings_manager.save_settings()
             super().closeEvent(event)
-        else: 
+        else:
             log_debug("Close ignored by user or handler.")
         log_debug("<-- MainWindow: closeEvent finished.")
 
 if __name__ == '__main__':
     log_debug("================= Application Start =================")
     app = QApplication(sys.argv)
-    window = MainWindow() 
+    window = MainWindow()
     window.show()
     log_debug("Starting Qt event loop...")
     exit_code = app.exec_()

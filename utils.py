@@ -1,4 +1,3 @@
-# utils.py
 import datetime
 import re
 
@@ -28,7 +27,17 @@ def convert_dots_to_spaces_from_editor(text: str) -> str:
     return text.replace(SPACE_DOT_SYMBOL, " ")
 
 def remove_curly_tags(text: str) -> str:
-    """Видаляє всі теги формату {...} з тексту."""
     if text is None:
         return ""
     return re.sub(r"\{[^}]*\}", "", text)
+
+def convert_raw_to_display_text(raw_text: str, show_dots: bool, newline_char_for_preview: str = "") -> str:
+    if raw_text is None:
+        return ""
+    
+    text_with_dots = convert_spaces_to_dots_for_display(str(raw_text), show_dots)
+    
+    if newline_char_for_preview: # Застосовуємо тільки якщо передано символ (для preview)
+        text_with_dots = text_with_dots.replace('\n', newline_char_for_preview)
+        
+    return text_with_dots

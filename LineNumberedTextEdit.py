@@ -30,6 +30,8 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.critical_problem_line_color = QColor(Qt.yellow).lighter(130) 
         self.warning_problem_line_color = QColor("#DDDDDD") 
         self.tag_interaction_highlight_color = QColor(Qt.green).lighter(150)
+        self.search_match_highlight_color = QColor(255, 165, 0) # Orange
+
 
         self.highlightManager = TextHighlightManager(self) 
 
@@ -67,8 +69,8 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
         main_window = self.window()
         if not isinstance(main_window, QMainWindow): return
-        if not hasattr(main_window, 'data_processor'): return # Потрібен DataProcessor
-        if not hasattr(main_window, 'editor_operation_handler'): return # Потрібен TextOperationHandler
+        if not hasattr(main_window, 'data_processor'): return 
+        if not hasattr(main_window, 'editor_operation_handler'): return 
 
         is_preview_widget = hasattr(main_window, 'preview_text_edit') and self == main_window.preview_text_edit
         
@@ -77,9 +79,8 @@ class LineNumberedTextEdit(QPlainTextEdit):
             clicked_cursor = self.cursorForPosition(pos)
             clicked_line_number = clicked_cursor.blockNumber()
             
-            # Перевіряємо, чи індекси валідні
             if current_block_idx < 0 or clicked_line_number < 0 : 
-                 menu.exec_(self.mapToGlobal(pos)) # Показуємо стандартне меню, якщо не вибрано рядок/блок
+                 menu.exec_(self.mapToGlobal(pos)) 
                  return
 
             if hasattr(main_window, 'paste_block_action'):
@@ -98,22 +99,16 @@ class LineNumberedTextEdit(QPlainTextEdit):
             if hasattr(main_window.editor_operation_handler, 'revert_single_line'):
                 revert_line_action.triggered.connect(lambda checked=False, line=clicked_line_number: main_window.editor_operation_handler.revert_single_line(line))
                 
-                # --- Оновлена логіка активації ---
                 is_revertable = False
-                # Отримуємо оригінальний текст
                 original_text = main_window.data_processor._get_string_from_source(current_block_idx, clicked_line_number, main_window.data, "original_for_revert_check")
                 if original_text is not None:
-                     # Отримуємо поточний текст (з урахуванням усіх джерел)
                      current_text, _ = main_window.data_processor.get_current_string_text(current_block_idx, clicked_line_number)
-                     # Якщо поточний текст відрізняється від оригінального, можна скасувати
                      if current_text != original_text:
                           is_revertable = True
                 revert_line_action.setEnabled(is_revertable)
-                # ---------------------------------
             else:
                  revert_line_action.setEnabled(False) 
 
-        # Тут можна додати дії для original_text_edit
         is_original_widget = hasattr(main_window, 'original_text_edit') and self == main_window.original_text_edit
         if is_original_widget:
              tag_text_curly, _, _ = self.get_tag_at_cursor(self.cursorForPosition(pos), r"\{[^}]*\}")
@@ -124,7 +119,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
         menu.exec_(self.mapToGlobal(pos))
         
-    # Допоміжна функція для копіювання тегу з original_text_edit
     def copy_tag_to_clipboard(self, tag_text_curly):
          actual_main_window = self.window()
          if not isinstance(actual_main_window, QMainWindow): return
@@ -132,9 +126,9 @@ class LineNumberedTextEdit(QPlainTextEdit):
          text_to_copy = tag_text_curly
          if tag_text_curly == self.original_player_tag: 
              text_to_copy = self.editor_player_tag
-             log_debug(f"LNET ({self.widget_id} - original_text_edit context): Copied '{self.original_player_tag}' as '{self.editor_player_tag}'")
+             log_debug(f"LNET ({self.objectName()}): Copied '{self.original_player_tag}' as '{self.editor_player_tag}'")
          else:
-             log_debug(f"LNET ({self.widget_id} - original_text_edit context): Copied tag: {tag_text_curly}")
+             log_debug(f"LNET ({self.objectName()}): Copied tag: {tag_text_curly}")
              
          QApplication.clipboard().setText(text_to_copy)
          if hasattr(actual_main_window, 'statusBar'): 
@@ -168,7 +162,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
             if self.isReadOnly() and hasattr(actual_main_window, 'original_text_edit') and self == actual_main_window.original_text_edit:
                 tag_text_curly, tag_start, tag_end = self.get_tag_at_cursor(text_cursor_at_click, r"\{[^}]*\}")
                 if tag_text_curly:
-                    self.copy_tag_to_clipboard(tag_text_curly) # Використовуємо нову функцію
+                    self.copy_tag_to_clipboard(tag_text_curly) 
                     self._momentary_highlight_tag(text_cursor_at_click.block(), tag_start, len(tag_text_curly)) 
                     event.accept(); return
             elif not self.isReadOnly() and hasattr(actual_main_window, 'edited_text_edit') and self == actual_main_window.edited_text_edit:
@@ -251,7 +245,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.highlightManager.clearAllHighlights() 
         if not ro:
              self.highlightManager.updateCurrentLineHighlight()
-             # Якщо стає Editable, вимикаємо контекстне меню (воно має стандартні дії)
              self.setContextMenuPolicy(Qt.DefaultContextMenu)
              try:
                   self.customContextMenuRequested.disconnect(self.showContextMenu)
@@ -279,13 +272,15 @@ class LineNumberedTextEdit(QPlainTextEdit):
     def updateLineNumberArea(self, rect: QRectF, dy: int):
         if dy: self.lineNumberArea.scroll(0, dy)
         else: self.lineNumberArea.update(0, 0, self.lineNumberArea.width(), self.lineNumberArea.height())
-        self.updateLineNumberAreaWidth(0)    
+        if self.isVisible(): 
+            self.updateLineNumberAreaWidth(0)    
     
     def resizeEvent(self, event): 
         super().resizeEvent(event)
         cr = self.contentsRect()
         self.lineNumberArea.setGeometry(QRect(cr.left(), cr.top(), self.lineNumberAreaWidth(), cr.height()))
-        self.viewport().update()
+        if self.isVisible():
+            self.viewport().update()
 
     def paintEvent(self, event: QPaintEvent): 
         super().paintEvent(event) 

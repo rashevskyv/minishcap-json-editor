@@ -1,29 +1,27 @@
-# TextHighlightManager.py
 from PyQt5.QtWidgets import QTextEdit
-from PyQt5.QtGui import QColor, QTextBlockFormat, QTextFormat, QTextCursor, QTextCharFormat
+from PyQt5.QtGui import QColor, QTextBlockFormat, QTextFormat, QTextCursor, QTextCharFormat, QTextBlock
 from PyQt5.QtCore import QTimer
 from typing import Optional, List, Tuple
 import re
+from utils import log_debug # Додаємо імпорт log_debug
 
 class TextHighlightManager:
     def __init__(self, editor):
-        self.editor = editor # Зберігаємо посилання на LineNumberedTextEdit
+        self.editor = editor
         
-        # Списки для зберігання виділень
         self._active_line_selections = [] 
         self._linked_cursor_selections = []
         self._critical_problem_selections = []
         self._warning_problem_selections = []
         self._preview_selected_line_selections = []
         self._tag_interaction_selections = []
+        self._search_match_selections = []
         
-        # Таймер для тимчасового підсвічування
         self._tag_highlight_timer = QTimer()
         self._tag_highlight_timer.setSingleShot(True)
         self._tag_highlight_timer.timeout.connect(self.clearTagInteractionHighlight)
 
-    # --- Допоміжна функція ---
-    def _create_block_background_selection(self, block: QTextBlockFormat, color: QColor, use_full_width: bool = False) -> Optional[QTextEdit.ExtraSelection]:
+    def _create_block_background_selection(self, block: QTextBlock, color: QColor, use_full_width: bool = False) -> Optional[QTextEdit.ExtraSelection]:
         if not block.isValid(): return None
         selection = QTextEdit.ExtraSelection()
         selection.format.setBackground(color)
@@ -33,16 +31,34 @@ class TextHighlightManager:
             selection.cursor = cursor 
             selection.cursor.clearSelection() 
         else: 
-            # Для проблем краще виділяти весь текст блоку, а не тільки фон
             cursor.select(QTextCursor.BlockUnderCursor) 
             selection.cursor = cursor
         return selection
 
-    # --- Метод для застосування всіх виділень ---
+    def _create_search_match_selection(self, block_number: int, start_char_in_block: int, length: int, color: QColor) -> Optional[QTextEdit.ExtraSelection]:
+        doc = self.editor.document()
+        if not (0 <= block_number < doc.blockCount()):
+            return None
+        block = doc.findBlockByNumber(block_number)
+        if not block.isValid():
+            return None
+        
+        log_debug(f"TextHighlightManager: Creating search match selection with color: RGB({color.red()}, {color.green()}, {color.blue()}), Alpha({color.alpha()})")
+
+        selection = QTextEdit.ExtraSelection()
+        selection.format.setBackground(color)
+        
+        cursor = QTextCursor(block)
+        cursor.setPosition(block.position() + start_char_in_block)
+        cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, length)
+        
+        if cursor.hasSelection():
+            selection.cursor = cursor
+            return selection
+        return None
+
     def applyHighlights(self):
-        """Збирає всі активні виділення та застосовує їх до редактора."""
         all_selections = []
-        # Порядок важливий для накладання кольорів
         if self._active_line_selections: all_selections.extend(list(self._active_line_selections)) 
         if self._linked_cursor_selections: 
             all_selections.extend([s for s in self._linked_cursor_selections if s.format.property(QTextFormat.FullWidthSelection)]) 
@@ -51,23 +67,20 @@ class TextHighlightManager:
         if self._critical_problem_selections: all_selections.extend(list(self._critical_problem_selections))
         if self._warning_problem_selections: all_selections.extend(list(self._warning_problem_selections))
         
+        if self._search_match_selections: all_selections.extend(list(self._search_match_selections))
+
         if self._linked_cursor_selections: 
             all_selections.extend([s for s in self._linked_cursor_selections if not s.format.property(QTextFormat.FullWidthSelection)]) 
         if self._tag_interaction_selections: all_selections.extend(list(self._tag_interaction_selections)) 
         
         self.editor.setExtraSelections(all_selections)
-        # Після застосування оновлюємо і LineNumberArea
         self.editor.lineNumberArea.update()
 
-    # --- Методи для керування різними типами підсвічування ---
 
-    # Активний рядок в редагованому полі
     def updateCurrentLineHighlight(self): 
         new_selections = [] 
-        # Цей метод викликається тільки для редагованого поля
         if not self.editor.isReadOnly():
             selection = QTextEdit.ExtraSelection()
-            # Використовуємо колір з редактора
             selection.format.setBackground(self.editor.current_line_color) 
             selection.format.setProperty(QTextFormat.FullWidthSelection, True) 
             selection.cursor = self.editor.textCursor()
@@ -83,14 +96,12 @@ class TextHighlightManager:
              self._active_line_selections = []
              self.applyHighlights()
 
-    # Зв'язаний курсор (для original_text_edit)
     def setLinkedCursorPosition(self, line_number: int, column_number: int): 
         new_linked_selections = [] 
         doc = self.editor.document()
         if line_number >= 0 and line_number < doc.blockCount():
             block = doc.findBlockByNumber(line_number)
             if block.isValid():
-                # Використовуємо кольори з редактора
                 line_sel = self._create_block_background_selection(block, self.editor.linked_cursor_block_color, use_full_width=True) 
                 if line_sel: new_linked_selections.append(line_sel)
                 
@@ -122,13 +133,11 @@ class TextHighlightManager:
               self._linked_cursor_selections = []
               self.applyHighlights()
 
-    # Виділення рядка в прев'ю
     def setPreviewSelectedLineHighlight(self, line_number: int): 
         new_selections = []
         doc = self.editor.document()
         if line_number >= 0 and line_number < doc.blockCount():
             block = doc.findBlockByNumber(line_number)
-            # Використовуємо колір з редактора
             selection = self._create_block_background_selection(block, self.editor.preview_selected_line_color, use_full_width=True)
             if selection: new_selections.append(selection)
             
@@ -141,7 +150,6 @@ class TextHighlightManager:
             self._preview_selected_line_selections = []
             self.applyHighlights()
 
-    # Критичні проблеми
     def addCriticalProblemHighlight(self, line_number: int):
         doc = self.editor.document()
         needs_update = False
@@ -174,7 +182,6 @@ class TextHighlightManager:
         if line_number is not None: return any(s.cursor.blockNumber() == line_number for s in self._critical_problem_selections)
         return bool(self._critical_problem_selections)
 
-    # Попередження
     def addWarningLineHighlight(self, line_number: int):
         doc = self.editor.document()
         needs_update = False
@@ -207,12 +214,10 @@ class TextHighlightManager:
         if line_number is not None: return any(s.cursor.blockNumber() == line_number for s in self._warning_problem_selections)
         return bool(self._warning_problem_selections)
 
-    # Взаємодія з тегами
     def momentaryHighlightTag(self, block, start_in_block, length):
         if not block.isValid(): return
-        self.clearTagInteractionHighlight() # Очищаємо попереднє, якщо є
+        self.clearTagInteractionHighlight() 
         selection = QTextEdit.ExtraSelection()
-        # Використовуємо колір з редактора
         selection.format.setBackground(self.editor.tag_interaction_highlight_color)
         cursor = QTextCursor(block)
         cursor.setPosition(block.position() + start_in_block)
@@ -220,14 +225,27 @@ class TextHighlightManager:
         selection.cursor = cursor
         self._tag_interaction_selections.append(selection)
         self.applyHighlights()
-        self._tag_highlight_timer.start(300) # Запускаємо таймер для очищення
+        self._tag_highlight_timer.start(300)
 
     def clearTagInteractionHighlight(self):
         if self._tag_interaction_selections:
             self._tag_interaction_selections = []
             self.applyHighlights()
 
-    # Загальні методи очищення
+    def add_search_match_highlight(self, block_number: int, start_char_in_block: int, length: int):
+        selection = self._create_search_match_selection(block_number, start_char_in_block, length, self.editor.search_match_highlight_color)
+        if selection:
+            # Переконуємося, що новий список, щоб уникнути модифікації під час ітерації (хоча тут малоймовірно)
+            current_selections = list(self._search_match_selections)
+            current_selections.append(selection)
+            self._search_match_selections = current_selections
+            self.applyHighlights()
+
+    def clear_search_match_highlights(self):
+        if self._search_match_selections:
+            self._search_match_selections = []
+            self.applyHighlights()
+
     def clearAllProblemHighlights(self):
         needs_update = bool(self._critical_problem_selections) or bool(self._warning_problem_selections)
         self._critical_problem_selections = []
@@ -235,11 +253,11 @@ class TextHighlightManager:
         if needs_update: self.applyHighlights()
         
     def clearAllHighlights(self):
-        """Очищає всі типи виділень."""
         self._active_line_selections = [] 
         self._linked_cursor_selections = []
         self._critical_problem_selections = []
         self._warning_problem_selections = []
         self._preview_selected_line_selections = []
         self._tag_interaction_selections = []
-        self.applyHighlights() # Застосовуємо порожній список
+        self._search_match_selections = []
+        self.applyHighlights()
