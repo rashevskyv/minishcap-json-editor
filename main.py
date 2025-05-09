@@ -117,7 +117,14 @@ class MainWindow(QMainWindow):
             if self.search_history_to_save:
                 last_query = self.search_history_to_save[0] 
                 
-                self.search_handler.current_query = last_query 
+                self.search_handler.current_query = last_query
+                # При завантаженні, також встановлюємо стан прапорців у SearchHandler
+                # згідно з тим, що могло бути збережено (або за замовчуванням з SearchPanelWidget)
+                _, cs, so, it = self.search_panel_widget.get_search_parameters()
+                self.search_handler.is_case_sensitive = cs
+                self.search_handler.search_in_original = so
+                self.search_handler.ignore_tags_newlines = it
+
             log_debug(f"Search history loaded into panel. Last query (if any) set in SearchHandler: {self.search_handler.current_query}")
 
 
@@ -155,21 +162,22 @@ class MainWindow(QMainWindow):
         query_to_use = ""
         case_sensitive_to_use = False
         search_in_original_to_use = False
+        ignore_tags_to_use = True # За замовчуванням для F3
 
         if self.search_panel_widget.isVisible():
-            query_to_use, case_sensitive_to_use, search_in_original_to_use = self.search_panel_widget.get_search_parameters()
+            query_to_use, case_sensitive_to_use, search_in_original_to_use, ignore_tags_to_use = self.search_panel_widget.get_search_parameters()
             if not query_to_use:
                 self.search_panel_widget.set_status_message("Введіть запит для F3", is_error=True)
                 self.search_panel_widget.focus_search_input()
                 return
         else: 
-            query_to_use, case_sensitive_to_use, search_in_original_to_use = self.search_handler.get_current_search_params()
+            query_to_use, case_sensitive_to_use, search_in_original_to_use, ignore_tags_to_use = self.search_handler.get_current_search_params()
             if not query_to_use: 
                 self.toggle_search_panel() 
                 self.search_panel_widget.set_status_message("Введіть запит", is_error=True)
                 return
         
-        found = self.search_handler.find_next(query_to_use, case_sensitive_to_use, search_in_original_to_use)
+        found = self.search_handler.find_next(query_to_use, case_sensitive_to_use, search_in_original_to_use, ignore_tags_to_use)
         if not found and not self.search_panel_widget.isVisible(): 
             QMessageBox.information(self, "Пошук", f"Не знайдено: \"{query_to_use}\"")
 
@@ -178,21 +186,22 @@ class MainWindow(QMainWindow):
         query_to_use = ""
         case_sensitive_to_use = False
         search_in_original_to_use = False
+        ignore_tags_to_use = True # За замовчуванням для F3
 
         if self.search_panel_widget.isVisible():
-            query_to_use, case_sensitive_to_use, search_in_original_to_use = self.search_panel_widget.get_search_parameters()
+            query_to_use, case_sensitive_to_use, search_in_original_to_use, ignore_tags_to_use = self.search_panel_widget.get_search_parameters()
             if not query_to_use:
                 self.search_panel_widget.set_status_message("Введіть запит для Shift+F3", is_error=True)
                 self.search_panel_widget.focus_search_input()
                 return
         else: 
-            query_to_use, case_sensitive_to_use, search_in_original_to_use = self.search_handler.get_current_search_params()
+            query_to_use, case_sensitive_to_use, search_in_original_to_use, ignore_tags_to_use = self.search_handler.get_current_search_params()
             if not query_to_use:
                 self.toggle_search_panel()
                 self.search_panel_widget.set_status_message("Введіть запит", is_error=True)
                 return
 
-        found = self.search_handler.find_previous(query_to_use, case_sensitive_to_use, search_in_original_to_use)
+        found = self.search_handler.find_previous(query_to_use, case_sensitive_to_use, search_in_original_to_use, ignore_tags_to_use)
         if not found and not self.search_panel_widget.isVisible():
             QMessageBox.information(self, "Пошук", f"Не знайдено: \"{query_to_use}\"")
 
@@ -236,25 +245,26 @@ class MainWindow(QMainWindow):
 
         log_debug("--> MainWindow: connect_signals() finished")
 
-    def handle_panel_find_next(self, query, case_sensitive, search_in_original):
-        self.search_handler.find_next(query, case_sensitive, search_in_original)
+    def handle_panel_find_next(self, query, case_sensitive, search_in_original, ignore_tags): # Додано ignore_tags
+        self.search_handler.find_next(query, case_sensitive, search_in_original, ignore_tags)
 
-    def handle_panel_find_previous(self, query, case_sensitive, search_in_original):
-        self.search_handler.find_previous(query, case_sensitive, search_in_original)
+    def handle_panel_find_previous(self, query, case_sensitive, search_in_original, ignore_tags): # Додано ignore_tags
+        self.search_handler.find_previous(query, case_sensitive, search_in_original, ignore_tags)
 
     def toggle_search_panel(self):
         if self.search_panel_widget.isVisible():
             self.hide_search_panel()
         else:
             self.search_panel_widget.setVisible(True)
-            last_query, case_sensitive, search_in_original = self.search_handler.get_current_search_params()
+            last_query, case_sensitive, search_in_original, ignore_tags = self.search_handler.get_current_search_params()
             
             self.search_panel_widget.set_query(last_query if last_query else "")
-            self.search_panel_widget.set_search_options(case_sensitive, search_in_original)
-            # Перезавантажуємо історію в комбобокс при кожному відкритті панелі,
-            # оскільки SearchPanelWidget сам не зберігає її між сесіями
-            if hasattr(self, 'search_history_to_save'):
+            self.search_panel_widget.set_search_options(case_sensitive, search_in_original, ignore_tags)
+            
+            if hasattr(self, 'search_history_to_save'): # Завантажуємо збережену історію
                  self.search_panel_widget.load_history(self.search_history_to_save)
+            else: # Якщо її немає, просто оновлюємо з поточної (порожньої) історії панелі
+                 self.search_panel_widget._update_combobox_items()
 
 
             self.search_panel_widget.focus_search_input()
@@ -410,7 +420,7 @@ class MainWindow(QMainWindow):
         self.app_action_handler.handle_close_event(event) 
         
         if event.isAccepted():
-            if not self.unsaved_changes : 
+            if not self.unsaved_changes : # Використовуємо self.unsaved_changes напряму
                 log_debug("Close accepted (no unsaved changes). Saving editor settings via SettingsManager.")
                 self.settings_manager.save_settings()
             else:

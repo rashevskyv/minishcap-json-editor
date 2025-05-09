@@ -6,8 +6,8 @@ from PyQt5.QtCore import Qt, pyqtSignal
 import collections
 
 class SearchPanelWidget(QWidget):
-    find_next_requested = pyqtSignal(str, bool, bool)
-    find_previous_requested = pyqtSignal(str, bool, bool)
+    find_next_requested = pyqtSignal(str, bool, bool, bool) # Додано ignore_tags_newlines
+    find_previous_requested = pyqtSignal(str, bool, bool, bool) # Додано ignore_tags_newlines
     close_requested = pyqtSignal()
 
     MAX_HISTORY_ITEMS = 20
@@ -32,16 +32,18 @@ class SearchPanelWidget(QWidget):
         self.find_next_button = QPushButton("Далі", self)
         self.find_previous_button = QPushButton("Назад", self)
         
-        # Встановлюємо фіксовану або максимальну ширину для кнопок
-        button_width = 75 # Можете підібрати це значення
+        button_width = 75 
         self.find_next_button.setFixedWidth(button_width)
         self.find_previous_button.setFixedWidth(button_width)
         
         self.case_sensitive_checkbox = QCheckBox("Враховувати регістр", self)
         self.search_in_original_checkbox = QCheckBox("В оригіналі", self)
+        self.ignore_tags_newlines_checkbox = QCheckBox("Ігнор. теги/переноси", self)
+        self.ignore_tags_newlines_checkbox.setChecked(True) # За замовчуванням увімкнено
+        self.ignore_tags_newlines_checkbox.setToolTip("Ігнорувати теги {...} [...], переноси рядків та зайві пробіли при пошуку")
         
         self.status_label = QLabel("", self)
-        self.status_label.setMinimumWidth(150) # Залишаємо мінімальну ширину для статусу
+        self.status_label.setMinimumWidth(150) 
         self.status_label.setAlignment(Qt.AlignCenter)
 
         self.close_search_panel_button = QPushButton("X", self)
@@ -56,13 +58,13 @@ class SearchPanelWidget(QWidget):
         options_layout = QHBoxLayout()
         options_layout.addWidget(self.case_sensitive_checkbox)
         options_layout.addWidget(self.search_in_original_checkbox)
+        options_layout.addWidget(self.ignore_tags_newlines_checkbox) # Додано сюди
         options_layout.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
 
-        # Змінюємо фактори розтягування, щоб QComboBox займав більше місця
-        main_layout.addLayout(left_layout, 5) # Більший stretch factor для лівої частини
-        main_layout.addLayout(options_layout, 3)
-        main_layout.addWidget(self.status_label, 2) # Менший для статусу
-        main_layout.addWidget(self.close_search_panel_button) # Кнопка закриття без stretch
+        main_layout.addLayout(left_layout, 5) 
+        main_layout.addLayout(options_layout, 4) # Збільшено stretch factor для опцій
+        main_layout.addWidget(self.status_label, 2) 
+        main_layout.addWidget(self.close_search_panel_button) 
 
         self.find_next_button.clicked.connect(self._on_find_next)
         self.find_previous_button.clicked.connect(self._on_find_previous)
@@ -111,23 +113,26 @@ class SearchPanelWidget(QWidget):
         query = self.search_query_edit.currentText()
         case_sensitive = self.case_sensitive_checkbox.isChecked()
         search_in_original = self.search_in_original_checkbox.isChecked()
+        ignore_tags = self.ignore_tags_newlines_checkbox.isChecked()
         if query:
             self._add_to_history(query)
-            self.find_next_requested.emit(query, case_sensitive, search_in_original)
+            self.find_next_requested.emit(query, case_sensitive, search_in_original, ignore_tags)
 
     def _on_find_previous(self):
         query = self.search_query_edit.currentText()
         case_sensitive = self.case_sensitive_checkbox.isChecked()
         search_in_original = self.search_in_original_checkbox.isChecked()
+        ignore_tags = self.ignore_tags_newlines_checkbox.isChecked()
         if query:
             self._add_to_history(query)
-            self.find_previous_requested.emit(query, case_sensitive, search_in_original)
+            self.find_previous_requested.emit(query, case_sensitive, search_in_original, ignore_tags)
 
-    def get_search_parameters(self) -> tuple[str, bool, bool]:
+    def get_search_parameters(self) -> tuple[str, bool, bool, bool]: # Додано ignore_tags
         query = self.search_query_edit.currentText()
         case_sensitive = self.case_sensitive_checkbox.isChecked()
         search_in_original = self.search_in_original_checkbox.isChecked()
-        return query, case_sensitive, search_in_original
+        ignore_tags = self.ignore_tags_newlines_checkbox.isChecked()
+        return query, case_sensitive, search_in_original, ignore_tags
 
     def set_status_message(self, message: str, is_error: bool = False):
         self.status_label.setText(message)
@@ -150,6 +155,7 @@ class SearchPanelWidget(QWidget):
     def set_query(self, query: str):
         self.search_query_edit.lineEdit().setText(query)
         
-    def set_search_options(self, case_sensitive: bool, search_in_original: bool):
+    def set_search_options(self, case_sensitive: bool, search_in_original: bool, ignore_tags: bool):
         self.case_sensitive_checkbox.setChecked(case_sensitive)
         self.search_in_original_checkbox.setChecked(search_in_original)
+        self.ignore_tags_newlines_checkbox.setChecked(ignore_tags)
