@@ -33,7 +33,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.warning_problem_line_color = QColor("#DDDDDD") 
         self.tag_interaction_highlight_color = QColor(Qt.green).lighter(150)
         self.search_match_highlight_color = QColor(255, 165, 0) # Orange
-        self.width_exceeded_line_color = QColor(Qt.red).lighter(160) 
+        self.width_exceeded_line_color = QColor(Qt.red).lighter(160) # Для підсвітки всього рядка preview (зараз не використовується)
 
 
         self.highlightManager = TextHighlightManager(self) 
@@ -75,6 +75,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
             self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = getattr(parent, 'LINE_WIDTH_WARNING_THRESHOLD_PIXELS', DEFAULT_LINE_WIDTH_WARNING_THRESHOLD)
         
         self.pixel_width_display_area_width = self.fontMetrics().horizontalAdvance("999") + 6 
+        self.preview_indicator_area_width = (self.lineNumberArea.preview_indicator_width + self.lineNumberArea.preview_indicator_spacing) * 3 + 2 # Місце для ~3 індикаторів
 
 
     def showContextMenu(self, pos: QPoint):
@@ -241,16 +242,26 @@ class LineNumberedTextEdit(QPlainTextEdit):
         return self.highlightManager.hasWarningLineHighlight(line_number)
         
     def addWidthExceededHighlight(self, line_number: int):
-        self.highlightManager.addWidthExceededHighlight(line_number)
+        # Цей метод більше не буде викликатися з UIUpdater для preview,
+        # але може використовуватися в інших місцях, якщо потрібно підсвітити весь рядок.
+        # Зараз індикація ширини для preview робиться тільки маркером в LineNumberArea.
+        if self.objectName() == "preview_text_edit": # Тільки для preview
+            self.highlightManager.addWidthExceededHighlight(line_number)
+
 
     def removeWidthExceededHighlight(self, line_number: int) -> bool:
-        return self.highlightManager.removeWidthExceededHighlight(line_number)
+        if self.objectName() == "preview_text_edit":
+            return self.highlightManager.removeWidthExceededHighlight(line_number)
+        return False
 
     def clearWidthExceededHighlights(self):
-        self.highlightManager.clearWidthExceededHighlights()
+        if self.objectName() == "preview_text_edit":
+            self.highlightManager.clearWidthExceededHighlights()
 
     def hasWidthExceededHighlight(self, line_number: Optional[int] = None) -> bool:
-        return self.highlightManager.hasWidthExceededHighlight(line_number)
+        if self.objectName() == "preview_text_edit":
+            return self.highlightManager.hasWidthExceededHighlight(line_number)
+        return False
 
     def setPreviewSelectedLineHighlight(self, line_number: int): 
         self.highlightManager.setPreviewSelectedLineHighlight(line_number)
@@ -302,11 +313,13 @@ class LineNumberedTextEdit(QPlainTextEdit):
         
         base_width = self.fontMetrics().horizontalAdvance('9') * (digits) + 10
         
-        pixel_width_display_width = 0
+        additional_width = 0
         if self.objectName() == "original_text_edit" or self.objectName() == "edited_text_edit":
-            pixel_width_display_width = self.pixel_width_display_area_width
+            additional_width = self.pixel_width_display_area_width
+        elif self.objectName() == "preview_text_edit":
+            additional_width = self.preview_indicator_area_width 
             
-        return base_width + pixel_width_display_width
+        return base_width + additional_width
 
     def updateLineNumberAreaWidth(self, _): 
         self.setViewportMargins(self.lineNumberAreaWidth(), 0, 0, 0)
@@ -355,12 +368,14 @@ class LineNumberedTextEdit(QPlainTextEdit):
         
         main_window_ref = self.window()
         active_data_line_idx = -1 
+        current_block_idx_data = -1 
         if isinstance(main_window_ref, QMainWindow):
             active_data_line_idx = main_window_ref.current_string_idx
+            current_block_idx_data = main_window_ref.current_block_idx
+
 
         odd_bg_color_const = self.lineNumberArea.odd_line_background
         even_bg_color_const = default_bg_color_for_area 
-        # number_text_color_const = self.lineNumberArea.number_color # Більше не використовуємо для встановлення
         width_exceeded_bg_color_const = self.lineNumberArea.width_indicator_exceeded_color
 
         current_q_block = self.firstVisibleBlock()
@@ -369,16 +384,22 @@ class LineNumberedTextEdit(QPlainTextEdit):
         bottom = top + int(self.blockBoundingRect(current_q_block).height())
         
         total_area_width = self.lineNumberAreaWidth()
-        pixel_width_part_width = 0
+        extra_part_width = 0 
         if self.objectName() == "original_text_edit" or self.objectName() == "edited_text_edit":
-            pixel_width_part_width = self.pixel_width_display_area_width
+            extra_part_width = self.pixel_width_display_area_width
+        elif self.objectName() == "preview_text_edit":
+            extra_part_width = self.preview_indicator_area_width
         
-        number_part_width = total_area_width - pixel_width_part_width
+        number_part_width = total_area_width - extra_part_width
 
         while current_q_block.isValid() and top <= event.rect().bottom():
             if current_q_block.isVisible() and bottom >= event.rect().top():
                 line_height = int(self.blockBoundingRect(current_q_block).height())
                 
+                data_line_index_for_this_q_block = current_q_block_number # Для preview це індекс рядка даних
+                if self.objectName() in ["original_text_edit", "edited_text_edit"]:
+                    data_line_index_for_this_q_block = active_data_line_idx if active_data_line_idx != -1 else -1
+
                 is_this_qblock_part_of_active_data_line = False
                 if active_data_line_idx != -1: 
                     if self.objectName() == "preview_text_edit":
@@ -393,39 +414,61 @@ class LineNumberedTextEdit(QPlainTextEdit):
                 if (current_q_block_number + 1) % 2 != 0: 
                     current_bg_for_number_part = odd_bg_color_const
                 
-                # Якщо рядок активний, фон не змінюємо спеціально (залишається парним/непарним),
-                # але текст номера буде білим, якщо ми це захочемо (зараз він завжди чорний).
-                # Для прикладу зі скріншота, де активний рядок НЕ має синього фону в LineNumberArea,
-                # ця логіка підходить.
-
                 painter.fillRect(line_num_rect.adjusted(0, 0, 3, 0), current_bg_for_number_part)
-                painter.setPen(QColor(Qt.black)) # Номер рядка завжди чорний
+                painter.setPen(QColor(Qt.black)) 
                 painter.drawText(line_num_rect, Qt.AlignRight | Qt.AlignVCenter, display_number_for_line_area) 
 
-                if pixel_width_part_width > 0:
-                    q_block_text_raw = current_q_block.text()
-                    text_for_width_calc = convert_dots_to_spaces_from_editor(q_block_text_raw)
-                    text_for_width_calc = remove_all_tags(text_for_width_calc)
+                if extra_part_width > 0:
+                    extra_info_rect = QRect(number_part_width, top, extra_part_width -3 , line_height)
+                    bg_for_extra_part = current_bg_for_number_part 
                     
-                    pixel_width = calculate_string_width(text_for_width_calc, self.font_map)
-                    width_str = str(pixel_width)
-                    
-                    width_display_rect = QRect(number_part_width, top, pixel_width_part_width -3 , line_height)
-                    
-                    bg_for_width_part = current_bg_for_number_part 
-                    text_color_for_width_part = QColor(Qt.black) # Текст ширини завжди чорний
+                    if self.objectName() == "original_text_edit" or self.objectName() == "edited_text_edit":
+                        q_block_text_raw = current_q_block.text()
+                        text_for_width_calc = convert_dots_to_spaces_from_editor(q_block_text_raw)
+                        text_for_width_calc = remove_all_tags(text_for_width_calc)
+                        pixel_width = calculate_string_width(text_for_width_calc, self.font_map)
+                        width_str = str(pixel_width)
+                        text_color_for_extra_part = QColor(Qt.black)
 
-                    if pixel_width > self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
-                        bg_for_width_part = width_exceeded_bg_color_const
-                        # text_color_for_width_part залишається чорним для кращої читабельності на червоному
-                    
-                    painter.fillRect(width_display_rect.adjusted(0,0,3,0), bg_for_width_part) 
-                    
-                    painter.setPen(text_color_for_width_part)
-                    painter.drawText(width_display_rect, Qt.AlignRight | Qt.AlignVCenter, width_str)
+                        if pixel_width > self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
+                            bg_for_extra_part = width_exceeded_bg_color_const
+                        
+                        painter.fillRect(extra_info_rect.adjusted(0,0,3,0), bg_for_extra_part) 
+                        painter.setPen(text_color_for_extra_part)
+                        painter.drawText(extra_info_rect, Qt.AlignRight | Qt.AlignVCenter, width_str)
+
+                    elif self.objectName() == "preview_text_edit" and isinstance(main_window_ref, QMainWindow) and current_block_idx_data != -1:
+                        painter.fillRect(extra_info_rect.adjusted(0,0,3,0), bg_for_extra_part) 
+
+                        indicator_x_start = number_part_width + 2 
+                        block_key_str_for_preview = str(current_block_idx_data)
+                        
+                        indicators_to_draw_preview = []
+                        # Пріоритет: критичні -> попередження -> ширина
+                        if data_line_index_for_this_q_block in main_window_ref.critical_problem_lines_per_block.get(block_key_str_for_preview, set()):
+                            indicators_to_draw_preview.append(self.lineNumberArea.preview_critical_indicator_color)
+                        elif data_line_index_for_this_q_block in main_window_ref.warning_problem_lines_per_block.get(block_key_str_for_preview, set()):
+                            indicators_to_draw_preview.append(self.lineNumberArea.preview_warning_indicator_color)
+                        
+                        if data_line_index_for_this_q_block in main_window_ref.width_exceeded_lines_per_block.get(block_key_str_for_preview, set()):
+                            # Додаємо індикатор ширини, якщо немає більш пріоритетних або якщо хочемо кілька
+                            if not indicators_to_draw_preview or \
+                               (len(indicators_to_draw_preview) < 2 and self.lineNumberArea.preview_width_exceeded_indicator_color not in indicators_to_draw_preview):
+                                indicators_to_draw_preview.append(self.lineNumberArea.preview_width_exceeded_indicator_color)
+
+
+                        current_indicator_x_preview = indicator_x_start
+                        for color in indicators_to_draw_preview:
+                            if current_indicator_x_preview + self.lineNumberArea.preview_indicator_width <= number_part_width + extra_part_width -1:
+                                ind_rect = QRect(current_indicator_x_preview, 
+                                                 top + 2, 
+                                                 self.lineNumberArea.preview_indicator_width, 
+                                                 line_height - 4)
+                                painter.fillRect(ind_rect, color)
+                                current_indicator_x_preview += self.lineNumberArea.preview_indicator_width + self.lineNumberArea.preview_indicator_spacing
+                            else: break 
                 
-                # Відновлюємо колір пера на випадок, якщо він був змінений (хоча зараз він завжди чорний для тексту)
-                # painter.setPen(self.lineNumberArea.number_color) # Можна прибрати, якщо колір завжди чорний
+                painter.setPen(QColor(Qt.black)) 
 
             current_q_block = current_q_block.next()
             top = bottom

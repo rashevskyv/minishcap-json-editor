@@ -186,12 +186,12 @@
     "game_dialog_max_width_pixels": 240,
     "line_width_warning_threshold_pixels": 175,
     "search_history": [
-        "лінк",
-        "link",
-        "Гей, Лінк",
-        "123",
+        "Так Ні",
         "Гей, {Color:Green}Лінк",
-        "Так Ні"
+        "123",
+        "Гей, Лінк",
+        "link",
+        "лінк"
     ],
     "main_splitter_state": "AAAA/wAAAAEAAAACAAABvQAAA+4B/////wEAAAABAA==",
     "right_splitter_state": "AAAA/wAAAAEAAAACAAABuAAAAW8B/////wEAAAACAA==",
@@ -244,16 +244,16 @@
             51
         ],
         "16": [
-            99,
             3,
+            99,
             104,
             92,
             94
         ],
         "17": [
-            51,
-            50,
             43,
+            50,
+            51,
             13
         ],
         "18": [

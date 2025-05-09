@@ -18,16 +18,46 @@ class AppActionHandler(BaseHandler):
         if not hasattr(self.mw, 'width_exceeded_lines_per_block'): 
             self.mw.width_exceeded_lines_per_block = {}
 
+    def _perform_width_scan_for_all_blocks(self):
+        log_debug("AppActionHandler: Performing width scan for all blocks...")
+        self.mw.width_exceeded_lines_per_block.clear() 
+        if not self.mw.data:
+            return
+
+        for block_idx in range(len(self.mw.data)):
+            if not (0 <= block_idx < len(self.mw.data)) or not isinstance(self.mw.data[block_idx], list):
+                continue
+            
+            block_key = str(block_idx)
+            current_block_width_exceeded_indices = set()
+            num_strings_in_block = len(self.mw.data[block_idx])
+
+            for string_idx in range(num_strings_in_block):
+                text_to_analyze, _ = self.data_processor.get_current_string_text(block_idx, string_idx)
+                
+                sub_lines = str(text_to_analyze).split('\n')
+                line_exceeds_width_flag = False
+                for sub_line_text in sub_lines:
+                    pixel_width = calculate_string_width(remove_all_tags(sub_line_text), self.mw.font_map)
+                    if pixel_width > self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
+                        line_exceeds_width_flag = True
+                        break
+                if line_exceeds_width_flag:
+                    current_block_width_exceeded_indices.add(string_idx)
+            
+            if current_block_width_exceeded_indices:
+                self.mw.width_exceeded_lines_per_block[block_key] = current_block_width_exceeded_indices
+        log_debug("AppActionHandler: Width scan for all blocks complete.")
+
+
     def _perform_issues_scan_for_block(self, block_idx: int, is_single_block_scan: bool = False, use_default_mappings_in_scan: bool = False) -> tuple[int, int, int, bool]: 
-        log_debug(f"AppActionHandler: Starting issues scan for block_idx: {block_idx}, use_default_mappings: {use_default_mappings_in_scan}")
         if not (0 <= block_idx < len(self.mw.data)):
-            log_debug(f"AppActionHandler: Invalid block_idx {block_idx} for scan.")
             return 0, 0, 0, False
 
         block_key = str(block_idx)
         current_block_critical_indices = set()
         current_block_warning_indices = set()
-        current_block_width_exceeded_indices = set()
+        current_block_width_exceeded_indices = set() # Додано для повноти, хоча _perform_width_scan_for_all_blocks може бути кращим для початкового сканування
         changes_made_to_edited_data_in_this_block = False
         
         num_strings_in_block = len(self.mw.data[block_idx])
@@ -88,12 +118,10 @@ class AppActionHandler(BaseHandler):
         log_debug("AppActionHandler: Performing initial silent scan for ALL issues (tags & width)...")
         self.mw.is_programmatically_changing_text = True 
         
-        # Очищаємо всі старі проблеми перед повним скануванням
         self.mw.critical_problem_lines_per_block.clear()
         self.mw.warning_problem_lines_per_block.clear()
         self.mw.width_exceeded_lines_per_block.clear()
         
-        # Очищаємо підсвітки в UI (якщо вони ще є)
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         if preview_edit and hasattr(preview_edit, 'clearAllProblemTypeHighlights'): 
             preview_edit.clearAllProblemTypeHighlights()
@@ -102,17 +130,12 @@ class AppActionHandler(BaseHandler):
 
         any_changes_applied_globally = False 
         for block_idx in range(len(self.mw.data)):
-            # Для початкового сканування НЕ використовуємо default_mappings для зміни даних,
-            # тому use_default_mappings_in_scan=False.
             _num_crit, _num_warn, _num_width, block_changes_applied = self._perform_issues_scan_for_block(block_idx, is_single_block_scan=False, use_default_mappings_in_scan=False) 
-            if block_changes_applied: # Це буде True, тільки якщо use_default_mappings_in_scan=True і були зміни
+            if block_changes_applied: 
                 any_changes_applied_globally = True
         
         if any_changes_applied_globally and not self.mw.unsaved_changes:
             log_debug("AppActionHandler: Data was modified during initial silent scan (e.g., by default tag mappings). This should not happen if use_default_mappings_in_scan=False.")
-
-        # Не викликаємо populate_blocks() та populate_strings_for_block() тут,
-        # бо вони будуть викликані в load_all_data_for_path після цього методу.
             
         self.mw.is_programmatically_changing_text = False
         log_debug("AppActionHandler: Initial silent scan for ALL issues complete.")
@@ -185,7 +208,7 @@ class AppActionHandler(BaseHandler):
             QMessageBox.information(self.mw, "Rescan All Issues", "No data loaded to rescan.")
             return
         
-        self._perform_initial_silent_scan_all_issues() # Цей метод вже очищає та сканує все
+        self._perform_initial_silent_scan_all_issues() 
 
         total_critical_lines = sum(len(s) for s in self.mw.critical_problem_lines_per_block.values())
         total_warning_lines = sum(len(s) for s in self.mw.warning_problem_lines_per_block.values())
@@ -208,11 +231,10 @@ class AppActionHandler(BaseHandler):
             summary = "\n".join(message_parts)
             QMessageBox.warning(self.mw, title, summary)
         
-        # Після сканування потрібно оновити UI, щоб відобразити результати
         self.ui_updater.populate_blocks()
         if self.mw.current_block_idx != -1:
             self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
-        else: # Якщо жоден блок не вибраний, але дані є
+        else: 
             self.ui_updater.populate_strings_for_block(-1)
 
 
@@ -223,7 +245,7 @@ class AppActionHandler(BaseHandler):
         base, ext = os.path.splitext(os.path.basename(original_path))
         return os.path.join(dir_name, f"{base}_edited{ext}")
 
-    def open_file_dialog_action(self):
+    def open_file_dialog_action(self): # <--- ВІДНОВЛЕНИЙ МЕТОД
         log_debug("--> AppActionHandler: Open File Dialog Triggered")
         if self.mw.unsaved_changes:
             reply = QMessageBox.question(self.mw, 'Unsaved Changes', "Save before opening new file?", QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel, QMessageBox.Cancel)
@@ -254,12 +276,11 @@ class AppActionHandler(BaseHandler):
             self.mw.edited_data = {} 
             self.mw.unsaved_changes = False 
             
-            self._perform_initial_silent_scan_all_issues() # Скануємо всі проблеми після завантаження файлу змін
+            self._perform_initial_silent_scan_all_issues() 
             
             self.ui_updater.update_title()
             self.ui_updater.update_statusbar_paths()
-            # populate_blocks та populate_strings_for_block будуть викликані в _perform_initial_silent_scan_all_issues або після нього
-            self.ui_updater.populate_blocks() # Перенесено сюди для гарантованого оновлення
+            self.ui_updater.populate_blocks() 
             if self.mw.block_list_widget.count() > 0 and self.mw.current_block_idx == -1:
                  self.mw.block_list_widget.setCurrentRow(0)
             else:
@@ -296,7 +317,6 @@ class AppActionHandler(BaseHandler):
             self.mw.json_path = None; self.mw.edited_json_path = None
             self.mw.data = []; self.mw.edited_data = {}; self.mw.edited_file_data = []
             self.mw.unsaved_changes = False
-            # Очищаємо всі проблеми, якщо файл не завантажився
             self.mw.critical_problem_lines_per_block.clear()
             self.mw.warning_problem_lines_per_block.clear()
             self.mw.width_exceeded_lines_per_block.clear()
@@ -323,20 +343,36 @@ class AppActionHandler(BaseHandler):
         
         if hasattr(self.mw, 'undo_paste_action'): self.mw.can_undo_paste = False; self.mw.undo_paste_action.setEnabled(False)
         
-        # Очищаємо UI перед скануванням та заповненням
         self.mw.block_list_widget.clear() 
         if hasattr(self.mw, 'preview_text_edit'): self.mw.preview_text_edit.clear()
         if hasattr(self.mw, 'original_text_edit'): self.mw.original_text_edit.clear()
         if hasattr(self.mw, 'edited_text_edit'): self.mw.edited_text_edit.clear()
         
-        # Завжди виконуємо повне сканування проблем після завантаження даних
-        self._perform_initial_silent_scan_all_issues()
+        if is_initial_load_from_settings:
+            # Якщо це початкове завантаження, і дані про теги були в settings.json,
+            # ми їх вже завантажили. Тепер перераховуємо тільки ширину.
+            # Якщо даних про теги не було в settings.json, SettingsManager встановить порожні словники,
+            # і _perform_initial_silent_scan_all_issues нижче все одно їх перерахує.
+            log_debug("Initial load from settings: Recalculating width issues based on current data.")
+            self._perform_width_scan_for_all_blocks()
+            # Перевірка, чи потрібно сканувати теги, якщо вони не були в налаштуваннях
+            if not self.mw.critical_problem_lines_per_block and not self.mw.warning_problem_lines_per_block:
+                log_debug("Tag problem data not found in settings, performing full tag scan as well.")
+                # Скануємо тільки теги, оскільки ширина вже просканована
+                self.mw.is_programmatically_changing_text = True
+                for block_idx in range(len(self.mw.data)):
+                    self._perform_issues_scan_for_block(block_idx, is_single_block_scan=False, use_default_mappings_in_scan=False)
+                self.mw.is_programmatically_changing_text = False
+
+        else: # Не початкове завантаження (користувач відкрив файл) - повне сканування всього.
+            log_debug("Not initial load from settings: Performing full scan for all issues.")
+            self._perform_initial_silent_scan_all_issues()
         
         self.ui_updater.update_title(); self.ui_updater.update_statusbar_paths()
-        self.ui_updater.populate_blocks() # Тепер використовує оновлені дані про проблеми
+        self.ui_updater.populate_blocks() 
 
         if self.mw.block_list_widget.count() > 0: 
-            self.mw.block_list_widget.setCurrentRow(0) # Це викличе block_selected, який викличе populate_strings_for_block
+            self.mw.block_list_widget.setCurrentRow(0) 
         else: 
             self.ui_updater.populate_strings_for_block(-1) 
             
