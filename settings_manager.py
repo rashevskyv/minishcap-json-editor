@@ -90,17 +90,25 @@ class SettingsManager:
         self.mw.warning_problem_lines_per_block = {}
         self.mw.width_exceeded_lines_per_block = {} 
         self.mw.search_history_to_save = [] 
+        
+        temp_original_file_path = None
+        temp_edited_file_path = None
 
         if not os.path.exists(self.settings_file_path):
             log_debug(f"Settings file '{self.settings_file_path}' not found. Using default values for core settings.")
             for key, value in default_settings_values.items():
                 setattr(self.mw, key, value) 
+            self.mw.original_file_path = None
+            self.mw.edited_file_path = None
         else:
             try:
                 with open(self.settings_file_path, 'r', encoding='utf-8') as f:
                     settings_data = json.load(f)
                 log_debug(f"SettingsManager: Successfully parsed settings.json. Content keys: {list(settings_data.keys())}")
                 
+                temp_original_file_path = settings_data.get("original_file_path")
+                temp_edited_file_path = settings_data.get("edited_file_path")
+
                 window_geom = settings_data.get("window_geometry")
                 if window_geom and isinstance(window_geom, dict) and all(k in window_geom for k in ('x', 'y', 'width', 'height')):
                     try: self.mw.setGeometry(window_geom['x'], window_geom['y'], window_geom['width'], window_geom['height'])
@@ -113,17 +121,16 @@ class SettingsManager:
                 
                 self.mw.block_names = {str(k): v for k, v in settings_data.get("block_names", {}).items()}
                 
-                # Детальне логування для КОЖНОГО ключа з default_settings_values
                 for key, default_value in default_settings_values.items():
                     value_from_settings = settings_data.get(key)
                     if value_from_settings is not None:
                         setattr(self.mw, key, value_from_settings)
-                        # log_debug(f"SettingsManager: Key '{key}' found in settings.json, value: {value_from_settings}. Set on mw.")
                     else:
                         setattr(self.mw, key, default_value)
-                        # log_debug(f"SettingsManager: Key '{key}' NOT found in settings.json. Using default value: {default_value}. Set on mw.")
                 
-                # Додаткове логування саме для line_width_warning_threshold_pixels
+                setattr(self.mw, "original_file_path", temp_original_file_path)
+                setattr(self.mw, "edited_file_path", temp_edited_file_path)
+
                 lw_threshold_key = "line_width_warning_threshold_pixels"
                 if lw_threshold_key in settings_data:
                     val = settings_data[lw_threshold_key]
@@ -140,12 +147,10 @@ class SettingsManager:
                 
                 log_debug(f"SettingsManager: Final MainWindow.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = {self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS}")
 
-
                 loaded_search_history = settings_data.get("search_history", [])
                 if isinstance(loaded_search_history, list):
                     self.mw.search_history_to_save = loaded_search_history
                 else: self.mw.search_history_to_save = []
-
 
                 crit_problems = settings_data.get("critical_problem_lines_per_block")
                 if isinstance(crit_problems, dict): 
@@ -160,28 +165,27 @@ class SettingsManager:
             except json.JSONDecodeError as e:
                 log_debug(f"ERROR reading or parsing settings file '{self.settings_file_path}': {e}. Using ALL default values.")
                 for key, value in default_settings_values.items(): setattr(self.mw, key, value)
-            except Exception as e: # Інші можливі помилки
+                self.mw.original_file_path = None
+                self.mw.edited_file_path = None
+            except Exception as e: 
                 log_debug(f"UNEXPECTED ERROR while processing settings file '{self.settings_file_path}': {e}. Using ALL default values.")
                 for key, value in default_settings_values.items(): setattr(self.mw, key, value)
-
+                self.mw.original_file_path = None
+                self.mw.edited_file_path = None
         
         log_debug(f"Settings loaded. Last block: {getattr(self.mw, 'last_selected_block_index', -1)}, string: {getattr(self.mw, 'last_selected_string_index', -1)}")
-        
+        log_debug(f"Settings loaded. Original path from mw: '{getattr(self.mw, 'original_file_path', None)}', Edited path from mw: '{getattr(self.mw, 'edited_file_path', None)}'")
+
         self.mw._apply_text_wrap_settings()
         self.mw._reconfigure_all_highlighters()
         
-        last_original_file = getattr(self.mw, 'original_file_path', None) # Беремо з атрибутів mw, встановлених вище
-        last_edited_file = getattr(self.mw, 'edited_file_path', None)
+        self.mw.initial_load_path = getattr(self.mw, 'original_file_path', None)
+        self.mw.initial_edited_load_path = getattr(self.mw, 'edited_file_path', None)
         
-        if last_original_file and os.path.exists(last_original_file):
-            self.mw.initial_load_path = last_original_file
-            self.mw.initial_edited_load_path = last_edited_file if last_edited_file and os.path.exists(last_edited_file) else None
-        else:
-            self.mw.initial_load_path = None
-            self.mw.initial_edited_load_path = None
-            if not self.mw.json_path: 
-                 self.mw.ui_updater.populate_blocks()
-                 self.mw.ui_updater.populate_strings_for_block(-1)
+        if not self.mw.initial_load_path and not self.mw.json_path:
+            log_debug("SettingsManager: No initial_load_path from settings and no current json_path, ensuring UI is cleared.")
+            self.mw.ui_updater.populate_blocks()
+            self.mw.ui_updater.populate_strings_for_block(-1)
         
         log_debug("<-- SettingsManager: load_settings finished")
 
@@ -198,26 +202,28 @@ class SettingsManager:
             "last_cursor_position_in_edited",
             "last_edited_text_edit_scroll_value_v", "last_edited_text_edit_scroll_value_h",
             "last_preview_text_edit_scroll_value_v",
-            "last_original_text_edit_scroll_value_v", "last_original_text_edit_scroll_value_h",
-            # "original_file_path", "edited_file_path" # Ці вже є в keys_to_save нижче
+            "last_original_text_edit_scroll_value_v", "last_original_text_edit_scroll_value_h"
         ]
         
-        # Додаємо шляхи до файлів окремо, щоб уникнути плутанини з hasattr
-        if hasattr(self.mw, 'json_path') and self.mw.json_path:
-            settings_data["original_file_path"] = self.mw.json_path
-        if hasattr(self.mw, 'edited_json_path') and self.mw.edited_json_path:
-            settings_data["edited_file_path"] = self.mw.edited_json_path
-
-
         for key in keys_to_save:
             if key == "search_history": 
-                if hasattr(self.mw, 'search_history_to_save'): # Використовуємо search_history_to_save
+                if hasattr(self.mw, 'search_history_to_save'):
                     settings_data[key] = self.mw.search_history_to_save
-            elif key in ["original_file_path", "edited_file_path"]: # Вже оброблено
-                pass
             elif hasattr(self.mw, key):
                 settings_data[key] = getattr(self.mw, key)
         
+        if hasattr(self.mw, 'json_path'):
+            settings_data["original_file_path"] = self.mw.json_path
+        else:
+            settings_data["original_file_path"] = None 
+            
+        if hasattr(self.mw, 'edited_json_path'):
+            settings_data["edited_file_path"] = self.mw.edited_json_path
+        else:
+            settings_data["edited_file_path"] = None
+
+        log_debug(f"Saving paths: original_file_path='{settings_data.get('original_file_path')}', edited_file_path='{settings_data.get('edited_file_path')}'")
+
         geom = self.mw.geometry(); settings_data["window_geometry"] = {"x": geom.x(), "y": geom.y(), "width": geom.width(), "height": geom.height()}
         try: 
             if self.mw.main_splitter: settings_data["main_splitter_state"] = base64.b64encode(self.mw.main_splitter.saveState().data()).decode('ascii')
