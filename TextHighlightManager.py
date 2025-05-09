@@ -3,7 +3,7 @@ from PyQt5.QtGui import QColor, QTextBlockFormat, QTextFormat, QTextCursor, QTex
 from PyQt5.QtCore import QTimer
 from typing import Optional, List, Tuple
 import re
-from utils import log_debug # Додаємо імпорт log_debug
+from utils import log_debug 
 
 class TextHighlightManager:
     def __init__(self, editor):
@@ -13,6 +13,7 @@ class TextHighlightManager:
         self._linked_cursor_selections = []
         self._critical_problem_selections = []
         self._warning_problem_selections = []
+        self._width_exceeded_selections = [] # Новий тип підсвічування
         self._preview_selected_line_selections = []
         self._tag_interaction_selections = []
         self._search_match_selections = []
@@ -66,6 +67,7 @@ class TextHighlightManager:
         
         if self._critical_problem_selections: all_selections.extend(list(self._critical_problem_selections))
         if self._warning_problem_selections: all_selections.extend(list(self._warning_problem_selections))
+        if self._width_exceeded_selections: all_selections.extend(list(self._width_exceeded_selections)) # Додаємо новий тип
         
         if self._search_match_selections: all_selections.extend(list(self._search_match_selections))
 
@@ -214,6 +216,39 @@ class TextHighlightManager:
         if line_number is not None: return any(s.cursor.blockNumber() == line_number for s in self._warning_problem_selections)
         return bool(self._warning_problem_selections)
 
+    def addWidthExceededHighlight(self, line_number: int): # Новий метод
+        doc = self.editor.document()
+        needs_update = False
+        if line_number >= 0 and line_number < doc.blockCount():
+            block = doc.findBlockByNumber(line_number)
+            if block.isValid():
+                is_already_added = any(s.cursor.blockNumber() == line_number for s in self._width_exceeded_selections)
+                if not is_already_added:
+                    selection = self._create_block_background_selection(block, self.editor.width_exceeded_line_color, use_full_width=False) 
+                    if selection: 
+                        self._width_exceeded_selections.append(selection)
+                        needs_update = True
+        if needs_update:
+             self.applyHighlights()
+
+    def removeWidthExceededHighlight(self, line_number: int) -> bool: # Новий метод
+        removed = False; initial_len = len(self._width_exceeded_selections)
+        self._width_exceeded_selections = [s for s in self._width_exceeded_selections if s.cursor.blockNumber() != line_number]
+        if len(self._width_exceeded_selections) < initial_len: 
+            removed = True
+            self.applyHighlights()
+        return removed
+
+    def clearWidthExceededHighlights(self): # Новий метод
+        needs_update = bool(self._width_exceeded_selections)
+        self._width_exceeded_selections = []
+        if needs_update: self.applyHighlights()
+
+    def hasWidthExceededHighlight(self, line_number: Optional[int] = None) -> bool: # Новий метод
+        if line_number is not None: return any(s.cursor.blockNumber() == line_number for s in self._width_exceeded_selections)
+        return bool(self._width_exceeded_selections)
+
+
     def momentaryHighlightTag(self, block, start_in_block, length):
         if not block.isValid(): return
         self.clearTagInteractionHighlight() 
@@ -235,7 +270,6 @@ class TextHighlightManager:
     def add_search_match_highlight(self, block_number: int, start_char_in_block: int, length: int):
         selection = self._create_search_match_selection(block_number, start_char_in_block, length, self.editor.search_match_highlight_color)
         if selection:
-            # Переконуємося, що новий список, щоб уникнути модифікації під час ітерації (хоча тут малоймовірно)
             current_selections = list(self._search_match_selections)
             current_selections.append(selection)
             self._search_match_selections = current_selections
@@ -246,10 +280,13 @@ class TextHighlightManager:
             self._search_match_selections = []
             self.applyHighlights()
 
-    def clearAllProblemHighlights(self):
-        needs_update = bool(self._critical_problem_selections) or bool(self._warning_problem_selections)
+    def clearAllProblemHighlights(self): # Тепер включає і width exceeded
+        needs_update = bool(self._critical_problem_selections) or \
+                       bool(self._warning_problem_selections) or \
+                       bool(self._width_exceeded_selections)
         self._critical_problem_selections = []
         self._warning_problem_selections = []
+        self._width_exceeded_selections = [] # Очищення нового типу
         if needs_update: self.applyHighlights()
         
     def clearAllHighlights(self):
@@ -257,6 +294,7 @@ class TextHighlightManager:
         self._linked_cursor_selections = []
         self._critical_problem_selections = []
         self._warning_problem_selections = []
+        self._width_exceeded_selections = [] # Очищення нового типу
         self._preview_selected_line_selections = []
         self._tag_interaction_selections = []
         self._search_match_selections = []

@@ -170,8 +170,8 @@
         "79": "Кафе"
     },
     "window_geometry": {
-        "x": 752,
-        "y": 216,
+        "x": 548,
+        "y": 225,
         "width": 1742,
         "height": 1055
     },
@@ -183,14 +183,15 @@
     "preview_wrap_lines": false,
     "editors_wrap_lines": false,
     "bracket_tag_color_hex": "#FFA500",
+    "game_dialog_max_width_pixels": 240,
+    "line_width_warning_threshold_pixels": 175,
     "search_history": [
-        "Так Ні",
-        "Гей, {Color:Green}Лінк",
-        "123",
-        "Гей, Лінк",
-        "link",
         "лінк",
-        "Тfк Ні"
+        "link",
+        "Гей, Лінк",
+        "123",
+        "Гей, {Color:Green}Лінк",
+        "Так Ні"
     ],
     "main_splitter_state": "AAAA/wAAAAEAAAACAAABvQAAA+4B/////wEAAAABAA==",
     "right_splitter_state": "AAAA/wAAAAEAAAACAAABuAAAAW8B/////wEAAAACAA==",
@@ -243,16 +244,16 @@
             51
         ],
         "16": [
-            3,
             99,
+            3,
             104,
             92,
             94
         ],
         "17": [
-            43,
-            50,
             51,
+            50,
+            43,
             13
         ],
         "18": [
@@ -358,6 +359,15 @@
             88,
             93,
             94
+        ]
+    },
+    "width_exceeded_lines_per_block": {
+        "5": [
+            14,
+            16,
+            17,
+            20,
+            21
         ]
     }
 }

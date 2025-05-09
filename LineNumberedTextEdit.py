@@ -1,22 +1,24 @@
 from PyQt5.QtWidgets import (QWidget, QPlainTextEdit, QHBoxLayout, QTextEdit, 
-                             QStyle, QApplication, QMainWindow, QMenu) 
+                             QStyle, QApplication, QMainWindow, QMenu, QMessageBox) 
 from PyQt5.QtGui import (QPainter, QColor, QFont, QTextBlockFormat, 
                          QTextFormat, QPen, QMouseEvent, QTextCursor, 
                          QTextCharFormat, QPaintEvent)
 from PyQt5.QtCore import Qt, QRect, QSize, QRectF, pyqtSignal, QTimer, QPoint 
 from LineNumberArea import LineNumberArea 
 from TextHighlightManager import TextHighlightManager 
-from utils import log_debug 
+from utils import log_debug, calculate_string_width, remove_all_tags, convert_dots_to_spaces_from_editor
 from syntax_highlighter import JsonTagHighlighter 
 import re 
 from typing import Optional, Tuple 
 
 EDITOR_PLAYER_TAG_DEFAULT = "[ІМ'Я ГРАВЦЯ]"
 ORIGINAL_PLAYER_TAG_DEFAULT = "{Player}"
+DEFAULT_LINE_WIDTH_WARNING_THRESHOLD = 175
 
 class LineNumberedTextEdit(QPlainTextEdit):
     lineClicked = pyqtSignal(int) 
     addTagMappingRequest = pyqtSignal(str, str) 
+    calculateLineWidthRequest = pyqtSignal(int) 
 
     def __init__(self, parent=None): 
         super().__init__(parent)
@@ -31,6 +33,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.warning_problem_line_color = QColor("#DDDDDD") 
         self.tag_interaction_highlight_color = QColor(Qt.green).lighter(150)
         self.search_match_highlight_color = QColor(255, 165, 0) # Orange
+        self.width_exceeded_line_color = QColor(Qt.red).lighter(160) 
 
 
         self.highlightManager = TextHighlightManager(self) 
@@ -59,9 +62,20 @@ class LineNumberedTextEdit(QPlainTextEdit):
         
         self.editor_player_tag = EDITOR_PLAYER_TAG_DEFAULT
         self.original_player_tag = ORIGINAL_PLAYER_TAG_DEFAULT
+        
+        self.font_map = {}
+        self.GAME_DIALOG_MAX_WIDTH_PIXELS = 240 
+        self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = DEFAULT_LINE_WIDTH_WARNING_THRESHOLD
+
         if parent and isinstance(parent, QMainWindow):
             self.editor_player_tag = getattr(parent, 'EDITOR_PLAYER_TAG', EDITOR_PLAYER_TAG_DEFAULT)
             self.original_player_tag = getattr(parent, 'ORIGINAL_PLAYER_TAG', ORIGINAL_PLAYER_TAG_DEFAULT)
+            self.font_map = getattr(parent, 'font_map', {})
+            self.GAME_DIALOG_MAX_WIDTH_PIXELS = getattr(parent, 'GAME_DIALOG_MAX_WIDTH_PIXELS', 240)
+            self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = getattr(parent, 'LINE_WIDTH_WARNING_THRESHOLD_PIXELS', DEFAULT_LINE_WIDTH_WARNING_THRESHOLD)
+        
+        self.pixel_width_display_area_width = self.fontMetrics().horizontalAdvance("999") + 6 
+
 
     def showContextMenu(self, pos: QPoint):
         menu = self.createStandardContextMenu()
@@ -75,11 +89,12 @@ class LineNumberedTextEdit(QPlainTextEdit):
         is_preview_widget = hasattr(main_window, 'preview_text_edit') and self == main_window.preview_text_edit
         
         if is_preview_widget:
-            current_block_idx = main_window.current_block_idx
+            current_block_idx_data = main_window.current_block_idx # Індекс блоку даних
             clicked_cursor = self.cursorForPosition(pos)
-            clicked_line_number = clicked_cursor.blockNumber()
+            # Для preview_text_edit, blockNumber() курсора - це індекс рядка даних
+            clicked_data_line_number = clicked_cursor.blockNumber() 
             
-            if current_block_idx < 0 or clicked_line_number < 0 : 
+            if current_block_idx_data < 0 or clicked_data_line_number < 0 : 
                  menu.exec_(self.mapToGlobal(pos)) 
                  return
 
@@ -95,19 +110,27 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
             menu.addSeparator()
 
-            revert_line_action = menu.addAction(f"Revert Line {clicked_line_number + 1} to Original")
+            revert_line_action = menu.addAction(f"Revert Data Line {clicked_data_line_number + 1} to Original")
             if hasattr(main_window.editor_operation_handler, 'revert_single_line'):
-                revert_line_action.triggered.connect(lambda checked=False, line=clicked_line_number: main_window.editor_operation_handler.revert_single_line(line))
+                revert_line_action.triggered.connect(lambda checked=False, line=clicked_data_line_number: main_window.editor_operation_handler.revert_single_line(line))
                 
                 is_revertable = False
-                original_text = main_window.data_processor._get_string_from_source(current_block_idx, clicked_line_number, main_window.data, "original_for_revert_check")
-                if original_text is not None:
-                     current_text, _ = main_window.data_processor.get_current_string_text(current_block_idx, clicked_line_number)
-                     if current_text != original_text:
+                original_text_for_revert_check = main_window.data_processor._get_string_from_source(current_block_idx_data, clicked_data_line_number, main_window.data, "original_for_revert_check")
+                if original_text_for_revert_check is not None:
+                     current_text, _ = main_window.data_processor.get_current_string_text(current_block_idx_data, clicked_data_line_number)
+                     if current_text != original_text_for_revert_check:
                           is_revertable = True
                 revert_line_action.setEnabled(is_revertable)
             else:
-                 revert_line_action.setEnabled(False) 
+                 revert_line_action.setEnabled(False)
+            
+            calc_width_action = menu.addAction(f"Calculate Width for Data Line {clicked_data_line_number + 1}")
+            if hasattr(main_window, 'editor_operation_handler') and hasattr(main_window.editor_operation_handler, 'calculate_width_for_data_line_action'):
+                # Передаємо індекс рядка даних
+                calc_width_action.triggered.connect(lambda checked=False, line_idx=clicked_data_line_number: main_window.editor_operation_handler.calculate_width_for_data_line_action(line_idx))
+            else:
+                calc_width_action.setEnabled(False)
+
 
         is_original_widget = hasattr(main_window, 'original_text_edit') and self == main_window.original_text_edit
         if is_original_widget:
@@ -219,6 +242,18 @@ class LineNumberedTextEdit(QPlainTextEdit):
     def hasWarningLineHighlight(self, line_number: Optional[int] = None) -> bool:
         return self.highlightManager.hasWarningLineHighlight(line_number)
         
+    def addWidthExceededHighlight(self, line_number: int):
+        self.highlightManager.addWidthExceededHighlight(line_number)
+
+    def removeWidthExceededHighlight(self, line_number: int) -> bool:
+        return self.highlightManager.removeWidthExceededHighlight(line_number)
+
+    def clearWidthExceededHighlights(self):
+        self.highlightManager.clearWidthExceededHighlights()
+
+    def hasWidthExceededHighlight(self, line_number: Optional[int] = None) -> bool:
+        return self.highlightManager.hasWidthExceededHighlight(line_number)
+
     def setPreviewSelectedLineHighlight(self, line_number: int): 
         self.highlightManager.setPreviewSelectedLineHighlight(line_number)
 
@@ -231,14 +266,17 @@ class LineNumberedTextEdit(QPlainTextEdit):
     def applyQueuedHighlights(self): 
         self.highlightManager.applyHighlights() 
 
-    def clearAllProblemTypeHighlights(self):
-        self.highlightManager.clearAllProblemHighlights()
+    def clearAllProblemTypeHighlights(self): 
+        self.highlightManager.clearAllProblemHighlights() 
         
     def addProblemLineHighlight(self, line_number: int): self.addCriticalProblemHighlight(line_number)
     def removeProblemLineHighlight(self, line_number: int) -> bool: return self.removeCriticalProblemHighlight(line_number)
     def clearProblemLineHighlights(self): self.clearAllProblemTypeHighlights()
-    def hasProblemHighlight(self, line_number: Optional[int] = None) -> bool:
-        return self.highlightManager.hasCriticalProblemHighlight(line_number) or self.highlightManager.hasWarningLineHighlight(line_number)
+    def hasProblemHighlight(self, line_number: Optional[int] = None) -> bool: 
+        return self.highlightManager.hasCriticalProblemHighlight(line_number) or \
+               self.highlightManager.hasWarningLineHighlight(line_number) or \
+               self.hasWidthExceededHighlight(line_number)
+
 
     def setReadOnly(self, ro):
         super().setReadOnly(ro)
@@ -263,7 +301,14 @@ class LineNumberedTextEdit(QPlainTextEdit):
     def lineNumberAreaWidth(self):
         digits = 1; max_val = max(1, self.blockCount())
         while max_val >= 10: max_val //= 10; digits += 1
-        return self.fontMetrics().horizontalAdvance('9') * (digits) + 10 
+        
+        base_width = self.fontMetrics().horizontalAdvance('9') * (digits) + 10
+        
+        pixel_width_display_width = 0
+        if self.objectName() == "original_text_edit" or self.objectName() == "edited_text_edit":
+            pixel_width_display_width = self.pixel_width_display_area_width
+            
+        return base_width + pixel_width_display_width
 
     def updateLineNumberAreaWidth(self, _): 
         self.setViewportMargins(self.lineNumberAreaWidth(), 0, 0, 0)
@@ -284,7 +329,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
     def paintEvent(self, event: QPaintEvent): 
         super().paintEvent(event) 
-        if not self.isReadOnly():
+        if not self.isReadOnly(): # Тільки для edited_text_edit
             painter = QPainter(self.viewport())
             char_width = self.fontMetrics().horizontalAdvance('0') 
             text_margin = self.document().documentMargin() 
@@ -299,63 +344,105 @@ class LineNumberedTextEdit(QPlainTextEdit):
         super().mousePressEvent(event) 
         if event.button() == Qt.LeftButton:
              cursor = self.cursorForPosition(event.pos())
-             block_number = cursor.blockNumber()
+             block_number = cursor.blockNumber() 
              self.lineClicked.emit(block_number)
 
     def lineNumberAreaPaintEvent(self, event, painter_device): 
         painter = QPainter(painter_device) 
         
         base_bg_color = self.palette().base().color()
-        if self.isReadOnly():
+        if self.isReadOnly(): # Для preview_text_edit та original_text_edit
              base_bg_color = self.palette().window().color().lighter(105)
         painter.fillRect(event.rect(), base_bg_color)
-
-        edited_active_block = -1
-        preview_active_block = -1
-        original_active_block = -1
-
-        if self.highlightManager._active_line_selections:
-             edited_active_block = self.highlightManager._active_line_selections[0].cursor.blockNumber()
-        if self.highlightManager._preview_selected_line_selections:
-             preview_active_block = self.highlightManager._preview_selected_line_selections[0].cursor.blockNumber()
-        if self.highlightManager._linked_cursor_selections:
-            for sel in self.highlightManager._linked_cursor_selections:
-                if sel.format.property(QTextFormat.FullWidthSelection):
-                     original_active_block = sel.cursor.blockNumber()
-                     break
         
+        main_window_ref = self.window()
+        active_data_line_idx = -1 # Індекс активного рядка даних
+        if isinstance(main_window_ref, QMainWindow):
+            active_data_line_idx = main_window_ref.current_string_idx
+
         active_bg_color = self.lineNumberArea.active_number_background_color 
         active_text_color = self.lineNumberArea.active_number_color 
         odd_bg_color = self.lineNumberArea.odd_line_background
         number_color = self.lineNumberArea.number_color
+        width_exceeded_bg_color = self.lineNumberArea.width_indicator_exceeded_color # Колір для фону ширини
 
-        block = self.firstVisibleBlock()
-        blockNumber = block.blockNumber()
-        top = int(self.blockBoundingGeometry(block).translated(self.contentOffset()).top())
-        bottom = top + int(self.blockBoundingRect(block).height())
-        area_width = self.lineNumberAreaWidth() 
+        current_q_block = self.firstVisibleBlock()
+        current_q_block_number = current_q_block.blockNumber() # Індекс поточного QTextBlcok
+        top = int(self.blockBoundingGeometry(current_q_block).translated(self.contentOffset()).top())
+        bottom = top + int(self.blockBoundingRect(current_q_block).height())
+        
+        number_area_total_width = self.lineNumberAreaWidth()
+        pixel_width_part_width = 0
+        # Відображаємо поле ширини тільки для original та edited
+        if self.objectName() == "original_text_edit" or self.objectName() == "edited_text_edit":
+            pixel_width_part_width = self.pixel_width_display_area_width
+        
+        number_part_width = number_area_total_width - pixel_width_part_width
 
-        while block.isValid() and top <= event.rect().bottom():
-            if block.isVisible() and bottom >= event.rect().top():
-                number = str(blockNumber + 1)
-                line_num_rect = QRect(0, top, area_width - 3, int(self.blockBoundingRect(block).height())) 
-
-                is_line_active = ( (edited_active_block == blockNumber) or \
-                                   (preview_active_block == blockNumber) or \
-                                   (original_active_block == blockNumber) )
-
-                if is_line_active:
-                     painter.fillRect(line_num_rect.adjusted(0, 0, 3, 0), active_bg_color) 
-                     painter.setPen(active_text_color) 
-                elif (blockNumber + 1) % 2 == 0: 
-                    painter.setPen(number_color)
-                else: 
-                    painter.fillRect(line_num_rect.adjusted(0, 0, 3, 0), odd_bg_color) 
-                    painter.setPen(number_color)
+        while current_q_block.isValid() and top <= event.rect().bottom():
+            if current_q_block.isVisible() and bottom >= event.rect().top():
+                line_height = int(self.blockBoundingRect(current_q_block).height())
                 
-                painter.drawText(line_num_rect, Qt.AlignRight | Qt.AlignVCenter, number) 
+                # Визначаємо, чи є поточний QTextBlock частиною активного рядка даних
+                is_this_qblock_part_of_active_data_line = False
+                if active_data_line_idx != -1: # Якщо взагалі є активний рядок даних
+                    if self.objectName() == "preview_text_edit":
+                        # У preview_text_edit кожен QTextBlock це окремий рядок даних
+                        is_this_qblock_part_of_active_data_line = (current_q_block_number == active_data_line_idx)
+                    elif self.objectName() in ["original_text_edit", "edited_text_edit"]:
+                        # У original/edited всі QTextBlocks належать до одного активного рядка даних
+                        is_this_qblock_part_of_active_data_line = True 
+                
+                # Малювання номера QTextBlock (або номера рядка даних для preview)
+                display_number_for_line_area = ""
+                if self.objectName() == "preview_text_edit":
+                    display_number_for_line_area = str(current_q_block_number + 1) # Номер рядка даних
+                else: # original_text_edit, edited_text_edit
+                    display_number_for_line_area = str(current_q_block_number + 1) # Номер QTextBlcok
 
-            block = block.next()
+                line_num_rect = QRect(0, top, number_part_width - 3, line_height) 
+
+                current_number_text_color = number_color
+                current_number_bg_color = None # Немає фону за замовчуванням
+
+                if is_this_qblock_part_of_active_data_line:
+                     current_number_bg_color = active_bg_color
+                     current_number_text_color = active_text_color 
+                elif (current_q_block_number + 1) % 2 != 0: # Непарний QTextBlcok (не активний)
+                    current_number_bg_color = odd_bg_color
+                # Для парних неактивних фон буде базовим (base_bg_color)
+
+                if current_number_bg_color:
+                    painter.fillRect(line_num_rect.adjusted(0, 0, 3, 0), current_number_bg_color)
+                painter.setPen(current_number_text_color)
+                painter.drawText(line_num_rect, Qt.AlignRight | Qt.AlignVCenter, display_number_for_line_area) 
+
+                # Малювання ширини QTextBlock (тільки для original_text_edit та edited_text_edit)
+                if pixel_width_part_width > 0:
+                    q_block_text_raw = current_q_block.text()
+                    text_for_width_calc = convert_dots_to_spaces_from_editor(q_block_text_raw)
+                    text_for_width_calc = remove_all_tags(text_for_width_calc)
+                    
+                    pixel_width = calculate_string_width(text_for_width_calc, self.font_map)
+                    width_str = str(pixel_width)
+                    
+                    width_display_rect = QRect(number_part_width, top, pixel_width_part_width -3 , line_height)
+                    
+                    width_text_color = current_number_text_color # За замовчуванням той самий, що і для номера
+                    width_bg_to_fill = current_number_bg_color # За замовчуванням той самий, що і для номера
+
+                    if pixel_width > self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
+                        width_bg_to_fill = width_exceeded_bg_color
+                        width_text_color = QColor(Qt.black) # Чорний текст на червоному фоні краще видно
+                    
+                    if width_bg_to_fill: # Якщо є фон для заливки (може не бути для парних неактивних)
+                        painter.fillRect(width_display_rect.adjusted(0,0,3,0), width_bg_to_fill)
+                    
+                    painter.setPen(width_text_color)
+                    painter.drawText(width_display_rect, Qt.AlignRight | Qt.AlignVCenter, width_str)
+                    painter.setPen(number_color) # Відновлюємо колір пера за замовчуванням для наступних операцій
+
+            current_q_block = current_q_block.next()
             top = bottom
-            bottom = top + int(self.blockBoundingRect(block).height())
-            blockNumber += 1
+            bottom = top + int(self.blockBoundingRect(current_q_block).height())
+            current_q_block_number += 1

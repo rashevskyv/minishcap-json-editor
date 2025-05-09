@@ -11,6 +11,27 @@ def log_debug(message):
 
 SPACE_DOT_SYMBOL = "·" 
 ALL_TAGS_PATTERN = re.compile(r'\[[^\]]*\]|\{[^}]*\}')
+DEFAULT_CHAR_WIDTH_FALLBACK = 6 
+
+def remove_all_tags(text: str) -> str:
+    if text is None:
+        return ""
+    return ALL_TAGS_PATTERN.sub("", text)
+
+def calculate_string_width(text: str, font_map: dict, default_char_width: int = DEFAULT_CHAR_WIDTH_FALLBACK) -> int:
+    if text is None or not font_map:
+        return 0
+    
+    text_no_tags = remove_all_tags(text)
+    total_width = 0
+    for char_code in text_no_tags:
+        char_data = font_map.get(char_code)
+        if char_data and isinstance(char_data, dict) and 'width' in char_data:
+            total_width += char_data['width']
+        else:
+            total_width += default_char_width
+            # log_debug(f"Char '{char_code}' (ord: {ord(char_code)}) not in font_map or no width, using default_char_width: {default_char_width}")
+    return total_width
 
 def convert_spaces_to_dots_for_display(text: str, enable_conversion: bool) -> str:
     if not enable_conversion or text is None:
@@ -43,7 +64,7 @@ def convert_raw_to_display_text(raw_text: str, show_dots: bool, newline_char_for
         
     return text_with_dots
 
-def prepare_text_for_tagless_search(text: str, keep_original_case: bool = False) -> str: # Додано параметр
+def prepare_text_for_tagless_search(text: str, keep_original_case: bool = False) -> str: 
     if text is None:
         return ""
     
@@ -54,11 +75,5 @@ def prepare_text_for_tagless_search(text: str, keep_original_case: bool = False)
     normalized_spaces_text = re.sub(r' {2,}', ' ', text_with_spaces_instead_of_newlines)
     
     stripped_text = normalized_spaces_text.strip()
-
-    # Параметр keep_original_case тут не використовується, оскільки ця функція
-    # лише готує текст, а чутливість до регістру враховується вже при самому пошуку.
-    # Однак, якщо ми захочемо, щоб ця функція сама переводила в нижній регістр,
-    # то параметр стане в пригоді. Поки що залишимо його для потенційного використання,
-    # але сама функція не буде змінювати регістр.
     
     return stripped_text

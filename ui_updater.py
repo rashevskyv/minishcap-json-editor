@@ -2,19 +2,19 @@ import os
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QBrush, QTextCursor
 from PyQt5.QtWidgets import QApplication
-# Додаємо remove_curly_tags до імпортів
 from utils import log_debug, convert_spaces_to_dots_for_display, convert_dots_to_spaces_from_editor, remove_curly_tags
 
 class UIUpdater:
     def __init__(self, main_window, data_processor):
         self.mw = main_window
         self.data_processor = data_processor
-        self.problem_block_color = QColor(Qt.yellow).lighter(150) 
+        self.critical_block_color = QColor(Qt.yellow).lighter(150) 
         self.warning_block_color = QColor(Qt.lightGray).lighter(110) 
+        self.width_exceeded_block_color = QColor(255, 192, 203) # Світло-рожевий для блоків з перевищенням ширини
 
-    # ... (populate_blocks, update_block_item_text_with_problem_count, populate_strings_for_block - без змін) ...
     def populate_blocks(self):
         log_debug("[UIUpdater] populate_blocks called.")
+        current_selection_block_idx = self.mw.block_list_widget.currentRow()
         self.mw.block_list_widget.clear()
         if not self.mw.data: 
             log_debug("[UIUpdater] populate_blocks: No original data.")
@@ -23,17 +23,20 @@ class UIUpdater:
         for i in range(len(self.mw.data)):
             base_display_name = self.mw.block_names.get(str(i), f"Block {i}")
             
-            num_critical = 0; num_warnings = 0
+            num_critical = 0; num_warnings = 0; num_width_exceeded = 0
             block_key = str(i)
             if hasattr(self.mw, 'critical_problem_lines_per_block'):
                 num_critical = len(self.mw.critical_problem_lines_per_block.get(block_key, set()))
             if hasattr(self.mw, 'warning_problem_lines_per_block'):
                 num_warnings = len(self.mw.warning_problem_lines_per_block.get(block_key, set()))
+            if hasattr(self.mw, 'width_exceeded_lines_per_block'):
+                num_width_exceeded = len(self.mw.width_exceeded_lines_per_block.get(block_key, set()))
             
             display_name_with_issues = base_display_name
             issue_texts = []
             if num_critical > 0: issue_texts.append(f"{num_critical} crit")
             if num_warnings > 0: issue_texts.append(f"{num_warnings} warn")
+            if num_width_exceeded > 0: issue_texts.append(f"{num_width_exceeded} width") 
             
             if issue_texts:
                 display_name_with_issues = f"{base_display_name} ({', '.join(issue_texts)})"
@@ -42,11 +45,16 @@ class UIUpdater:
             self.mw.block_list_widget.addItem(item)
 
             if num_critical > 0:
-                self.highlight_problem_block(i, True, is_critical=True)
-            elif num_warnings > 0:
-                self.highlight_problem_block(i, True, is_critical=False) 
+                item.setBackground(QBrush(self.critical_block_color))
+            elif num_warnings > 0: # Тільки якщо немає критичних
+                item.setBackground(QBrush(self.warning_block_color))
+            elif num_width_exceeded > 0: # Тільки якщо немає критичних або попереджень по тегах
+                 item.setBackground(QBrush(self.width_exceeded_block_color))
             else: 
-                self.highlight_problem_block(i, False)
+                item.setBackground(QBrush(Qt.transparent))
+        
+        if 0 <= current_selection_block_idx < self.mw.block_list_widget.count():
+            self.mw.block_list_widget.setCurrentRow(current_selection_block_idx)
 
         log_debug(f"[UIUpdater] populate_blocks: Added {self.mw.block_list_widget.count()} items.")
 
@@ -58,19 +66,22 @@ class UIUpdater:
         if not item: return
 
         base_display_name = self.mw.block_names.get(str(block_idx), f"Block {block_idx}")
-        num_critical = 0; num_warnings = 0
+        num_critical = 0; num_warnings = 0; num_width_exceeded = 0
         block_key = str(block_idx)
 
         if hasattr(self.mw, 'critical_problem_lines_per_block'):
             num_critical = len(self.mw.critical_problem_lines_per_block.get(block_key, set()))
         if hasattr(self.mw, 'warning_problem_lines_per_block'):
             num_warnings = len(self.mw.warning_problem_lines_per_block.get(block_key, set()))
+        if hasattr(self.mw, 'width_exceeded_lines_per_block'):
+            num_width_exceeded = len(self.mw.width_exceeded_lines_per_block.get(block_key, set()))
 
         display_name_with_issues = base_display_name
         issue_texts = []
         if num_critical > 0: issue_texts.append(f"{num_critical} crit")
         if num_warnings > 0: issue_texts.append(f"{num_warnings} warn")
-
+        if num_width_exceeded > 0: issue_texts.append(f"{num_width_exceeded} width")
+        
         if issue_texts:
             display_name_with_issues = f"{base_display_name} ({', '.join(issue_texts)})"
         
@@ -79,11 +90,13 @@ class UIUpdater:
             item.setText(display_name_with_issues)
         
         if num_critical > 0:
-            self.highlight_problem_block(block_idx, True, is_critical=True)
+            item.setBackground(QBrush(self.critical_block_color))
         elif num_warnings > 0:
-            self.highlight_problem_block(block_idx, True, is_critical=False)
+            item.setBackground(QBrush(self.warning_block_color))
+        elif num_width_exceeded > 0:
+            item.setBackground(QBrush(self.width_exceeded_block_color))
         else:
-            self.highlight_problem_block(block_idx, False)
+            item.setBackground(QBrush(Qt.transparent))
 
 
     def populate_strings_for_block(self, block_idx):
@@ -93,38 +106,42 @@ class UIUpdater:
         old_scrollbar_value = 0
         if preview_edit: old_scrollbar_value = preview_edit.verticalScrollBar().value()
 
-        critical_lines_to_restore = []
-        warning_lines_to_restore = []
+        critical_lines_to_restore = set()
+        warning_lines_to_restore = set()
+        width_exceeded_lines_to_restore = set() 
         block_key_str = str(block_idx)
 
-        if preview_edit:
+        # Завантажуємо ВСІ типи проблем для поточного блоку, якщо блок валідний
+        if block_idx >=0 : # Тільки якщо блок валідний
             if hasattr(self.mw, 'critical_problem_lines_per_block'):
-                critical_lines_to_restore = list(self.mw.critical_problem_lines_per_block.get(block_key_str, set()))
+                critical_lines_to_restore = self.mw.critical_problem_lines_per_block.get(block_key_str, set()).copy()
             if hasattr(self.mw, 'warning_problem_lines_per_block'):
-                warning_lines_to_restore = list(self.mw.warning_problem_lines_per_block.get(block_key_str, set()))
+                warning_lines_to_restore = self.mw.warning_problem_lines_per_block.get(block_key_str, set()).copy()
+            if hasattr(self.mw, 'width_exceeded_lines_per_block'):
+                width_exceeded_lines_to_restore = self.mw.width_exceeded_lines_per_block.get(block_key_str, set()).copy()
 
         self.mw.is_programmatically_changing_text = True 
         
         if preview_edit and hasattr(preview_edit, 'clearPreviewSelectedLineHighlight'):
             preview_edit.clearPreviewSelectedLineHighlight()
 
-        if self.mw.current_block_idx != block_idx: 
-            if preview_edit and hasattr(preview_edit, 'clearAllProblemTypeHighlights'):
-                log_debug(f"UIUpdater: Block changed from {self.mw.current_block_idx} to {block_idx}. Clearing all problem/warning highlights for preview.")
-                preview_edit.clearAllProblemTypeHighlights()
-                critical_lines_to_restore = [] 
-                warning_lines_to_restore = []
+        # Очищаємо ВСІ типи підсвіток проблем у preview_edit ПЕРЕД заповненням новими даними
+        if preview_edit and hasattr(preview_edit, 'clearAllProblemTypeHighlights'):
+            log_debug(f"UIUpdater: Clearing all problem highlights for preview before populating for block {block_idx}.")
+            preview_edit.clearAllProblemTypeHighlights()
+
 
         preview_lines = []
         if block_idx < 0 or not self.mw.data or block_idx >= len(self.mw.data) or not isinstance(self.mw.data[block_idx], list):
             if preview_edit: preview_edit.setPlainText("")
-            if self.mw.current_block_idx != -1 and block_idx < 0: self.mw.current_block_idx = -1
+            # current_block_idx вже встановлено в -1 або інше значення в block_selected або load_all_data
+            # if self.mw.current_block_idx != -1 and block_idx < 0: self.mw.current_block_idx = -1 # Цей рядок може бути зайвим
             self.update_text_views(); self.synchronize_original_cursor() 
             if preview_edit: preview_edit.verticalScrollBar().setValue(old_scrollbar_value)
             self.mw.is_programmatically_changing_text = False 
             return
 
-        self.mw.current_block_idx = block_idx 
+        # self.mw.current_block_idx вже має бути встановлений правильно до виклику цього методу
         
         for i in range(len(self.mw.data[self.mw.current_block_idx])):
             text_for_preview_raw, _ = self.data_processor.get_current_string_text(self.mw.current_block_idx, i)
@@ -133,24 +150,32 @@ class UIUpdater:
             preview_lines.append(preview_line)
         
         if preview_edit:
-            if hasattr(preview_edit, '_critical_problem_selections'): preview_edit._critical_problem_selections = [] 
-            if hasattr(preview_edit, '_warning_problem_selections'): preview_edit._warning_problem_selections = []
-            preview_edit.setPlainText("\n".join(preview_lines))
+            # Очищаємо програмні списки підсвіток, якщо вони є в preview_edit.highlightManager
+            # Це робиться в clearAllProblemTypeHighlights(), тому тут не потрібно
+            # if hasattr(preview_edit.highlightManager, '_critical_problem_selections'): preview_edit.highlightManager._critical_problem_selections = [] 
+            # ... і т.д.
 
-            if hasattr(preview_edit, 'addCriticalProblemHighlight'):
-                for line_num in critical_lines_to_restore: preview_edit.addCriticalProblemHighlight(line_num)
-            if hasattr(preview_edit, 'addWarningLineHighlight'):
-                for line_num in warning_lines_to_restore: preview_edit.addWarningLineHighlight(line_num) 
+            preview_edit.setPlainText("\n".join(preview_lines))
             
-            if hasattr(preview_edit, 'applyQueuedHighlights'):
+            for line_num in range(len(preview_lines)):
+                if line_num in critical_lines_to_restore:
+                    if hasattr(preview_edit, 'addCriticalProblemHighlight'):
+                        preview_edit.addCriticalProblemHighlight(line_num)
+                elif line_num in warning_lines_to_restore:
+                    if hasattr(preview_edit, 'addWarningLineHighlight'):
+                        preview_edit.addWarningLineHighlight(line_num)
+                elif line_num in width_exceeded_lines_to_restore: 
+                    if hasattr(preview_edit, 'addWidthExceededHighlight'):
+                        preview_edit.addWidthExceededHighlight(line_num)
+            
+            if hasattr(preview_edit, 'applyQueuedHighlights'): 
                 preview_edit.applyQueuedHighlights()
             
             if self.mw.current_string_idx != -1 and \
                hasattr(preview_edit, 'setPreviewSelectedLineHighlight') and \
                self.mw.current_string_idx < preview_edit.document().blockCount(): 
                 preview_edit.setPreviewSelectedLineHighlight(self.mw.current_string_idx)
-            elif hasattr(preview_edit, '_apply_all_extra_selections'): 
-                 preview_edit._apply_all_extra_selections()
+            # Не потрібно 'else' з _apply_all_extra_selections, бо applyQueuedHighlights вже викликано
 
             preview_edit.verticalScrollBar().setValue(old_scrollbar_value)
         
@@ -165,23 +190,14 @@ class UIUpdater:
             return 
         cursor = self.mw.edited_text_edit.textCursor()
         block = cursor.block()
-        pos_in_block = cursor.positionInBlock() # Позиція курсора в поточній лінії (з урахуванням символів-точок)
+        pos_in_block = cursor.positionInBlock() 
         
-        # Отримуємо текст лінії з віджета (з символами-точками)
         line_text_with_dots = block.text()
-        # Конвертуємо його назад до тексту з пробілами для підрахунку "реальної" довжини
         line_text_with_spaces = convert_dots_to_spaces_from_editor(line_text_with_dots)
         
-        # Довжина без тегів
         line_text_no_tags = remove_curly_tags(line_text_with_spaces)
         line_len_no_tags = len(line_text_no_tags)
-
-        # Позиція курсора без тегів (це складніше, бо теги можуть бути до курсора)
-        # Для простоти, поки що позицію показуємо відносно тексту з тегами (як є зараз)
-        # або можна показувати позицію в тексті без тегів, якщо курсор не всередині тегу.
-        # Поки що залишимо pos_in_block як є (відносно тексту з точками).
         
-        # Альтернатива: показувати довжину поточного рядка без тегів та з тегами
         line_len_with_tags = len(line_text_with_spaces)
         self.mw.pos_len_label.setText(f"{pos_in_block} ({line_len_no_tags}/{line_len_with_tags})")
         
@@ -198,14 +214,8 @@ class UIUpdater:
             return
 
         selected_text_with_dots = cursor.selectedText()
-        # Важливо: selectedText() може містити символи нового рядка, якщо виділення багаторядкове.
-        # remove_curly_tags та convert_dots_to_spaces_from_editor мають це обробляти.
-
-        # 1. Конвертуємо точки-пробіли назад в пробіли
         selected_text_with_spaces = convert_dots_to_spaces_from_editor(selected_text_with_dots)
         len_with_tags = len(selected_text_with_spaces)
-
-        # 2. Видаляємо теги {...}
         selected_text_no_tags = remove_curly_tags(selected_text_with_spaces)
         len_no_tags = len(selected_text_no_tags)
         
@@ -214,13 +224,12 @@ class UIUpdater:
 
     def clear_status_bar(self):
         if hasattr(self.mw, 'pos_len_label') and self.mw.pos_len_label:
-            self.mw.pos_len_label.setText("0 (0/0)") # Оновлений формат
+            self.mw.pos_len_label.setText("0 (0/0)") 
         if hasattr(self.mw, 'selection_len_label') and self.mw.selection_len_label:
-            self.mw.selection_len_label.setText("Sel: 0/0") # Оновлений формат
+            self.mw.selection_len_label.setText("Sel: 0/0") 
 
 
     def synchronize_original_cursor(self):
-        # ... (код без змін) ...
         if not hasattr(self.mw, 'edited_text_edit') or not hasattr(self.mw, 'original_text_edit') or \
            not self.mw.edited_text_edit or not self.mw.original_text_edit:
             return
@@ -240,20 +249,10 @@ class UIUpdater:
 
 
     def highlight_problem_block(self, block_idx: int, highlight: bool, is_critical: bool = True):
-        # ... (код без змін) ...
-        if not hasattr(self.mw, 'block_list_widget'): return
-        if 0 <= block_idx < self.mw.block_list_widget.count():
-            item = self.mw.block_list_widget.item(block_idx)
-            if item:
-                if highlight:
-                    color_to_use = self.problem_block_color if is_critical else self.warning_block_color
-                    item.setBackground(QBrush(color_to_use))
-                else: 
-                    item.setBackground(QBrush(Qt.transparent))
+        pass
 
 
     def clear_all_problem_block_highlights_and_text(self): 
-        # ... (код без змін) ...
         if not hasattr(self.mw, 'block_list_widget'): return
         for i in range(self.mw.block_list_widget.count()):
             item = self.mw.block_list_widget.item(i)
@@ -262,11 +261,10 @@ class UIUpdater:
                 base_display_name = self.mw.block_names.get(str(i), f"Block {i}")
                 if item.text() != base_display_name: 
                     item.setText(base_display_name)
-        log_debug("UIUpdater: Cleared all problem/warning block highlights and count texts.")
+        log_debug("UIUpdater: Cleared all problem/warning/width block highlights and count texts.")
 
             
     def update_title(self):
-        # ... (код без змін) ...
         title = "JSON Text Editor"
         if self.mw.json_path: 
             title += f" - [{os.path.basename(self.mw.json_path)}]"
@@ -278,7 +276,6 @@ class UIUpdater:
 
 
     def update_statusbar_paths(self):
-        # ... (код без змін) ...
         if hasattr(self.mw, 'original_path_label') and self.mw.original_path_label:
             orig_filename = os.path.basename(self.mw.json_path) if self.mw.json_path else "[not specified]"
             self.mw.original_path_label.setText(f"Original: {orig_filename}")
@@ -290,7 +287,6 @@ class UIUpdater:
 
             
     def update_text_views(self): 
-        # ... (код без змін) ...
         is_programmatic_call = self.mw.is_programmatically_changing_text
         log_debug(f"UIUpdater.update_text_views: Called. Programmatic: {is_programmatic_call}. Current block: {self.mw.current_block_idx}, string: {self.mw.current_string_idx}")
         original_text_raw = ""
@@ -307,6 +303,7 @@ class UIUpdater:
         else: log_debug("  No active block/string selected. Text views will be cleared.")
         original_text_for_display = convert_spaces_to_dots_for_display(str(original_text_raw), self.mw.show_multiple_spaces_as_dots)
         edited_text_for_display_converted = convert_spaces_to_dots_for_display(str(edited_text_raw), self.mw.show_multiple_spaces_as_dots)
+        
         orig_edit = self.mw.original_text_edit
         orig_text_edit_cursor_pos = orig_edit.textCursor().position()
         orig_anchor_pos = orig_edit.textCursor().anchor()
@@ -317,6 +314,8 @@ class UIUpdater:
         if orig_has_selection: new_orig_cursor.setPosition(min(orig_text_edit_cursor_pos, len(original_text_for_display)), QTextCursor.KeepAnchor)
         else: new_orig_cursor.setPosition(min(orig_text_edit_cursor_pos, len(original_text_for_display)))
         orig_edit.setTextCursor(new_orig_cursor)
+        if hasattr(orig_edit, 'lineNumberArea'): orig_edit.lineNumberArea.update()
+
         edited_widget = self.mw.edited_text_edit
         text_in_widget_for_display = edited_widget.toPlainText()
         if is_programmatic_call or (text_in_widget_for_display != edited_text_for_display_converted):
@@ -333,5 +332,7 @@ class UIUpdater:
             if saved_edited_has_selection: restored_cursor.setPosition(new_edited_cursor_pos, QTextCursor.KeepAnchor)
             else: restored_cursor.setPosition(new_edited_cursor_pos)
             edited_widget.setTextCursor(restored_cursor)
+        if hasattr(edited_widget, 'lineNumberArea'): edited_widget.lineNumberArea.update()
+
         self.update_status_bar()
         self.update_status_bar_selection()

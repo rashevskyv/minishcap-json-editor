@@ -20,10 +20,13 @@ from handlers.app_action_handler import AppActionHandler
 from handlers.search_handler import SearchHandler
 
 
-from utils import log_debug
+from utils import log_debug, DEFAULT_CHAR_WIDTH_FALLBACK
 
 EDITOR_PLAYER_TAG = "[ІМ'Я ГРАВЦЯ]"
 ORIGINAL_PLAYER_TAG = "{Player}"
+DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS = 240 
+DEFAULT_LINE_WIDTH_WARNING_THRESHOLD_MAIN = 175
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -32,6 +35,9 @@ class MainWindow(QMainWindow):
 
         self.EDITOR_PLAYER_TAG = EDITOR_PLAYER_TAG
         self.ORIGINAL_PLAYER_TAG = ORIGINAL_PLAYER_TAG
+        self.GAME_DIALOG_MAX_WIDTH_PIXELS = DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS 
+        self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = DEFAULT_LINE_WIDTH_WARNING_THRESHOLD_MAIN
+        self.font_map = {} 
 
         self.is_programmatically_changing_text = False
         self.json_path = None; self.edited_json_path = None
@@ -62,12 +68,14 @@ class MainWindow(QMainWindow):
         }
         self.critical_problem_lines_per_block = {}
         self.warning_problem_lines_per_block = {}
+        self.width_exceeded_lines_per_block = {} # Новий атрибут
 
         self.can_undo_paste = False
         self.before_paste_edited_data_snapshot = {}
         self.before_paste_block_idx_affected = -1
         self.before_paste_critical_problems_snapshot = {}
         self.before_paste_warning_problems_snapshot = {}
+        self.before_paste_width_exceeded_snapshot = {} # Для відкату стану перевищення ширини
 
         self.search_match_block_indices = set()
         self.current_search_results = []
@@ -112,14 +120,21 @@ class MainWindow(QMainWindow):
         log_debug("MainWindow: Loading Editor Settings via SettingsManager...")
         self.settings_manager.load_settings() 
         
+        for editor_widget in [self.preview_text_edit, self.original_text_edit, self.edited_text_edit]:
+            if editor_widget:
+                editor_widget.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
+                editor_widget.font_map = self.font_map 
+                editor_widget.GAME_DIALOG_MAX_WIDTH_PIXELS = self.GAME_DIALOG_MAX_WIDTH_PIXELS
+                if hasattr(editor_widget, 'updateLineNumberAreaWidth'):
+                    editor_widget.updateLineNumberAreaWidth(0)
+
+
         if hasattr(self, 'search_history_to_save') and self.search_panel_widget:
             self.search_panel_widget.load_history(self.search_history_to_save)
             if self.search_history_to_save:
                 last_query = self.search_history_to_save[0] 
                 
                 self.search_handler.current_query = last_query
-                # При завантаженні, також встановлюємо стан прапорців у SearchHandler
-                # згідно з тим, що могло бути збережено (або за замовчуванням з SearchPanelWidget)
                 _, cs, so, it = self.search_panel_widget.get_search_parameters()
                 self.search_handler.is_case_sensitive = cs
                 self.search_handler.search_in_original = so
@@ -162,7 +177,7 @@ class MainWindow(QMainWindow):
         query_to_use = ""
         case_sensitive_to_use = False
         search_in_original_to_use = False
-        ignore_tags_to_use = True # За замовчуванням для F3
+        ignore_tags_to_use = True 
 
         if self.search_panel_widget.isVisible():
             query_to_use, case_sensitive_to_use, search_in_original_to_use, ignore_tags_to_use = self.search_panel_widget.get_search_parameters()
@@ -186,7 +201,7 @@ class MainWindow(QMainWindow):
         query_to_use = ""
         case_sensitive_to_use = False
         search_in_original_to_use = False
-        ignore_tags_to_use = True # За замовчуванням для F3
+        ignore_tags_to_use = True 
 
         if self.search_panel_widget.isVisible():
             query_to_use, case_sensitive_to_use, search_in_original_to_use, ignore_tags_to_use = self.search_panel_widget.get_search_parameters()
@@ -245,10 +260,10 @@ class MainWindow(QMainWindow):
 
         log_debug("--> MainWindow: connect_signals() finished")
 
-    def handle_panel_find_next(self, query, case_sensitive, search_in_original, ignore_tags): # Додано ignore_tags
+    def handle_panel_find_next(self, query, case_sensitive, search_in_original, ignore_tags): 
         self.search_handler.find_next(query, case_sensitive, search_in_original, ignore_tags)
 
-    def handle_panel_find_previous(self, query, case_sensitive, search_in_original, ignore_tags): # Додано ignore_tags
+    def handle_panel_find_previous(self, query, case_sensitive, search_in_original, ignore_tags): 
         self.search_handler.find_previous(query, case_sensitive, search_in_original, ignore_tags)
 
     def toggle_search_panel(self):
@@ -261,9 +276,9 @@ class MainWindow(QMainWindow):
             self.search_panel_widget.set_query(last_query if last_query else "")
             self.search_panel_widget.set_search_options(case_sensitive, search_in_original, ignore_tags)
             
-            if hasattr(self, 'search_history_to_save'): # Завантажуємо збережену історію
+            if hasattr(self, 'search_history_to_save'): 
                  self.search_panel_widget.load_history(self.search_history_to_save)
-            else: # Якщо її немає, просто оновлюємо з поточної (порожньої) історії панелі
+            else: 
                  self.search_panel_widget._update_combobox_items()
 
 
@@ -286,6 +301,7 @@ class MainWindow(QMainWindow):
             log_debug("Revert successful, UI updated by DataStateProcessor.")
             if hasattr(self, 'critical_problem_lines_per_block'): self.critical_problem_lines_per_block.clear()
             if hasattr(self, 'warning_problem_lines_per_block'): self.warning_problem_lines_per_block.clear()
+            if hasattr(self, 'width_exceeded_lines_per_block'): self.width_exceeded_lines_per_block.clear()
             self._rebuild_unsaved_block_indices()
             if hasattr(self.ui_updater, 'clear_all_problem_block_highlights_and_text'):
                 self.ui_updater.clear_all_problem_block_highlights_and_text()
@@ -303,6 +319,7 @@ class MainWindow(QMainWindow):
         self.edited_data = dict(self.before_paste_edited_data_snapshot)
         self.critical_problem_lines_per_block = copy.deepcopy(self.before_paste_critical_problems_snapshot)
         self.warning_problem_lines_per_block = copy.deepcopy(self.before_paste_warning_problems_snapshot)
+        self.width_exceeded_lines_per_block = copy.deepcopy(self.before_paste_width_exceeded_snapshot)
 
         self._rebuild_unsaved_block_indices()
 
@@ -313,13 +330,13 @@ class MainWindow(QMainWindow):
         self.is_programmatically_changing_text = True
         preview_edit = getattr(self, 'preview_text_edit', None)
         if preview_edit and hasattr(preview_edit, 'clearAllProblemTypeHighlights'):
-            preview_edit.clearCriticalProblemHighlights()
-            preview_edit.clearWarningLineHighlights()
+            preview_edit.clearAllProblemTypeHighlights() # Це очистить всі, включно з width exceeded
+            # Потрібно буде відновити width exceeded highlights в populate_strings_for_block
 
         if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
             self.ui_updater.update_block_item_text_with_problem_count(block_to_refresh_ui_for)
 
-        self.ui_updater.populate_strings_for_block(self.current_block_idx)
+        self.ui_updater.populate_strings_for_block(self.current_block_idx) # Це відновить потрібні підсвітки
 
         if self.current_block_idx != block_to_refresh_ui_for:
             if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
@@ -382,6 +399,14 @@ class MainWindow(QMainWindow):
     def load_all_data_for_path(self, original_file_path, manually_set_edited_path=None, is_initial_load_from_settings=False):
         self.app_action_handler.load_all_data_for_path(original_file_path, manually_set_edited_path, is_initial_load_from_settings)
         self._rebuild_unsaved_block_indices()
+        for editor_widget in [self.preview_text_edit, self.original_text_edit, self.edited_text_edit]:
+            if editor_widget:
+                editor_widget.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
+                editor_widget.font_map = self.font_map
+                editor_widget.GAME_DIALOG_MAX_WIDTH_PIXELS = self.GAME_DIALOG_MAX_WIDTH_PIXELS
+                if hasattr(editor_widget, 'updateLineNumberAreaWidth'): 
+                    editor_widget.updateLineNumberAreaWidth(0)
+
 
     def _apply_text_wrap_settings(self):
         log_debug(f"Applying text wrap settings: Preview wrap: {self.preview_wrap_lines}, Editors wrap: {self.editors_wrap_lines}")
@@ -420,7 +445,7 @@ class MainWindow(QMainWindow):
         self.app_action_handler.handle_close_event(event) 
         
         if event.isAccepted():
-            if not self.unsaved_changes : # Використовуємо self.unsaved_changes напряму
+            if not self.unsaved_changes : 
                 log_debug("Close accepted (no unsaved changes). Saving editor settings via SettingsManager.")
                 self.settings_manager.save_settings()
             else:
