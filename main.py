@@ -2,7 +2,7 @@ import sys
 import os
 import json
 import copy
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QPlainTextEdit, QVBoxLayout, QSpinBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QPlainTextEdit, QVBoxLayout, QSpinBox, QWidget
 from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtGui import QKeyEvent, QTextCursor, QKeySequence, QFont
 
@@ -28,7 +28,8 @@ from utils.utils import log_debug, DEFAULT_CHAR_WIDTH_FALLBACK
 from constants import (
     EDITOR_PLAYER_TAG, ORIGINAL_PLAYER_TAG,
     DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS,
-    DEFAULT_LINE_WIDTH_WARNING_THRESHOLD, DEFAULT_FONT_FAMILY
+    DEFAULT_LINE_WIDTH_WARNING_THRESHOLD,
+    GENERAL_APP_FONT_FAMILY, MONOSPACE_EDITOR_FONT_FAMILY, DEFAULT_APP_FONT_SIZE
 )
 
 
@@ -42,10 +43,10 @@ class MainWindow(QMainWindow):
         self.GAME_DIALOG_MAX_WIDTH_PIXELS = DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS
         self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = DEFAULT_LINE_WIDTH_WARNING_THRESHOLD
         self.font_map = {}
-        default_font_size = QFont(DEFAULT_FONT_FAMILY).pointSize()
-        if default_font_size <= 0: default_font_size = 10
-        self.current_font_size = default_font_size
-        self.current_font_family = DEFAULT_FONT_FAMILY
+
+        self.current_font_size = DEFAULT_APP_FONT_SIZE
+        self.general_font_family = GENERAL_APP_FONT_FAMILY
+        self.editor_font_family = MONOSPACE_EDITOR_FONT_FAMILY
 
 
         self.is_programmatically_changing_text = False
@@ -147,7 +148,7 @@ class MainWindow(QMainWindow):
 
         log_debug("MainWindow: Loading Editor Settings via SettingsManager...")
         self.settings_manager.load_settings()
-        log_debug(f"MainWindow: After SettingsManager.load_settings(), self.current_font_size = {self.current_font_size}, family = {self.current_font_family}")
+        log_debug(f"MainWindow: After SettingsManager.load_settings(), self.current_font_size = {self.current_font_size}, general_family = {self.general_font_family}, editor_family = {self.editor_font_family}")
         if self.font_size_spinbox:
             self.font_size_spinbox.setValue(self.current_font_size)
 
@@ -236,24 +237,26 @@ class MainWindow(QMainWindow):
             self.apply_font_size()
 
     def apply_font_size(self):
-        log_debug(f"MainWindow: Applying font: Family='{self.current_font_family}', Size={self.current_font_size}")
+        log_debug(f"MainWindow: Applying font. General: Family='{self.general_font_family}', Editor: Family='{self.editor_font_family}', Size={self.current_font_size}")
         if self.current_font_size <= 0:
             log_debug("MainWindow: Invalid font size, skipping application.")
             return
 
-        app_font = QFont(self.current_font_family, self.current_font_size)
-        QApplication.setFont(app_font)
+        general_font = QFont(self.general_font_family, self.current_font_size)
+        editor_font = QFont(self.editor_font_family, self.current_font_size)
 
-        widgets_to_update = [
-            self.preview_text_edit, self.original_text_edit, self.edited_text_edit,
+        QApplication.setFont(general_font)
+
+        editor_widgets = [self.preview_text_edit, self.original_text_edit, self.edited_text_edit]
+        general_ui_widgets = [
             self.block_list_widget, self.search_panel_widget, self.statusBar
         ]
 
         labels_in_status_bar = [self.original_path_label, self.edited_path_label, self.pos_len_label, self.selection_len_label]
-        widgets_to_update.extend(labels_in_status_bar)
+        general_ui_widgets.extend(labels_in_status_bar)
 
         if self.search_panel_widget:
-            widgets_to_update.extend([
+            general_ui_widgets.extend([
                 self.search_panel_widget.search_query_edit,
                 self.search_panel_widget.find_next_button,
                 self.search_panel_widget.find_previous_button,
@@ -263,27 +266,39 @@ class MainWindow(QMainWindow):
                 self.search_panel_widget.status_label,
                 self.search_panel_widget.close_search_panel_button
             ])
+        
+        if self.main_splitter:
+            for i in range(self.main_splitter.count()):
+                widget = self.main_splitter.widget(i)
+                if widget not in editor_widgets and widget not in general_ui_widgets:
+                    general_ui_widgets.append(widget)
+                    for child_widget in widget.findChildren(QWidget):
+                         if child_widget not in editor_widgets and child_widget not in general_ui_widgets:
+                             general_ui_widgets.append(child_widget)
 
 
-        for widget in widgets_to_update:
+        for widget in editor_widgets:
             if widget:
                 try:
-                    current_widget_font = widget.font()
-                    current_widget_font.setFamily(self.current_font_family)
-                    current_widget_font.setPointSize(self.current_font_size)
-                    widget.setFont(current_widget_font)
-                    if hasattr(widget, 'updateGeometry'):
-                        widget.updateGeometry()
-                    if hasattr(widget, 'adjustSize'):
-                        widget.adjustSize()
-
-                    if isinstance(widget, QPlainTextEdit) and hasattr(widget, 'updateLineNumberAreaWidth'):
+                    widget.setFont(editor_font)
+                    if hasattr(widget, 'updateGeometry'): widget.updateGeometry()
+                    if hasattr(widget, 'adjustSize'): widget.adjustSize()
+                    if hasattr(widget, 'updateLineNumberAreaWidth'):
                         widget.updateLineNumberAreaWidth(0)
-                        widget.viewport().update()
-                    elif isinstance(widget, CustomListWidget):
+                    widget.viewport().update()
+                except Exception as e:
+                    log_debug(f"Error applying editor font to widget {widget.objectName() if hasattr(widget, 'objectName') else type(widget)}: {e}")
+
+        for widget in general_ui_widgets:
+            if widget and widget not in editor_widgets:
+                try:
+                    widget.setFont(general_font)
+                    if hasattr(widget, 'updateGeometry'): widget.updateGeometry()
+                    if hasattr(widget, 'adjustSize'): widget.adjustSize()
+                    if isinstance(widget, CustomListWidget):
                         widget.viewport().update()
                 except Exception as e:
-                    log_debug(f"Error applying font to widget {widget.objectName() if hasattr(widget, 'objectName') else type(widget)}: {e}")
+                    log_debug(f"Error applying general font to widget {widget.objectName() if hasattr(widget, 'objectName') else type(widget)}: {e}")
 
 
         if self.block_list_widget and self.block_list_widget.itemDelegate():

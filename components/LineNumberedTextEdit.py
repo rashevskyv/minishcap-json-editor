@@ -10,7 +10,7 @@ from constants import (
     EDITOR_PLAYER_TAG as EDITOR_PLAYER_TAG_CONST,
     ORIGINAL_PLAYER_TAG as ORIGINAL_PLAYER_TAG_CONST,
     DEFAULT_LINE_WIDTH_WARNING_THRESHOLD,
-    DEFAULT_FONT_FAMILY as DEFAULT_FONT_FAMILY_CONST,
+    MONOSPACE_EDITOR_FONT_FAMILY as DEFAULT_EDITOR_FONT_FAMILY_CONST,
     DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS
 )
 from .LNET_constants import (
@@ -64,7 +64,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
         self.updateLineNumberAreaWidth(0)
 
-        initial_font = QFont(DEFAULT_FONT_FAMILY_CONST)
+        initial_font = QFont(DEFAULT_EDITOR_FONT_FAMILY_CONST)
         font_size_to_set = 10
         if parent and hasattr(parent, 'current_font_size') and parent.current_font_size > 0:
             font_size_to_set = parent.current_font_size

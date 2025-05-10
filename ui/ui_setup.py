@@ -165,7 +165,7 @@ def setup_main_window_ui(main_window):
     toolbar.addAction(main_window.find_action)
     toolbar.addSeparator()
 
-    font_size_label = QLabel("Font Size:")
+    font_size_label = QLabel("Font Size: ")
     toolbar.addWidget(font_size_label)
     main_window.font_size_spinbox = QSpinBox(main_window)
     main_window.font_size_spinbox.setMinimum(6)

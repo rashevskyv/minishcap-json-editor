@@ -180,22 +180,22 @@
     "game_dialog_max_width_pixels": 240,
     "line_width_warning_threshold_pixels": 210,
     "search_history": [
-        "лінк",
-        "link",
-        "Гей, Лінк",
-        "123",
+        "Так Ні",
         "Гей, {Color:Green}Лінк",
-        "Так Ні"
+        "123",
+        "Гей, Лінк",
+        "link",
+        "лінк"
     ],
     "last_selected_block_index": 4,
-    "last_selected_string_index": 83,
+    "last_selected_string_index": -1,
     "last_cursor_position_in_edited": 0,
     "last_edited_text_edit_scroll_value_v": 0,
     "last_edited_text_edit_scroll_value_h": 0,
-    "last_preview_text_edit_scroll_value_v": 63,
+    "last_preview_text_edit_scroll_value_v": 0,
     "last_original_text_edit_scroll_value_v": 0,
     "last_original_text_edit_scroll_value_h": 0,
-    "font_size": 12,
+    "font_size": 11,
     "original_file_path": "//192.168.50.168/tloz_tmc_ua/UKR_orig.json",
     "edited_file_path": "//192.168.50.168/tloz_tmc_ua/UKR.json",
     "window_geometry": {
@@ -255,16 +255,16 @@
         ],
         "16": [
             1,
-            3,
             99,
+            3,
             104,
             92,
             94
         ],
         "17": [
-            43,
-            50,
             51,
+            50,
+            43,
             13
         ],
         "18": [

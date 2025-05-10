@@ -30,6 +30,8 @@
 │   └── ui_updater.py
 ├── utils
 │   ├── __init__.py
+│   ├── constants.py
+│   ├── logging_utils.py
 │   ├── syntax_highlighter.py
 │   └── utils.py
 ├── app_debug.log
@@ -38,5 +40,4 @@
 ├── main.py
 ├── main_window_actions.py
 ├── main_window_helper.py
-├── settings.json
-└── tree.txt
+└── settings.json
