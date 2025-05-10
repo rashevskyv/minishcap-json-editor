@@ -1,7 +1,7 @@
 import json
 import os
 from PyQt5.QtWidgets import QMessageBox
-from utils import log_debug # Changed from .utils
+from utils.utils import log_debug
 
 def load_json_file(file_path, parent_widget=None, expected_type=list):
     log_debug(f"load_json_file: Attempting to load '{file_path}', expected_type: {expected_type.__name__}")

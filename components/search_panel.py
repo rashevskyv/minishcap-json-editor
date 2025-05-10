@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import (
-    QWidget, QHBoxLayout, QVBoxLayout, QComboBox, QPushButton, 
+    QWidget, QHBoxLayout, QVBoxLayout, QComboBox, QPushButton,
     QCheckBox, QLabel, QSpacerItem, QSizePolicy
 )
 from PyQt5.QtCore import Qt, pyqtSignal

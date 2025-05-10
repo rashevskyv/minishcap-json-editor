@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QStyledItemDelegate, QStyle, QStyleOptionViewItem
 from PyQt5.QtGui import QPainter, QColor, QPalette, QBrush, QPen, QFontMetrics, QFont
 from PyQt5.QtCore import QRect, Qt, QPoint, QSize, QModelIndex
-from utils import log_debug
+from utils.utils import log_debug
 
 class CustomListItemDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):

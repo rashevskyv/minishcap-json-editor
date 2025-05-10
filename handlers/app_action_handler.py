@@ -1,26 +1,26 @@
 import os
-from PyQt5.QtWidgets import QMessageBox, QFileDialog, QProgressDialog
+from PyQt5.QtWidgets import QMessageBox, QFileDialog, QProgressDialog, QPlainTextEdit
 from PyQt5.QtCore import Qt
-from handlers.base_handler import BaseHandler
-from utils import log_debug, convert_dots_to_spaces_from_editor, calculate_string_width, remove_all_tags
-from tag_utils import apply_default_mappings_only, analyze_tags_for_issues, \
+from .base_handler import BaseHandler
+from utils.utils import log_debug, convert_dots_to_spaces_from_editor, calculate_string_width, remove_all_tags
+from core.tag_utils import apply_default_mappings_only, analyze_tags_for_issues, \
                       TAG_STATUS_OK, TAG_STATUS_UNRESOLVED_BRACKETS, TAG_STATUS_MISMATCHED_CURLY
-from data_manager import load_json_file
+from core.data_manager import load_json_file
 
 
 class AppActionHandler(BaseHandler):
     def __init__(self, main_window, data_processor, ui_updater):
         super().__init__(main_window, data_processor, ui_updater)
         if not hasattr(self.mw, 'critical_problem_lines_per_block'):
-            self.mw.critical_problem_lines_per_block = {} 
+            self.mw.critical_problem_lines_per_block = {}
         if not hasattr(self.mw, 'warning_problem_lines_per_block'):
-            self.mw.warning_problem_lines_per_block = {}  
-        if not hasattr(self.mw, 'width_exceeded_lines_per_block'): 
+            self.mw.warning_problem_lines_per_block = {}
+        if not hasattr(self.mw, 'width_exceeded_lines_per_block'):
             self.mw.width_exceeded_lines_per_block = {}
 
     def _perform_width_scan_for_all_blocks(self):
         log_debug("AppActionHandler: Performing width scan for all blocks...")
-        self.mw.width_exceeded_lines_per_block.clear() 
+        self.mw.width_exceeded_lines_per_block.clear()
         if not self.mw.data:
             return
 
@@ -50,14 +50,14 @@ class AppActionHandler(BaseHandler):
         log_debug("AppActionHandler: Width scan for all blocks complete.")
 
 
-    def _perform_issues_scan_for_block(self, block_idx: int, is_single_block_scan: bool = False, use_default_mappings_in_scan: bool = False) -> tuple[int, int, int, bool]: 
+    def _perform_issues_scan_for_block(self, block_idx: int, is_single_block_scan: bool = False, use_default_mappings_in_scan: bool = False) -> tuple[int, int, int, bool]:
         if not (0 <= block_idx < len(self.mw.data)):
             return 0, 0, 0, False
 
         block_key = str(block_idx)
         current_block_critical_indices = set()
         current_block_warning_indices = set()
-        current_block_width_exceeded_indices = set() # Додано для повноти, хоча _perform_width_scan_for_all_blocks може бути кращим для початкового сканування
+        current_block_width_exceeded_indices = set()
         changes_made_to_edited_data_in_this_block = False
         
         num_strings_in_block = len(self.mw.data[block_idx])
@@ -66,16 +66,16 @@ class AppActionHandler(BaseHandler):
             text_before_processing, source = self.data_processor.get_current_string_text(block_idx, string_idx)
             text_to_analyze = text_before_processing
             
-            if use_default_mappings_in_scan: 
+            if use_default_mappings_in_scan:
                 normalized_text, was_normalized = apply_default_mappings_only(
                     text_before_processing,
-                    self.mw.default_tag_mappings 
+                    self.mw.default_tag_mappings
                 )
                 if was_normalized:
                     if self.data_processor.update_edited_data(block_idx, string_idx, normalized_text):
-                        self.ui_updater.update_title() 
+                        self.ui_updater.update_title()
                     changes_made_to_edited_data_in_this_block = True
-                    text_to_analyze = normalized_text 
+                    text_to_analyze = normalized_text
             
             original_text_for_comparison = self.mw.data[block_idx][string_idx]
             tag_status, _ = analyze_tags_for_issues(text_to_analyze, original_text_for_comparison, self.mw.EDITOR_PLAYER_TAG)
@@ -102,36 +102,36 @@ class AppActionHandler(BaseHandler):
         elif block_key in self.mw.width_exceeded_lines_per_block: del self.mw.width_exceeded_lines_per_block[block_key]
         
         if is_single_block_scan and hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
-            self.ui_updater.update_block_item_text_with_problem_count(block_idx) 
+            self.ui_updater.update_block_item_text_with_problem_count(block_idx)
         
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         if is_single_block_scan and self.mw.current_block_idx == block_idx and preview_edit:
-            self.ui_updater.populate_strings_for_block(block_idx) 
+            self.ui_updater.populate_strings_for_block(block_idx)
         
         return len(current_block_critical_indices), len(current_block_warning_indices), len(current_block_width_exceeded_indices), changes_made_to_edited_data_in_this_block
 
-    def _perform_initial_silent_scan_all_issues(self): 
+    def _perform_initial_silent_scan_all_issues(self):
         if not self.mw.data:
             log_debug("AppActionHandler._perform_initial_silent_scan_all_issues: No data to scan.")
             return
         
         log_debug("AppActionHandler: Performing initial silent scan for ALL issues (tags & width)...")
-        self.mw.is_programmatically_changing_text = True 
+        self.mw.is_programmatically_changing_text = True
         
         self.mw.critical_problem_lines_per_block.clear()
         self.mw.warning_problem_lines_per_block.clear()
         self.mw.width_exceeded_lines_per_block.clear()
         
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
-        if preview_edit and hasattr(preview_edit, 'clearAllProblemTypeHighlights'): 
+        if preview_edit and hasattr(preview_edit, 'clearAllProblemTypeHighlights'):
             preview_edit.clearAllProblemTypeHighlights()
         if hasattr(self.ui_updater, 'clear_all_problem_block_highlights_and_text'):
              self.ui_updater.clear_all_problem_block_highlights_and_text()
 
-        any_changes_applied_globally = False 
+        any_changes_applied_globally = False
         for block_idx in range(len(self.mw.data)):
-            _num_crit, _num_warn, _num_width, block_changes_applied = self._perform_issues_scan_for_block(block_idx, is_single_block_scan=False, use_default_mappings_in_scan=False) 
-            if block_changes_applied: 
+            _num_crit, _num_warn, _num_width, block_changes_applied = self._perform_issues_scan_for_block(block_idx, is_single_block_scan=False, use_default_mappings_in_scan=False)
+            if block_changes_applied:
                 any_changes_applied_globally = True
         
         if any_changes_applied_globally and not self.mw.unsaved_changes:
@@ -149,7 +149,7 @@ class AppActionHandler(BaseHandler):
         current_block_idx_before_save = self.mw.current_block_idx; current_string_idx_before_save = self.mw.current_string_idx
         save_success = self.data_processor.save_current_edits(ask_confirmation=ask_confirmation)
         if save_success:
-            self.ui_updater.update_title() 
+            self.ui_updater.update_title()
             self.mw.is_programmatically_changing_text = True
             if current_block_idx_before_save != -1:
                  self.mw.current_block_idx = current_block_idx_before_save
@@ -158,7 +158,7 @@ class AppActionHandler(BaseHandler):
             else: self.ui_updater.populate_strings_for_block(-1)
             self.ui_updater.update_statusbar_paths()
             self.mw.is_programmatically_changing_text = False
-        else: self.ui_updater.update_title() 
+        else: self.ui_updater.update_title()
         return save_success
 
     def handle_close_event(self, event):
@@ -173,26 +173,26 @@ class AppActionHandler(BaseHandler):
         else: event.accept()
         log_debug("<-- AppActionHandler: handle_close_event finished.")
     
-    def rescan_issues_for_single_block(self, block_idx: int = -1, show_message_on_completion: bool = True, use_default_mappings: bool = True): 
+    def rescan_issues_for_single_block(self, block_idx: int = -1, show_message_on_completion: bool = True, use_default_mappings: bool = True):
         if block_idx == -1: block_idx = self.mw.current_block_idx
         if block_idx < 0:
-            if show_message_on_completion: 
+            if show_message_on_completion:
                 QMessageBox.information(self.mw, "Rescan Issues", "No block selected to rescan.")
             return
             
-        log_debug(f"<<<<<<<<<< ACTION: Rescan Issues for Block {block_idx} Triggered. use_default_mappings={use_default_mappings} >>>>>>>>>>") 
+        log_debug(f"<<<<<<<<<< ACTION: Rescan Issues for Block {block_idx} Triggered. use_default_mappings={use_default_mappings} >>>>>>>>>>")
         self.mw.is_programmatically_changing_text = True
-        num_critical, num_warnings, num_width_exceeded, changes_applied = self._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=use_default_mappings) 
+        num_critical, num_warnings, num_width_exceeded, changes_applied = self._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=use_default_mappings)
         self.mw.is_programmatically_changing_text = False
             
-        if show_message_on_completion: 
+        if show_message_on_completion:
             block_name_str = self.mw.block_names.get(str(block_idx), f"Block {block_idx}")
             message_parts = []
             if num_critical > 0: message_parts.append(f"{num_critical} line(s) with critical tag issues.")
             if num_warnings > 0: message_parts.append(f"{num_warnings} line(s) with tag warnings.")
             if num_width_exceeded > 0: message_parts.append(f"{num_width_exceeded} line(s) exceed width limit ({self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS}px).")
             
-            if not message_parts: 
+            if not message_parts:
                 message = f"No issues found in Block '{block_name_str}'."
                 if changes_applied: message += "\nKnown editor tags were standardized using default mappings."
                 QMessageBox.information(self.mw, "Rescan Complete", message)
@@ -202,13 +202,13 @@ class AppActionHandler(BaseHandler):
                 if changes_applied: summary += "\nKnown editor tags were standardized using default mappings where possible."
                 QMessageBox.warning(self.mw, title, summary)
 
-    def rescan_all_tags(self): 
-        log_debug("<<<<<<<<<< ACTION: Rescan All Tags (and Widths) Triggered >>>>>>>>>>") 
+    def rescan_all_tags(self):
+        log_debug("<<<<<<<<<< ACTION: Rescan All Tags (and Widths) Triggered >>>>>>>>>>")
         if not self.mw.data:
             QMessageBox.information(self.mw, "Rescan All Issues", "No data loaded to rescan.")
             return
         
-        self._perform_initial_silent_scan_all_issues() 
+        self._perform_initial_silent_scan_all_issues()
 
         total_critical_lines = sum(len(s) for s in self.mw.critical_problem_lines_per_block.values())
         total_warning_lines = sum(len(s) for s in self.mw.warning_problem_lines_per_block.values())
@@ -234,7 +234,7 @@ class AppActionHandler(BaseHandler):
         self.ui_updater.populate_blocks()
         if self.mw.current_block_idx != -1:
             self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
-        else: 
+        else:
             self.ui_updater.populate_strings_for_block(-1)
 
 
@@ -245,7 +245,7 @@ class AppActionHandler(BaseHandler):
         base, ext = os.path.splitext(os.path.basename(original_path))
         return os.path.join(dir_name, f"{base}_edited{ext}")
 
-    def open_file_dialog_action(self): # <--- ВІДНОВЛЕНИЙ МЕТОД
+    def open_file_dialog_action(self):
         log_debug("--> AppActionHandler: Open File Dialog Triggered")
         if self.mw.unsaved_changes:
             reply = QMessageBox.question(self.mw, 'Unsaved Changes', "Save before opening new file?", QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel, QMessageBox.Cancel)
@@ -254,7 +254,7 @@ class AppActionHandler(BaseHandler):
             elif reply == QMessageBox.Cancel: return
         start_dir = os.path.dirname(self.mw.json_path) if self.mw.json_path else ""
         path, _ = QFileDialog.getOpenFileName(self.mw, "Open Original JSON", start_dir, "JSON (*.json);;All (*)")
-        if path: 
+        if path:
             self.load_all_data_for_path(path, manually_set_edited_path=None, is_initial_load_from_settings=False)
         log_debug("<-- AppActionHandler: Open File Dialog Finished")
 
@@ -273,14 +273,14 @@ class AppActionHandler(BaseHandler):
             
             self.mw.edited_json_path = path
             self.mw.edited_file_data = new_edited_data
-            self.mw.edited_data = {} 
-            self.mw.unsaved_changes = False 
+            self.mw.edited_data = {}
+            self.mw.unsaved_changes = False
             
-            self._perform_initial_silent_scan_all_issues() 
+            self._perform_initial_silent_scan_all_issues()
             
             self.ui_updater.update_title()
             self.ui_updater.update_statusbar_paths()
-            self.ui_updater.populate_blocks() 
+            self.ui_updater.populate_blocks()
             if self.mw.block_list_widget.count() > 0 and self.mw.current_block_idx == -1:
                  self.mw.block_list_widget.setCurrentRow(0)
             else:
@@ -298,13 +298,13 @@ class AppActionHandler(BaseHandler):
         if new_edited_path:
             original_edited_path_backup = self.mw.edited_json_path
             self.mw.edited_json_path = new_edited_path
-            save_success = self.save_data_action(ask_confirmation=False) 
-            if save_success: 
+            save_success = self.save_data_action(ask_confirmation=False)
+            if save_success:
                 QMessageBox.information(self.mw, "Saved As", f"Changes saved to:\n{self.mw.edited_json_path}")
-                self.ui_updater.update_statusbar_paths() 
-            else: 
+                self.ui_updater.update_statusbar_paths()
+            else:
                 QMessageBox.critical(self.mw, "Save As Error", f"Failed to save to:\n{self.mw.edited_json_path}")
-                self.mw.edited_json_path = original_edited_path_backup 
+                self.mw.edited_json_path = original_edited_path_backup
                 self.ui_updater.update_statusbar_paths()
         log_debug("<-- AppActionHandler: Save As Finished")
 
@@ -327,54 +327,48 @@ class AppActionHandler(BaseHandler):
 
         self.mw.json_path = original_file_path
         self.mw.data = data
-        self.mw.edited_data = {} 
+        self.mw.edited_data = {}
         self.mw.unsaved_changes = False
         
         self.mw.edited_json_path = manually_set_edited_path if manually_set_edited_path else self._derive_edited_path(self.mw.json_path)
-        self.mw.edited_file_data = [] 
+        self.mw.edited_file_data = []
         if self.mw.edited_json_path and os.path.exists(self.mw.edited_json_path):
             edited_data_from_file, edit_error = load_json_file(self.mw.edited_json_path, parent_widget=self.mw, expected_type=list)
-            if edit_error: 
+            if edit_error:
                 QMessageBox.warning(self.mw, "Edited Load Warning", f"Could not load changes file: {self.mw.edited_json_path}\n{edit_error}")
-            else: 
+            else:
                 self.mw.edited_file_data = edited_data_from_file
         
-        self.mw.current_block_idx = -1; self.mw.current_string_idx = -1 
+        self.mw.current_block_idx = -1; self.mw.current_string_idx = -1
         
         if hasattr(self.mw, 'undo_paste_action'): self.mw.can_undo_paste = False; self.mw.undo_paste_action.setEnabled(False)
         
-        self.mw.block_list_widget.clear() 
+        self.mw.block_list_widget.clear()
         if hasattr(self.mw, 'preview_text_edit'): self.mw.preview_text_edit.clear()
         if hasattr(self.mw, 'original_text_edit'): self.mw.original_text_edit.clear()
         if hasattr(self.mw, 'edited_text_edit'): self.mw.edited_text_edit.clear()
         
         if is_initial_load_from_settings:
-            # Якщо це початкове завантаження, і дані про теги були в settings.json,
-            # ми їх вже завантажили. Тепер перераховуємо тільки ширину.
-            # Якщо даних про теги не було в settings.json, SettingsManager встановить порожні словники,
-            # і _perform_initial_silent_scan_all_issues нижче все одно їх перерахує.
             log_debug("Initial load from settings: Recalculating width issues based on current data.")
             self._perform_width_scan_for_all_blocks()
-            # Перевірка, чи потрібно сканувати теги, якщо вони не були в налаштуваннях
             if not self.mw.critical_problem_lines_per_block and not self.mw.warning_problem_lines_per_block:
                 log_debug("Tag problem data not found in settings, performing full tag scan as well.")
-                # Скануємо тільки теги, оскільки ширина вже просканована
                 self.mw.is_programmatically_changing_text = True
                 for block_idx in range(len(self.mw.data)):
                     self._perform_issues_scan_for_block(block_idx, is_single_block_scan=False, use_default_mappings_in_scan=False)
                 self.mw.is_programmatically_changing_text = False
 
-        else: # Не початкове завантаження (користувач відкрив файл) - повне сканування всього.
+        else: 
             log_debug("Not initial load from settings: Performing full scan for all issues.")
             self._perform_initial_silent_scan_all_issues()
         
         self.ui_updater.update_title(); self.ui_updater.update_statusbar_paths()
-        self.ui_updater.populate_blocks() 
+        self.ui_updater.populate_blocks()
 
-        if self.mw.block_list_widget.count() > 0: 
-            self.mw.block_list_widget.setCurrentRow(0) 
-        else: 
-            self.ui_updater.populate_strings_for_block(-1) 
+        if self.mw.block_list_widget.count() > 0:
+            self.mw.block_list_widget.setCurrentRow(0)
+        else:
+            self.ui_updater.populate_strings_for_block(-1)
             
         self.mw.is_programmatically_changing_text = False
         log_debug(f"<-- AppActionHandler: load_all_data_for_path FINISHED (Success)")
@@ -385,7 +379,7 @@ class AppActionHandler(BaseHandler):
         if self.mw.unsaved_changes:
             reply = QMessageBox.question(self.mw, 'Unsaved Changes', "Reloading will discard current unsaved edits in memory. Proceed?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.No: return
-        current_edited_path_before_reload = self.mw.edited_json_path 
+        current_edited_path_before_reload = self.mw.edited_json_path
         self.load_all_data_for_path(self.mw.json_path, manually_set_edited_path=current_edited_path_before_reload, is_initial_load_from_settings=False)
         log_debug("<-- AppActionHandler: Reload Original Finished")
 
@@ -406,13 +400,13 @@ class AppActionHandler(BaseHandler):
 
         progress = QProgressDialog(f"Calculating widths for block {self.mw.block_names.get(str(block_idx),str(block_idx))}...", "Cancel", 0, num_strings, self.mw)
         progress.setWindowModality(Qt.WindowModal)
-        progress.setMinimumDuration(0) 
+        progress.setMinimumDuration(0)
 
         results = []
         max_allowed_width_game = self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS
         editor_warning_threshold = self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
         
-        for i in range(num_strings): 
+        for i in range(num_strings):
             progress.setValue(i)
             if progress.wasCanceled():
                 log_debug("Width calculation for block cancelled by user.")
@@ -463,14 +457,14 @@ class AppActionHandler(BaseHandler):
         
         result_dialog = QMessageBox(self.mw)
         result_dialog.setWindowTitle("Line Widths Report")
-        result_dialog.setTextFormat(Qt.PlainText) 
+        result_dialog.setTextFormat(Qt.PlainText)
         result_dialog.setText(result_text)
         result_dialog.setIcon(QMessageBox.Information)
         result_dialog.setStandardButtons(QMessageBox.Ok)
         result_dialog.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
-        text_edit_for_size = result_dialog.findChild(QPlainTextEdit) 
+        text_edit_for_size = result_dialog.findChild(QPlainTextEdit)
         if text_edit_for_size:
-            text_edit_for_size.setMinimumWidth(700) 
+            text_edit_for_size.setMinimumWidth(700)
             text_edit_for_size.setMinimumHeight(500)
         result_dialog.exec_()
 

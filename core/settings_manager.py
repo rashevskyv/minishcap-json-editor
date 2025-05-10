@@ -4,7 +4,11 @@ import base64
 from PyQt5.QtCore import QByteArray
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QFont
-from utils import log_debug
+from utils.utils import log_debug
+from constants import (
+    DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS,
+    DEFAULT_LINE_WIDTH_WARNING_THRESHOLD
+)
 
 class SettingsManager:
     def __init__(self, main_window):
@@ -79,8 +83,8 @@ class SettingsManager:
             "default_tag_mappings": dict(self.initial_default_tag_mappings),
             "bracket_tag_color_hex": getattr(self.mw, 'bracket_tag_color_hex', "#FF8C00"),
             "search_history": [],
-            "game_dialog_max_width_pixels": getattr(self.mw, 'GAME_DIALOG_MAX_WIDTH_PIXELS', 240),
-            "line_width_warning_threshold_pixels": getattr(self.mw, 'LINE_WIDTH_WARNING_THRESHOLD_PIXELS', 175),
+            "game_dialog_max_width_pixels": getattr(self.mw, 'GAME_DIALOG_MAX_WIDTH_PIXELS', DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS),
+            "line_width_warning_threshold_pixels": getattr(self.mw, 'LINE_WIDTH_WARNING_THRESHOLD_PIXELS', DEFAULT_LINE_WIDTH_WARNING_THRESHOLD),
             "last_selected_block_index": -1,
             "last_selected_string_index": -1,
             "last_cursor_position_in_edited": 0,
@@ -108,8 +112,8 @@ class SettingsManager:
 
         if not os.path.exists(self.settings_file_path):
             log_debug(f"Settings file '{self.settings_file_path}' not found. Using default values already set.")
-            self.mw.original_file_path = None
-            self.mw.edited_file_path = None
+            setattr(self.mw, "original_file_path", None)
+            setattr(self.mw, "edited_file_path", None)
         else:
             try:
                 with open(self.settings_file_path, 'r', encoding='utf-8') as f:
@@ -138,7 +142,7 @@ class SettingsManager:
                         if key_from_defaults == "font_size":
                             log_debug(f"SettingsManager: Found 'font_size' in settings file: {value_from_file}. Current self.mw.current_font_size: {self.mw.current_font_size}")
                             if isinstance(value_from_file, int) and value_from_file > 0:
-                                self.mw.current_font_size = value_from_file # Явно присвоюємо
+                                self.mw.current_font_size = value_from_file
                                 log_debug(f"SettingsManager: Set self.mw.current_font_size to {self.mw.current_font_size} from file.")
                             else:
                                 log_debug(f"SettingsManager: Invalid 'font_size' in file ({value_from_file}), keeping default: {self.mw.current_font_size}")

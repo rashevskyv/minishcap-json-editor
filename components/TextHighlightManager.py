@@ -3,7 +3,7 @@ from PyQt5.QtGui import QColor, QTextBlockFormat, QTextFormat, QTextCursor, QTex
 from PyQt5.QtCore import QTimer
 from typing import Optional, List, Tuple
 import re
-from utils import log_debug 
+from utils.utils import log_debug
 
 class TextHighlightManager:
     def __init__(self, editor):

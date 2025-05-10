@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QMenu
 from PyQt5.QtCore import Qt, QPoint, QSize
-from utils import log_debug 
-from CustomListItemDelegate import CustomListItemDelegate 
+from utils.utils import log_debug
+from .CustomListItemDelegate import CustomListItemDelegate
 
 class CustomListWidget(QListWidget):
     def __init__(self, parent=None):

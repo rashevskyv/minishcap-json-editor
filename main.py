@@ -6,14 +6,14 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QPlainTextEd
 from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtGui import QKeyEvent, QTextCursor, QKeySequence, QFont
 
-from LineNumberArea import LineNumberArea
-from CustomListWidget import CustomListWidget
-from ui_setup import setup_main_window_ui
-from data_state_processor import DataStateProcessor
-from ui_updater import UIUpdater
-from settings_manager import SettingsManager
-from search_panel import SearchPanelWidget
-from ui_event_filters import MainWindowEventFilter
+from components.LineNumberArea import LineNumberArea
+from components.CustomListWidget import CustomListWidget
+from ui.ui_setup import setup_main_window_ui
+from core.data_state_processor import DataStateProcessor
+from ui.ui_updater import UIUpdater
+from core.settings_manager import SettingsManager
+from components.search_panel import SearchPanelWidget
+from ui.ui_event_filters import MainWindowEventFilter
 from main_window_helper import MainWindowHelper
 from main_window_actions import MainWindowActions
 
@@ -24,13 +24,12 @@ from handlers.app_action_handler import AppActionHandler
 from handlers.search_handler import SearchHandler
 
 
-from utils import log_debug, DEFAULT_CHAR_WIDTH_FALLBACK
-
-EDITOR_PLAYER_TAG = "[ІМ'Я ГРАВЦЯ]"
-ORIGINAL_PLAYER_TAG = "{Player}"
-DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS = 240
-DEFAULT_LINE_WIDTH_WARNING_THRESHOLD_MAIN = 175
-DEFAULT_FONT_FAMILY = "Courier New"
+from utils.utils import log_debug, DEFAULT_CHAR_WIDTH_FALLBACK
+from constants import (
+    EDITOR_PLAYER_TAG, ORIGINAL_PLAYER_TAG,
+    DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS,
+    DEFAULT_LINE_WIDTH_WARNING_THRESHOLD, DEFAULT_FONT_FAMILY
+)
 
 
 class MainWindow(QMainWindow):
@@ -41,7 +40,7 @@ class MainWindow(QMainWindow):
         self.EDITOR_PLAYER_TAG = EDITOR_PLAYER_TAG
         self.ORIGINAL_PLAYER_TAG = ORIGINAL_PLAYER_TAG
         self.GAME_DIALOG_MAX_WIDTH_PIXELS = DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS
-        self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = DEFAULT_LINE_WIDTH_WARNING_THRESHOLD_MAIN
+        self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = DEFAULT_LINE_WIDTH_WARNING_THRESHOLD
         self.font_map = {}
         default_font_size = QFont(DEFAULT_FONT_FAMILY).pointSize()
         if default_font_size <= 0: default_font_size = 10
@@ -289,7 +288,7 @@ class MainWindow(QMainWindow):
 
         if self.block_list_widget and self.block_list_widget.itemDelegate():
             self.block_list_widget.itemDelegate().deleteLater()
-            from CustomListItemDelegate import CustomListItemDelegate
+            from components.CustomListItemDelegate import CustomListItemDelegate
             new_delegate = CustomListItemDelegate(self.block_list_widget)
             self.block_list_widget.setItemDelegate(new_delegate)
             self.block_list_widget.viewport().update()

@@ -1,17 +1,34 @@
 import datetime
 import re
+import os
 
-log_debug_enabled = True 
+log_debug_enabled = True
+LOG_FILE_PATH = "app_debug.log"
+
+if log_debug_enabled:
+    try:
+        with open(LOG_FILE_PATH, 'w', encoding='utf-8') as f:
+            f.write(f"Log started at {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}\n")
+            f.write("=" * 50 + "\n")
+    except Exception as e:
+        print(f"CRITICAL: Could not initialize log file {LOG_FILE_PATH}: {e}")
+        log_debug_enabled = False
+
 
 def log_debug(message):
     if not log_debug_enabled:
         return
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-    print(f"[{timestamp}] DEBUG: {message}")
+    
+    try:
+        with open(LOG_FILE_PATH, 'a', encoding='utf-8') as f:
+            f.write(f"[{timestamp}] DEBUG: {message}\n")
+    except Exception as e:
+        print(f"ERROR writing to log file {LOG_FILE_PATH}: {e}. Message: {message}")
 
-SPACE_DOT_SYMBOL = "·" 
+SPACE_DOT_SYMBOL = "·"
 ALL_TAGS_PATTERN = re.compile(r'\[[^\]]*\]|\{[^}]*\}')
-DEFAULT_CHAR_WIDTH_FALLBACK = 6 
+DEFAULT_CHAR_WIDTH_FALLBACK = 6
 
 def remove_all_tags(text: str) -> str:
     if text is None:
@@ -30,7 +47,6 @@ def calculate_string_width(text: str, font_map: dict, default_char_width: int = 
             total_width += char_data['width']
         else:
             total_width += default_char_width
-            # log_debug(f"Char '{char_code}' (ord: {ord(char_code)}) not in font_map or no width, using default_char_width: {default_char_width}")
     return total_width
 
 def convert_spaces_to_dots_for_display(text: str, enable_conversion: bool) -> str:
@@ -59,12 +75,12 @@ def convert_raw_to_display_text(raw_text: str, show_dots: bool, newline_char_for
     
     text_with_dots = convert_spaces_to_dots_for_display(str(raw_text), show_dots)
     
-    if newline_char_for_preview: 
+    if newline_char_for_preview:
         text_with_dots = text_with_dots.replace('\n', newline_char_for_preview)
         
     return text_with_dots
 
-def prepare_text_for_tagless_search(text: str, keep_original_case: bool = False) -> str: 
+def prepare_text_for_tagless_search(text: str, keep_original_case: bool = False) -> str:
     if text is None:
         return ""
     

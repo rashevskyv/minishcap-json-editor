@@ -1,0 +1,42 @@
+├── components
+│   ├── __init__.py
+│   ├── CustomListItemDelegate.py
+│   ├── CustomListWidget.py
+│   ├── LineNumberArea.py
+│   ├── LineNumberedTextEdit.py
+│   ├── LNET_constants.py
+│   ├── LNET_highlight_interface.py
+│   ├── LNET_mouse_handlers.py
+│   ├── LNET_paint_handlers.py
+│   ├── search_panel.py
+│   └── TextHighlightManager.py
+├── core
+│   ├── __init__.py
+│   ├── data_manager.py
+│   ├── data_state_processor.py
+│   ├── settings_manager.py
+│   └── tag_utils.py
+├── handlers
+│   ├── __init__.py
+│   ├── app_action_handler.py
+│   ├── base_handler.py
+│   ├── list_selection_handler.py
+│   ├── search_handler.py
+│   └── text_operation_handler.py
+├── ui
+│   ├── __init__.py
+│   ├── ui_event_filters.py
+│   ├── ui_setup.py
+│   └── ui_updater.py
+├── utils
+│   ├── __init__.py
+│   ├── syntax_highlighter.py
+│   └── utils.py
+├── app_debug.log
+├── constants.py
+├── font_map.json
+├── main.py
+├── main_window_actions.py
+├── main_window_helper.py
+├── settings.json
+└── tree.txt

@@ -1,5 +1,5 @@
-from handlers.base_handler import BaseHandler
-from utils import log_debug, convert_spaces_to_dots_for_display, remove_curly_tags, convert_raw_to_display_text, prepare_text_for_tagless_search
+from .base_handler import BaseHandler
+from utils.utils import log_debug, convert_spaces_to_dots_for_display, remove_curly_tags, convert_raw_to_display_text, prepare_text_for_tagless_search
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QTextCursor
 from PyQt5.QtWidgets import QApplication
@@ -11,10 +11,10 @@ class SearchHandler(BaseHandler):
         self.current_query = ""
         self.is_case_sensitive = False
         self.search_in_original = False
-        self.ignore_tags_newlines = True 
+        self.ignore_tags_newlines = True
         self.last_found_block = -1
         self.last_found_string = -1
-        self.last_found_char_pos_raw = -1 
+        self.last_found_char_pos_raw = -1
         self.search_results = []
         self.current_search_index = -1
         
@@ -40,7 +40,7 @@ class SearchHandler(BaseHandler):
     def reset_search(self, new_query: str = "", new_case_sensitive: bool = False, new_search_in_original: bool = False, new_ignore_tags: bool = True):
         log_debug(f"SearchHandler: Resetting search. Q: '{new_query}', Case: {new_case_sensitive}, Orig: {new_search_in_original}, IgnoreTags: {new_ignore_tags}")
         
-        self.current_query = new_query 
+        self.current_query = new_query
         self.is_case_sensitive = new_case_sensitive
         self.search_in_original = new_search_in_original
         self.ignore_tags_newlines = new_ignore_tags
@@ -54,7 +54,7 @@ class SearchHandler(BaseHandler):
         self.mw.search_match_block_indices.clear()
         if hasattr(self.mw, 'block_list_widget'):
             self.mw.block_list_widget.viewport().update()
-        if hasattr(self.mw, 'search_panel_widget') and self.mw.search_panel_widget.isVisible(): 
+        if hasattr(self.mw, 'search_panel_widget') and self.mw.search_panel_widget.isVisible():
             self.mw.search_panel_widget.clear_status()
 
     def _find_in_text(self, text_to_search_in: str, query_to_find: str, start_offset: int, case_sensitive: bool, find_reverse: bool = False) -> int:
@@ -67,7 +67,7 @@ class SearchHandler(BaseHandler):
         if not compare_query: return -1
 
         if find_reverse:
-            return compare_text.rfind(compare_query, 0, start_offset + 1) 
+            return compare_text.rfind(compare_query, 0, start_offset + 1)
         else:
             return compare_text.find(compare_query, start_offset)
 
@@ -76,18 +76,18 @@ class SearchHandler(BaseHandler):
         log_debug(f"SearchHandler: find_next. Q: '{query}', Case: {case_sensitive}, Orig: {search_in_original}, IgnoreTags: {ignore_tags}")
         
         effective_query = prepare_text_for_tagless_search(query) if ignore_tags else query
-        if not effective_query: 
+        if not effective_query:
             if hasattr(self.mw, 'search_panel_widget') and self.mw.search_panel_widget.isVisible():
                 self.mw.search_panel_widget.set_status_message("Введіть запит", is_error=True)
             return False
 
-        if (self.current_query != query or 
-            self.is_case_sensitive != case_sensitive or 
+        if (self.current_query != query or
+            self.is_case_sensitive != case_sensitive or
             self.search_in_original != search_in_original or
             self.ignore_tags_newlines != ignore_tags):
             self.last_found_block = -1; self.last_found_string = -1; self.last_found_char_pos_raw = -1
         
-        self.current_query = query 
+        self.current_query = query
         self.is_case_sensitive = case_sensitive
         self.search_in_original = search_in_original
         self.ignore_tags_newlines = ignore_tags
@@ -113,20 +113,20 @@ class SearchHandler(BaseHandler):
                     log_debug(f"Found match in {'processed' if ignore_tags else 'raw'} text at DataB {b_idx}, DataS {s_idx}, SearchTextPos {match_pos_in_search_text}")
                     self.last_found_block = b_idx
                     self.last_found_string = s_idx
-                    self.last_found_char_pos_raw = match_pos_in_search_text 
+                    self.last_found_char_pos_raw = match_pos_in_search_text
                     
                     self._navigate_to_match(b_idx, s_idx, match_pos_in_search_text, len(effective_query), self.ignore_tags_newlines)
                     if hasattr(self.mw, 'search_panel_widget') and self.mw.search_panel_widget.isVisible():
                         self.mw.search_panel_widget.set_status_message(f"Знайдено: Б{b_idx+1}, Р{s_idx+1}")
-                    return True 
+                    return True
             
-            start_string_data_idx = 0 
+            start_string_data_idx = 0
             start_char_offset = 0   
 
         if hasattr(self.mw, 'search_panel_widget') and self.mw.search_panel_widget.isVisible():
             self.mw.search_panel_widget.set_status_message("Не знайдено (кінець)")
         self.last_found_block = -1; self.last_found_string = -1; self.last_found_char_pos_raw = -1
-        return False 
+        return False
 
     def find_previous(self, query: str, case_sensitive: bool, search_in_original: bool, ignore_tags: bool) -> bool:
         log_debug(f"SearchHandler: find_previous. Q: '{query}', Case: {case_sensitive}, Orig: {search_in_original}, IgnoreTags: {ignore_tags}")
@@ -137,8 +137,8 @@ class SearchHandler(BaseHandler):
                 self.mw.search_panel_widget.set_status_message("Введіть запит", is_error=True)
             return False
 
-        if (self.current_query != query or 
-            self.is_case_sensitive != case_sensitive or 
+        if (self.current_query != query or
+            self.is_case_sensitive != case_sensitive or
             self.search_in_original != search_in_original or
             self.ignore_tags_newlines != ignore_tags):
             self.last_found_block = -1; self.last_found_string = -1; self.last_found_char_pos_raw = -1
@@ -151,19 +151,19 @@ class SearchHandler(BaseHandler):
         if not self.mw.data: return False
 
         start_block_data_idx = self.last_found_block if self.last_found_block != -1 else len(self.mw.data) - 1
-        start_string_data_idx = self.last_found_string if self.last_found_string != -1 else -1 
-        start_char_search_from = self.last_found_char_pos_raw -1 if self.last_found_char_pos_raw != -1 else -1 
+        start_string_data_idx = self.last_found_string if self.last_found_string != -1 else -1
+        start_char_search_from = self.last_found_char_pos_raw -1 if self.last_found_char_pos_raw != -1 else -1
         
         for b_idx in range(start_block_data_idx, -1, -1):
             if not isinstance(self.mw.data[b_idx], list): continue
             
-            s_idx_start_loop_offset = (start_string_data_idx if b_idx == start_block_data_idx and start_string_data_idx != -1 
+            s_idx_start_loop_offset = (start_string_data_idx if b_idx == start_block_data_idx and start_string_data_idx != -1
                                   else len(self.mw.data[b_idx]) - 1)
             
             for s_idx in range(s_idx_start_loop_offset, -1, -1):
                 text_for_search = self._get_text_for_search(b_idx, s_idx, self.search_in_original, self.ignore_tags_newlines)
                 
-                current_char_search_from = (start_char_search_from 
+                current_char_search_from = (start_char_search_from
                                            if b_idx == start_block_data_idx and s_idx == start_string_data_idx and start_char_search_from != -1
                                            else len(text_for_search) -1 )
                 
@@ -178,15 +178,15 @@ class SearchHandler(BaseHandler):
                     self._navigate_to_match(b_idx, s_idx, match_pos_in_search_text, len(effective_query), self.ignore_tags_newlines)
                     if hasattr(self.mw, 'search_panel_widget') and self.mw.search_panel_widget.isVisible():
                         self.mw.search_panel_widget.set_status_message(f"Знайдено: Б{b_idx+1}, Р{s_idx+1}")
-                    return True 
+                    return True
             
-            start_string_data_idx = -1 
+            start_string_data_idx = -1
             start_char_search_from = -1   
 
         if hasattr(self.mw, 'search_panel_widget') and self.mw.search_panel_widget.isVisible():
              self.mw.search_panel_widget.set_status_message("Не знайдено (початок)")
         self.last_found_block = -1; self.last_found_string = -1; self.last_found_char_pos_raw = -1
-        return False 
+        return False
 
     def _find_nth_occurrence_in_display_text(self, display_text: str, display_query: str, target_occurrence: int, case_sensitive: bool) -> tuple[int, int]:
         current_occurrence = 0; search_start_pos = 0
@@ -196,10 +196,10 @@ class SearchHandler(BaseHandler):
         if not query_to_scan: return -1, -1
         while True:
             match_pos = text_to_scan.find(query_to_scan, search_start_pos)
-            if match_pos == -1: return -1, -1 
+            if match_pos == -1: return -1, -1
             current_occurrence += 1
-            if current_occurrence == target_occurrence: return match_pos, len(display_query) 
-            search_start_pos = match_pos + 1 
+            if current_occurrence == target_occurrence: return match_pos, len(display_query)
+            search_start_pos = match_pos + 1
             if search_start_pos >= len(text_to_scan): return -1, -1
 
     def _calculate_qtextblock_and_pos_in_block(self, raw_text_line_with_newlines: str, char_pos_in_raw_string_with_newlines: int) -> tuple[int, int]:
@@ -209,12 +209,12 @@ class SearchHandler(BaseHandler):
             newline_found_at = raw_text_line_with_newlines.find('\n', current_pos)
             if newline_found_at != -1 and newline_found_at < char_pos_in_raw_string_with_newlines:
                 qtextblock_idx += 1; last_newline_pos = newline_found_at; current_pos = newline_found_at + 1
-            else: break 
+            else: break
         if last_newline_pos != -1: pos_in_qtextblock = char_pos_in_raw_string_with_newlines - (last_newline_pos + 1)
         return qtextblock_idx, pos_in_qtextblock
 
-    def _navigate_to_match(self, block_idx_match_in_data, string_idx_match_in_data, 
-                           char_pos_in_search_text: int, match_len_in_search_text: int, 
+    def _navigate_to_match(self, block_idx_match_in_data, string_idx_match_in_data,
+                           char_pos_in_search_text: int, match_len_in_search_text: int,
                            was_search_tagless_and_newline_agnostic: bool):
         log_debug(f"Navigating. Data: B:{block_idx_match_in_data}, S:{string_idx_match_in_data}. SearchTextPos:{char_pos_in_search_text}, SearchTextLen:{match_len_in_search_text}, TaglessNLSearch:{was_search_tagless_and_newline_agnostic}")
         self.clear_all_search_highlights()
@@ -225,7 +225,6 @@ class SearchHandler(BaseHandler):
 
         if was_search_tagless_and_newline_agnostic:
             temp_query_for_words = self.current_query
-            # Регістр для слів запиту вже враховано в self.is_case_sensitive при пошуку
             query_words_for_display_search = prepare_text_for_tagless_search(temp_query_for_words, keep_original_case=True).split()
 
             if not query_words_for_display_search: return
@@ -240,7 +239,6 @@ class SearchHandler(BaseHandler):
                     continue
 
                 found_overall_match_in_editor = False
-                # Для preview ми обробляємо один QTextBlock, для original/edited - потенційно декілька
                 qtextblock_start_idx = string_idx_match_in_data if editor == self.mw.preview_text_edit else 0
                 qtextblock_end_idx = string_idx_match_in_data if editor == self.mw.preview_text_edit else editor.document().blockCount() - 1
 
@@ -249,14 +247,13 @@ class SearchHandler(BaseHandler):
                     if not widget_block.isValid(): continue
                     text_in_widget_qtextblock = widget_block.text()
 
-                    # Шукаємо перше слово
                     first_word_display = convert_raw_to_display_text(query_words_for_display_search[0], self.mw.show_multiple_spaces_as_dots, self.mw.newline_display_symbol if editor == self.mw.preview_text_edit else "")
                     if editor == self.mw.original_text_edit: first_word_display = remove_curly_tags(first_word_display)
                     
                     current_search_offset_in_qblock = 0
                     while current_search_offset_in_qblock < len(text_in_widget_qtextblock):
                         start_pos = self._find_in_text(text_in_widget_qtextblock, first_word_display, current_search_offset_in_qblock, self.is_case_sensitive)
-                        if start_pos == -1: break # Перше слово не знайдено в цьому блоці з поточного offset
+                        if start_pos == -1: break
 
                         highlight_start_qblock_idx = current_widget_qblock_idx
                         highlight_start_pos_in_qblock = start_pos
@@ -288,8 +285,8 @@ class SearchHandler(BaseHandler):
                                         temp_current_qblock_for_next_words = j
                                         temp_offset_for_next_words = highlight_end_pos_in_qblock_end_of_word
                                         found_current_next_word = True
-                                        break 
-                                    elif j == temp_current_qblock_for_next_words : # Якщо не знайдено в залишку поточного блоку, то далі немає сенсу шукати цю послідовність
+                                        break
+                                    elif j == temp_current_qblock_for_next_words :
                                         all_words_found_sequentially=False; break
                                 if not found_current_next_word: all_words_found_sequentially=False
                                 if not all_words_found_sequentially: break
@@ -308,17 +305,15 @@ class SearchHandler(BaseHandler):
                             cursor_nav = QTextCursor(scroll_to_block_nav)
                             cursor_nav.setPosition(scroll_to_block_nav.position() + highlight_start_pos_in_qblock)
                             editor.setTextCursor(cursor_nav); editor.ensureCursorVisible()
-                            found_overall_match_in_editor = True; break 
-                        else: # Якщо не всі слова знайдені послідовно, пробуємо знайти перше слово далі
-                            current_search_offset_in_qblock = start_pos + 1 
+                            found_overall_match_in_editor = True; break
+                        else:
+                            current_search_offset_in_qblock = start_pos + 1
                     
-                    if found_overall_match_in_editor: break # Знайшли в цьому редакторі, переходимо до наступного
-        else: 
-            # Точне підсвічування (попередня логіка) - тут є помилка з визначенням is_original_editor_and_search_original_precise
-            # Поки що закоментуємо цю гілку, щоб зосередитися на tagless search
+                    if found_overall_match_in_editor: break
+        else:
             raw_full_string_data = self._get_text_for_search(block_idx_match_in_data, string_idx_match_in_data, self.search_in_original, False)
             target_qtextblock_idx_in_editor, char_pos_in_target_qtextblock_raw = \
-                self._calculate_qtextblock_and_pos_in_block(raw_full_string_data, char_pos_in_search_text) 
+                self._calculate_qtextblock_and_pos_in_block(raw_full_string_data, char_pos_in_search_text)
             log_debug(f"PreciseSearch: Match is in QTextBlk(editor): {target_qtextblock_idx_in_editor}, RawCharInBlk: {char_pos_in_target_qtextblock_raw}")
             raw_qtextblocks = raw_full_string_data.split('\n')
             if target_qtextblock_idx_in_editor >= len(raw_qtextblocks):
@@ -334,23 +329,22 @@ class SearchHandler(BaseHandler):
             effective_query_for_occ_count = compare_raw_query_for_occurrence_base
             text_for_occ_count = compare_raw_qtextblock_text
             
-            # Визначаємо, чи потрібно видаляти теги для підрахунку входжень (тільки для original_text_edit при пошуку в оригіналі)
-            if self.search_in_original and self.mw.original_text_edit.objectName() == "original_text_edit": # Припускаємо, що editor - це original_text_edit
+            if self.search_in_original and self.mw.original_text_edit.objectName() == "original_text_edit":
                  effective_query_for_occ_count = remove_curly_tags(effective_query_for_occ_count)
                  text_for_occ_count = remove_curly_tags(text_for_occ_count)
 
-            if effective_query_for_occ_count: 
+            if effective_query_for_occ_count:
                 while search_offset_qblk <= char_pos_in_target_qtextblock_raw:
                     temp_pos_qblk = text_for_occ_count.find(effective_query_for_occ_count, search_offset_qblk)
                     if temp_pos_qblk == -1 or temp_pos_qblk > char_pos_in_target_qtextblock_raw: break
                     occurrence_in_qtextblock_raw += 1
                     if temp_pos_qblk == char_pos_in_target_qtextblock_raw: break
                     search_offset_qblk = temp_pos_qblk + 1
-            if occurrence_in_qtextblock_raw == 0 and effective_query_for_occ_count: occurrence_in_qtextblock_raw = 1 
+            if occurrence_in_qtextblock_raw == 0 and effective_query_for_occ_count: occurrence_in_qtextblock_raw = 1
             log_debug(f"PreciseSearch: Match is the {occurrence_in_qtextblock_raw}-th occ in its raw QTextBlock.")
             editors_to_process_precise = [(self.mw.preview_text_edit, True, string_idx_match_in_data),(self.mw.original_text_edit, False, target_qtextblock_idx_in_editor),(self.mw.edited_text_edit, False, target_qtextblock_idx_in_editor)]
             for editor_precise, use_newline_symbol, widget_qtextblock_idx_to_use in editors_to_process_precise:
-                editor_name_precise = editor_precise.objectName(); 
+                editor_name_precise = editor_precise.objectName();
                 if not editor_precise or not hasattr(editor_precise, 'highlightManager'): continue
                 if (editor_precise == self.mw.original_text_edit or editor_precise == self.mw.edited_text_edit) and string_idx_match_in_data != self.mw.current_string_idx: continue
                 widget_block_precise = editor_precise.document().findBlockByNumber(widget_qtextblock_idx_to_use)

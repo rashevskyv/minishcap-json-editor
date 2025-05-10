@@ -5,9 +5,9 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QFont
-from LineNumberedTextEdit import LineNumberedTextEdit
-from CustomListWidget import CustomListWidget
-from utils import log_debug
+from components.LineNumberedTextEdit import LineNumberedTextEdit
+from components.CustomListWidget import CustomListWidget
+from utils.utils import log_debug
 
 def setup_main_window_ui(main_window):
     log_debug("setup_main_window_ui: Starting UI setup.")

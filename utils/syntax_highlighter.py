@@ -3,7 +3,7 @@ import re
 from PyQt5.QtCore import QRegExp, Qt
 from PyQt5.QtGui import QSyntaxHighlighter, QTextCharFormat, QColor, QFont, QPen
 
-from utils import log_debug, SPACE_DOT_SYMBOL 
+from .utils import log_debug, SPACE_DOT_SYMBOL
 
 class JsonTagHighlighter(QSyntaxHighlighter):
     def __init__(self, parent=None):

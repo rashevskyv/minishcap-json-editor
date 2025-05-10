@@ -1,4 +1,3 @@
-# LineNumberArea.py
 from PyQt5.QtWidgets import QWidget
 from PyQt5.QtGui import QPainter, QColor, QPen
 from PyQt5.QtCore import Qt, QRect, QSize

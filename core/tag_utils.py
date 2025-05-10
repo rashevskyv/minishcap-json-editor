@@ -1,5 +1,5 @@
 import re
-from utils import log_debug 
+from utils.utils import log_debug
 
 TAG_STATUS_OK = "OK"
 TAG_STATUS_CRITICAL = "CRITICAL_ERROR" 
