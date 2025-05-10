@@ -1,119 +1,458 @@
-Log started at 2025-05-10 23:25:43.489
+Log started at 2025-05-11 00:21:51.566
 ==================================================
-[2025-05-10 23:25:43.501] DEBUG: ================= Application Start =================
-[2025-05-10 23:25:43.513] DEBUG: ++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++
-[2025-05-10 23:25:43.514] DEBUG: MainWindow: Initializing Core Components...
-[2025-05-10 23:25:43.514] DEBUG: MainWindow: Initializing Handlers...
-2025-05-10 23:25:43,514 - DEBUG - logging_utils - log_debug - Handler 'ListSelectionHandler' initialized.
-2025-05-10 23:25:43,514 - DEBUG - logging_utils - log_debug - Handler 'TextOperationHandler' initialized.
-2025-05-10 23:25:43,515 - DEBUG - logging_utils - log_debug - Handler 'AppActionHandler' initialized.
-2025-05-10 23:25:43,515 - DEBUG - logging_utils - log_debug - Handler 'SearchHandler' initialized.
-[2025-05-10 23:25:43.515] DEBUG: MainWindow: Setting up UI...
-[2025-05-10 23:25:43.515] DEBUG: setup_main_window_ui: Starting UI setup.
-[2025-05-10 23:25:43.517] DEBUG: CustomListWidget INITIALIZED, parent: <__main__.MainWindow object at 0x000001EFB04C18B0>
-[2025-05-10 23:25:43.517] DEBUG: CustomListWidget: Item delegate set to <components.CustomListItemDelegate.CustomListItemDelegate object at 0x000001EFB04C1DC0>
-[2025-05-10 23:25:43.524] DEBUG: JsonTagHighlighter initialized.
-[2025-05-10 23:25:43.525] DEBUG: JsonTagHighlighter reconfiguring styles: ..., curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
-[2025-05-10 23:25:43.525] DEBUG: Set BRACKET_TAG [...] style: color=#FF8C00, bold=True
-[2025-05-10 23:25:43.688] DEBUG: JsonTagHighlighter initialized.
-[2025-05-10 23:25:43.688] DEBUG: JsonTagHighlighter reconfiguring styles: ..., curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
-[2025-05-10 23:25:43.688] DEBUG: Set BRACKET_TAG [...] style: color=#FF8C00, bold=True
-[2025-05-10 23:25:43.690] DEBUG: JsonTagHighlighter initialized.
-[2025-05-10 23:25:43.690] DEBUG: JsonTagHighlighter reconfiguring styles: ..., curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
-[2025-05-10 23:25:43.690] DEBUG: Set BRACKET_TAG [...] style: color=#FF8C00, bold=True
-[2025-05-10 23:25:43.703] DEBUG: setup_main_window_ui: UI setup complete.
-[2025-05-10 23:25:43.704] DEBUG: MainWindow: Connecting Signals...
-[2025-05-10 23:25:43.704] DEBUG: --> MainWindow: connect_signals() started
-[2025-05-10 23:25:43.704] DEBUG: --> MainWindow: connect_signals() finished
-[2025-05-10 23:25:43.705] DEBUG: MainWindow: Loading Editor Settings via SettingsManager...
-[2025-05-10 23:25:43.705] DEBUG: --> SettingsManager: load_settings from settings.json
-[2025-05-10 23:25:43.705] DEBUG: --> SettingsManager: load_font_map from font_map.json
-[2025-05-10 23:25:43.706] DEBUG: Successfully loaded font_map. Count: 115
-[2025-05-10 23:25:43.706] DEBUG: SettingsManager: Initial default_font_size (from QFont or 10): 8
-[2025-05-10 23:25:43.706] DEBUG: SettingsManager: Applied all default values. self.mw.current_font_size is now 10 (from defaults)
-[2025-05-10 23:25:43.706] DEBUG: SettingsManager: Successfully parsed settings.json. Content keys: ['default_tag_mappings', 'block_names', 'newline_display_symbol', 'newline_css', 'tag_css', 'show_multiple_spaces_as_dots', 'space_dot_color_hex', 'preview_wrap_lines', 'editors_wrap_lines', 'bracket_tag_color_hex', 'game_dialog_max_width_pixels', 'line_width_warning_threshold_pixels', 'search_history', 'last_selected_block_index', 'last_selected_string_index', 'last_cursor_position_in_edited', 'last_edited_text_edit_scroll_value_v', 'last_edited_text_edit_scroll_value_h', 'last_preview_text_edit_scroll_value_v', 'last_original_text_edit_scroll_value_v', 'last_original_text_edit_scroll_value_h', 'font_size', 'original_file_path', 'edited_file_path', 'window_geometry', 'main_splitter_state', 'right_splitter_state', 'bottom_right_splitter_state', 'critical_problem_lines_per_block', 'warning_problem_lines_per_block', 'width_exceeded_lines_per_block']
-[2025-05-10 23:25:43.707] DEBUG: SettingsManager: Found 'font_size' in settings file: 11. Current self.mw.current_font_size: 10
-[2025-05-10 23:25:43.707] DEBUG: SettingsManager: Set self.mw.current_font_size to 11 from file.
-[2025-05-10 23:25:43.707] DEBUG: SettingsManager: Final MainWindow.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 210
-[2025-05-10 23:25:43.707] DEBUG: SettingsManager: After potential load from file, self.mw.current_font_size is 11
-[2025-05-10 23:25:43.708] DEBUG: MainWindow: Applying font. General: Family='Segoe UI', Editor: Family='Courier New', Size=11
-[2025-05-10 23:25:43.713] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-10 23:25:43.713] DEBUG: TextOperationHandler.text_edited: No block/string selected, returning.
-[2025-05-10 23:25:43.724] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: -1, string: -1
-[2025-05-10 23:25:43.724] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-10 23:25:43.724] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: False
-[2025-05-10 23:25:43.725] DEBUG: [UIUpdater] populate_blocks called.
-[2025-05-10 23:25:43.725] DEBUG: [UIUpdater] populate_blocks: No original data.
-[2025-05-10 23:25:43.725] DEBUG: UIUpdater: populate_strings_for_block for block_idx: -1. Current string_idx: -1
-[2025-05-10 23:25:43.725] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: -1, string: -1
-[2025-05-10 23:25:43.725] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-10 23:25:43.726] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
-[2025-05-10 23:25:43.726] DEBUG: Settings loaded. Last block: 4, string: -1
-[2025-05-10 23:25:43.726] DEBUG: Settings loaded. Original path from mw: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Edited path from mw: '//192.168.50.168/tloz_tmc_ua/UKR.json'
-2025-05-10 23:25:43,726 - DEBUG - logging_utils - log_debug - Applying text wrap settings: Preview wrap: False, Editors wrap: False
-2025-05-10 23:25:43,726 - DEBUG - logging_utils - log_debug - MainWindowHelper: Reconfiguring all highlighters...
-[2025-05-10 23:25:43.727] DEBUG: JsonTagHighlighter reconfiguring styles: ..., curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
-[2025-05-10 23:25:43.727] DEBUG: Set BRACKET_TAG [...] style: color=#FFA500, bold=True
-[2025-05-10 23:25:43.727] DEBUG: JsonTagHighlighter reconfiguring styles: ..., curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
-[2025-05-10 23:25:43.727] DEBUG: Set BRACKET_TAG [...] style: color=#FFA500, bold=True
-[2025-05-10 23:25:43.727] DEBUG: JsonTagHighlighter reconfiguring styles: ..., curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
-[2025-05-10 23:25:43.727] DEBUG: Set BRACKET_TAG [...] style: color=#FFA500, bold=True
-[2025-05-10 23:25:43.727] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-10 23:25:43.727] DEBUG: TextOperationHandler.text_edited: No block/string selected, returning.
-2025-05-10 23:25:43,727 - DEBUG - logging_utils - log_debug - MainWindowHelper: Highlighter reconfiguration attempt complete.
-[2025-05-10 23:25:43.727] DEBUG: <-- SettingsManager: load_settings finished
-[2025-05-10 23:25:43.728] DEBUG: MainWindow: After SettingsManager.load_settings(), self.current_font_size = 11, general_family = Segoe UI, editor_family = Courier New
-[2025-05-10 23:25:43.728] DEBUG: MainWindow: change_font_size_action called with size 11
-[2025-05-10 23:25:43.728] DEBUG: MainWindow: After load_settings, self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 210
-[2025-05-10 23:25:43.728] DEBUG: MainWindow: After load_settings, self.initial_load_path = //192.168.50.168/tloz_tmc_ua/UKR_orig.json
-[2025-05-10 23:25:43.728] DEBUG: MainWindow: After load_settings, self.initial_edited_load_path = //192.168.50.168/tloz_tmc_ua/UKR.json
-[2025-05-10 23:25:43.728] DEBUG: MainWindow: Set preview_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 210
-[2025-05-10 23:25:43.729] DEBUG: MainWindow: Set original_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 210
-[2025-05-10 23:25:43.729] DEBUG: MainWindow: Set edited_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 210
-2025-05-10 23:25:43,729 - DEBUG - logging_utils - log_debug - MainWindowHelper: restore_state_after_settings_load called.
-2025-05-10 23:25:43,733 - DEBUG - logging_utils - log_debug - MainWindowHelper: Attempting to load initial file from settings: //192.168.50.168/tloz_tmc_ua/UKR_orig.json
-[2025-05-10 23:25:43.733] DEBUG: --> AppActionHandler: load_all_data_for_path START. Original: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Manual Edit Path: '//192.168.50.168/tloz_tmc_ua/UKR.json', InitialLoad: True
-[2025-05-10 23:25:43.734] DEBUG: load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', expected_type: list
-[2025-05-10 23:25:43.746] DEBUG: load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR_orig.json'.
-[2025-05-10 23:25:43.748] DEBUG: load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR.json', expected_type: list
-[2025-05-10 23:25:43.762] DEBUG: load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR.json'.
-[2025-05-10 23:25:43.762] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-10 23:25:43.762] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
-[2025-05-10 23:25:43.763] DEBUG: Initial load from settings: Recalculating width issues based on current data.
-[2025-05-10 23:25:43.763] DEBUG: AppActionHandler: Performing width scan for all blocks...
-[2025-05-10 23:25:43.826] DEBUG: AppActionHandler: Width scan for all blocks complete.
-[2025-05-10 23:25:43.826] DEBUG: [UIUpdater] populate_blocks called.
-[2025-05-10 23:25:43.827] DEBUG: [UIUpdater] populate_blocks: Added 80 items.
-[2025-05-10 23:25:43.827] DEBUG: --> ListSelectionHandler: block_selected. Item: 'Системні (1 width)', Index: 0
-[2025-05-10 23:25:43.827] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 0. Current string_idx: -1
-[2025-05-10 23:25:43.829] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 0, string: -1
-[2025-05-10 23:25:43.829] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-10 23:25:43.829] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
-[2025-05-10 23:25:43.829] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-10 23:25:43.829] DEBUG: <-- ListSelectionHandler: block_selected finished.
-[2025-05-10 23:25:43.829] DEBUG: <-- AppActionHandler: load_all_data_for_path FINISHED (Success)
-[2025-05-10 23:25:43.829] DEBUG: --> ListSelectionHandler: block_selected. Item: 'Предмети, атаки мечем (1 warn, 2 width)', Index: 4
-[2025-05-10 23:25:43.830] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 4. Current string_idx: -1
-[2025-05-10 23:25:43.838] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 4, string: -1
-[2025-05-10 23:25:43.838] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-10 23:25:43.839] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
-[2025-05-10 23:25:43.839] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-10 23:25:43.839] DEBUG: <-- ListSelectionHandler: block_selected finished.
-2025-05-10 23:25:43,840 - DEBUG - logging_utils - log_debug - MainWindowHelper: last_selected_string_index (-1) is out of bounds for block 4. Skipping string/cursor restore.
-2025-05-10 23:25:43,841 - DEBUG - logging_utils - log_debug - MainWindowHelper: Search history loaded into panel. Last query (if any) set in SearchHandler: ���
-2025-05-10 23:25:43,841 - DEBUG - logging_utils - log_debug - Rebuilt unsaved_block_indices: set()
-[2025-05-10 23:25:43.841] DEBUG: ++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++
-[2025-05-10 23:25:43.990] DEBUG: Starting Qt event loop...
-[2025-05-10 23:25:46.298] DEBUG: --> MainWindow: closeEvent received.
-2025-05-10 23:25:46,298 - DEBUG - logging_utils - log_debug - MainWindowHelper: prepare_to_close called.
-2025-05-10 23:25:46,299 - DEBUG - logging_utils - log_debug - MainWindowHelper: Updated search_history_to_save: 6 items
-[2025-05-10 23:25:46.299] DEBUG: --> AppActionHandler: handle_close_event called.
-[2025-05-10 23:25:46.299] DEBUG: <-- AppActionHandler: handle_close_event finished.
-[2025-05-10 23:25:46.299] DEBUG: Close accepted (no unsaved changes). Saving editor settings via SettingsManager.
-[2025-05-10 23:25:46.299] DEBUG: --> SettingsManager: save_settings to settings.json
-[2025-05-10 23:25:46.299] DEBUG: SettingsManager: Saving font_size: 11 (from self.mw.current_font_size: 11)
-[2025-05-10 23:25:46.299] DEBUG: Saving paths: original_file_path='//192.168.50.168/tloz_tmc_ua/UKR_orig.json', edited_file_path='//192.168.50.168/tloz_tmc_ua/UKR.json'
-[2025-05-10 23:25:46.301] DEBUG: <-- SettingsManager: save_settings finished
-[2025-05-10 23:25:46.301] DEBUG: <-- MainWindow: closeEvent finished.
-[2025-05-10 23:25:46.328] DEBUG: Qt event loop finished with exit code: 0
-[2025-05-10 23:25:46.329] DEBUG: ================= Application End =================
+[2025-05-11 00:21:51.586] DEBUG: ================= Application Start =================
+[2025-05-11 00:21:51.604] DEBUG: ++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++
+[2025-05-11 00:21:51.604] DEBUG: MainWindow: Initializing Core Components...
+[2025-05-11 00:21:51.604] DEBUG: MainWindow: Initializing Handlers (Pre-UI setup)...
+2025-05-11 00:21:51,604 - DEBUG - logging_utils - log_debug - Handler 'ListSelectionHandler' initialized.
+2025-05-11 00:21:51,605 - DEBUG - logging_utils - log_debug - Handler 'TextOperationHandler' initialized.
+2025-05-11 00:21:51,605 - DEBUG - logging_utils - log_debug - Handler 'AppActionHandler' initialized.
+2025-05-11 00:21:51,605 - DEBUG - logging_utils - log_debug - Handler 'SearchHandler' initialized.
+[2025-05-11 00:21:51.606] DEBUG: MainWindow: Setting up UI...
+[2025-05-11 00:21:51.606] DEBUG: setup_main_window_ui: Starting UI setup.
+[2025-05-11 00:21:51.607] DEBUG: CustomListWidget INITIALIZED, parent: <__main__.MainWindow object at 0x000002CA540F3280>
+[2025-05-11 00:21:51.607] DEBUG: CustomListWidget: Item delegate set to <components.CustomListItemDelegate.CustomListItemDelegate object at 0x000002CA540F3790>
+[2025-05-11 00:21:51.620] DEBUG: JsonTagHighlighter initialized.
+[2025-05-11 00:21:51.620] DEBUG: JsonTagHighlighter reconfiguring styles: ..., curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
+[2025-05-11 00:21:51.621] DEBUG: Set BRACKET_TAG [...] style: color=#FF8C00, bold=True
+[2025-05-11 00:21:51.811] DEBUG: JsonTagHighlighter initialized.
+[2025-05-11 00:21:51.811] DEBUG: JsonTagHighlighter reconfiguring styles: ..., curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
+[2025-05-11 00:21:51.811] DEBUG: Set BRACKET_TAG [...] style: color=#FF8C00, bold=True
+[2025-05-11 00:21:51.814] DEBUG: JsonTagHighlighter initialized.
+[2025-05-11 00:21:51.814] DEBUG: JsonTagHighlighter reconfiguring styles: ..., curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
+[2025-05-11 00:21:51.815] DEBUG: Set BRACKET_TAG [...] style: color=#FF8C00, bold=True
+[2025-05-11 00:21:51.831] DEBUG: setup_main_window_ui: UI setup complete.
+[2025-05-11 00:21:51.832] DEBUG: MainWindow: Initializing Handlers (Post-UI setup)...
+[2025-05-11 00:21:51.833] DEBUG: MainWindow: Connecting Signals...
+[2025-05-11 00:21:51.833] DEBUG: --> MainWindow: connect_signals() started
+[2025-05-11 00:21:51.833] DEBUG: --> MainWindow: connect_signals() finished
+[2025-05-11 00:21:51.833] DEBUG: MainWindow: Loading Editor Settings via SettingsManager...
+[2025-05-11 00:21:51.834] DEBUG: --> SettingsManager: load_settings from settings.json
+[2025-05-11 00:21:51.834] DEBUG: --> SettingsManager: load_font_map from font_map.json
+[2025-05-11 00:21:51.834] DEBUG: Successfully loaded font_map. Count: 115
+[2025-05-11 00:21:51.835] DEBUG: SettingsManager: Initial default_font_size (from QFont or 10): 8
+[2025-05-11 00:21:51.835] DEBUG: SettingsManager: Applied all default values. self.mw.current_font_size is now 10 (from defaults)
+[2025-05-11 00:21:51.835] DEBUG: SettingsManager: Successfully parsed settings.json. Content keys: ['default_tag_mappings', 'block_names', 'newline_display_symbol', 'newline_css', 'tag_css', 'show_multiple_spaces_as_dots', 'space_dot_color_hex', 'preview_wrap_lines', 'editors_wrap_lines', 'bracket_tag_color_hex', 'game_dialog_max_width_pixels', 'line_width_warning_threshold_pixels', 'search_history', 'last_selected_block_index', 'last_selected_string_index', 'last_cursor_position_in_edited', 'last_edited_text_edit_scroll_value_v', 'last_edited_text_edit_scroll_value_h', 'last_preview_text_edit_scroll_value_v', 'last_original_text_edit_scroll_value_v', 'last_original_text_edit_scroll_value_h', 'font_size', 'original_file_path', 'edited_file_path', 'window_geometry', 'main_splitter_state', 'right_splitter_state', 'bottom_right_splitter_state', 'critical_problem_lines_per_block', 'warning_problem_lines_per_block', 'width_exceeded_lines_per_block']
+[2025-05-11 00:21:51.836] DEBUG: SettingsManager: Found 'font_size' in settings file: 11. Current self.mw.current_font_size: 10
+[2025-05-11 00:21:51.836] DEBUG: SettingsManager: Set self.mw.current_font_size to 11 from file.
+[2025-05-11 00:21:51.836] DEBUG: SettingsManager: Final MainWindow.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 210
+[2025-05-11 00:21:51.836] DEBUG: SettingsManager: After potential load from file, self.mw.current_font_size is 11
+[2025-05-11 00:21:51.836] DEBUG: MainWindow: Applying font. General: Family='Segoe UI', Editor: Family='Courier New', Size=11
+[2025-05-11 00:21:51.843] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-11 00:21:51.843] DEBUG: TextOperationHandler.text_edited: No block/string selected, returning.
+[2025-05-11 00:21:51.856] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: -1, string: -1
+[2025-05-11 00:21:51.856] DEBUG:   No active block/string selected. Text views will be cleared.
+[2025-05-11 00:21:51.856] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: False
+[2025-05-11 00:21:51.856] DEBUG: [UIUpdater] populate_blocks called.
+[2025-05-11 00:21:51.856] DEBUG: [UIUpdater] populate_blocks: No original data.
+[2025-05-11 00:21:51.856] DEBUG: UIUpdater: populate_strings_for_block for block_idx: -1. Current string_idx: -1
+[2025-05-11 00:21:51.857] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: -1, string: -1
+[2025-05-11 00:21:51.857] DEBUG:   No active block/string selected. Text views will be cleared.
+[2025-05-11 00:21:51.857] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
+[2025-05-11 00:21:51.857] DEBUG: Settings loaded. Last block: 8, string: 50
+[2025-05-11 00:21:51.857] DEBUG: Settings loaded. Original path from mw: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Edited path from mw: '//192.168.50.168/tloz_tmc_ua/UKR.json'
+2025-05-11 00:21:51,858 - DEBUG - logging_utils - log_debug - Applying text wrap settings: Preview wrap: False, Editors wrap: False
+2025-05-11 00:21:51,858 - DEBUG - logging_utils - log_debug - MainWindowHelper: Reconfiguring all highlighters...
+[2025-05-11 00:21:51.858] DEBUG: JsonTagHighlighter reconfiguring styles: ..., curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
+[2025-05-11 00:21:51.858] DEBUG: Set BRACKET_TAG [...] style: color=#FFA500, bold=True
+[2025-05-11 00:21:51.859] DEBUG: JsonTagHighlighter reconfiguring styles: ..., curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
+[2025-05-11 00:21:51.859] DEBUG: Set BRACKET_TAG [...] style: color=#FFA500, bold=True
+[2025-05-11 00:21:51.859] DEBUG: JsonTagHighlighter reconfiguring styles: ..., curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
+[2025-05-11 00:21:51.859] DEBUG: Set BRACKET_TAG [...] style: color=#FFA500, bold=True
+[2025-05-11 00:21:51.859] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-11 00:21:51.859] DEBUG: TextOperationHandler.text_edited: No block/string selected, returning.
+2025-05-11 00:21:51,859 - DEBUG - logging_utils - log_debug - MainWindowHelper: Highlighter reconfiguration attempt complete.
+[2025-05-11 00:21:51.860] DEBUG: <-- SettingsManager: load_settings finished
+[2025-05-11 00:21:51.860] DEBUG: MainWindow: After SettingsManager.load_settings(), self.current_font_size = 11, general_family = Segoe UI, editor_family = Courier New
+[2025-05-11 00:21:51.860] DEBUG: MainWindow: change_font_size_action called with size 11
+[2025-05-11 00:21:51.860] DEBUG: MainWindow: After load_settings, self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 210
+[2025-05-11 00:21:51.860] DEBUG: MainWindow: After load_settings, self.initial_load_path = //192.168.50.168/tloz_tmc_ua/UKR_orig.json
+[2025-05-11 00:21:51.860] DEBUG: MainWindow: After load_settings, self.initial_edited_load_path = //192.168.50.168/tloz_tmc_ua/UKR.json
+[2025-05-11 00:21:51.861] DEBUG: MainWindow: Set preview_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 210
+[2025-05-11 00:21:51.861] DEBUG: MainWindow: Set original_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 210
+[2025-05-11 00:21:51.861] DEBUG: MainWindow: Set edited_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 210
+2025-05-11 00:21:51,861 - DEBUG - logging_utils - log_debug - MainWindowHelper: restore_state_after_settings_load called.
+2025-05-11 00:21:51,876 - DEBUG - logging_utils - log_debug - MainWindowHelper: Attempting to load initial file from settings: //192.168.50.168/tloz_tmc_ua/UKR_orig.json
+[2025-05-11 00:21:51.876] DEBUG: --> AppActionHandler: load_all_data_for_path START. Original: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Manual Edit Path: '//192.168.50.168/tloz_tmc_ua/UKR.json', InitialLoad: True
+[2025-05-11 00:21:51.877] DEBUG: load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', expected_type: list
+[2025-05-11 00:21:51.894] DEBUG: load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR_orig.json'.
+[2025-05-11 00:21:51.898] DEBUG: load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR.json', expected_type: list
+[2025-05-11 00:21:51.912] DEBUG: load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR.json'.
+[2025-05-11 00:21:51.912] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
+[2025-05-11 00:21:51.913] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
+[2025-05-11 00:21:51.913] DEBUG: Initial load from settings: Recalculating width issues based on current data.
+[2025-05-11 00:21:51.913] DEBUG: AppActionHandler: Performing width scan for all blocks...
+[2025-05-11 00:21:51.979] DEBUG: AppActionHandler: Width scan for all blocks complete.
+[2025-05-11 00:21:51.979] DEBUG: [UIUpdater] populate_blocks called.
+[2025-05-11 00:21:51.980] DEBUG: [UIUpdater] populate_blocks: Added 80 items.
+[2025-05-11 00:21:51.980] DEBUG: --> ListSelectionHandler: block_selected. Item: 'Системні (1 width)', Index: 0
+[2025-05-11 00:21:51.980] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 0. Current string_idx: -1
+[2025-05-11 00:21:51.981] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 0, string: -1
+[2025-05-11 00:21:51.981] DEBUG:   No active block/string selected. Text views will be cleared.
+[2025-05-11 00:21:51.981] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
+[2025-05-11 00:21:51.982] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-11 00:21:51.982] DEBUG: <-- ListSelectionHandler: block_selected finished.
+[2025-05-11 00:21:51.982] DEBUG: <-- AppActionHandler: load_all_data_for_path FINISHED (Success)
+[2025-05-11 00:21:51.982] DEBUG: --> ListSelectionHandler: block_selected. Item: 'Статуетки (7 warn)', Index: 8
+[2025-05-11 00:21:51.982] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 8. Current string_idx: -1
+[2025-05-11 00:21:51.989] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 8, string: -1
+[2025-05-11 00:21:51.990] DEBUG:   No active block/string selected. Text views will be cleared.
+[2025-05-11 00:21:51.990] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
+[2025-05-11 00:21:51.990] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-11 00:21:51.990] DEBUG: <-- ListSelectionHandler: block_selected finished.
+[2025-05-11 00:21:51.991] DEBUG: --> ListSelectionHandler: string_selected_from_preview. Data Line number: 50
+[2025-05-11 00:21:51.991] DEBUG: Set current_string_idx = 50.
+[2025-05-11 00:21:51.996] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 8. Current string_idx: 50
+[2025-05-11 00:21:51.999] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 8, string: 50
+[2025-05-11 00:21:52.001] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating. Programmatic context: True
+[2025-05-11 00:21:52.002] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
+[2025-05-11 00:21:52.002] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
+[2025-05-11 00:21:52.002] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
+[2025-05-11 00:21:52.003] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-11 00:21:52.003] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 8, string: 50
+[2025-05-11 00:21:52.003] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: False
+[2025-05-11 00:21:52.003] DEBUG: <-- ListSelectionHandler: string_selected_from_preview finished.
+2025-05-11 00:21:52,004 - DEBUG - logging_utils - log_debug - MainWindowHelper: Restored selection to block 8, string 50, cursor 0
+2025-05-11 00:21:52,005 - DEBUG - logging_utils - log_debug - MainWindowHelper: Search history loaded into panel. Last query (if any) set in SearchHandler: ���
+2025-05-11 00:21:52,005 - DEBUG - logging_utils - log_debug - Rebuilt unsaved_block_indices: set()
+[2025-05-11 00:21:52.005] DEBUG: ++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++
+[2025-05-11 00:21:52.181] DEBUG: Starting Qt event loop...
+[2025-05-11 00:21:54.278] DEBUG: TagChecker: start_or_continue_check. is_search_active: False, Highlighted: False
+[2025-05-11 00:21:54.278] DEBUG: TagChecker: New search initiated. Start: B8, S50
+[2025-05-11 00:21:54.278] DEBUG: TagChecker: Mismatch! B8,S50. Original Tag (idx 0) '{Symbol:0D}' not found in translation 'Крумель та Кондітта'. Used translation tags for previous original tags in this row: []
+[2025-05-11 00:21:54.279] DEBUG: TextHighlightManager: Creating search match selection with color: RGB(255, 165, 0), Alpha(100)
+[2025-05-11 00:21:54.279] DEBUG: Highlighted mismatch: {'block_idx': 8, 'string_idx': 50, 'qtextblock_idx': 0, 'start_char_in_qtextblock': 8, 'length': 11, 'tag_text': '{Symbol:0D}'}
+[2025-05-11 00:21:55.943] DEBUG: TagChecker: start_or_continue_check. is_search_active: True, Highlighted: True
+[2025-05-11 00:21:55.943] DEBUG: Removed mismatch highlight
+[2025-05-11 00:21:55.943] DEBUG: TagChecker: Resuming after mismatch. Next original tag index: 1
+[2025-05-11 00:21:55.943] DEBUG: TagChecker: No more tags in B8,S50 or all checked for this string. Moving to S51
+[2025-05-11 00:21:55.944] DEBUG: TagChecker: No more tags in B8,S51 or all checked for this string. Moving to S52
+[2025-05-11 00:21:55.944] DEBUG: TagChecker: No more tags in B8,S52 or all checked for this string. Moving to S53
+[2025-05-11 00:21:55.944] DEBUG: TagChecker: No more tags in B8,S53 or all checked for this string. Moving to S54
+[2025-05-11 00:21:55.944] DEBUG: TagChecker: No more tags in B8,S54 or all checked for this string. Moving to S55
+[2025-05-11 00:21:55.944] DEBUG: TagChecker: No more tags in B8,S55 or all checked for this string. Moving to S56
+[2025-05-11 00:21:55.944] DEBUG: TagChecker: No more tags in B8,S56 or all checked for this string. Moving to S57
+[2025-05-11 00:21:55.944] DEBUG: TagChecker: No more tags in B8,S57 or all checked for this string. Moving to S58
+[2025-05-11 00:21:55.944] DEBUG: TagChecker: No more tags in B8,S58 or all checked for this string. Moving to S59
+[2025-05-11 00:21:55.945] DEBUG: TagChecker: No more tags in B8,S59 or all checked for this string. Moving to S60
+[2025-05-11 00:21:55.945] DEBUG: TagChecker: No more tags in B8,S60 or all checked for this string. Moving to S61
+[2025-05-11 00:21:55.945] DEBUG: TagChecker: No more tags in B8,S61 or all checked for this string. Moving to S62
+[2025-05-11 00:21:55.945] DEBUG: TagChecker: No more tags in B8,S62 or all checked for this string. Moving to S63
+[2025-05-11 00:21:55.945] DEBUG: TagChecker: Mismatch! B8,S63. Original Tag (idx 0) '{Symbol:0D}' not found in translation 'Вітрило та Привид'. Used translation tags for previous original tags in this row: []
+[2025-05-11 00:21:55.945] DEBUG: TagChecker: Syncing UI to mismatch location B8, S63 before highlight.
+[2025-05-11 00:21:55.946] DEBUG: --> ListSelectionHandler: string_selected_from_preview. Data Line number: 63
+[2025-05-11 00:21:55.946] DEBUG: Set current_string_idx = 63.
+[2025-05-11 00:21:55.947] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 8. Current string_idx: 63
+[2025-05-11 00:21:55.953] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 8, string: 63
+[2025-05-11 00:21:55.954] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating. Programmatic context: True
+[2025-05-11 00:21:55.954] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
+[2025-05-11 00:21:55.954] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
+[2025-05-11 00:21:55.955] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
+[2025-05-11 00:21:55.955] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-11 00:21:55.955] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 8, string: 63
+[2025-05-11 00:21:55.955] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: False
+[2025-05-11 00:21:55.956] DEBUG: <-- ListSelectionHandler: string_selected_from_preview finished.
+[2025-05-11 00:21:55.969] DEBUG: TextHighlightManager: Creating search match selection with color: RGB(255, 165, 0), Alpha(100)
+[2025-05-11 00:21:55.969] DEBUG: Highlighted mismatch: {'block_idx': 8, 'string_idx': 63, 'qtextblock_idx': 0, 'start_char_in_qtextblock': 7, 'length': 11, 'tag_text': '{Symbol:0D}'}
+[2025-05-11 00:21:57.774] DEBUG: TagChecker: start_or_continue_check. is_search_active: True, Highlighted: True
+[2025-05-11 00:21:57.774] DEBUG: Removed mismatch highlight
+[2025-05-11 00:21:57.774] DEBUG: TagChecker: Resuming after mismatch. Next original tag index: 1
+[2025-05-11 00:21:57.774] DEBUG: TagChecker: No more tags in B8,S63 or all checked for this string. Moving to S64
+[2025-05-11 00:21:57.774] DEBUG: TagChecker: No more tags in B8,S64 or all checked for this string. Moving to S65
+[2025-05-11 00:21:57.775] DEBUG: TagChecker: Mismatch! B8,S65. Original Tag (idx 0) '{Symbol:0D}' not found in translation 'Еник та Беник'. Used translation tags for previous original tags in this row: []
+[2025-05-11 00:21:57.775] DEBUG: TagChecker: Syncing UI to mismatch location B8, S65 before highlight.
+[2025-05-11 00:21:57.775] DEBUG: --> ListSelectionHandler: string_selected_from_preview. Data Line number: 65
+[2025-05-11 00:21:57.775] DEBUG: Set current_string_idx = 65.
+[2025-05-11 00:21:57.775] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 8. Current string_idx: 65
+[2025-05-11 00:21:57.779] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 8, string: 65
+[2025-05-11 00:21:57.780] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating. Programmatic context: True
+[2025-05-11 00:21:57.780] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
+[2025-05-11 00:21:57.780] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
+[2025-05-11 00:21:57.781] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
+[2025-05-11 00:21:57.781] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-11 00:21:57.781] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 8, string: 65
+[2025-05-11 00:21:57.781] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: False
+[2025-05-11 00:21:57.782] DEBUG: <-- ListSelectionHandler: string_selected_from_preview finished.
+[2025-05-11 00:21:57.794] DEBUG: TextHighlightManager: Creating search match selection with color: RGB(255, 165, 0), Alpha(100)
+[2025-05-11 00:21:57.795] DEBUG: Highlighted mismatch: {'block_idx': 8, 'string_idx': 65, 'qtextblock_idx': 0, 'start_char_in_qtextblock': 6, 'length': 11, 'tag_text': '{Symbol:0D}'}
+[2025-05-11 00:21:58.679] DEBUG: TagChecker: start_or_continue_check. is_search_active: True, Highlighted: True
+[2025-05-11 00:21:58.679] DEBUG: Removed mismatch highlight
+[2025-05-11 00:21:58.679] DEBUG: TagChecker: Resuming after mismatch. Next original tag index: 1
+[2025-05-11 00:21:58.680] DEBUG: TagChecker: No more tags in B8,S65 or all checked for this string. Moving to S66
+[2025-05-11 00:21:58.680] DEBUG: TagChecker: No more tags in B8,S66 or all checked for this string. Moving to S67
+[2025-05-11 00:21:58.680] DEBUG: TagChecker: Mismatch! B8,S67. Original Tag (idx 0) '{Symbol:0D}' not found in translation 'Скрипун та Хрипун'. Used translation tags for previous original tags in this row: []
+[2025-05-11 00:21:58.680] DEBUG: TagChecker: Syncing UI to mismatch location B8, S67 before highlight.
+[2025-05-11 00:21:58.680] DEBUG: --> ListSelectionHandler: string_selected_from_preview. Data Line number: 67
+[2025-05-11 00:21:58.680] DEBUG: Set current_string_idx = 67.
+[2025-05-11 00:21:58.681] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 8. Current string_idx: 67
+[2025-05-11 00:21:58.686] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 8, string: 67
+[2025-05-11 00:21:58.687] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating. Programmatic context: True
+[2025-05-11 00:21:58.688] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
+[2025-05-11 00:21:58.688] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
+[2025-05-11 00:21:58.688] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
+[2025-05-11 00:21:58.689] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-11 00:21:58.689] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 8, string: 67
+[2025-05-11 00:21:58.689] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: False
+[2025-05-11 00:21:58.690] DEBUG: <-- ListSelectionHandler: string_selected_from_preview finished.
+[2025-05-11 00:21:58.704] DEBUG: TextHighlightManager: Creating search match selection with color: RGB(255, 165, 0), Alpha(100)
+[2025-05-11 00:21:58.704] DEBUG: Highlighted mismatch: {'block_idx': 8, 'string_idx': 67, 'qtextblock_idx': 0, 'start_char_in_qtextblock': 9, 'length': 11, 'tag_text': '{Symbol:0D}'}
+[2025-05-11 00:21:59.701] DEBUG: TagChecker: start_or_continue_check. is_search_active: True, Highlighted: True
+[2025-05-11 00:21:59.701] DEBUG: Removed mismatch highlight
+[2025-05-11 00:21:59.701] DEBUG: TagChecker: Resuming after mismatch. Next original tag index: 1
+[2025-05-11 00:21:59.702] DEBUG: TagChecker: No more tags in B8,S67 or all checked for this string. Moving to S68
+[2025-05-11 00:21:59.702] DEBUG: TagChecker: No more tags in B8,S68 or all checked for this string. Moving to S69
+[2025-05-11 00:21:59.702] DEBUG: TagChecker: No more tags in B8,S69 or all checked for this string. Moving to S70
+[2025-05-11 00:21:59.702] DEBUG: TagChecker: No more tags in B8,S70 or all checked for this string. Moving to S71
+[2025-05-11 00:21:59.702] DEBUG: TagChecker: No more tags in B8,S71 or all checked for this string. Moving to S72
+[2025-05-11 00:21:59.703] DEBUG: TagChecker: No more tags in B8,S72 or all checked for this string. Moving to S73
+[2025-05-11 00:21:59.703] DEBUG: TagChecker: No more tags in B8,S73 or all checked for this string. Moving to S74
+[2025-05-11 00:21:59.703] DEBUG: TagChecker: No more tags in B8,S74 or all checked for this string. Moving to S75
+[2025-05-11 00:21:59.703] DEBUG: TagChecker: No more tags in B8,S75 or all checked for this string. Moving to S76
+[2025-05-11 00:21:59.703] DEBUG: TagChecker: No more tags in B8,S76 or all checked for this string. Moving to S77
+[2025-05-11 00:21:59.703] DEBUG: TagChecker: No more tags in B8,S77 or all checked for this string. Moving to S78
+[2025-05-11 00:21:59.703] DEBUG: TagChecker: No more tags in B8,S78 or all checked for this string. Moving to S79
+[2025-05-11 00:21:59.704] DEBUG: TagChecker: No more tags in B8,S79 or all checked for this string. Moving to S80
+[2025-05-11 00:21:59.704] DEBUG: TagChecker: No more tags in B8,S80 or all checked for this string. Moving to S81
+[2025-05-11 00:21:59.704] DEBUG: TagChecker: No more tags in B8,S81 or all checked for this string. Moving to S82
+[2025-05-11 00:21:59.704] DEBUG: TagChecker: No more tags in B8,S82 or all checked for this string. Moving to S83
+[2025-05-11 00:21:59.704] DEBUG: TagChecker: No more tags in B8,S83 or all checked for this string. Moving to S84
+[2025-05-11 00:21:59.704] DEBUG: TagChecker: No more tags in B8,S84 or all checked for this string. Moving to S85
+[2025-05-11 00:21:59.704] DEBUG: TagChecker: No more tags in B8,S85 or all checked for this string. Moving to S86
+[2025-05-11 00:21:59.704] DEBUG: TagChecker: No more tags in B8,S86 or all checked for this string. Moving to S87
+[2025-05-11 00:21:59.704] DEBUG: TagChecker: No more tags in B8,S87 or all checked for this string. Moving to S88
+[2025-05-11 00:21:59.705] DEBUG: TagChecker: No more tags in B8,S88 or all checked for this string. Moving to S89
+[2025-05-11 00:21:59.705] DEBUG: TagChecker: No more tags in B8,S89 or all checked for this string. Moving to S90
+[2025-05-11 00:21:59.705] DEBUG: TagChecker: No more tags in B8,S90 or all checked for this string. Moving to S91
+[2025-05-11 00:21:59.705] DEBUG: TagChecker: No more tags in B8,S91 or all checked for this string. Moving to S92
+[2025-05-11 00:21:59.705] DEBUG: TagChecker: No more tags in B8,S92 or all checked for this string. Moving to S93
+[2025-05-11 00:21:59.705] DEBUG: TagChecker: No more tags in B8,S93 or all checked for this string. Moving to S94
+[2025-05-11 00:21:59.705] DEBUG: TagChecker: No more tags in B8,S94 or all checked for this string. Moving to S95
+[2025-05-11 00:21:59.705] DEBUG: TagChecker: No more tags in B8,S95 or all checked for this string. Moving to S96
+[2025-05-11 00:21:59.705] DEBUG: TagChecker: No more tags in B8,S96 or all checked for this string. Moving to S97
+[2025-05-11 00:21:59.705] DEBUG: TagChecker: No more tags in B8,S97 or all checked for this string. Moving to S98
+[2025-05-11 00:21:59.706] DEBUG: TagChecker: Mismatch! B8,S98. Original Tag (idx 0) '{Symbol:0D}' not found in translation 'Солдат із кулею на ланцюгу'. Used translation tags for previous original tags in this row: []
+[2025-05-11 00:21:59.706] DEBUG: TagChecker: Syncing UI to mismatch location B8, S98 before highlight.
+[2025-05-11 00:21:59.706] DEBUG: --> ListSelectionHandler: string_selected_from_preview. Data Line number: 98
+[2025-05-11 00:21:59.706] DEBUG: Set current_string_idx = 98.
+[2025-05-11 00:21:59.706] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 8. Current string_idx: 98
+[2025-05-11 00:21:59.710] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 8, string: 98
+[2025-05-11 00:21:59.711] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating. Programmatic context: True
+[2025-05-11 00:21:59.711] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
+[2025-05-11 00:21:59.711] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
+[2025-05-11 00:21:59.712] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
+[2025-05-11 00:21:59.712] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-11 00:21:59.712] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 8, string: 98
+[2025-05-11 00:21:59.712] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: False
+[2025-05-11 00:21:59.713] DEBUG: <-- ListSelectionHandler: string_selected_from_preview finished.
+[2025-05-11 00:21:59.724] DEBUG: TextHighlightManager: Creating search match selection with color: RGB(255, 165, 0), Alpha(100)
+[2025-05-11 00:21:59.725] DEBUG: Highlighted mismatch: {'block_idx': 8, 'string_idx': 98, 'qtextblock_idx': 0, 'start_char_in_qtextblock': 5, 'length': 11, 'tag_text': '{Symbol:0D}'}
+[2025-05-11 00:22:01.750] DEBUG: TagChecker: start_or_continue_check. is_search_active: True, Highlighted: True
+[2025-05-11 00:22:01.751] DEBUG: Removed mismatch highlight
+[2025-05-11 00:22:01.751] DEBUG: TagChecker: Resuming after mismatch. Next original tag index: 1
+[2025-05-11 00:22:01.751] DEBUG: TagChecker: No more tags in B8,S98 or all checked for this string. Moving to S99
+[2025-05-11 00:22:01.751] DEBUG: TagChecker: No more tags in B8,S99 or all checked for this string. Moving to S100
+[2025-05-11 00:22:01.751] DEBUG: TagChecker: No more tags in B8,S100 or all checked for this string. Moving to S101
+[2025-05-11 00:22:01.752] DEBUG: TagChecker: No more tags in B8,S101 or all checked for this string. Moving to S102
+[2025-05-11 00:22:01.752] DEBUG: TagChecker: No more tags in B8,S102 or all checked for this string. Moving to S103
+[2025-05-11 00:22:01.752] DEBUG: TagChecker: No more tags in B8,S103 or all checked for this string. Moving to S104
+[2025-05-11 00:22:01.752] DEBUG: TagChecker: No more tags in B8,S104 or all checked for this string. Moving to S105
+[2025-05-11 00:22:01.752] DEBUG: TagChecker: No more tags in B8,S105 or all checked for this string. Moving to S106
+[2025-05-11 00:22:01.752] DEBUG: TagChecker: No more tags in B8,S106 or all checked for this string. Moving to S107
+[2025-05-11 00:22:01.753] DEBUG: TagChecker: No more tags in B8,S107 or all checked for this string. Moving to S108
+[2025-05-11 00:22:01.753] DEBUG: TagChecker: No more tags in B8,S108 or all checked for this string. Moving to S109
+[2025-05-11 00:22:01.753] DEBUG: TagChecker: No more tags in B8,S109 or all checked for this string. Moving to S110
+[2025-05-11 00:22:01.753] DEBUG: TagChecker: No more tags in B8,S110 or all checked for this string. Moving to S111
+[2025-05-11 00:22:01.753] DEBUG: TagChecker: No more tags in B8,S111 or all checked for this string. Moving to S112
+[2025-05-11 00:22:01.753] DEBUG: TagChecker: No more tags in B8,S112 or all checked for this string. Moving to S113
+[2025-05-11 00:22:01.754] DEBUG: TagChecker: No more tags in B8,S113 or all checked for this string. Moving to S114
+[2025-05-11 00:22:01.754] DEBUG: TagChecker: Mismatch! B8,S114. Original Tag (idx 0) '{Symbol:0D}' not found in translation 'Ворона та Таккурі'. Used translation tags for previous original tags in this row: []
+[2025-05-11 00:22:01.754] DEBUG: TagChecker: Syncing UI to mismatch location B8, S114 before highlight.
+[2025-05-11 00:22:01.754] DEBUG: --> ListSelectionHandler: string_selected_from_preview. Data Line number: 114
+[2025-05-11 00:22:01.754] DEBUG: Set current_string_idx = 114.
+[2025-05-11 00:22:01.755] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 8. Current string_idx: 114
+[2025-05-11 00:22:01.760] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 8, string: 114
+[2025-05-11 00:22:01.760] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating. Programmatic context: True
+[2025-05-11 00:22:01.761] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
+[2025-05-11 00:22:01.761] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
+[2025-05-11 00:22:01.761] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
+[2025-05-11 00:22:01.762] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-11 00:22:01.762] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 8, string: 114
+[2025-05-11 00:22:01.762] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: False
+[2025-05-11 00:22:01.762] DEBUG: <-- ListSelectionHandler: string_selected_from_preview finished.
+[2025-05-11 00:22:01.775] DEBUG: TextHighlightManager: Creating search match selection with color: RGB(255, 165, 0), Alpha(100)
+[2025-05-11 00:22:01.775] DEBUG: Highlighted mismatch: {'block_idx': 8, 'string_idx': 114, 'qtextblock_idx': 0, 'start_char_in_qtextblock': 5, 'length': 11, 'tag_text': '{Symbol:0D}'}
+[2025-05-11 00:22:02.813] DEBUG: TagChecker: start_or_continue_check. is_search_active: True, Highlighted: True
+[2025-05-11 00:22:02.813] DEBUG: Removed mismatch highlight
+[2025-05-11 00:22:02.813] DEBUG: TagChecker: Resuming after mismatch. Next original tag index: 1
+[2025-05-11 00:22:02.813] DEBUG: TagChecker: No more tags in B8,S114 or all checked for this string. Moving to S115
+[2025-05-11 00:22:02.814] DEBUG: TagChecker: No more tags in B8,S115 or all checked for this string. Moving to S116
+[2025-05-11 00:22:02.814] DEBUG: TagChecker: No more tags in B8,S116 or all checked for this string. Moving to S117
+[2025-05-11 00:22:02.814] DEBUG: TagChecker: No more tags in B8,S117 or all checked for this string. Moving to S118
+[2025-05-11 00:22:02.814] DEBUG: TagChecker: No more tags in B8,S118 or all checked for this string. Moving to S119
+[2025-05-11 00:22:02.814] DEBUG: TagChecker: No more tags in B8,S119 or all checked for this string. Moving to S120
+[2025-05-11 00:22:02.814] DEBUG: TagChecker: No more tags in B8,S120 or all checked for this string. Moving to S121
+[2025-05-11 00:22:02.814] DEBUG: TagChecker: No more tags in B8,S121 or all checked for this string. Moving to S122
+[2025-05-11 00:22:02.814] DEBUG: TagChecker: No more tags in B8,S122 or all checked for this string. Moving to S123
+[2025-05-11 00:22:02.814] DEBUG: TagChecker: No more tags in B8,S123 or all checked for this string. Moving to S124
+[2025-05-11 00:22:02.815] DEBUG: TagChecker: No more tags in B8,S124 or all checked for this string. Moving to S125
+[2025-05-11 00:22:02.815] DEBUG: TagChecker: No more tags in B8,S125 or all checked for this string. Moving to S126
+[2025-05-11 00:22:02.815] DEBUG: TagChecker: No more tags in B8,S126 or all checked for this string. Moving to S127
+[2025-05-11 00:22:02.815] DEBUG: TagChecker: No more tags in B8,S127 or all checked for this string. Moving to S128
+[2025-05-11 00:22:02.815] DEBUG: TagChecker: No more tags in B8,S128 or all checked for this string. Moving to S129
+[2025-05-11 00:22:02.815] DEBUG: TagChecker: No more tags in B8,S129 or all checked for this string. Moving to S130
+[2025-05-11 00:22:02.815] DEBUG: TagChecker: No more tags in B8,S130 or all checked for this string. Moving to S131
+[2025-05-11 00:22:02.815] DEBUG: TagChecker: Match! B8,S131. Tag '{Symbol:0D}' (orig_idx 0).
+[2025-05-11 00:22:02.816] DEBUG: TagChecker: Mismatch! B8,S131. Original Tag (idx 1) '{Player}' not found in translation 'Зельда та {Symbol:0D}Лінк{Player}'. Used translation tags for previous original tags in this row: [(10, 21)]
+[2025-05-11 00:22:02.816] DEBUG: TagChecker: Syncing UI to mismatch location B8, S131 before highlight.
+[2025-05-11 00:22:02.816] DEBUG: --> ListSelectionHandler: string_selected_from_preview. Data Line number: 131
+[2025-05-11 00:22:02.816] DEBUG: Set current_string_idx = 131.
+[2025-05-11 00:22:02.816] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 8. Current string_idx: 131
+[2025-05-11 00:22:02.820] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 8, string: 131
+[2025-05-11 00:22:02.821] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating. Programmatic context: True
+[2025-05-11 00:22:02.821] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
+[2025-05-11 00:22:02.822] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
+[2025-05-11 00:22:02.822] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
+[2025-05-11 00:22:02.822] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-11 00:22:02.823] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 8, string: 131
+[2025-05-11 00:22:02.823] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: False
+[2025-05-11 00:22:02.823] DEBUG: <-- ListSelectionHandler: string_selected_from_preview finished.
+[2025-05-11 00:22:02.835] DEBUG: TextHighlightManager: Creating search match selection with color: RGB(255, 165, 0), Alpha(100)
+[2025-05-11 00:22:02.836] DEBUG: Highlighted mismatch: {'block_idx': 8, 'string_idx': 131, 'qtextblock_idx': 0, 'start_char_in_qtextblock': 18, 'length': 8, 'tag_text': '{Player}'}
+2025-05-11 00:22:27,550 - DEBUG - logging_utils - log_debug - EventFilter KeyPress: Key 16777249, Modifiers: <PyQt5.QtCore.Qt.KeyboardModifiers object at 0x000002CA57F413C0>, Text: '', Focused widget: edited_text_edit
+[2025-05-11 00:22:27.550] DEBUG: MainWindow keyPressEvent: This should not be called if eventFilter is working.
+[2025-05-11 00:22:27.776] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-11 00:22:27.776] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:27.777] DEBUG: DSP.update_edited_data: Key (8, 131) updated. New edited_data size: 1
+[2025-05-11 00:22:27.777] DEBUG: DSP.update_edited_data: Unsaved changes status changed to True
+[2025-05-11 00:22:27.777] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:27.777] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
+[2025-05-11 00:22:27.777] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:27.778] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-11 00:22:28.026] DEBUG: Timer timeout: Updating preview content.
+[2025-05-11 00:22:28.027] DEBUG:   _update_preview_content: Set is_programmatically_changing_text to True (was False)
+[2025-05-11 00:22:28.027] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 8. Current string_idx: 131
+[2025-05-11 00:22:28.031] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 8, string: 131
+[2025-05-11 00:22:28.032] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
+[2025-05-11 00:22:28.032] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-11 00:22:28.032] DEBUG:   _update_preview_content: Restored is_programmatically_changing_text to False
+[2025-05-11 00:22:28.032] DEBUG: Preview content update finished.
+[2025-05-11 00:22:29.841] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-11 00:22:29.842] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:29.842] DEBUG: DSP.update_edited_data: Key (8, 131) updated. New edited_data size: 1
+[2025-05-11 00:22:29.842] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:29.842] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
+[2025-05-11 00:22:29.842] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:29.843] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-11 00:22:29.999] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-11 00:22:29.999] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:30.000] DEBUG: DSP.update_edited_data: Key (8, 131) updated. New edited_data size: 1
+[2025-05-11 00:22:30.000] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:30.000] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
+[2025-05-11 00:22:30.000] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:30.000] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-11 00:22:30.148] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-11 00:22:30.148] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:30.148] DEBUG: DSP.update_edited_data: Key (8, 131) updated. New edited_data size: 1
+[2025-05-11 00:22:30.148] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:30.149] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
+[2025-05-11 00:22:30.149] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:30.149] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-11 00:22:30.298] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-11 00:22:30.299] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:30.299] DEBUG: DSP.update_edited_data: Key (8, 131) updated. New edited_data size: 1
+[2025-05-11 00:22:30.299] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:30.299] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
+[2025-05-11 00:22:30.299] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:30.300] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-11 00:22:30.465] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-11 00:22:30.465] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:30.465] DEBUG: DSP.update_edited_data: Key (8, 131) updated. New edited_data size: 1
+[2025-05-11 00:22:30.465] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:30.465] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
+[2025-05-11 00:22:30.466] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:30.466] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-11 00:22:30.545] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-11 00:22:30.545] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:30.545] DEBUG: DSP.update_edited_data: Key (8, 131) updated. New edited_data size: 1
+[2025-05-11 00:22:30.545] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:30.545] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
+[2025-05-11 00:22:30.546] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:30.546] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-11 00:22:30.696] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-11 00:22:30.696] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:30.696] DEBUG: DSP.update_edited_data: Key (8, 131) updated. New edited_data size: 1
+[2025-05-11 00:22:30.696] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:30.696] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
+[2025-05-11 00:22:30.696] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:30.697] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-11 00:22:30.934] DEBUG: Timer timeout: Updating preview content.
+[2025-05-11 00:22:30.934] DEBUG:   _update_preview_content: Set is_programmatically_changing_text to True (was False)
+[2025-05-11 00:22:30.934] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 8. Current string_idx: 131
+[2025-05-11 00:22:30.938] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 8, string: 131
+[2025-05-11 00:22:30.938] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
+[2025-05-11 00:22:30.939] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-11 00:22:30.939] DEBUG:   _update_preview_content: Restored is_programmatically_changing_text to False
+[2025-05-11 00:22:30.939] DEBUG: Preview content update finished.
+[2025-05-11 00:22:31.174] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-11 00:22:31.174] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:31.174] DEBUG: DSP.update_edited_data: Key (8, 131) updated. New edited_data size: 1
+[2025-05-11 00:22:31.174] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:31.174] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
+[2025-05-11 00:22:31.175] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:31.175] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-11 00:22:31.435] DEBUG: Timer timeout: Updating preview content.
+[2025-05-11 00:22:31.435] DEBUG:   _update_preview_content: Set is_programmatically_changing_text to True (was False)
+[2025-05-11 00:22:31.436] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 8. Current string_idx: 131
+[2025-05-11 00:22:31.441] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 8, string: 131
+[2025-05-11 00:22:31.441] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
+[2025-05-11 00:22:31.441] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-11 00:22:31.442] DEBUG:   _update_preview_content: Restored is_programmatically_changing_text to False
+[2025-05-11 00:22:31.442] DEBUG: Preview content update finished.
+[2025-05-11 00:22:32.316] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-11 00:22:32.316] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:32.316] DEBUG: DSP.update_edited_data: Key (8, 131) updated. New edited_data size: 1
+[2025-05-11 00:22:32.317] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:32.317] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
+[2025-05-11 00:22:32.317] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:32.317] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-11 00:22:32.436] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-11 00:22:32.436] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:32.436] DEBUG: DSP.update_edited_data: Key (8, 131) updated. New edited_data size: 1
+[2025-05-11 00:22:32.436] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:32.436] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
+[2025-05-11 00:22:32.437] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
+[2025-05-11 00:22:32.437] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-11 00:22:32.684] DEBUG: Timer timeout: Updating preview content.
+[2025-05-11 00:22:32.684] DEBUG:   _update_preview_content: Set is_programmatically_changing_text to True (was False)
+[2025-05-11 00:22:32.685] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 8. Current string_idx: 131
+[2025-05-11 00:22:32.689] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 8, string: 131
+[2025-05-11 00:22:32.690] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
+[2025-05-11 00:22:32.690] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-11 00:22:32.690] DEBUG:   _update_preview_content: Restored is_programmatically_changing_text to False
+[2025-05-11 00:22:32.690] DEBUG: Preview content update finished.
+2025-05-11 00:22:36,347 - DEBUG - logging_utils - log_debug - EventFilter KeyPress: Key 16777249, Modifiers: <PyQt5.QtCore.Qt.KeyboardModifiers object at 0x000002CA54C07A50>, Text: '', Focused widget: edited_text_edit
+[2025-05-11 00:22:36.347] DEBUG: MainWindow keyPressEvent: This should not be called if eventFilter is working.
+2025-05-11 00:22:38,180 - DEBUG - logging_utils - log_debug - <<<<<<<<<< ACTION: Save Triggered (via MainWindowActions) >>>>>>>>>>
+[2025-05-11 00:22:38.180] DEBUG: --> AppActionHandler: save_data_action called. ask_confirmation=True, current unsaved=True
+[2025-05-11 00:22:39.054] DEBUG: Applying changes from loaded edited_file_data (count: 3699)
+[2025-05-11 00:22:39.055] DEBUG: Applying changes from current memory edits (self.mw.edited_data, count: 1)
+[2025-05-11 00:22:39.055] DEBUG: save_json_file: Attempting to save data to '//192.168.50.168/tloz_tmc_ua/UKR.json'.
+[2025-05-11 00:22:39.107] DEBUG: save_json_file: Data successfully saved to '//192.168.50.168/tloz_tmc_ua/UKR.json'
+[2025-05-11 00:22:39.765] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 8. Current string_idx: 131
+[2025-05-11 00:22:39.770] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 8, string: 131
+[2025-05-11 00:22:39.770] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
+[2025-05-11 00:22:39.771] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+2025-05-11 00:22:39,771 - DEBUG - logging_utils - log_debug - Rebuilt unsaved_block_indices: set()
+[2025-05-11 00:22:40.803] DEBUG: --> MainWindow: closeEvent received.
+2025-05-11 00:22:40,803 - DEBUG - logging_utils - log_debug - MainWindowHelper: prepare_to_close called.
+2025-05-11 00:22:40,803 - DEBUG - logging_utils - log_debug - MainWindowHelper: Updated search_history_to_save: 6 items
+[2025-05-11 00:22:40.804] DEBUG: --> AppActionHandler: handle_close_event called.
+[2025-05-11 00:22:40.804] DEBUG: <-- AppActionHandler: handle_close_event finished.
+[2025-05-11 00:22:40.804] DEBUG: Close accepted (no unsaved changes). Saving editor settings via SettingsManager.
+[2025-05-11 00:22:40.804] DEBUG: --> SettingsManager: save_settings to settings.json
+[2025-05-11 00:22:40.804] DEBUG: SettingsManager: Saving font_size: 11 (from self.mw.current_font_size: 11)
+[2025-05-11 00:22:40.804] DEBUG: Saving paths: original_file_path='//192.168.50.168/tloz_tmc_ua/UKR_orig.json', edited_file_path='//192.168.50.168/tloz_tmc_ua/UKR.json'
+[2025-05-11 00:22:40.806] DEBUG: <-- SettingsManager: save_settings finished
+[2025-05-11 00:22:40.806] DEBUG: <-- MainWindow: closeEvent finished.
+[2025-05-11 00:22:40.828] DEBUG: Qt event loop finished with exit code: 0
+[2025-05-11 00:22:40.828] DEBUG: ================= Application End =================

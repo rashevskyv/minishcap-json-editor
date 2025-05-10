@@ -22,6 +22,7 @@ from handlers.list_selection_handler import ListSelectionHandler
 from handlers.text_operation_handler import TextOperationHandler
 from handlers.app_action_handler import AppActionHandler
 from handlers.search_handler import SearchHandler
+from handlers.tag_checker_handler import TagCheckerHandler
 
 
 from utils.utils import log_debug, DEFAULT_CHAR_WIDTH_FALLBACK
@@ -113,6 +114,7 @@ class MainWindow(QMainWindow):
         self.undo_paste_action = None
         self.rescan_all_tags_action = None
         self.find_action = None
+        self.check_tags_action = None # Залишаємо як None, QAction буде створено в ui_setup
         self.main_vertical_layout = None
         self.font_size_spinbox = None
 
@@ -124,15 +126,19 @@ class MainWindow(QMainWindow):
         self.settings_manager = SettingsManager(self)
 
 
-        log_debug("MainWindow: Initializing Handlers...")
+        log_debug("MainWindow: Initializing Handlers (Pre-UI setup)...")
         self.list_selection_handler = ListSelectionHandler(self, self.data_processor, self.ui_updater)
         self.editor_operation_handler = TextOperationHandler(self, self.data_processor, self.ui_updater)
         self.app_action_handler = AppActionHandler(self, self.data_processor, self.ui_updater)
         self.search_handler = SearchHandler(self, self.data_processor, self.ui_updater)
+        # self.tag_checker_handler = TagCheckerHandler(self) # Перенесено нижче
 
 
         log_debug("MainWindow: Setting up UI...")
-        setup_main_window_ui(self)
+        setup_main_window_ui(self) # UI елементи створюються тут
+
+        log_debug("MainWindow: Initializing Handlers (Post-UI setup)...")
+        self.tag_checker_handler = TagCheckerHandler(self) # Тепер UI елементи доступні
 
         self.search_panel_widget = SearchPanelWidget(self)
         self.main_vertical_layout.insertWidget(0, self.search_panel_widget)
@@ -186,6 +192,10 @@ class MainWindow(QMainWindow):
 
     def execute_find_previous_shortcut(self):
         self.helper.execute_find_previous_shortcut()
+    
+    def trigger_check_tags_action(self):
+        if self.tag_checker_handler:
+            self.tag_checker_handler.start_or_continue_check()
 
 
     def connect_signals(self):
@@ -226,6 +236,9 @@ class MainWindow(QMainWindow):
             self.search_panel_widget.find_previous_requested.connect(self.helper.handle_panel_find_previous)
         if hasattr(self, 'font_size_spinbox') and self.font_size_spinbox:
             self.font_size_spinbox.valueChanged.connect(self.change_font_size_action)
+        if hasattr(self, 'check_tags_action') and self.check_tags_action: # Перевіряємо, чи QAction було створено
+            self.check_tags_action.triggered.connect(self.trigger_check_tags_action)
+
 
         log_debug("--> MainWindow: connect_signals() finished")
 

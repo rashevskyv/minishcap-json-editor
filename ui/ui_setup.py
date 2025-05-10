@@ -151,6 +151,13 @@ def setup_main_window_ui(main_window):
 
     main_window.rescan_all_tags_action = QAction(QIcon.fromTheme("system-search"), 'Rescan All Tags for Issues', main_window)
     edit_menu.addAction(main_window.rescan_all_tags_action)
+    
+    # Нова дія для перевірки тегів
+    # Можна використати іконку, наприклад, SP_DialogApplyButton або SP_DialogYesButton, або знайти тематичну
+    check_tags_icon = style.standardIcon(QStyle.SP_DialogApplyButton) 
+    main_window.check_tags_action = QAction(check_tags_icon, 'Check &Tags Mismatch', main_window)
+    main_window.check_tags_action.setToolTip("Check for tags mismatch between original and translation")
+    edit_menu.addAction(main_window.check_tags_action)
 
 
     toolbar = QToolBar("Main Toolbar")
@@ -163,6 +170,7 @@ def setup_main_window_ui(main_window):
     toolbar.addAction(main_window.redo_typing_action)
     toolbar.addSeparator()
     toolbar.addAction(main_window.find_action)
+    toolbar.addAction(main_window.check_tags_action) # Додаємо кнопку на тулбар
     toolbar.addSeparator()
 
     font_size_label = QLabel("Font Size: ")
