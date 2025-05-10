@@ -14,6 +14,7 @@ from typing import Optional, Tuple
 EDITOR_PLAYER_TAG_DEFAULT = "[ІМ'Я ГРАВЦЯ]"
 ORIGINAL_PLAYER_TAG_DEFAULT = "{Player}"
 DEFAULT_LINE_WIDTH_WARNING_THRESHOLD = 175
+DEFAULT_FONT_FAMILY_LNET = "Courier New"
 
 class LineNumberedTextEdit(QPlainTextEdit):
     lineClicked = pyqtSignal(int)
@@ -53,12 +54,12 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
         self.updateLineNumberAreaWidth(0)
 
-        font = self.font()
-        if parent and hasattr(parent, 'current_font_size'):
+        initial_font = QFont(DEFAULT_FONT_FAMILY_LNET)
+        font_size_to_set = 10
+        if parent and hasattr(parent, 'current_font_size') and parent.current_font_size > 0:
             font_size_to_set = parent.current_font_size
-            if font_size_to_set > 0:
-                font.setPointSize(font_size_to_set)
-        self.setFont(font)
+        initial_font.setPointSize(font_size_to_set)
+        self.setFont(initial_font)
 
 
         self.highlighter = JsonTagHighlighter(self.document())
@@ -82,7 +83,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
             self.font_map = getattr(parent, 'font_map', {})
             self.GAME_DIALOG_MAX_WIDTH_PIXELS = getattr(parent, 'GAME_DIALOG_MAX_WIDTH_PIXELS', 240)
             self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = getattr(parent, 'LINE_WIDTH_WARNING_THRESHOLD_PIXELS', DEFAULT_LINE_WIDTH_WARNING_THRESHOLD)
-            log_debug(f"LNET {self.objectName()} __init__: LINE_WIDTH_WARNING_THRESHOLD_PIXELS initially set to {self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS} (from parent's current value or default).")
         else:
             log_debug(f"LNET {self.objectName()} __init__: Parent is not MainWindow or no parent, LINE_WIDTH_WARNING_THRESHOLD_PIXELS set to default {self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS}.")
 
@@ -107,24 +107,17 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
 
     def keyPressEvent(self, event: QKeyEvent):
-        log_debug(f"LNET ({self.objectName()}) keyPressEvent: Key {event.key()}, Modifiers: {event.modifiers()}, Text: '{event.text()}'")
         if not self.isReadOnly():
             if event.matches(QKeySequence.Undo):
-                log_debug(f"  LNET ({self.objectName()}): Undo match. Is undo available? {self.document().isUndoAvailable()}")
                 if self.document().isUndoAvailable():
                     self.undo()
-                    log_debug(f"  LNET ({self.objectName()}): self.undo() called. Is undo now available? {self.document().isUndoAvailable()}")
                     event.accept()
                     return
             elif event.matches(QKeySequence.Redo):
-                log_debug(f"  LNET ({self.objectName()}): Redo match. Is redo available? {self.document().isRedoAvailable()}")
                 if self.document().isRedoAvailable():
                     self.redo()
-                    log_debug(f"  LNET ({self.objectName()}): self.redo() called. Is redo now available? {self.document().isRedoAvailable()}")
                     event.accept()
                     return
-
-        log_debug(f"  LNET ({self.objectName()}): Calling super().keyPressEvent")
         super().keyPressEvent(event)
 
 
@@ -155,7 +148,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
             if hasattr(main_window, 'undo_paste_action'):
                  undo_paste_action = menu.addAction("Undo Last Paste Block")
-                 undo_paste_action.triggered.connect(main_window.trigger_undo_paste_action)
+                 undo_paste_action.triggered.connect(main_window.actions.trigger_undo_paste_action)
                  undo_paste_action.setEnabled(main_window.can_undo_paste)
 
             menu.addSeparator()
@@ -198,10 +191,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
          text_to_copy = tag_text_curly
          if tag_text_curly == self.original_player_tag:
              text_to_copy = self.editor_player_tag
-             log_debug(f"LNET ({self.objectName()}): Copied '{self.original_player_tag}' as '{self.editor_player_tag}'")
-         else:
-             log_debug(f"LNET ({self.objectName()}): Copied tag: {tag_text_curly}")
-
          QApplication.clipboard().setText(text_to_copy)
          if hasattr(actual_main_window, 'statusBar'):
              actual_main_window.statusBar.showMessage(f"Copied to clipboard: {text_to_copy}", 2000)
@@ -342,10 +331,8 @@ class LineNumberedTextEdit(QPlainTextEdit):
                   self.customContextMenuRequested.disconnect(self.showContextMenu)
              except TypeError:
                   pass
-             log_debug(f"LNET ({self.objectName()}): setReadOnly(False). Undo/Redo enabled: {self.isUndoRedoEnabled()}")
              if not self.isUndoRedoEnabled():
                  self.setUndoRedoEnabled(True)
-                 log_debug(f"LNET ({self.objectName()}): Explicitly enabled Undo/Redo. Now: {self.isUndoRedoEnabled()}")
         else:
              self.setContextMenuPolicy(Qt.CustomContextMenu)
              try:
