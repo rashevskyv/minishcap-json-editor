@@ -2,7 +2,8 @@ import json
 import os
 import base64
 from PyQt5.QtCore import QByteArray
-from PyQt5.QtWidgets import QMessageBox 
+from PyQt5.QtWidgets import QMessageBox
+from PyQt5.QtGui import QFont
 from utils import log_debug
 
 class SettingsManager:
@@ -62,6 +63,11 @@ class SettingsManager:
 
         self.load_font_map()
 
+        default_font_size = QFont().pointSize()
+        if default_font_size <= 0: default_font_size = 10
+        log_debug(f"SettingsManager: Initial default_font_size (from QFont or 10): {default_font_size}")
+
+
         default_settings_values = {
             "newline_display_symbol": getattr(self.mw, 'newline_display_symbol', "↵"),
             "newline_css": getattr(self.mw, 'newline_css', "color: #A020F0; font-weight: bold;"),
@@ -72,7 +78,7 @@ class SettingsManager:
             "editors_wrap_lines": getattr(self.mw, 'editors_wrap_lines', False),
             "default_tag_mappings": dict(self.initial_default_tag_mappings),
             "bracket_tag_color_hex": getattr(self.mw, 'bracket_tag_color_hex', "#FF8C00"),
-            "search_history": [], 
+            "search_history": [],
             "game_dialog_max_width_pixels": getattr(self.mw, 'GAME_DIALOG_MAX_WIDTH_PIXELS', 240),
             "line_width_warning_threshold_pixels": getattr(self.mw, 'LINE_WIDTH_WARNING_THRESHOLD_PIXELS', 175),
             "last_selected_block_index": -1,
@@ -83,21 +89,25 @@ class SettingsManager:
             "last_preview_text_edit_scroll_value_v": 0,
             "last_original_text_edit_scroll_value_v": 0,
             "last_original_text_edit_scroll_value_h": 0,
+            "font_size": default_font_size,
         }
-        
+
         settings_data = {}
         self.mw.critical_problem_lines_per_block = {}
         self.mw.warning_problem_lines_per_block = {}
-        self.mw.width_exceeded_lines_per_block = {} 
-        self.mw.search_history_to_save = [] 
-        
+        self.mw.width_exceeded_lines_per_block = {}
+        self.mw.search_history_to_save = []
+
         temp_original_file_path = None
         temp_edited_file_path = None
 
+        for key, value in default_settings_values.items():
+            setattr(self.mw, key, value)
+        log_debug(f"SettingsManager: Applied all default values. self.mw.current_font_size is now {self.mw.current_font_size} (from defaults)")
+
+
         if not os.path.exists(self.settings_file_path):
-            log_debug(f"Settings file '{self.settings_file_path}' not found. Using default values for core settings.")
-            for key, value in default_settings_values.items():
-                setattr(self.mw, key, value) 
+            log_debug(f"Settings file '{self.settings_file_path}' not found. Using default values already set.")
             self.mw.original_file_path = None
             self.mw.edited_file_path = None
         else:
@@ -105,7 +115,7 @@ class SettingsManager:
                 with open(self.settings_file_path, 'r', encoding='utf-8') as f:
                     settings_data = json.load(f)
                 log_debug(f"SettingsManager: Successfully parsed settings.json. Content keys: {list(settings_data.keys())}")
-                
+
                 temp_original_file_path = settings_data.get("original_file_path")
                 temp_edited_file_path = settings_data.get("edited_file_path")
 
@@ -118,33 +128,34 @@ class SettingsManager:
                     if self.mw.right_splitter and "right_splitter_state" in settings_data: self.mw.right_splitter.restoreState(QByteArray(base64.b64decode(settings_data["right_splitter_state"])))
                     if self.mw.bottom_right_splitter and "bottom_right_splitter_state" in settings_data: self.mw.bottom_right_splitter.restoreState(QByteArray(base64.b64decode(settings_data["bottom_right_splitter_state"])))
                 except Exception as e: log_debug(f"WARN: Failed to restore splitter state(s): {e}")
-                
+
                 self.mw.block_names = {str(k): v for k, v in settings_data.get("block_names", {}).items()}
-                
-                for key, default_value in default_settings_values.items():
-                    value_from_settings = settings_data.get(key)
-                    if value_from_settings is not None:
-                        setattr(self.mw, key, value_from_settings)
-                    else:
-                        setattr(self.mw, key, default_value)
-                
+
+
+                for key_from_defaults, _ in default_settings_values.items():
+                    if key_from_defaults in settings_data:
+                        value_from_file = settings_data[key_from_defaults]
+                        if key_from_defaults == "font_size":
+                            log_debug(f"SettingsManager: Found 'font_size' in settings file: {value_from_file}. Current self.mw.current_font_size: {self.mw.current_font_size}")
+                            if isinstance(value_from_file, int) and value_from_file > 0:
+                                self.mw.current_font_size = value_from_file # Явно присвоюємо
+                                log_debug(f"SettingsManager: Set self.mw.current_font_size to {self.mw.current_font_size} from file.")
+                            else:
+                                log_debug(f"SettingsManager: Invalid 'font_size' in file ({value_from_file}), keeping default: {self.mw.current_font_size}")
+                        else:
+                            setattr(self.mw, key_from_defaults, value_from_file)
+
+
                 setattr(self.mw, "original_file_path", temp_original_file_path)
                 setattr(self.mw, "edited_file_path", temp_edited_file_path)
+
 
                 lw_threshold_key = "line_width_warning_threshold_pixels"
                 if lw_threshold_key in settings_data:
                     val = settings_data[lw_threshold_key]
-                    log_debug(f"SettingsManager: Found key '{lw_threshold_key}' in settings_data with value: {val} (type: {type(val)})")
                     if isinstance(val, int):
                          self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = val
-                         log_debug(f"SettingsManager: MW attribute LINE_WIDTH_WARNING_THRESHOLD_PIXELS updated to: {val}")
-                    else:
-                         log_debug(f"SettingsManager: Value for '{lw_threshold_key}' is not int, using default.")
-                         self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = default_settings_values[lw_threshold_key]
-                else:
-                    log_debug(f"SettingsManager: Key '{lw_threshold_key}' NOT in settings_data. Using default: {default_settings_values[lw_threshold_key]}")
-                    self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = default_settings_values[lw_threshold_key]
-                
+
                 log_debug(f"SettingsManager: Final MainWindow.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = {self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS}")
 
                 loaded_search_history = settings_data.get("search_history", [])
@@ -153,70 +164,72 @@ class SettingsManager:
                 else: self.mw.search_history_to_save = []
 
                 crit_problems = settings_data.get("critical_problem_lines_per_block")
-                if isinstance(crit_problems, dict): 
+                if isinstance(crit_problems, dict):
                     self.mw.critical_problem_lines_per_block = {k: set(v) for k, v in crit_problems.items() if isinstance(v, list)}
                 warn_problems = settings_data.get("warning_problem_lines_per_block")
                 if isinstance(warn_problems, dict):
                     self.mw.warning_problem_lines_per_block = {k: set(v) for k, v in warn_problems.items() if isinstance(v, list)}
-                width_problems = settings_data.get("width_exceeded_lines_per_block") 
+                width_problems = settings_data.get("width_exceeded_lines_per_block")
                 if isinstance(width_problems, dict):
                     self.mw.width_exceeded_lines_per_block = {k: set(v) for k, v in width_problems.items() if isinstance(v, list)}
-                
+
             except json.JSONDecodeError as e:
-                log_debug(f"ERROR reading or parsing settings file '{self.settings_file_path}': {e}. Using ALL default values.")
-                for key, value in default_settings_values.items(): setattr(self.mw, key, value)
-                self.mw.original_file_path = None
-                self.mw.edited_file_path = None
-            except Exception as e: 
-                log_debug(f"UNEXPECTED ERROR while processing settings file '{self.settings_file_path}': {e}. Using ALL default values.")
-                for key, value in default_settings_values.items(): setattr(self.mw, key, value)
-                self.mw.original_file_path = None
-                self.mw.edited_file_path = None
-        
+                log_debug(f"ERROR reading or parsing settings file '{self.settings_file_path}': {e}. Using ALL default values set initially.")
+            except Exception as e:
+                log_debug(f"UNEXPECTED ERROR while processing settings file '{self.settings_file_path}': {e}. Using ALL default values set initially.")
+
+        log_debug(f"SettingsManager: After potential load from file, self.mw.current_font_size is {self.mw.current_font_size}")
+        self.mw.apply_font_size()
+
+
         log_debug(f"Settings loaded. Last block: {getattr(self.mw, 'last_selected_block_index', -1)}, string: {getattr(self.mw, 'last_selected_string_index', -1)}")
         log_debug(f"Settings loaded. Original path from mw: '{getattr(self.mw, 'original_file_path', None)}', Edited path from mw: '{getattr(self.mw, 'edited_file_path', None)}'")
 
         self.mw._apply_text_wrap_settings()
         self.mw._reconfigure_all_highlighters()
-        
+
         self.mw.initial_load_path = getattr(self.mw, 'original_file_path', None)
         self.mw.initial_edited_load_path = getattr(self.mw, 'edited_file_path', None)
-        
+
         if not self.mw.initial_load_path and not self.mw.json_path:
             log_debug("SettingsManager: No initial_load_path from settings and no current json_path, ensuring UI is cleared.")
             self.mw.ui_updater.populate_blocks()
             self.mw.ui_updater.populate_strings_for_block(-1)
-        
+
         log_debug("<-- SettingsManager: load_settings finished")
 
     def save_settings(self):
         log_debug(f"--> SettingsManager: save_settings to {self.settings_file_path}")
-        settings_data = {} 
+        settings_data = {}
         keys_to_save = [
             "default_tag_mappings", "block_names", "newline_display_symbol", "newline_css",
-            "tag_css", "show_multiple_spaces_as_dots", "space_dot_color_hex", 
+            "tag_css", "show_multiple_spaces_as_dots", "space_dot_color_hex",
             "preview_wrap_lines", "editors_wrap_lines", "bracket_tag_color_hex",
             "game_dialog_max_width_pixels", "line_width_warning_threshold_pixels",
-            "search_history", 
+            "search_history",
             "last_selected_block_index", "last_selected_string_index",
             "last_cursor_position_in_edited",
             "last_edited_text_edit_scroll_value_v", "last_edited_text_edit_scroll_value_h",
             "last_preview_text_edit_scroll_value_v",
-            "last_original_text_edit_scroll_value_v", "last_original_text_edit_scroll_value_h"
+            "last_original_text_edit_scroll_value_v", "last_original_text_edit_scroll_value_h",
+            "font_size"
         ]
-        
+
         for key in keys_to_save:
-            if key == "search_history": 
+            if key == "search_history":
                 if hasattr(self.mw, 'search_history_to_save'):
                     settings_data[key] = self.mw.search_history_to_save
+            elif key == "font_size":
+                 settings_data[key] = getattr(self.mw, 'current_font_size', QFont().pointSize() if QFont().pointSize() > 0 else 10)
+                 log_debug(f"SettingsManager: Saving font_size: {settings_data[key]} (from self.mw.current_font_size: {self.mw.current_font_size})")
             elif hasattr(self.mw, key):
                 settings_data[key] = getattr(self.mw, key)
-        
+
         if hasattr(self.mw, 'json_path'):
             settings_data["original_file_path"] = self.mw.json_path
         else:
-            settings_data["original_file_path"] = None 
-            
+            settings_data["original_file_path"] = None
+
         if hasattr(self.mw, 'edited_json_path'):
             settings_data["edited_file_path"] = self.mw.edited_json_path
         else:
@@ -225,17 +238,17 @@ class SettingsManager:
         log_debug(f"Saving paths: original_file_path='{settings_data.get('original_file_path')}', edited_file_path='{settings_data.get('edited_file_path')}'")
 
         geom = self.mw.geometry(); settings_data["window_geometry"] = {"x": geom.x(), "y": geom.y(), "width": geom.width(), "height": geom.height()}
-        try: 
+        try:
             if self.mw.main_splitter: settings_data["main_splitter_state"] = base64.b64encode(self.mw.main_splitter.saveState().data()).decode('ascii')
             if self.mw.right_splitter: settings_data["right_splitter_state"] = base64.b64encode(self.mw.right_splitter.saveState().data()).decode('ascii')
             if self.mw.bottom_right_splitter: settings_data["bottom_right_splitter_state"] = base64.b64encode(self.mw.bottom_right_splitter.saveState().data()).decode('ascii')
         except Exception as e: log_debug(f"WARN: Failed to save splitter state(s): {e}")
-        
+
         if not self.mw.unsaved_changes:
-            settings_data["critical_problem_lines_per_block"] = {k: list(v) for k, v in self.mw.critical_problem_lines_per_block.items() if v} 
-            settings_data["warning_problem_lines_per_block"] = {k: list(v) for k, v in self.mw.warning_problem_lines_per_block.items() if v} 
+            settings_data["critical_problem_lines_per_block"] = {k: list(v) for k, v in self.mw.critical_problem_lines_per_block.items() if v}
+            settings_data["warning_problem_lines_per_block"] = {k: list(v) for k, v in self.mw.warning_problem_lines_per_block.items() if v}
             settings_data["width_exceeded_lines_per_block"] = {k: list(v) for k, v in self.mw.width_exceeded_lines_per_block.items() if v}
-        else: 
+        else:
             log_debug("Not saving problem line data dictionaries because unsaved_changes is True.")
 
         try:

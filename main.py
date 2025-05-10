@@ -2,9 +2,9 @@ import sys
 import os
 import json
 import copy
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QPlainTextEdit, QVBoxLayout
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QPlainTextEdit, QVBoxLayout, QSpinBox
 from PyQt5.QtCore import Qt, QEvent
-from PyQt5.QtGui import QKeyEvent, QTextCursor, QKeySequence 
+from PyQt5.QtGui import QKeyEvent, QTextCursor, QKeySequence, QFont
 
 from LineNumberArea import LineNumberArea
 from CustomListWidget import CustomListWidget
@@ -24,7 +24,7 @@ from utils import log_debug, DEFAULT_CHAR_WIDTH_FALLBACK
 
 EDITOR_PLAYER_TAG = "[ІМ'Я ГРАВЦЯ]"
 ORIGINAL_PLAYER_TAG = "{Player}"
-DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS = 240 
+DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS = 240
 DEFAULT_LINE_WIDTH_WARNING_THRESHOLD_MAIN = 175
 
 
@@ -35,9 +35,13 @@ class MainWindow(QMainWindow):
 
         self.EDITOR_PLAYER_TAG = EDITOR_PLAYER_TAG
         self.ORIGINAL_PLAYER_TAG = ORIGINAL_PLAYER_TAG
-        self.GAME_DIALOG_MAX_WIDTH_PIXELS = DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS 
+        self.GAME_DIALOG_MAX_WIDTH_PIXELS = DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS
         self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = DEFAULT_LINE_WIDTH_WARNING_THRESHOLD_MAIN
-        self.font_map = {} 
+        self.font_map = {}
+        default_font_size = QFont().pointSize()
+        if default_font_size <= 0: default_font_size = 10
+        self.current_font_size = default_font_size
+
 
         self.is_programmatically_changing_text = False
         self.json_path = None; self.edited_json_path = None
@@ -54,8 +58,8 @@ class MainWindow(QMainWindow):
         self.last_preview_text_edit_scroll_value_v = 0
         self.last_original_text_edit_scroll_value_v = 0
         self.last_original_text_edit_scroll_value_h = 0
-        
-        self.initial_load_path = None 
+
+        self.initial_load_path = None
         self.initial_edited_load_path = None
 
 
@@ -67,7 +71,7 @@ class MainWindow(QMainWindow):
         self.preview_wrap_lines = True
         self.editors_wrap_lines = False
         self.bracket_tag_color_hex = "#FF8C00"
-        self.search_history_to_save = [] 
+        self.search_history_to_save = []
 
 
         self.default_tag_mappings = {
@@ -80,14 +84,14 @@ class MainWindow(QMainWindow):
         }
         self.critical_problem_lines_per_block = {}
         self.warning_problem_lines_per_block = {}
-        self.width_exceeded_lines_per_block = {} 
+        self.width_exceeded_lines_per_block = {}
 
         self.can_undo_paste = False
         self.before_paste_edited_data_snapshot = {}
         self.before_paste_block_idx_affected = -1
         self.before_paste_critical_problems_snapshot = {}
         self.before_paste_warning_problems_snapshot = {}
-        self.before_paste_width_exceeded_snapshot = {} 
+        self.before_paste_width_exceeded_snapshot = {}
 
         self.search_match_block_indices = set()
         self.current_search_results = []
@@ -104,6 +108,7 @@ class MainWindow(QMainWindow):
         self.rescan_all_tags_action = None
         self.find_action = None
         self.main_vertical_layout = None
+        self.font_size_spinbox = None
 
         log_debug("MainWindow: Initializing Core Components...")
         self.data_processor = DataStateProcessor(self)
@@ -130,8 +135,12 @@ class MainWindow(QMainWindow):
         self.connect_signals()
 
         log_debug("MainWindow: Loading Editor Settings via SettingsManager...")
-        self.settings_manager.load_settings() 
-        
+        self.settings_manager.load_settings()
+        log_debug(f"MainWindow: After SettingsManager.load_settings(), self.current_font_size = {self.current_font_size}")
+        if self.font_size_spinbox:
+            self.font_size_spinbox.setValue(self.current_font_size)
+
+
         log_debug(f"MainWindow: After load_settings, self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = {self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS}")
         log_debug(f"MainWindow: After load_settings, self.initial_load_path = {self.initial_load_path}")
         log_debug(f"MainWindow: After load_settings, self.initial_edited_load_path = {self.initial_edited_load_path}")
@@ -141,7 +150,7 @@ class MainWindow(QMainWindow):
             if editor_widget:
                 editor_widget.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
                 log_debug(f"MainWindow: Set {editor_widget.objectName()}.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to {editor_widget.LINE_WIDTH_WARNING_THRESHOLD_PIXELS}")
-                editor_widget.font_map = self.font_map 
+                editor_widget.font_map = self.font_map
                 editor_widget.GAME_DIALOG_MAX_WIDTH_PIXELS = self.GAME_DIALOG_MAX_WIDTH_PIXELS
                 if hasattr(editor_widget, 'updateLineNumberAreaWidth'):
                     editor_widget.updateLineNumberAreaWidth(0)
@@ -149,23 +158,23 @@ class MainWindow(QMainWindow):
         if self.initial_load_path and os.path.exists(self.initial_load_path):
             log_debug(f"MainWindow: Attempting to load initial file from settings: {self.initial_load_path}")
             self.app_action_handler.load_all_data_for_path(self.initial_load_path, self.initial_edited_load_path, is_initial_load_from_settings=True)
-            
+
             if self.data and 0 <= self.last_selected_block_index < len(self.data):
                 self.block_list_widget.setCurrentRow(self.last_selected_block_index)
-                QApplication.processEvents() 
+                QApplication.processEvents()
                 if self.block_list_widget.currentItem() and \
                    self.current_block_idx == self.last_selected_block_index and \
                    0 <= self.last_selected_string_index < len(self.data[self.last_selected_block_index]):
                     self.list_selection_handler.string_selected_from_preview(self.last_selected_string_index)
-                    QApplication.processEvents() 
+                    QApplication.processEvents()
                     if self.edited_text_edit:
-                        doc_len = self.edited_text_edit.document().characterCount() -1 
-                        pos_to_set = min(self.last_cursor_position_in_edited, doc_len if doc_len >= 0 else 0) 
+                        doc_len = self.edited_text_edit.document().characterCount() -1
+                        pos_to_set = min(self.last_cursor_position_in_edited, doc_len if doc_len >= 0 else 0)
                         cursor = self.edited_text_edit.textCursor()
                         cursor.setPosition(pos_to_set)
                         self.edited_text_edit.setTextCursor(cursor)
                         self.edited_text_edit.ensureCursorVisible()
-                        
+
                         self.edited_text_edit.verticalScrollBar().setValue(self.last_edited_text_edit_scroll_value_v)
                         self.edited_text_edit.horizontalScrollBar().setValue(self.last_edited_text_edit_scroll_value_h)
                         if self.preview_text_edit:
@@ -181,7 +190,7 @@ class MainWindow(QMainWindow):
             else:
                 log_debug(f"MainWindow: last_selected_block_index ({self.last_selected_block_index}) is out of bounds or no data. Skipping selection restore.")
 
-        elif not self.json_path: 
+        elif not self.json_path:
              log_debug("MainWindow: No file auto-loaded, updating initial UI state.")
              self.ui_updater.update_title(); self.ui_updater.update_statusbar_paths()
              self.ui_updater.populate_blocks()
@@ -191,8 +200,8 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'search_history_to_save') and self.search_panel_widget:
             self.search_panel_widget.load_history(self.search_history_to_save)
             if self.search_history_to_save:
-                last_query = self.search_history_to_save[0] 
-                
+                last_query = self.search_history_to_save[0]
+
                 self.search_handler.current_query = last_query
                 _, cs, so, it = self.search_panel_widget.get_search_parameters()
                 self.search_handler.is_case_sensitive = cs
@@ -218,7 +227,7 @@ class MainWindow(QMainWindow):
     def keyPressEvent(self, event: QKeyEvent):
         focused_widget = QApplication.focusWidget()
         log_debug(f"MainWindow keyPressEvent: Key {event.key()}, Modifiers: {event.modifiers()}, Text: '{event.text()}', Focused widget: {focused_widget.objectName() if focused_widget else 'None'}")
-        
+
         if event.key() == Qt.Key_F3:
             if event.modifiers() & Qt.ShiftModifier:
                 log_debug("Shift+F3 pressed - Find Previous (handled in MainWindow)")
@@ -230,7 +239,7 @@ class MainWindow(QMainWindow):
                 self.execute_find_next_shortcut()
                 event.accept()
                 return
-        
+
         log_debug("MainWindow keyPressEvent: Calling super().keyPressEvent(event) for other keys.")
         super().keyPressEvent(event)
 
@@ -239,7 +248,7 @@ class MainWindow(QMainWindow):
         query_to_use = ""
         case_sensitive_to_use = False
         search_in_original_to_use = False
-        ignore_tags_to_use = True 
+        ignore_tags_to_use = True
 
         if self.search_panel_widget.isVisible():
             query_to_use, case_sensitive_to_use, search_in_original_to_use, ignore_tags_to_use = self.search_panel_widget.get_search_parameters()
@@ -247,15 +256,15 @@ class MainWindow(QMainWindow):
                 self.search_panel_widget.set_status_message("Введіть запит для F3", is_error=True)
                 self.search_panel_widget.focus_search_input()
                 return
-        else: 
+        else:
             query_to_use, case_sensitive_to_use, search_in_original_to_use, ignore_tags_to_use = self.search_handler.get_current_search_params()
-            if not query_to_use: 
-                self.toggle_search_panel() 
+            if not query_to_use:
+                self.toggle_search_panel()
                 self.search_panel_widget.set_status_message("Введіть запит", is_error=True)
                 return
-        
+
         found = self.search_handler.find_next(query_to_use, case_sensitive_to_use, search_in_original_to_use, ignore_tags_to_use)
-        if not found and not self.search_panel_widget.isVisible(): 
+        if not found and not self.search_panel_widget.isVisible():
             QMessageBox.information(self, "Пошук", f"Не знайдено: \"{query_to_use}\"")
 
 
@@ -263,7 +272,7 @@ class MainWindow(QMainWindow):
         query_to_use = ""
         case_sensitive_to_use = False
         search_in_original_to_use = False
-        ignore_tags_to_use = True 
+        ignore_tags_to_use = True
 
         if self.search_panel_widget.isVisible():
             query_to_use, case_sensitive_to_use, search_in_original_to_use, ignore_tags_to_use = self.search_panel_widget.get_search_parameters()
@@ -271,7 +280,7 @@ class MainWindow(QMainWindow):
                 self.search_panel_widget.set_status_message("Введіть запит для Shift+F3", is_error=True)
                 self.search_panel_widget.focus_search_input()
                 return
-        else: 
+        else:
             query_to_use, case_sensitive_to_use, search_in_original_to_use, ignore_tags_to_use = self.search_handler.get_current_search_params()
             if not query_to_use:
                 self.toggle_search_panel()
@@ -294,11 +303,11 @@ class MainWindow(QMainWindow):
             self.edited_text_edit.textChanged.connect(self.editor_operation_handler.text_edited)
             self.edited_text_edit.cursorPositionChanged.connect(self.ui_updater.update_status_bar)
             self.edited_text_edit.selectionChanged.connect(self.ui_updater.update_status_bar_selection)
-            if hasattr(self, 'undo_typing_action'): 
+            if hasattr(self, 'undo_typing_action'):
                 self.edited_text_edit.undoAvailable.connect(self.undo_typing_action.setEnabled)
                 self.undo_typing_action.triggered.connect(self.edited_text_edit.undo)
                 log_debug("Connected undo_typing_action.triggered to edited_text_edit.undo()")
-            if hasattr(self, 'redo_typing_action'): 
+            if hasattr(self, 'redo_typing_action'):
                 self.edited_text_edit.redoAvailable.connect(self.redo_typing_action.setEnabled)
                 self.redo_typing_action.triggered.connect(self.edited_text_edit.redo)
                 log_debug("Connected redo_typing_action.triggered to edited_text_edit.redo()")
@@ -324,14 +333,87 @@ class MainWindow(QMainWindow):
             self.search_panel_widget.close_requested.connect(self.hide_search_panel)
             self.search_panel_widget.find_next_requested.connect(self.handle_panel_find_next)
             self.search_panel_widget.find_previous_requested.connect(self.handle_panel_find_previous)
+        if hasattr(self, 'font_size_spinbox') and self.font_size_spinbox:
+            self.font_size_spinbox.valueChanged.connect(self.change_font_size_action)
+            log_debug("Connected font_size_spinbox.valueChanged signal.")
 
 
         log_debug("--> MainWindow: connect_signals() finished")
 
-    def handle_panel_find_next(self, query, case_sensitive, search_in_original, ignore_tags): 
+    def change_font_size_action(self, new_size: int):
+        log_debug(f"MainWindow: change_font_size_action called with size {new_size}")
+        if self.current_font_size != new_size:
+            self.current_font_size = new_size
+            log_debug(f"MainWindow: self.current_font_size is now {self.current_font_size}")
+            self.apply_font_size()
+
+    def apply_font_size(self):
+        log_debug(f"MainWindow: Applying font size {self.current_font_size}")
+        if self.current_font_size <= 0:
+            log_debug("MainWindow: Invalid font size, skipping application.")
+            return
+
+        app_font = QApplication.font()
+        app_font.setPointSize(self.current_font_size)
+        QApplication.setFont(app_font)
+
+        widgets_to_update = [
+            self.preview_text_edit, self.original_text_edit, self.edited_text_edit,
+            self.block_list_widget, self.search_panel_widget, self.statusBar
+        ]
+
+        labels_in_status_bar = [self.original_path_label, self.edited_path_label, self.pos_len_label, self.selection_len_label]
+        widgets_to_update.extend(labels_in_status_bar)
+
+        if self.search_panel_widget:
+            widgets_to_update.extend([
+                self.search_panel_widget.search_query_edit,
+                self.search_panel_widget.find_next_button,
+                self.search_panel_widget.find_previous_button,
+                self.search_panel_widget.case_sensitive_checkbox,
+                self.search_panel_widget.search_in_original_checkbox,
+                self.search_panel_widget.ignore_tags_newlines_checkbox,
+                self.search_panel_widget.status_label,
+                self.search_panel_widget.close_search_panel_button
+            ])
+
+
+        for widget in widgets_to_update:
+            if widget:
+                try:
+                    current_widget_font = widget.font()
+                    current_widget_font.setPointSize(self.current_font_size)
+                    widget.setFont(current_widget_font)
+                    if hasattr(widget, 'updateGeometry'):
+                        widget.updateGeometry()
+                    if hasattr(widget, 'adjustSize'):
+                        widget.adjustSize()
+
+                    if isinstance(widget, QPlainTextEdit) and hasattr(widget, 'updateLineNumberAreaWidth'):
+                        widget.updateLineNumberAreaWidth(0)
+                        widget.viewport().update()
+                    elif isinstance(widget, CustomListWidget):
+                        widget.viewport().update()
+                except Exception as e:
+                    log_debug(f"Error applying font to widget {widget.objectName() if hasattr(widget, 'objectName') else type(widget)}: {e}")
+
+
+        if self.block_list_widget and self.block_list_widget.itemDelegate():
+            self.block_list_widget.itemDelegate().deleteLater()
+            from CustomListItemDelegate import CustomListItemDelegate
+            new_delegate = CustomListItemDelegate(self.block_list_widget)
+            self.block_list_widget.setItemDelegate(new_delegate)
+            self.block_list_widget.viewport().update()
+        
+        self.ui_updater.update_text_views()
+        self.ui_updater.populate_blocks()
+        self.ui_updater.populate_strings_for_block(self.current_block_idx)
+
+
+    def handle_panel_find_next(self, query, case_sensitive, search_in_original, ignore_tags):
         self.search_handler.find_next(query, case_sensitive, search_in_original, ignore_tags)
 
-    def handle_panel_find_previous(self, query, case_sensitive, search_in_original, ignore_tags): 
+    def handle_panel_find_previous(self, query, case_sensitive, search_in_original, ignore_tags):
         self.search_handler.find_previous(query, case_sensitive, search_in_original, ignore_tags)
 
     def toggle_search_panel(self):
@@ -340,13 +422,13 @@ class MainWindow(QMainWindow):
         else:
             self.search_panel_widget.setVisible(True)
             last_query, case_sensitive, search_in_original, ignore_tags = self.search_handler.get_current_search_params()
-            
+
             self.search_panel_widget.set_query(last_query if last_query else "")
             self.search_panel_widget.set_search_options(case_sensitive, search_in_original, ignore_tags)
-            
-            if hasattr(self, 'search_history_to_save'): 
+
+            if hasattr(self, 'search_history_to_save'):
                  self.search_panel_widget.load_history(self.search_history_to_save)
-            else: 
+            else:
                  self.search_panel_widget._update_combobox_items()
 
 
@@ -398,12 +480,12 @@ class MainWindow(QMainWindow):
         self.is_programmatically_changing_text = True
         preview_edit = getattr(self, 'preview_text_edit', None)
         if preview_edit and hasattr(preview_edit, 'clearAllProblemTypeHighlights'):
-            preview_edit.clearAllProblemTypeHighlights() 
+            preview_edit.clearAllProblemTypeHighlights()
 
         if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
             self.ui_updater.update_block_item_text_with_problem_count(block_to_refresh_ui_for)
 
-        self.ui_updater.populate_strings_for_block(self.current_block_idx) 
+        self.ui_updater.populate_strings_for_block(self.current_block_idx)
 
         if self.current_block_idx != block_to_refresh_ui_for:
             if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
@@ -428,7 +510,7 @@ class MainWindow(QMainWindow):
                  if QMessageBox.question(self, "Rescan Tags",
                                        "No block is currently selected. Do you want to rescan all tags in all blocks?",
                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.No) == QMessageBox.Yes:
-                    self.app_action_handler.rescan_all_tags() 
+                    self.app_action_handler.rescan_all_tags()
         else: QMessageBox.warning(self, "Reload Error", "Could not reload tag mappings. Check settings.json or console logs.")
 
 
@@ -471,7 +553,7 @@ class MainWindow(QMainWindow):
                 editor_widget.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
                 editor_widget.font_map = self.font_map
                 editor_widget.GAME_DIALOG_MAX_WIDTH_PIXELS = self.GAME_DIALOG_MAX_WIDTH_PIXELS
-                if hasattr(editor_widget, 'updateLineNumberAreaWidth'): 
+                if hasattr(editor_widget, 'updateLineNumberAreaWidth'):
                     editor_widget.updateLineNumberAreaWidth(0)
 
 
@@ -504,7 +586,7 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         log_debug("--> MainWindow: closeEvent received.")
-        
+
         self.last_selected_block_index = self.current_block_idx
         self.last_selected_string_index = self.current_string_idx
         if self.edited_text_edit:
@@ -522,10 +604,10 @@ class MainWindow(QMainWindow):
             self.search_history_to_save = self.search_panel_widget.get_history()
             log_debug(f"Preparing to save search history: {len(self.search_history_to_save)} items")
 
-        self.app_action_handler.handle_close_event(event) 
-        
+        self.app_action_handler.handle_close_event(event)
+
         if event.isAccepted():
-            if not self.unsaved_changes : 
+            if not self.unsaved_changes :
                 log_debug("Close accepted (no unsaved changes). Saving editor settings via SettingsManager.")
                 self.settings_manager.save_settings()
             else:
