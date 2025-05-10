@@ -1,5 +1,6 @@
-from PyQt5.QtWidgets import (QPlainTextEdit, QMainWindow)
-from PyQt5.QtGui import (QPainter, QFont, QPaintEvent, QKeyEvent, QKeySequence, QMouseEvent)
+from PyQt5.QtWidgets import (QPlainTextEdit, QMainWindow, QMenu, QApplication, QAction, 
+                             QWidget, QHBoxLayout, QPushButton, QWidgetAction) 
+from PyQt5.QtGui import (QPainter, QFont, QPaintEvent, QKeyEvent, QKeySequence, QMouseEvent, QIcon, QPixmap, QColor) 
 from PyQt5.QtCore import Qt, QRect, QSize, QRectF, pyqtSignal
 
 from .LineNumberArea import LineNumberArea
@@ -47,20 +48,21 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.width_exceeded_line_color = WIDTH_EXCEEDED_LINE_COLOR
 
         self.highlightManager = TextHighlightManager(self)
-        self.mouse_handler = LNETMouseHandlers(self)
+        self.mouse_handler = LNETMouseHandlers(self) 
         self.highlight_interface = LNETHighlightInterface(self)
         self.paint_handler = LNETPaintHandlers(self)
 
         self.blockCountChanged.connect(self.updateLineNumberAreaWidth)
         self.updateRequest.connect(self.updateLineNumberArea)
 
+        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.customContextMenuRequested.connect(self.mouse_handler.showContextMenu)
+
+
         if not self.isReadOnly():
             self.cursorPositionChanged.connect(self.highlightManager.updateCurrentLineHighlight)
             if not self.isUndoRedoEnabled():
                 self.setUndoRedoEnabled(True)
-        else:
-            self.setContextMenuPolicy(Qt.CustomContextMenu)
-            self.customContextMenuRequested.connect(self.mouse_handler.showContextMenu)
 
         self.updateLineNumberAreaWidth(0)
 
@@ -92,6 +94,140 @@ class LineNumberedTextEdit(QPlainTextEdit):
             self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = getattr(parent, 'LINE_WIDTH_WARNING_THRESHOLD_PIXELS', DEFAULT_LINE_WIDTH_WARNING_THRESHOLD)
 
         self._update_auxiliary_widths()
+
+    def _create_color_button(self, parent_widget, color_name: str, color_rgb_str: str, menu_to_close: QMenu):
+        btn = QPushButton(parent_widget)
+        button_size = 22 
+        btn.setFixedSize(button_size, button_size)
+        
+        # Стиль за замовчуванням
+        normal_style = f"background-color: {color_rgb_str}; border: 1px solid black; border-radius: 3px;"
+        # Стиль при натисканні (трохи темніший колір або інша рамка)
+        # Для простоти, давайте зробимо рамку товстішою при натисканні
+        pressed_style = f"background-color: {color_rgb_str}; border: 2px solid darkblue; border-radius: 3px;"
+        
+        btn.setStyleSheet(normal_style)
+        btn.setToolTip(f"Обгорнути тегом {{Color:{color_name.capitalize()}}}")
+
+        # Обробка натискання
+        btn.pressed.connect(lambda s=pressed_style: btn.setStyleSheet(s))
+        
+        # Обробка відпускання кнопки та основна дія
+        # Released спрацьовує перед clicked, якщо обидва підключені до QPushButton.
+        # Clicked спрацьовує, коли кнопка миші відпущена НАД кнопкою.
+        # Нам потрібно, щоб меню закрилося ПІСЛЯ виконання дії.
+        def on_button_clicked():
+            self.mouse_handler._wrap_selection_with_color(color_name)
+            # Меню має закритися автоматично, оскільки QWidgetAction містить QPushButton.
+            # Якщо ні, можна додати menu_to_close.close() або menu_to_close.hide()
+            # але це може викликати проблеми, якщо клік був поза кнопкою.
+            # Повертаємо стиль до нормального, хоча це може бути зайвим, якщо меню закривається.
+            btn.setStyleSheet(normal_style) # Відновлення стилю
+
+        btn.clicked.connect(on_button_clicked)
+        
+        return btn
+
+    def populateContextMenu(self, menu: QMenu, position_in_widget_coords):
+        log_debug(f"LNET ({self.objectName()}): populateContextMenu called.")
+        main_window = self.window()
+        if not isinstance(main_window, QMainWindow):
+            return
+
+        custom_actions_added_header = False
+
+        if self.objectName() == "edited_text_edit" and not self.isReadOnly():
+            log_debug(f"LNET ({self.objectName()}): Adding actions for editable text.")
+            cursor = self.textCursor() 
+            if cursor.hasSelection():
+                log_debug(f"LNET ({self.objectName()}): Has selection.")
+                if not custom_actions_added_header:
+                    menu.addSeparator()
+                    custom_actions_added_header = True
+                
+                color_widget_action = QWidgetAction(menu)
+                color_palette_widget = QWidget(menu) 
+                palette_layout = QHBoxLayout(color_palette_widget)
+                palette_layout.setContentsMargins(5, 3, 5, 3) 
+                palette_layout.setSpacing(4)
+
+                colors_map = {
+                    "Red": "rgb(200,0,0)", # Трохи темніший червоний для кращого контрасту рамки
+                    "Green": "rgb(0,100,0)", 
+                    "Blue": "rgb(0,0,200)"  # Трохи темніший синій
+                }
+                
+                for color_name_str, color_rgb_str in colors_map.items():
+                    # Передаємо 'menu' як menu_to_close, хоча QPushButton сам має закривати меню
+                    color_button = self._create_color_button(color_palette_widget, color_name_str, color_rgb_str, menu)
+                    palette_layout.addWidget(color_button)
+                
+                color_palette_widget.setLayout(palette_layout)
+                color_widget_action.setDefaultWidget(color_palette_widget)
+                menu.addAction(color_widget_action)
+            else:
+                log_debug(f"LNET ({self.objectName()}): No selection.")
+
+        elif self.objectName() == "preview_text_edit":
+            # ... (решта коду для preview_text_edit залишається без змін) ...
+            log_debug(f"LNET ({self.objectName()}): Adding actions for preview.")
+            if hasattr(main_window, 'data_processor') and hasattr(main_window, 'editor_operation_handler'):
+                current_block_idx_data = main_window.current_block_idx
+                clicked_cursor_obj = self.cursorForPosition(position_in_widget_coords)
+                clicked_data_line_number = clicked_cursor_obj.blockNumber()
+
+                if current_block_idx_data >= 0 and clicked_data_line_number >= 0:
+                    actions_for_preview_added = False
+                    if not custom_actions_added_header:
+                        menu.addSeparator()
+                        custom_actions_added_header = True 
+                    
+                    preview_actions_actually_added = False
+
+                    if hasattr(main_window, 'paste_block_action'):
+                        paste_block_action = menu.addAction("Paste Block Text Here")
+                        paste_block_action.triggered.connect(main_window.editor_operation_handler.paste_block_text)
+                        paste_block_action.setEnabled(QApplication.clipboard().text() != "")
+                        preview_actions_actually_added = True
+                    
+                    if hasattr(main_window, 'undo_paste_action'):
+                        undo_paste_action = menu.addAction("Undo Last Paste Block")
+                        undo_paste_action.triggered.connect(main_window.actions.trigger_undo_paste_action)
+                        undo_paste_action.setEnabled(main_window.can_undo_paste)
+                        preview_actions_actually_added = True
+                    
+                    if preview_actions_actually_added:
+                        menu.addSeparator()
+
+                    revert_line_action = menu.addAction(f"Revert Data Line {clicked_data_line_number + 1} to Original")
+                    if hasattr(main_window.editor_operation_handler, 'revert_single_line'):
+                        revert_line_action.triggered.connect(lambda checked=False, line=clicked_data_line_number: main_window.editor_operation_handler.revert_single_line(line))
+                        is_revertable = False
+                        original_text_for_revert_check = main_window.data_processor._get_string_from_source(current_block_idx_data, clicked_data_line_number, main_window.data, "original_for_revert_check")
+                        if original_text_for_revert_check is not None:
+                            current_text, _ = main_window.data_processor.get_current_string_text(current_block_idx_data, clicked_data_line_number)
+                            if current_text != original_text_for_revert_check:
+                                is_revertable = True
+                        revert_line_action.setEnabled(is_revertable)
+                    else:
+                        revert_line_action.setEnabled(False)
+
+                    calc_width_action = menu.addAction(f"Calculate Width for Data Line {clicked_data_line_number + 1}")
+                    if hasattr(main_window.editor_operation_handler, 'calculate_width_for_data_line_action'):
+                        calc_width_action.triggered.connect(lambda checked=False, line_idx=clicked_data_line_number: main_window.editor_operation_handler.calculate_width_for_data_line_action(line_idx))
+                    else:
+                        calc_width_action.setEnabled(False)
+
+        elif self.objectName() == "original_text_edit":
+            # ... (решта коду для original_text_edit залишається без змін) ...
+            log_debug(f"LNET ({self.objectName()}): Adding actions for original.")
+            tag_text_curly, _, _ = self.mouse_handler.get_tag_at_cursor(self.cursorForPosition(position_in_widget_coords), r"\{[^}]*\}")
+            if tag_text_curly:
+                if not custom_actions_added_header:
+                    menu.addSeparator()
+                
+                copy_tag_action = menu.addAction(f"Copy Tag: {tag_text_curly}")
+                copy_tag_action.triggered.connect(lambda checked=False, tag=tag_text_curly: self.mouse_handler.copy_tag_to_clipboard(tag))
 
     def _update_auxiliary_widths(self):
         current_font_metrics = self.fontMetrics()
@@ -127,15 +263,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.highlightManager.clearAllHighlights()
         if not ro:
              self.highlightManager.updateCurrentLineHighlight()
-             self.setContextMenuPolicy(Qt.DefaultContextMenu)
-             try: self.customContextMenuRequested.disconnect(self.mouse_handler.showContextMenu)
-             except TypeError: pass
              if not self.isUndoRedoEnabled(): self.setUndoRedoEnabled(True)
-        else:
-             self.setContextMenuPolicy(Qt.CustomContextMenu)
-             try: self.customContextMenuRequested.disconnect(self.mouse_handler.showContextMenu)
-             except TypeError: pass
-             self.customContextMenuRequested.connect(self.mouse_handler.showContextMenu)
         self.viewport().update()
 
     def lineNumberAreaWidth(self):
@@ -179,17 +307,16 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.paint_handler.lineNumberAreaPaintEvent(event, painter_device)
 
     def mousePressEvent(self, event: QMouseEvent):
-        self.mouse_handler.mousePressEvent(event)
+        self.mouse_handler.mousePressEvent(event) 
 
     def super_mousePressEvent(self, event: QMouseEvent):
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent):
-        self.mouse_handler.mouseReleaseEvent(event)
+        self.mouse_handler.mouseReleaseEvent(event) 
 
     def super_mouseReleaseEvent(self, event: QMouseEvent):
         super().mouseReleaseEvent(event)
-
 
     def _momentary_highlight_tag(self, block, start_in_block, length):
         self.highlight_interface._momentary_highlight_tag(block, start_in_block, length)
