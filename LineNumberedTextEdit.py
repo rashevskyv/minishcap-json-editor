@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import (QWidget, QPlainTextEdit, QHBoxLayout, QTextEdit,
                              QStyle, QApplication, QMainWindow, QMenu, QMessageBox) 
 from PyQt5.QtGui import (QPainter, QColor, QFont, QTextBlockFormat, 
                          QTextFormat, QPen, QMouseEvent, QTextCursor, 
-                         QTextCharFormat, QPaintEvent)
+                         QTextCharFormat, QPaintEvent, QKeyEvent, QKeySequence) # Додано QKeyEvent, QKeySequence
 from PyQt5.QtCore import Qt, QRect, QSize, QRectF, pyqtSignal, QTimer, QPoint 
 from LineNumberArea import LineNumberArea 
 from TextHighlightManager import TextHighlightManager 
@@ -32,7 +32,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.critical_problem_line_color = QColor(Qt.yellow).lighter(130) 
         self.warning_problem_line_color = QColor("#DDDDDD") 
         self.tag_interaction_highlight_color = QColor(Qt.green).lighter(150)
-        self.search_match_highlight_color = QColor(255, 165, 0) # Orange
+        self.search_match_highlight_color = QColor(255, 165, 0) 
         self.width_exceeded_line_color = QColor(Qt.red).lighter(160) 
 
 
@@ -43,6 +43,10 @@ class LineNumberedTextEdit(QPlainTextEdit):
         
         if not self.isReadOnly():
             self.cursorPositionChanged.connect(self.highlightManager.updateCurrentLineHighlight)
+            log_debug(f"LNET ({self.objectName()}): Undo/Redo enabled by default: {self.isUndoRedoEnabled()}")
+            if not self.isUndoRedoEnabled():
+                self.setUndoRedoEnabled(True)
+                log_debug(f"LNET ({self.objectName()}): Explicitly enabled Undo/Redo. Now: {self.isUndoRedoEnabled()}")
         else:
             self.setContextMenuPolicy(Qt.CustomContextMenu)
             self.customContextMenuRequested.connect(self.showContextMenu)
@@ -72,7 +76,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
             self.original_player_tag = getattr(parent, 'ORIGINAL_PLAYER_TAG', ORIGINAL_PLAYER_TAG_DEFAULT)
             self.font_map = getattr(parent, 'font_map', {})
             self.GAME_DIALOG_MAX_WIDTH_PIXELS = getattr(parent, 'GAME_DIALOG_MAX_WIDTH_PIXELS', 240)
-            # На цьому етапі parent.LINE_WIDTH_WARNING_THRESHOLD_PIXELS ще може бути значенням за замовчуванням з MainWindow
             self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = getattr(parent, 'LINE_WIDTH_WARNING_THRESHOLD_PIXELS', DEFAULT_LINE_WIDTH_WARNING_THRESHOLD)
             log_debug(f"LNET {self.objectName()} __init__: LINE_WIDTH_WARNING_THRESHOLD_PIXELS initially set to {self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS} (from parent's current value or default).")
         else:
@@ -81,6 +84,27 @@ class LineNumberedTextEdit(QPlainTextEdit):
         
         self.pixel_width_display_area_width = self.fontMetrics().horizontalAdvance("999") + 6 
         self.preview_indicator_area_width = (self.lineNumberArea.preview_indicator_width + self.lineNumberArea.preview_indicator_spacing) * 3 + 2 
+
+    def keyPressEvent(self, event: QKeyEvent):
+        log_debug(f"LNET ({self.objectName()}) keyPressEvent: Key {event.key()}, Modifiers: {event.modifiers()}, Text: '{event.text()}'")
+        if not self.isReadOnly():
+            if event.matches(QKeySequence.Undo):
+                log_debug(f"  LNET ({self.objectName()}): Undo match. Is undo available? {self.document().isUndoAvailable()}")
+                if self.document().isUndoAvailable():
+                    self.undo()
+                    log_debug(f"  LNET ({self.objectName()}): self.undo() called. Is undo now available? {self.document().isUndoAvailable()}")
+                    event.accept()
+                    return
+            elif event.matches(QKeySequence.Redo):
+                log_debug(f"  LNET ({self.objectName()}): Redo match. Is redo available? {self.document().isRedoAvailable()}")
+                if self.document().isRedoAvailable():
+                    self.redo()
+                    log_debug(f"  LNET ({self.objectName()}): self.redo() called. Is redo now available? {self.document().isRedoAvailable()}")
+                    event.accept()
+                    return
+        
+        log_debug(f"  LNET ({self.objectName()}): Calling super().keyPressEvent")
+        super().keyPressEvent(event)
 
 
     def showContextMenu(self, pos: QPoint):
@@ -297,6 +321,10 @@ class LineNumberedTextEdit(QPlainTextEdit):
                   self.customContextMenuRequested.disconnect(self.showContextMenu)
              except TypeError:
                   pass
+             log_debug(f"LNET ({self.objectName()}): setReadOnly(False). Undo/Redo enabled: {self.isUndoRedoEnabled()}")
+             if not self.isUndoRedoEnabled():
+                 self.setUndoRedoEnabled(True)
+                 log_debug(f"LNET ({self.objectName()}): Explicitly enabled Undo/Redo. Now: {self.isUndoRedoEnabled()}")
         else:
              self.setContextMenuPolicy(Qt.CustomContextMenu)
              try:
@@ -423,10 +451,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
                         width_str = str(pixel_width)
                         text_color_for_extra_part = QColor(Qt.black)
                         
-                        # Логування для відстеження порогу
-                        # if self.objectName() == "edited_text_edit":
-                        #     log_debug(f"LNET {self.objectName()} paintEvent: qBlk {current_q_block_number}, width {pixel_width}, threshold {self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS}")
-
                         if pixel_width > self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
                             bg_for_extra_part = width_exceeded_bg_color_const
                         

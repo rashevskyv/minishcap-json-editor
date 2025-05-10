@@ -95,8 +95,6 @@ class UIUpdater:
 
         critical_lines_to_restore = set()
         warning_lines_to_restore = set()
-        # width_exceeded_lines_to_restore не потрібне для фонового підсвічування рядка,
-        # оскільки індикація перевищення ширини тепер тільки через маркер в LineNumberArea.
         block_key_str = str(block_idx)
 
         if block_idx >=0 and preview_edit: 
@@ -104,20 +102,17 @@ class UIUpdater:
                 critical_lines_to_restore = self.mw.critical_problem_lines_per_block.get(block_key_str, set()).copy()
             if hasattr(self.mw, 'warning_problem_lines_per_block'):
                 warning_lines_to_restore = self.mw.warning_problem_lines_per_block.get(block_key_str, set()).copy()
-            # Не завантажуємо width_exceeded_lines_to_restore для фонової підсвітки самого тексту
 
         self.mw.is_programmatically_changing_text = True 
         
         if preview_edit and hasattr(preview_edit, 'clearPreviewSelectedLineHighlight'):
             preview_edit.clearPreviewSelectedLineHighlight()
 
-        # Очищаємо тільки ті підсвітки, які ми контролюємо для тексту (критичні та попередження по тегах)
         if preview_edit:
             if hasattr(preview_edit, 'clearCriticalProblemHighlights'):
                 preview_edit.clearCriticalProblemHighlights()
             if hasattr(preview_edit, 'clearWarningLineHighlights'):
                  preview_edit.clearWarningLineHighlights()
-            # Не викликаємо clearWidthExceededHighlights, бо це стосується фону, а не маркера
 
 
         preview_lines = []
@@ -138,7 +133,6 @@ class UIUpdater:
         if preview_edit:
             preview_edit.setPlainText("\n".join(preview_lines))
             
-            # Застосовуємо фонові підсвітки для тегових проблем
             for line_num in range(len(preview_lines)):
                 if line_num in critical_lines_to_restore:
                     if hasattr(preview_edit, 'addCriticalProblemHighlight'):
@@ -267,8 +261,8 @@ class UIUpdater:
 
             
     def update_text_views(self): 
-        is_programmatic_call = self.mw.is_programmatically_changing_text
-        log_debug(f"UIUpdater.update_text_views: Called. Programmatic: {is_programmatic_call}. Current block: {self.mw.current_block_idx}, string: {self.mw.current_string_idx}")
+        is_programmatic_call_flag = self.mw.is_programmatically_changing_text
+        log_debug(f"UIUpdater.update_text_views: Called. Programmatic: {is_programmatic_call_flag}. Current block: {self.mw.current_block_idx}, string: {self.mw.current_string_idx}")
         original_text_raw = ""
         edited_text_raw = ""
         if self.mw.current_block_idx != -1 and self.mw.current_string_idx != -1:
@@ -300,13 +294,25 @@ class UIUpdater:
         edited_widget = self.mw.edited_text_edit
         if edited_widget:
             text_in_widget_for_display = edited_widget.toPlainText()
-            if is_programmatic_call or (text_in_widget_for_display != edited_text_for_display_converted):
-                if text_in_widget_for_display != edited_text_for_display_converted :
-                     log_debug(f"UIUpdater: update_text_views - Content mismatch or programmatic call. Updating edited_text_edit.")
+            
+            if text_in_widget_for_display != edited_text_for_display_converted:
+                log_debug(f"UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating. Programmatic context: {is_programmatic_call_flag}")
                 saved_edited_cursor_pos = edited_widget.textCursor().position()
                 saved_edited_anchor_pos = edited_widget.textCursor().anchor()
                 saved_edited_has_selection = edited_widget.textCursor().hasSelection()
+                
+                # Важливо: тут ми не встановлюємо is_programmatically_changing_text, 
+                # бо якщо ця функція викликана з is_programmatic_call_flag = True,
+                # то цей флаг вже встановлений вище по стеку викликів.
+                # Якщо ж is_programmatic_call_flag = False, то це може бути,
+                # наприклад, оновлення після зміни налаштувань, і ми хочемо, щоб
+                # text_edited НЕ спрацював.
+                # Однак, для Undo/Redo, QPlainTextEdit сам керує своїм стеком,
+                # і setPlainText завжди очищує стек Undo, якщо це не спеціальна операція Undo/Redo.
+                
                 edited_widget.setPlainText(edited_text_for_display_converted)
+                log_debug(f"  UIUpdater: setPlainText called on edited_text_edit. Undo available after: {edited_widget.document().isUndoAvailable()}")
+
                 restored_cursor = edited_widget.textCursor()
                 new_edited_anchor_pos = min(saved_edited_anchor_pos, len(edited_text_for_display_converted))
                 new_edited_cursor_pos = min(saved_edited_cursor_pos, len(edited_text_for_display_converted))
@@ -314,6 +320,9 @@ class UIUpdater:
                 if saved_edited_has_selection: restored_cursor.setPosition(new_edited_cursor_pos, QTextCursor.KeepAnchor)
                 else: restored_cursor.setPosition(new_edited_cursor_pos)
                 edited_widget.setTextCursor(restored_cursor)
+            else:
+                 log_debug(f"UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: {is_programmatic_call_flag}")
+
             if hasattr(edited_widget, 'lineNumberArea'): edited_widget.lineNumberArea.update()
 
         self.update_status_bar()

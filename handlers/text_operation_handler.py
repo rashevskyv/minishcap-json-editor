@@ -27,18 +27,27 @@ class TextOperationHandler(BaseHandler):
 
         old_scrollbar_value = preview_edit.verticalScrollBar().value() if preview_edit else 0
         
-        # populate_strings_for_block тепер буде обробляти всі типи підсвічувань, включно з width_exceeded
+        # Зберігаємо поточний стан is_programmatically_changing_text
+        # і встановлюємо його в True на час оновлення, щоб уникнути рекурсії
+        # або небажаних спрацьовувань text_edited
+        main_window_ref = self.mw
+        was_programmatically_changing = main_window_ref.is_programmatically_changing_text
+        main_window_ref.is_programmatically_changing_text = True
+        
+        log_debug(f"  _update_preview_content: Set is_programmatically_changing_text to True (was {was_programmatically_changing})")
+
         self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
         
         if preview_edit: preview_edit.verticalScrollBar().setValue(old_scrollbar_value)
-        # Оновлюємо LineNumberArea для original/edited, щоб перемалювати ширину
         if original_edit and hasattr(original_edit, 'lineNumberArea'): original_edit.lineNumberArea.update()
         if edited_edit and hasattr(edited_edit, 'lineNumberArea'): edited_edit.lineNumberArea.update()
 
+        # Відновлюємо попередній стан
+        main_window_ref.is_programmatically_changing_text = was_programmatically_changing
+        log_debug(f"  _update_preview_content: Restored is_programmatically_changing_text to {was_programmatically_changing}")
         log_debug("Preview content update finished.")
 
     def _check_and_update_width_exceeded_status(self, block_idx: int, string_idx: int, text_to_check: str):
-        """Перевіряє ширину рядка та оновлює self.mw.width_exceeded_lines_per_block."""
         block_key = str(block_idx)
         sub_lines = str(text_to_check).split('\n')
         line_exceeds_width = False
@@ -68,9 +77,17 @@ class TextOperationHandler(BaseHandler):
 
 
     def text_edited(self):
-        if self.mw.is_programmatically_changing_text: return 
-        if self.mw.current_block_idx == -1 or self.mw.current_string_idx == -1: return
+        log_debug(f"TextOperationHandler.text_edited: Start. Programmatic change? {self.mw.is_programmatically_changing_text}")
+        if self.mw.is_programmatically_changing_text: 
+            log_debug("TextOperationHandler.text_edited: Is programmatic, returning.")
+            return 
         
+        if self.mw.current_block_idx == -1 or self.mw.current_string_idx == -1: 
+            log_debug("TextOperationHandler.text_edited: No block/string selected, returning.")
+            return
+        
+        log_debug(f"TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = {self.mw.edited_text_edit.document().isUndoAvailable()}")
+
         block_idx = self.mw.current_block_idx
         string_idx_in_block = self.mw.current_string_idx
         block_key = str(block_idx)
@@ -82,6 +99,11 @@ class TextOperationHandler(BaseHandler):
         if needs_title_update: 
             self.ui_updater.update_title()
             
+        log_debug(f"TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = {self.mw.edited_text_edit.document().isUndoAvailable()}")
+        if hasattr(self.mw, 'undo_typing_action'):
+            log_debug(f"TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = {self.mw.undo_typing_action.isEnabled()}")
+
+
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         problems_updated_for_block_list = False 
 
@@ -103,11 +125,11 @@ class TextOperationHandler(BaseHandler):
                 tag_state_changed_for_block_list = False
                 if should_be_crit:
                     if not is_crit_before: crit_problems.add(string_idx_in_block); tag_state_changed_for_block_list = True
-                    if is_warn_before: warn_problems.discard(string_idx_in_block); tag_state_changed_for_block_list = True # Crit overrides warn
+                    if is_warn_before: warn_problems.discard(string_idx_in_block); tag_state_changed_for_block_list = True 
                 elif should_be_warn:
                     if not is_warn_before: warn_problems.add(string_idx_in_block); tag_state_changed_for_block_list = True
-                    if is_crit_before: crit_problems.discard(string_idx_in_block); tag_state_changed_for_block_list = True # If no longer crit, but now warn
-                else: # No tag problems
+                    if is_crit_before: crit_problems.discard(string_idx_in_block); tag_state_changed_for_block_list = True 
+                else: 
                     if is_crit_before: crit_problems.discard(string_idx_in_block); tag_state_changed_for_block_list = True
                     if is_warn_before: warn_problems.discard(string_idx_in_block); tag_state_changed_for_block_list = True
                 
@@ -118,21 +140,22 @@ class TextOperationHandler(BaseHandler):
                     if warn_problems: self.mw.warning_problem_lines_per_block[block_key] = warn_problems
                     elif block_key in self.mw.warning_problem_lines_per_block: del self.mw.warning_problem_lines_per_block[block_key]
             
-            # Перевірка ширини
             width_state_changed_for_block_list = self._check_and_update_width_exceeded_status(block_idx, string_idx_in_block, actual_text_with_spaces)
             if width_state_changed_for_block_list:
                 problems_updated_for_block_list = True
                     
             if problems_updated_for_block_list and hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'): 
                 self.ui_updater.update_block_item_text_with_problem_count(block_idx)
-
-        self.preview_update_timer.start(PREVIEW_UPDATE_DELAY) # Це оновить preview_text_edit з усіма підсвітками
+        
+        log_debug(f"TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = {self.mw.edited_text_edit.document().isUndoAvailable()}")
+        self.preview_update_timer.start(PREVIEW_UPDATE_DELAY) 
         self.ui_updater.update_status_bar()
         self.ui_updater.synchronize_original_cursor()
         
         edited_edit = getattr(self.mw, 'edited_text_edit', None)
         if edited_edit and hasattr(edited_edit, 'lineNumberArea'): 
             edited_edit.lineNumberArea.update()
+        log_debug(f"TextOperationHandler.text_edited: End. Final undoAvailable = {self.mw.edited_text_edit.document().isUndoAvailable()}")
 
 
     def paste_block_text(self):
@@ -152,7 +175,6 @@ class TextOperationHandler(BaseHandler):
         if preview_edit and hasattr(preview_edit, 'clearAllProblemTypeHighlights'): 
             preview_edit.clearAllProblemTypeHighlights() 
         
-        # Очищаємо всі проблеми для поточного блоку перед вставкою
         self.mw.critical_problem_lines_per_block.pop(block_key, None)
         self.mw.warning_problem_lines_per_block.pop(block_key, None)
         self.mw.width_exceeded_lines_per_block.pop(block_key, None)
@@ -203,16 +225,12 @@ class TextOperationHandler(BaseHandler):
                  any_change_applied_to_data = True
 
             successfully_processed_count += 1
-            # Після оновлення даних, перевіряємо теги та ширину для цього конкретного рядка
-            # Теги будуть перевірені в rescan_tags_for_single_block нижче
-            # Ширину перевіряємо тут, щоб правильно встановити before_paste_width_exceeded_snapshot
             self._check_and_update_width_exceeded_status(block_idx, current_target_string_idx, final_text_to_apply)
 
 
         if successfully_processed_count > 0:
              log_debug(f"Paste block finished. Triggering silent rescan for block {block_idx}.")
              if hasattr(self.mw, 'app_action_handler') and hasattr(self.mw.app_action_handler, 'rescan_issues_for_single_block'):
-                  # Використовуємо новий метод, який сканує всі типи проблем
                   self.mw.app_action_handler.rescan_issues_for_single_block(block_idx, show_message_on_completion=False)
              else:
                   log_debug("Could not find rescan_issues_for_single_block method.")
@@ -248,7 +266,7 @@ class TextOperationHandler(BaseHandler):
             
         log_debug("<-- TextOperationHandler: paste_block_text (AGRESSIVE MODE V13) finished.")
 
-    def revert_single_line(self, line_index: int): # line_index тут - це індекс рядка даних
+    def revert_single_line(self, line_index: int): 
         block_idx = self.mw.current_block_idx
         if block_idx == -1:
              log_debug("Revert single line: No block selected.")
@@ -273,7 +291,6 @@ class TextOperationHandler(BaseHandler):
              self.ui_updater.update_title() 
 
         block_key = str(block_idx)
-        # Перевірка тегів
         tag_status, _ = analyze_tags_for_issues(original_text, original_text, self.mw.EDITOR_PLAYER_TAG) 
         crit_problems = self.mw.critical_problem_lines_per_block.get(block_key, set()).copy()
         warn_problems = self.mw.warning_problem_lines_per_block.get(block_key, set()).copy()
@@ -290,17 +307,16 @@ class TextOperationHandler(BaseHandler):
             if warn_problems: self.mw.warning_problem_lines_per_block[block_key] = warn_problems
             elif block_key in self.mw.warning_problem_lines_per_block: del self.mw.warning_problem_lines_per_block[block_key]
         
-        # Перевірка ширини
         width_state_changed = self._check_and_update_width_exceeded_status(block_idx, line_index, original_text)
-        if width_state_changed: problems_updated = True # Якщо будь-яка проблема змінилася, треба оновити список блоків
+        if width_state_changed: problems_updated = True 
 
         if self.mw.current_string_idx == line_index:
-             self.ui_updater.update_text_views() # Це оновить original/edited, включно з їх LineNumberArea
+             self.ui_updater.update_text_views() 
         
         self.mw.is_programmatically_changing_text = True
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         old_scrollbar_value = preview_edit.verticalScrollBar().value() if preview_edit else 0
-        self.ui_updater.populate_strings_for_block(block_idx) # Це оновить preview з усіма підсвітками
+        self.ui_updater.populate_strings_for_block(block_idx) 
         if preview_edit: preview_edit.verticalScrollBar().setValue(old_scrollbar_value)
         
         if problems_updated and hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
@@ -310,7 +326,6 @@ class TextOperationHandler(BaseHandler):
         if hasattr(self.mw, 'statusBar'):
              self.mw.statusBar.showMessage(f"Data line {line_index + 1} reverted to original.", 2000)
         
-        # Додатково оновлюємо LineNumberArea для original/edited, якщо активний рядок був змінений
         if self.mw.current_string_idx == line_index:
             original_edit = getattr(self.mw, 'original_text_edit', None)
             edited_edit = getattr(self.mw, 'edited_text_edit', None)
@@ -340,10 +355,9 @@ class TextOperationHandler(BaseHandler):
         
         info_parts = [f"Data Line {data_line_idx + 1} (Block {self.mw.current_block_idx}):\nMax Allowed Width (Game Dialog): {max_allowed_width}px\nWidth Warning Threshold (Editor): {warning_threshold}px\n"]
 
-        # Поточний текст
         info_parts.append(f"--- Current Text (Source: {source}) ---")
         sub_lines_current = str(current_text_data_line).split('\n')
-        total_width_current = calculate_string_width(remove_all_tags(str(current_text_data_line).replace('\n','')), self.mw.font_map) # Загальна без \n для порівняння з грою
+        total_width_current = calculate_string_width(remove_all_tags(str(current_text_data_line).replace('\n','')), self.mw.font_map) 
         info_parts.append(f"Total (game-like, no newlines): {total_width_current}px")
         for i, sub_line in enumerate(sub_lines_current):
             sub_line_no_tags = remove_all_tags(sub_line)
@@ -352,11 +366,10 @@ class TextOperationHandler(BaseHandler):
             if width_px > warning_threshold: status = "EXCEEDED (Editor)"
             info_parts.append(f"  Sub-line {i+1}: {width_px}px (Status: {status}) '{sub_line_no_tags[:40]}...'")
         
-        # Оригінальний текст
         info_parts.append(f"\n--- Original Text ---")
         sub_lines_original = str(original_text_data_line).split('\n')
         total_width_original = calculate_string_width(remove_all_tags(str(original_text_data_line).replace('\n','')), self.mw.font_map)
-        info_parts.append(f"Total (game-like, no newlines): {total_width_original}px")
+        info_parts.append(f"Total (game-like, no newlines): {original_total_game_width}px")
         for i, sub_line in enumerate(sub_lines_original):
             sub_line_no_tags = remove_all_tags(sub_line)
             width_px = calculate_string_width(sub_line_no_tags, self.mw.font_map)

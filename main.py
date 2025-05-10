@@ -4,7 +4,7 @@ import json
 import copy
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QPlainTextEdit, QVBoxLayout
 from PyQt5.QtCore import Qt, QEvent
-from PyQt5.QtGui import QKeyEvent, QTextCursor 
+from PyQt5.QtGui import QKeyEvent, QTextCursor, QKeySequence 
 
 from LineNumberArea import LineNumberArea
 from CustomListWidget import CustomListWidget
@@ -216,15 +216,24 @@ class MainWindow(QMainWindow):
              self.block_list_widget.viewport().update()
 
     def keyPressEvent(self, event: QKeyEvent):
+        focused_widget = QApplication.focusWidget()
+        log_debug(f"MainWindow keyPressEvent: Key {event.key()}, Modifiers: {event.modifiers()}, Text: '{event.text()}', Focused widget: {focused_widget.objectName() if focused_widget else 'None'}")
+        
         if event.key() == Qt.Key_F3:
             if event.modifiers() & Qt.ShiftModifier:
-                log_debug("Shift+F3 pressed - Find Previous")
+                log_debug("Shift+F3 pressed - Find Previous (handled in MainWindow)")
                 self.execute_find_previous_shortcut()
+                event.accept()
+                return
             else:
-                log_debug("F3 pressed - Find Next")
+                log_debug("F3 pressed - Find Next (handled in MainWindow)")
                 self.execute_find_next_shortcut()
-        else:
-            super().keyPressEvent(event)
+                event.accept()
+                return
+        
+        log_debug("MainWindow keyPressEvent: Calling super().keyPressEvent(event) for other keys.")
+        super().keyPressEvent(event)
+
 
     def execute_find_next_shortcut(self):
         query_to_use = ""
@@ -285,8 +294,14 @@ class MainWindow(QMainWindow):
             self.edited_text_edit.textChanged.connect(self.editor_operation_handler.text_edited)
             self.edited_text_edit.cursorPositionChanged.connect(self.ui_updater.update_status_bar)
             self.edited_text_edit.selectionChanged.connect(self.ui_updater.update_status_bar_selection)
-            if hasattr(self, 'undo_typing_action'): self.edited_text_edit.undoAvailable.connect(self.undo_typing_action.setEnabled)
-            if hasattr(self, 'redo_typing_action'): self.edited_text_edit.redoAvailable.connect(self.redo_typing_action.setEnabled)
+            if hasattr(self, 'undo_typing_action'): 
+                self.edited_text_edit.undoAvailable.connect(self.undo_typing_action.setEnabled)
+                self.undo_typing_action.triggered.connect(self.edited_text_edit.undo)
+                log_debug("Connected undo_typing_action.triggered to edited_text_edit.undo()")
+            if hasattr(self, 'redo_typing_action'): 
+                self.edited_text_edit.redoAvailable.connect(self.redo_typing_action.setEnabled)
+                self.redo_typing_action.triggered.connect(self.edited_text_edit.redo)
+                log_debug("Connected redo_typing_action.triggered to edited_text_edit.redo()")
             if hasattr(self.edited_text_edit, 'addTagMappingRequest'):
                 self.edited_text_edit.addTagMappingRequest.connect(self.handle_add_tag_mapping_request)
                 log_debug("Connected edited_text_edit.addTagMappingRequest signal.")
