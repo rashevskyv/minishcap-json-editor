@@ -24,35 +24,45 @@ class LNETHighlightInterface:
         return self.editor.highlightManager.hasCriticalProblemHighlight(line_number)
 
     def addWarningLineHighlight(self, line_number: int):
-        if self.editor.objectName() != "preview_text_edit":
-            self.editor.highlightManager.addWarningLineHighlight(line_number)
+        self.editor.highlightManager.addWarningLineHighlight(line_number)
+
 
     def removeWarningLineHighlight(self, line_number: int) -> bool:
-        if self.editor.objectName() != "preview_text_edit":
-            return self.editor.highlightManager.removeWarningLineHighlight(line_number)
-        return False
+        return self.editor.highlightManager.removeWarningLineHighlight(line_number)
+
 
     def clearWarningLineHighlights(self):
-        if self.editor.objectName() != "preview_text_edit":
-            self.editor.highlightManager.clearWarningLineHighlights()
+        self.editor.highlightManager.clearWarningLineHighlights()
+
 
     def hasWarningLineHighlight(self, line_number: Optional[int] = None) -> bool:
-        if self.editor.objectName() != "preview_text_edit":
-            return self.editor.highlightManager.hasWarningLineHighlight(line_number)
-        return False
+        return self.editor.highlightManager.hasWarningLineHighlight(line_number)
+
 
     def addWidthExceededHighlight(self, line_number: int):
-        self.editor.highlightManager.addWidthExceededHighlight(line_number)
+        pass
 
 
     def removeWidthExceededHighlight(self, line_number: int) -> bool:
-        return self.editor.highlightManager.removeWidthExceededHighlight(line_number)
+        return False
 
     def clearWidthExceededHighlights(self):
-        self.editor.highlightManager.clearWidthExceededHighlights()
+        pass
 
     def hasWidthExceededHighlight(self, line_number: Optional[int] = None) -> bool:
-        return self.editor.highlightManager.hasWidthExceededHighlight(line_number)
+        return False
+
+    def addShortLineHighlight(self, line_number: int):
+        pass
+
+    def removeShortLineHighlight(self, line_number: int) -> bool:
+        return False
+
+    def clearShortLineHighlights(self):
+        pass
+
+    def hasShortLineHighlight(self, line_number: Optional[int] = None) -> bool:
+        return False
 
     def setPreviewSelectedLineHighlight(self, line_number: int):
         self.editor.highlightManager.setPreviewSelectedLineHighlight(line_number)

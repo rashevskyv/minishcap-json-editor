@@ -2,7 +2,8 @@ import sys
 import os
 import json
 import copy
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QPlainTextEdit, QVBoxLayout, QSpinBox, QWidget
+import re
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QPlainTextEdit, QVBoxLayout, QSpinBox, QWidget, QLabel
 from PyQt5.QtCore import Qt, QEvent
 from PyQt5.QtGui import QKeyEvent, QTextCursor, QKeySequence, QFont
 
@@ -25,7 +26,7 @@ from handlers.search_handler import SearchHandler
 from handlers.tag_checker_handler import TagCheckerHandler
 
 
-from utils.utils import log_debug, DEFAULT_CHAR_WIDTH_FALLBACK
+from utils.utils import log_debug, DEFAULT_CHAR_WIDTH_FALLBACK, ALL_TAGS_PATTERN
 from constants import (
     EDITOR_PLAYER_TAG, ORIGINAL_PLAYER_TAG,
     DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS,
@@ -51,6 +52,8 @@ class MainWindow(QMainWindow):
 
 
         self.is_programmatically_changing_text = False
+        self.is_adjusting_cursor = False
+        self.is_adjusting_selection = False
         self.json_path = None; self.edited_json_path = None
         self.data = []; self.edited_data = {}; self.edited_file_data = []
         self.block_names = {}; self.current_block_idx = -1; self.current_string_idx = -1
@@ -92,6 +95,7 @@ class MainWindow(QMainWindow):
         self.critical_problem_lines_per_block = {}
         self.warning_problem_lines_per_block = {}
         self.width_exceeded_lines_per_block = {}
+        self.short_lines_per_block = {}
 
         self.can_undo_paste = False
         self.before_paste_edited_data_snapshot = {}
@@ -99,6 +103,7 @@ class MainWindow(QMainWindow):
         self.before_paste_critical_problems_snapshot = {}
         self.before_paste_warning_problems_snapshot = {}
         self.before_paste_width_exceeded_snapshot = {}
+        self.before_paste_short_lines_snapshot = {}
 
         self.search_match_block_indices = set()
         self.current_search_results = []
@@ -114,9 +119,14 @@ class MainWindow(QMainWindow):
         self.undo_paste_action = None
         self.rescan_all_tags_action = None
         self.find_action = None
-        self.check_tags_action = None # Залишаємо як None, QAction буде створено в ui_setup
+        self.check_tags_action = None
         self.main_vertical_layout = None
         self.font_size_spinbox = None
+        
+        self.status_label_part1: QLabel = None
+        self.status_label_part2: QLabel = None
+        self.status_label_part3: QLabel = None
+
 
         log_debug("MainWindow: Initializing Core Components...")
         self.helper = MainWindowHelper(self)
@@ -131,14 +141,13 @@ class MainWindow(QMainWindow):
         self.editor_operation_handler = TextOperationHandler(self, self.data_processor, self.ui_updater)
         self.app_action_handler = AppActionHandler(self, self.data_processor, self.ui_updater)
         self.search_handler = SearchHandler(self, self.data_processor, self.ui_updater)
-        # self.tag_checker_handler = TagCheckerHandler(self) # Перенесено нижче
 
 
         log_debug("MainWindow: Setting up UI...")
-        setup_main_window_ui(self) # UI елементи створюються тут
+        setup_main_window_ui(self)
 
         log_debug("MainWindow: Initializing Handlers (Post-UI setup)...")
-        self.tag_checker_handler = TagCheckerHandler(self) # Тепер UI елементи доступні
+        self.tag_checker_handler = TagCheckerHandler(self)
 
         self.search_panel_widget = SearchPanelWidget(self)
         self.main_vertical_layout.insertWidget(0, self.search_panel_widget)
@@ -170,6 +179,10 @@ class MainWindow(QMainWindow):
                 log_debug(f"MainWindow: Set {editor_widget.objectName()}.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to {editor_widget.LINE_WIDTH_WARNING_THRESHOLD_PIXELS}")
                 editor_widget.font_map = self.font_map
                 editor_widget.GAME_DIALOG_MAX_WIDTH_PIXELS = self.GAME_DIALOG_MAX_WIDTH_PIXELS
+                if hasattr(editor_widget, 'short_line_color'):
+                    from components.LNET_constants import SHORT_LINE_COLOR
+                    editor_widget.short_line_color = SHORT_LINE_COLOR
+
                 if hasattr(editor_widget, 'updateLineNumberAreaWidth'):
                     editor_widget.updateLineNumberAreaWidth(0)
 
@@ -197,6 +210,111 @@ class MainWindow(QMainWindow):
         if self.tag_checker_handler:
             self.tag_checker_handler.start_or_continue_check()
 
+    def handle_edited_cursor_position_changed(self):
+        if self.is_adjusting_cursor or self.is_programmatically_changing_text:
+            return
+
+        editor = self.edited_text_edit
+        cursor = editor.textCursor()
+
+        # If selection is active, selectionChanged will handle status bar updates.
+        # We only handle non-selection cursor moves here for tag adjustment.
+        if not cursor.hasSelection():
+            self.is_adjusting_cursor = True
+            
+            current_block = cursor.block()
+            pos_in_block = cursor.positionInBlock()
+            block_text = current_block.text()
+            
+            for match in ALL_TAGS_PATTERN.finditer(block_text):
+                tag_start, tag_end = match.span()
+                if tag_start < pos_in_block < tag_end:
+                    new_cursor_pos_abs = current_block.position() + tag_end
+                    cursor.setPosition(new_cursor_pos_abs)
+                    editor.setTextCursor(cursor)
+                    log_debug(f"Cursor was inside tag '{match.group(0)}' at rel_pos {pos_in_block}, moved to abs_pos {new_cursor_pos_abs} (rel_pos {tag_end})")
+                    break 
+            self.is_adjusting_cursor = False
+        
+        self.ui_updater.update_status_bar() # This will now check for selection itself.
+
+
+    def handle_edited_selection_changed(self):
+        if self.is_adjusting_selection or self.is_programmatically_changing_text:
+            self.ui_updater.update_status_bar_selection() 
+            return
+
+        editor = self.edited_text_edit
+        cursor = editor.textCursor()
+
+        if not cursor.hasSelection():
+            self.ui_updater.update_status_bar_selection() 
+            return
+
+        self.is_adjusting_selection = True
+        
+        doc = editor.document()
+        anchor_abs = cursor.anchor()
+        position_abs = cursor.position()
+        
+        anchor_block = doc.findBlock(anchor_abs)
+        position_block = doc.findBlock(position_abs)
+
+        if anchor_block.blockNumber() != position_block.blockNumber():
+            log_debug("Selection spans multiple blocks. No adjustment.")
+            self.is_adjusting_selection = False
+            self.ui_updater.update_status_bar_selection()
+            return
+            
+        current_block = anchor_block
+        block_text = current_block.text()
+        
+        original_anchor_rel = anchor_abs - current_block.position()
+        original_position_rel = position_abs - current_block.position()
+        
+        current_sel_start_rel = min(original_anchor_rel, original_position_rel)
+        current_sel_end_rel = max(original_anchor_rel, original_position_rel)
+
+        new_sel_start_rel = current_sel_start_rel
+        new_sel_end_rel = current_sel_end_rel
+        
+        adjusted = False
+
+        for match in ALL_TAGS_PATTERN.finditer(block_text):
+            tag_start, tag_end = match.span()
+            
+            if tag_start < current_sel_start_rel < tag_end:
+                new_sel_start_rel = min(new_sel_start_rel, tag_start)
+                adjusted = True
+            
+            if tag_start < current_sel_end_rel < tag_end:
+                new_sel_end_rel = max(new_sel_end_rel, tag_end)
+                adjusted = True
+        
+        if new_sel_start_rel > new_sel_end_rel :
+            log_debug(f"Warning: sel_start ({new_sel_start_rel}) > sel_end ({new_sel_end_rel}) after adjustment attempt. Reverting to original selection for this event.")
+            new_sel_start_rel = current_sel_start_rel
+            new_sel_end_rel = current_sel_end_rel
+            adjusted = False
+
+
+        if adjusted and (new_sel_start_rel != current_sel_start_rel or new_sel_end_rel != current_sel_end_rel):
+            log_debug(f"Original sel: {current_sel_start_rel}-{current_sel_end_rel}. Proposed new: {new_sel_start_rel}-{new_sel_end_rel}")
+            
+            new_cursor = QTextCursor(current_block)
+            
+            final_anchor_abs = current_block.position() + (new_sel_start_rel if original_anchor_rel == current_sel_start_rel else new_sel_end_rel)
+            final_position_abs = current_block.position() + (new_sel_end_rel if original_anchor_rel == current_sel_start_rel else new_sel_start_rel)
+
+            new_cursor.setPosition(final_anchor_abs)
+            new_cursor.setPosition(final_position_abs, QTextCursor.KeepAnchor)
+            
+            editor.setTextCursor(new_cursor)
+            log_debug("Selection adjusted to encompass full tags.")
+        
+        self.is_adjusting_selection = False
+        self.ui_updater.update_status_bar_selection()
+
 
     def connect_signals(self):
         log_debug("--> MainWindow: connect_signals() started")
@@ -207,8 +325,8 @@ class MainWindow(QMainWindow):
             self.preview_text_edit.lineClicked.connect(self.list_selection_handler.string_selected_from_preview)
         if hasattr(self, 'edited_text_edit'):
             self.edited_text_edit.textChanged.connect(self.editor_operation_handler.text_edited)
-            self.edited_text_edit.cursorPositionChanged.connect(self.ui_updater.update_status_bar)
-            self.edited_text_edit.selectionChanged.connect(self.ui_updater.update_status_bar_selection)
+            self.edited_text_edit.cursorPositionChanged.connect(self.handle_edited_cursor_position_changed)
+            self.edited_text_edit.selectionChanged.connect(self.handle_edited_selection_changed)
             if hasattr(self, 'undo_typing_action'):
                 self.edited_text_edit.undoAvailable.connect(self.undo_typing_action.setEnabled)
                 self.undo_typing_action.triggered.connect(self.edited_text_edit.undo)
@@ -236,7 +354,7 @@ class MainWindow(QMainWindow):
             self.search_panel_widget.find_previous_requested.connect(self.helper.handle_panel_find_previous)
         if hasattr(self, 'font_size_spinbox') and self.font_size_spinbox:
             self.font_size_spinbox.valueChanged.connect(self.change_font_size_action)
-        if hasattr(self, 'check_tags_action') and self.check_tags_action: # Перевіряємо, чи QAction було створено
+        if hasattr(self, 'check_tags_action') and self.check_tags_action:
             self.check_tags_action.triggered.connect(self.trigger_check_tags_action)
 
 
@@ -265,7 +383,8 @@ class MainWindow(QMainWindow):
             self.block_list_widget, self.search_panel_widget, self.statusBar
         ]
 
-        labels_in_status_bar = [self.original_path_label, self.edited_path_label, self.pos_len_label, self.selection_len_label]
+        labels_in_status_bar = [self.original_path_label, self.edited_path_label, 
+                                self.status_label_part1, self.status_label_part2, self.status_label_part3]
         general_ui_widgets.extend(labels_in_status_bar)
 
         if self.search_panel_widget:

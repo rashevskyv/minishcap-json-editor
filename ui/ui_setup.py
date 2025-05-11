@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (
     QStyle, QSpinBox
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon, QFont
+from PyQt5.QtGui import QIcon, QFont, QFontMetrics
 from components.LineNumberedTextEdit import LineNumberedTextEdit
 from components.CustomListWidget import CustomListWidget
 from utils.utils import log_debug
@@ -71,14 +71,29 @@ def setup_main_window_ui(main_window):
     main_window.edited_path_label = QLabel("Changes: [not specified]")
     main_window.original_path_label.setToolTip("Path to the original text file")
     main_window.edited_path_label.setToolTip("Path to the file where changes are saved")
-    main_window.pos_len_label = QLabel("0 (0/0)")
-    main_window.selection_len_label = QLabel("Sel: 0")
 
+    main_window.status_label_part1 = QLabel("Pos: 000")
+    main_window.status_label_part2 = QLabel("Line: 000/000")
+    main_window.status_label_part3 = QLabel("Width: 0000px")
+    
+    # Use a default font or the app's font for metrics if available early
+    font_for_metrics = QFont() 
+    if main_window.font() and main_window.font().family(): # Check if main_window font is already set
+        font_for_metrics = main_window.font()
+
+    font_metrics = QFontMetrics(font_for_metrics)
+    main_window.status_label_part1.setMinimumWidth(font_metrics.horizontalAdvance("Sel: 000/000") + 15) # Max expected for Sel
+    main_window.status_label_part2.setMinimumWidth(font_metrics.horizontalAdvance("Line: 000/000") + 15) # Max expected for Line/At
+    main_window.status_label_part3.setMinimumWidth(font_metrics.horizontalAdvance("Width: 0000px") + 10)
+    
     main_window.statusBar.addWidget(main_window.original_path_label)
     main_window.statusBar.addWidget(QLabel("|"))
     main_window.statusBar.addWidget(main_window.edited_path_label)
-    main_window.statusBar.addPermanentWidget(main_window.pos_len_label)
-    main_window.statusBar.addPermanentWidget(main_window.selection_len_label)
+    main_window.statusBar.addPermanentWidget(main_window.status_label_part1)
+    main_window.statusBar.addPermanentWidget(QLabel("|")) # Separator
+    main_window.statusBar.addPermanentWidget(main_window.status_label_part2)
+    main_window.statusBar.addPermanentWidget(QLabel("|")) # Separator
+    main_window.statusBar.addPermanentWidget(main_window.status_label_part3)
 
 
     menubar = main_window.menuBar()
@@ -152,8 +167,6 @@ def setup_main_window_ui(main_window):
     main_window.rescan_all_tags_action = QAction(QIcon.fromTheme("system-search"), 'Rescan All Tags for Issues', main_window)
     edit_menu.addAction(main_window.rescan_all_tags_action)
     
-    # Нова дія для перевірки тегів
-    # Можна використати іконку, наприклад, SP_DialogApplyButton або SP_DialogYesButton, або знайти тематичну
     check_tags_icon = style.standardIcon(QStyle.SP_DialogApplyButton) 
     main_window.check_tags_action = QAction(check_tags_icon, 'Check &Tags Mismatch', main_window)
     main_window.check_tags_action.setToolTip("Check for tags mismatch between original and translation")
@@ -170,7 +183,7 @@ def setup_main_window_ui(main_window):
     toolbar.addAction(main_window.redo_typing_action)
     toolbar.addSeparator()
     toolbar.addAction(main_window.find_action)
-    toolbar.addAction(main_window.check_tags_action) # Додаємо кнопку на тулбар
+    toolbar.addAction(main_window.check_tags_action)
     toolbar.addSeparator()
 
     font_size_label = QLabel("Font Size: ")

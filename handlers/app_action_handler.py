@@ -17,50 +17,30 @@ class AppActionHandler(BaseHandler):
             self.mw.warning_problem_lines_per_block = {}
         if not hasattr(self.mw, 'width_exceeded_lines_per_block'):
             self.mw.width_exceeded_lines_per_block = {}
+        if not hasattr(self.mw, 'short_lines_per_block'):
+            self.mw.short_lines_per_block = {}
 
-    def _perform_width_scan_for_all_blocks(self):
-        log_debug("AppActionHandler: Performing width scan for all blocks...")
-        self.mw.width_exceeded_lines_per_block.clear()
-        if not self.mw.data:
-            return
+    def _get_first_word_width(self, text: str) -> int:
+        if not text:
+            return 0
+        stripped_text = remove_all_tags(text.lstrip())
+        first_word = stripped_text.split(maxsplit=1)[0] if stripped_text else ""
+        return calculate_string_width(first_word, self.mw.font_map)
 
-        for block_idx in range(len(self.mw.data)):
-            if not (0 <= block_idx < len(self.mw.data)) or not isinstance(self.mw.data[block_idx], list):
-                continue
-            
-            block_key = str(block_idx)
-            current_block_width_exceeded_indices = set()
-            num_strings_in_block = len(self.mw.data[block_idx])
-
-            for string_idx in range(num_strings_in_block):
-                text_to_analyze, _ = self.data_processor.get_current_string_text(block_idx, string_idx)
-                
-                sub_lines = str(text_to_analyze).split('\n')
-                line_exceeds_width_flag = False
-                for sub_line_text in sub_lines:
-                    pixel_width = calculate_string_width(remove_all_tags(sub_line_text), self.mw.font_map)
-                    if pixel_width > self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
-                        line_exceeds_width_flag = True
-                        break
-                if line_exceeds_width_flag:
-                    current_block_width_exceeded_indices.add(string_idx)
-            
-            if current_block_width_exceeded_indices:
-                self.mw.width_exceeded_lines_per_block[block_key] = current_block_width_exceeded_indices
-        log_debug("AppActionHandler: Width scan for all blocks complete.")
-
-
-    def _perform_issues_scan_for_block(self, block_idx: int, is_single_block_scan: bool = False, use_default_mappings_in_scan: bool = False) -> tuple[int, int, int, bool]:
+    def _perform_issues_scan_for_block(self, block_idx: int, is_single_block_scan: bool = False, use_default_mappings_in_scan: bool = False) -> tuple[int, int, int, int, bool]:
         if not (0 <= block_idx < len(self.mw.data)):
-            return 0, 0, 0, False
+            return 0, 0, 0, 0, False
 
         block_key = str(block_idx)
         current_block_critical_indices = set()
         current_block_warning_indices = set()
         current_block_width_exceeded_indices = set()
+        current_block_short_line_indices = set()
         changes_made_to_edited_data_in_this_block = False
         
         num_strings_in_block = len(self.mw.data[block_idx])
+        space_width = calculate_string_width(" ", self.mw.font_map)
+        sentence_end_chars = ('.', '!', '?')
 
         for string_idx in range(num_strings_in_block):
             text_before_processing, source = self.data_processor.get_current_string_text(block_idx, string_idx)
@@ -84,13 +64,49 @@ class AppActionHandler(BaseHandler):
             
             sub_lines = str(text_to_analyze).split('\n')
             line_exceeds_width_flag = False
-            for sub_line_text in sub_lines:
-                pixel_width = calculate_string_width(remove_all_tags(sub_line_text), self.mw.font_map)
-                if pixel_width > self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
-                    line_exceeds_width_flag = True
-                    break
+            is_short_line_candidate = False
+
+            if string_idx < num_strings_in_block - 1: # Тільки якщо це не останній рядок у блоці даних
+                for sub_line_idx, sub_line_text in enumerate(sub_lines):
+                    pixel_width = calculate_string_width(remove_all_tags(sub_line_text), self.mw.font_map)
+                    if pixel_width > self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
+                        line_exceeds_width_flag = True
+                    
+                    if sub_line_idx == len(sub_lines) - 1:
+                        current_sub_line_no_tags_stripped = remove_all_tags(sub_line_text).strip()
+                        if not current_sub_line_no_tags_stripped:
+                            continue 
+                        
+                        if current_sub_line_no_tags_stripped.endswith(sentence_end_chars):
+                            continue
+
+                        # string_idx + 1 тут гарантовано існує через зовнішню умову
+                        next_full_line_text, _ = self.data_processor.get_current_string_text(block_idx, string_idx + 1)
+                        if not next_full_line_text or not str(next_full_line_text).strip():
+                            continue
+                        
+                        first_word_next_line_text_raw = str(next_full_line_text).split('\n')[0]
+                        if not first_word_next_line_text_raw.strip(): 
+                            continue
+
+                        first_word_next_line_width = self._get_first_word_width(first_word_next_line_text_raw)
+                        
+                        if first_word_next_line_width > 0:
+                            remaining_width = self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS - pixel_width
+                            if remaining_width >= (first_word_next_line_width + space_width):
+                                is_short_line_candidate = True
+            else: # Для останнього рядка у блоці даних просто перевіряємо ширину
+                 for sub_line_text in sub_lines:
+                    pixel_width = calculate_string_width(remove_all_tags(sub_line_text), self.mw.font_map)
+                    if pixel_width > self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
+                        line_exceeds_width_flag = True
+                        break
+            
             if line_exceeds_width_flag:
                 current_block_width_exceeded_indices.add(string_idx)
+            if is_short_line_candidate:
+                current_block_short_line_indices.add(string_idx)
+
 
         if current_block_critical_indices: self.mw.critical_problem_lines_per_block[block_key] = current_block_critical_indices
         elif block_key in self.mw.critical_problem_lines_per_block: del self.mw.critical_problem_lines_per_block[block_key]
@@ -101,6 +117,9 @@ class AppActionHandler(BaseHandler):
         if current_block_width_exceeded_indices: self.mw.width_exceeded_lines_per_block[block_key] = current_block_width_exceeded_indices
         elif block_key in self.mw.width_exceeded_lines_per_block: del self.mw.width_exceeded_lines_per_block[block_key]
         
+        if current_block_short_line_indices: self.mw.short_lines_per_block[block_key] = current_block_short_line_indices
+        elif block_key in self.mw.short_lines_per_block: del self.mw.short_lines_per_block[block_key]
+        
         if is_single_block_scan and hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
             self.ui_updater.update_block_item_text_with_problem_count(block_idx)
         
@@ -108,19 +127,20 @@ class AppActionHandler(BaseHandler):
         if is_single_block_scan and self.mw.current_block_idx == block_idx and preview_edit:
             self.ui_updater.populate_strings_for_block(block_idx)
         
-        return len(current_block_critical_indices), len(current_block_warning_indices), len(current_block_width_exceeded_indices), changes_made_to_edited_data_in_this_block
+        return len(current_block_critical_indices), len(current_block_warning_indices), len(current_block_width_exceeded_indices), len(current_block_short_line_indices), changes_made_to_edited_data_in_this_block
 
     def _perform_initial_silent_scan_all_issues(self):
         if not self.mw.data:
             log_debug("AppActionHandler._perform_initial_silent_scan_all_issues: No data to scan.")
             return
         
-        log_debug("AppActionHandler: Performing initial silent scan for ALL issues (tags & width)...")
+        log_debug("AppActionHandler: Performing initial silent scan for ALL issues (tags, width, short lines)...")
         self.mw.is_programmatically_changing_text = True
         
         self.mw.critical_problem_lines_per_block.clear()
         self.mw.warning_problem_lines_per_block.clear()
         self.mw.width_exceeded_lines_per_block.clear()
+        self.mw.short_lines_per_block.clear()
         
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         if preview_edit and hasattr(preview_edit, 'clearAllProblemTypeHighlights'):
@@ -130,7 +150,7 @@ class AppActionHandler(BaseHandler):
 
         any_changes_applied_globally = False
         for block_idx in range(len(self.mw.data)):
-            _num_crit, _num_warn, _num_width, block_changes_applied = self._perform_issues_scan_for_block(block_idx, is_single_block_scan=False, use_default_mappings_in_scan=False)
+            _num_crit, _num_warn, _num_width, _num_short, block_changes_applied = self._perform_issues_scan_for_block(block_idx, is_single_block_scan=False, use_default_mappings_in_scan=False)
             if block_changes_applied:
                 any_changes_applied_globally = True
         
@@ -182,7 +202,7 @@ class AppActionHandler(BaseHandler):
             
         log_debug(f"<<<<<<<<<< ACTION: Rescan Issues for Block {block_idx} Triggered. use_default_mappings={use_default_mappings} >>>>>>>>>>")
         self.mw.is_programmatically_changing_text = True
-        num_critical, num_warnings, num_width_exceeded, changes_applied = self._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=use_default_mappings)
+        num_critical, num_warnings, num_width_exceeded, num_short, changes_applied = self._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=use_default_mappings)
         self.mw.is_programmatically_changing_text = False
             
         if show_message_on_completion:
@@ -191,6 +211,7 @@ class AppActionHandler(BaseHandler):
             if num_critical > 0: message_parts.append(f"{num_critical} line(s) with critical tag issues.")
             if num_warnings > 0: message_parts.append(f"{num_warnings} line(s) with tag warnings.")
             if num_width_exceeded > 0: message_parts.append(f"{num_width_exceeded} line(s) exceed width limit ({self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS}px).")
+            if num_short > 0: message_parts.append(f"{num_short} line(s) are potentially too short.")
             
             if not message_parts:
                 message = f"No issues found in Block '{block_name_str}'."
@@ -203,7 +224,7 @@ class AppActionHandler(BaseHandler):
                 QMessageBox.warning(self.mw, title, summary)
 
     def rescan_all_tags(self):
-        log_debug("<<<<<<<<<< ACTION: Rescan All Tags (and Widths) Triggered >>>>>>>>>>")
+        log_debug("<<<<<<<<<< ACTION: Rescan All Tags (and Widths/Shorts) Triggered >>>>>>>>>>")
         if not self.mw.data:
             QMessageBox.information(self.mw, "Rescan All Issues", "No data loaded to rescan.")
             return
@@ -213,18 +234,21 @@ class AppActionHandler(BaseHandler):
         total_critical_lines = sum(len(s) for s in self.mw.critical_problem_lines_per_block.values())
         total_warning_lines = sum(len(s) for s in self.mw.warning_problem_lines_per_block.values())
         total_width_exceeded_lines = sum(len(s) for s in self.mw.width_exceeded_lines_per_block.values())
+        total_short_lines = sum(len(s) for s in self.mw.short_lines_per_block.values())
 
         total_blocks_with_critical = sum(1 for s in self.mw.critical_problem_lines_per_block.values() if s)
         total_blocks_with_warning = sum(1 for s in self.mw.warning_problem_lines_per_block.values() if s)
         total_blocks_with_width = sum(1 for s in self.mw.width_exceeded_lines_per_block.values() if s)
+        total_blocks_with_short = sum(1 for s in self.mw.short_lines_per_block.values() if s)
         
         message_parts = []
         if total_blocks_with_critical > 0: message_parts.append(f"Found {total_critical_lines} critical tag issue(s) across {total_blocks_with_critical} block(s).")
         if total_blocks_with_warning > 0: message_parts.append(f"Found {total_warning_lines} tag warning(s) across {total_blocks_with_warning} block(s).")
         if total_blocks_with_width > 0: message_parts.append(f"Found {total_width_exceeded_lines} line(s) exceeding width limit across {total_blocks_with_width} block(s).")
+        if total_blocks_with_short > 0: message_parts.append(f"Found {total_short_lines} potentially short line(s) across {total_blocks_with_short} block(s).")
         
         if not message_parts:
-            message = "No issues (tags or width) found in any block based on current data state."
+            message = "No issues (tags, width, or short lines) found in any block based on current data state."
             QMessageBox.information(self.mw, "Rescan Complete", message)
         else:
             title = "Rescan Complete with Issues/Warnings"
@@ -320,6 +344,7 @@ class AppActionHandler(BaseHandler):
             self.mw.critical_problem_lines_per_block.clear()
             self.mw.warning_problem_lines_per_block.clear()
             self.mw.width_exceeded_lines_per_block.clear()
+            self.mw.short_lines_per_block.clear()
             self.ui_updater.update_title(); self.ui_updater.update_statusbar_paths()
             self.ui_updater.populate_blocks(); self.ui_updater.populate_strings_for_block(-1)
             self.mw.is_programmatically_changing_text = False
@@ -349,14 +374,20 @@ class AppActionHandler(BaseHandler):
         if hasattr(self.mw, 'edited_text_edit'): self.mw.edited_text_edit.clear()
         
         if is_initial_load_from_settings:
-            log_debug("Initial load from settings: Recalculating width issues based on current data.")
-            self._perform_width_scan_for_all_blocks()
-            if not self.mw.critical_problem_lines_per_block and not self.mw.warning_problem_lines_per_block:
-                log_debug("Tag problem data not found in settings, performing full tag scan as well.")
+            log_debug("Initial load from settings: Assuming problem data is from settings or will be calculated if missing.")
+            problem_keys_to_check_in_mw = ['width_exceeded_lines_per_block', 'short_lines_per_block', 
+                                           'critical_problem_lines_per_block', 'warning_problem_lines_per_block']
+            needs_full_scan = False
+            for key in problem_keys_to_check_in_mw:
+                if not hasattr(self.mw, key) or not getattr(self.mw, key):
+                    log_debug(f"{key} data not found in settings or empty, performing full scan.")
+                    needs_full_scan = True
+                    break
+            if needs_full_scan:
                 self.mw.is_programmatically_changing_text = True
-                for block_idx in range(len(self.mw.data)):
-                    self._perform_issues_scan_for_block(block_idx, is_single_block_scan=False, use_default_mappings_in_scan=False)
+                self._perform_initial_silent_scan_all_issues()
                 self.mw.is_programmatically_changing_text = False
+
 
         else: 
             log_debug("Not initial load from settings: Performing full scan for all issues.")
@@ -405,6 +436,8 @@ class AppActionHandler(BaseHandler):
         results = []
         max_allowed_width_game = self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS
         editor_warning_threshold = self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
+        space_width = calculate_string_width(" ", self.mw.font_map)
+        sentence_end_chars = ('.', '!', '?')
         
         for i in range(num_strings):
             progress.setValue(i)
@@ -427,8 +460,25 @@ class AppActionHandler(BaseHandler):
                 sub_line_no_tags = remove_all_tags(sub_line)
                 width_px = calculate_string_width(sub_line_no_tags, self.mw.font_map)
                 editor_status = "OK"
+                short_status = ""
                 if width_px > editor_warning_threshold: editor_status = f"EXCEEDS EDITOR THRESHOLD ({width_px - editor_warning_threshold}px)"
-                line_report_parts.append(f"    Sub {j+1}: {width_px}px ({editor_status}) '{sub_line_no_tags[:30]}...'")
+                
+                if j == len(current_sub_lines) -1 :
+                    current_sub_line_no_tags_stripped_rpt = remove_all_tags(sub_line).strip()
+                    if current_sub_line_no_tags_stripped_rpt and not current_sub_line_no_tags_stripped_rpt.endswith(sentence_end_chars):
+                        if i + 1 < num_strings: # Check if it's not the last string in the block
+                            next_full_line_text_rpt, _ = self.data_processor.get_current_string_text(block_idx, i + 1)
+                            if next_full_line_text_rpt and str(next_full_line_text_rpt).strip():
+                                first_word_next_line_text_raw_rpt = str(next_full_line_text_rpt).split('\n')[0]
+                                if first_word_next_line_text_raw_rpt.strip():
+                                    first_word_next_line_width_rpt = self._get_first_word_width(first_word_next_line_text_raw_rpt)
+                                    if first_word_next_line_width_rpt > 0:
+                                        remaining_width_rpt = max_allowed_width_game - width_px
+                                        if remaining_width_rpt >= (first_word_next_line_width_rpt + space_width):
+                                            short_status = f"SHORT (can fit {first_word_next_line_width_rpt+space_width}px, has {remaining_width_rpt}px)"
+                
+                line_report_parts.append(f"    Sub {j+1}: {width_px}px (Editor: {editor_status}) {short_status} '{sub_line_no_tags[:30]}...'")
+
 
             line_report_parts.append(f"  Original:")
             original_sub_lines = str(original_text_data).split('\n')
@@ -440,8 +490,24 @@ class AppActionHandler(BaseHandler):
                 sub_line_no_tags = remove_all_tags(sub_line)
                 width_px = calculate_string_width(sub_line_no_tags, self.mw.font_map)
                 editor_status = "OK"
+                short_status_orig = ""
                 if width_px > editor_warning_threshold: editor_status = f"EXCEEDS EDITOR THRESHOLD ({width_px - editor_warning_threshold}px)"
-                line_report_parts.append(f"    Sub {j+1}: {width_px}px ({editor_status}) '{sub_line_no_tags[:30]}...'")
+
+                if j == len(original_sub_lines) -1:
+                    original_sub_line_no_tags_stripped_rpt = remove_all_tags(sub_line).strip()
+                    if original_sub_line_no_tags_stripped_rpt and not original_sub_line_no_tags_stripped_rpt.endswith(sentence_end_chars):
+                        if i + 1 < num_strings: # Check if it's not the last string in the block
+                            next_full_line_text_orig_rpt = self.data_processor._get_string_from_source(block_idx, i + 1, self.mw.data, "orig_report")
+                            if next_full_line_text_orig_rpt and str(next_full_line_text_orig_rpt).strip():
+                                first_word_next_line_text_raw_orig_rpt = str(next_full_line_text_orig_rpt).split('\n')[0]
+                                if first_word_next_line_text_raw_orig_rpt.strip():
+                                    first_word_next_line_width_orig_rpt = self._get_first_word_width(first_word_next_line_text_raw_orig_rpt)
+                                    if first_word_next_line_width_orig_rpt > 0:
+                                        remaining_width_orig_rpt = max_allowed_width_game - width_px
+                                        if remaining_width_orig_rpt >= (first_word_next_line_width_orig_rpt + space_width):
+                                            short_status_orig = f"SHORT (can fit {first_word_next_line_width_orig_rpt+space_width}px, has {remaining_width_orig_rpt}px)"
+
+                line_report_parts.append(f"    Sub {j+1}: {width_px}px (Editor: {editor_status}) {short_status_orig} '{sub_line_no_tags[:30]}...'")
             
             results.append("\n".join(line_report_parts))
         

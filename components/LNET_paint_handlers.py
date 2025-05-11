@@ -2,6 +2,7 @@ from PyQt5.QtGui import QPainter, QColor, QPen, QFontMetrics, QFont, QPaintEvent
 from PyQt5.QtCore import Qt, QRect, QSize
 from PyQt5.QtWidgets import QMainWindow
 from utils.utils import log_debug, calculate_string_width, remove_all_tags, convert_dots_to_spaces_from_editor
+from components.LNET_constants import SHORT_LINE_COLOR, WIDTH_EXCEEDED_LINE_COLOR
 
 class LNETPaintHandlers:
     def __init__(self, editor):
@@ -42,8 +43,7 @@ class LNETPaintHandlers:
 
         odd_bg_color_const = self.editor.lineNumberArea.odd_line_background
         even_bg_color_const = default_bg_color_for_area
-        width_exceeded_bg_color_const = self.editor.lineNumberArea.width_indicator_exceeded_color
-
+        
         current_q_block = self.editor.firstVisibleBlock()
         current_q_block_number = current_q_block.blockNumber()
         top = int(self.editor.blockBoundingGeometry(current_q_block).translated(self.editor.contentOffset()).top())
@@ -64,25 +64,23 @@ class LNETPaintHandlers:
         while current_q_block.isValid() and top <= event.rect().bottom():
             if current_q_block.isVisible() and bottom >= event.rect().top():
                 line_height = int(self.editor.blockBoundingRect(current_q_block).height())
-
-                data_line_index_for_this_q_block = current_q_block_number
-                if self.editor.objectName() in ["original_text_edit", "edited_text_edit"]:
-                    data_line_index_for_this_q_block = active_data_line_idx if active_data_line_idx != -1 else -1
-
+                
                 display_number_for_line_area = str(current_q_block_number + 1)
                 line_num_rect = QRect(0, top, number_part_width - 3, line_height)
 
                 current_bg_for_number_part = even_bg_color_const
                 if (current_q_block_number + 1) % 2 != 0:
                     current_bg_for_number_part = odd_bg_color_const
+                
+                number_text_color = QColor(Qt.black)
 
                 painter.fillRect(line_num_rect.adjusted(0, 0, 3, 0), current_bg_for_number_part)
-                painter.setPen(QColor(Qt.black))
+                painter.setPen(number_text_color)
                 painter.drawText(line_num_rect, Qt.AlignRight | Qt.AlignVCenter, display_number_for_line_area)
 
                 if extra_part_width > 0:
                     extra_info_rect = QRect(number_part_width, top, extra_part_width -3 , line_height)
-                    bg_for_extra_part = current_bg_for_number_part
+                    bg_for_extra_part = current_bg_for_number_part 
 
                     if self.editor.objectName() == "original_text_edit" or self.editor.objectName() == "edited_text_edit":
                         q_block_text_raw = current_q_block.text()
@@ -91,34 +89,54 @@ class LNETPaintHandlers:
                         pixel_width = calculate_string_width(text_for_width_calc, self.editor.font_map)
                         width_str = str(pixel_width)
                         text_color_for_extra_part = QColor(Qt.black)
-
-                        if pixel_width > self.editor.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
-                            bg_for_extra_part = width_exceeded_bg_color_const
-
+                        
+                        is_part_of_short_data_line = False
+                        if isinstance(main_window_ref, QMainWindow) and current_block_idx_data != -1 and active_data_line_idx != -1:
+                            block_key_str = str(current_block_idx_data)
+                            if active_data_line_idx in main_window_ref.short_lines_per_block.get(block_key_str, set()):
+                                text_of_active_data_line, _ = main_window_ref.data_processor.get_current_string_text(current_block_idx_data, active_data_line_idx)
+                                num_q_blocks_in_active_data_line = str(text_of_active_data_line).count('\n')
+                                if current_q_block_number == num_q_blocks_in_active_data_line:
+                                    is_part_of_short_data_line = True
+                        
+                        if is_part_of_short_data_line:
+                             bg_for_extra_part = SHORT_LINE_COLOR
+                        elif pixel_width > self.editor.LINE_WIDTH_WARNING_THRESHOLD_PIXELS: # Original logic for width number bg
+                             bg_for_extra_part = self.editor.lineNumberArea.width_indicator_exceeded_color
+                        
                         painter.fillRect(extra_info_rect.adjusted(0,0,3,0), bg_for_extra_part)
                         painter.setPen(text_color_for_extra_part)
                         painter.drawText(extra_info_rect, Qt.AlignRight | Qt.AlignVCenter, width_str)
+                        
 
                     elif self.editor.objectName() == "preview_text_edit" and isinstance(main_window_ref, QMainWindow) and current_block_idx_data != -1:
                         painter.fillRect(extra_info_rect.adjusted(0,0,3,0), bg_for_extra_part)
 
                         indicator_x_start = number_part_width + 2
                         block_key_str_for_preview = str(current_block_idx_data)
+                        data_line_index_preview = current_q_block_number
 
                         indicators_to_draw_preview = []
-                        if data_line_index_for_this_q_block in main_window_ref.critical_problem_lines_per_block.get(block_key_str_for_preview, set()):
+                        if data_line_index_preview in main_window_ref.critical_problem_lines_per_block.get(block_key_str_for_preview, set()):
                             indicators_to_draw_preview.append(self.editor.lineNumberArea.preview_critical_indicator_color)
-                        elif data_line_index_for_this_q_block in main_window_ref.warning_problem_lines_per_block.get(block_key_str_for_preview, set()):
+                        elif data_line_index_preview in main_window_ref.warning_problem_lines_per_block.get(block_key_str_for_preview, set()):
                             indicators_to_draw_preview.append(self.editor.lineNumberArea.preview_warning_indicator_color)
 
-                        if data_line_index_for_this_q_block in main_window_ref.width_exceeded_lines_per_block.get(block_key_str_for_preview, set()):
-                            if not indicators_to_draw_preview or \
-                               (len(indicators_to_draw_preview) < 2 and self.editor.lineNumberArea.preview_width_exceeded_indicator_color not in indicators_to_draw_preview):
-                                indicators_to_draw_preview.append(self.editor.lineNumberArea.preview_width_exceeded_indicator_color)
+                        if data_line_index_preview in main_window_ref.width_exceeded_lines_per_block.get(block_key_str_for_preview, set()):
+                             preview_width_color_temp = WIDTH_EXCEEDED_LINE_COLOR
+                             if preview_width_color_temp.alpha() < 100: preview_width_color_temp = preview_width_color_temp.lighter(120) 
+                             if len(indicators_to_draw_preview) < 3 and preview_width_color_temp not in indicators_to_draw_preview:
+                                indicators_to_draw_preview.append(preview_width_color_temp)
+                        
+                        if data_line_index_preview in main_window_ref.short_lines_per_block.get(block_key_str_for_preview, set()):
+                            preview_short_color_temp = SHORT_LINE_COLOR
+                            if preview_short_color_temp.alpha() < 100: preview_short_color_temp = preview_short_color_temp.lighter(120)
+                            if len(indicators_to_draw_preview) < 3 and preview_short_color_temp not in indicators_to_draw_preview:
+                                indicators_to_draw_preview.append(preview_short_color_temp)
 
 
                         current_indicator_x_preview = indicator_x_start
-                        for color in indicators_to_draw_preview:
+                        for color_idx, color in enumerate(indicators_to_draw_preview):
                             if current_indicator_x_preview + self.editor.lineNumberArea.preview_indicator_width <= number_part_width + extra_part_width -1:
                                 ind_rect = QRect(current_indicator_x_preview,
                                                  top + 2,
@@ -127,7 +145,7 @@ class LNETPaintHandlers:
                                 painter.fillRect(ind_rect, color)
                                 current_indicator_x_preview += self.editor.lineNumberArea.preview_indicator_width + self.editor.lineNumberArea.preview_indicator_spacing
                             else: break
-                painter.setPen(QColor(Qt.black))
+                painter.setPen(QColor(Qt.black)) 
             current_q_block = current_q_block.next()
             top = bottom
             bottom = top + int(self.editor.blockBoundingRect(current_q_block).height())

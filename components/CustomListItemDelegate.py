@@ -25,10 +25,9 @@ class CustomListItemDelegate(QStyledItemDelegate):
         current_font_size = font_for_metrics.pointSize()
         if current_font_size <= 0: current_font_size = self.fixed_number_area_width_base_font_size
 
-        # Пропорційно змінюємо ширину номерної зони
         scaled_width = int(self.fixed_number_area_width_base_pixels * \
                            (current_font_size / self.fixed_number_area_width_base_font_size))
-        return max(scaled_width, 20) # Мінімальна ширина
+        return max(scaled_width, 20)
 
 
     def sizeHint(self, option: QStyleOptionViewItem, index: QModelIndex) -> QSize:
@@ -47,7 +46,7 @@ class CustomListItemDelegate(QStyledItemDelegate):
 
         calculated_width = current_number_area_width + \
                            self.number_area_padding_right_to_indicators + \
-                           (self.indicator_width + self.indicator_spacing) * 3 + \
+                           (self.indicator_width + self.indicator_spacing) * 4 + \
                            self.text_left_margin_after_indicators + \
                            fm.horizontalAdvance(str(index.data(Qt.DisplayRole))) + 20
 
@@ -80,6 +79,7 @@ class CustomListItemDelegate(QStyledItemDelegate):
         critical_tag_indicator_color = QColor(Qt.yellow).darker(125)
         warning_tag_indicator_color = QColor(Qt.darkGray)
         width_exceeded_indicator_color = QColor(255, 120, 120)
+        short_line_indicator_color = QColor(0, 0, 200, 180) # Darker blue for item list
 
         is_selected = option.state & QStyle.State_Selected
         block_idx_data = index.data(Qt.UserRole)
@@ -89,6 +89,7 @@ class CustomListItemDelegate(QStyledItemDelegate):
         has_critical_tag_issues = False
         has_warning_tag_issues = False
         has_width_exceeded_issues = False
+        has_short_line_issues = False
 
         main_window = None
         if self.list_widget:
@@ -106,6 +107,9 @@ class CustomListItemDelegate(QStyledItemDelegate):
                 has_warning_tag_issues = bool(main_window.warning_problem_lines_per_block.get(block_key))
             if hasattr(main_window, 'width_exceeded_lines_per_block'):
                 has_width_exceeded_issues = bool(main_window.width_exceeded_lines_per_block.get(block_key))
+            if hasattr(main_window, 'short_lines_per_block'):
+                has_short_line_issues = bool(main_window.short_lines_per_block.get(block_key))
+
 
         number_rect = QRect(item_rect.left(), item_rect.top(), current_number_area_width, item_rect.height())
         painter.fillRect(number_rect, number_area_bg)
@@ -131,6 +135,11 @@ class CustomListItemDelegate(QStyledItemDelegate):
                  indicator_colors_to_draw.append(width_exceeded_indicator_color)
             elif width_exceeded_indicator_color not in indicator_colors_to_draw and len(indicator_colors_to_draw) < 3:
                  indicator_colors_to_draw.append(width_exceeded_indicator_color)
+        
+        if has_short_line_issues:
+            if len(indicator_colors_to_draw) < 3 and short_line_indicator_color not in indicator_colors_to_draw:
+                 indicator_colors_to_draw.append(short_line_indicator_color)
+
 
         actual_indicator_start_x = current_indicator_x
         for color in indicator_colors_to_draw:

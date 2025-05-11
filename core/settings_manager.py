@@ -100,6 +100,7 @@ class SettingsManager:
         self.mw.critical_problem_lines_per_block = {}
         self.mw.warning_problem_lines_per_block = {}
         self.mw.width_exceeded_lines_per_block = {}
+        self.mw.short_lines_per_block = {}
         self.mw.search_history_to_save = []
 
         temp_original_file_path = None
@@ -176,6 +177,10 @@ class SettingsManager:
                 width_problems = settings_data.get("width_exceeded_lines_per_block")
                 if isinstance(width_problems, dict):
                     self.mw.width_exceeded_lines_per_block = {k: set(v) for k, v in width_problems.items() if isinstance(v, list)}
+                short_problems = settings_data.get("short_lines_per_block")
+                if isinstance(short_problems, dict):
+                    self.mw.short_lines_per_block = {k: set(v) for k,v in short_problems.items() if isinstance(v, list)}
+
 
             except json.JSONDecodeError as e:
                 log_debug(f"ERROR reading or parsing settings file '{self.settings_file_path}': {e}. Using ALL default values set initially.")
@@ -252,6 +257,7 @@ class SettingsManager:
             settings_data["critical_problem_lines_per_block"] = {k: list(v) for k, v in self.mw.critical_problem_lines_per_block.items() if v}
             settings_data["warning_problem_lines_per_block"] = {k: list(v) for k, v in self.mw.warning_problem_lines_per_block.items() if v}
             settings_data["width_exceeded_lines_per_block"] = {k: list(v) for k, v in self.mw.width_exceeded_lines_per_block.items() if v}
+            settings_data["short_lines_per_block"] = {k: list(v) for k, v in self.mw.short_lines_per_block.items() if v}
         else:
             log_debug("Not saving problem line data dictionaries because unsaved_changes is True.")
 

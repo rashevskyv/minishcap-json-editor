@@ -18,7 +18,7 @@ from .LNET_constants import (
     CURRENT_LINE_COLOR, LINKED_CURSOR_BLOCK_COLOR, LINKED_CURSOR_POS_COLOR,
     PREVIEW_SELECTED_LINE_COLOR, CRITICAL_PROBLEM_LINE_COLOR,
     WARNING_PROBLEM_LINE_COLOR, TAG_INTERACTION_HIGHLIGHT_COLOR,
-    SEARCH_MATCH_HIGHLIGHT_COLOR, WIDTH_EXCEEDED_LINE_COLOR,
+    SEARCH_MATCH_HIGHLIGHT_COLOR, WIDTH_EXCEEDED_LINE_COLOR, SHORT_LINE_COLOR,
     CHARACTER_LIMIT_LINE_POSITION, CHARACTER_LIMIT_LINE_COLOR,
     CHARACTER_LIMIT_LINE_WIDTH
 )
@@ -46,6 +46,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.tag_interaction_highlight_color = TAG_INTERACTION_HIGHLIGHT_COLOR
         self.search_match_highlight_color = SEARCH_MATCH_HIGHLIGHT_COLOR
         self.width_exceeded_line_color = WIDTH_EXCEEDED_LINE_COLOR
+        self.short_line_color = SHORT_LINE_COLOR
 
         self.highlightManager = TextHighlightManager(self)
         self.mouse_handler = LNETMouseHandlers(self) 
@@ -100,29 +101,17 @@ class LineNumberedTextEdit(QPlainTextEdit):
         button_size = 22 
         btn.setFixedSize(button_size, button_size)
         
-        # Стиль за замовчуванням
         normal_style = f"background-color: {color_rgb_str}; border: 1px solid black; border-radius: 3px;"
-        # Стиль при натисканні (трохи темніший колір або інша рамка)
-        # Для простоти, давайте зробимо рамку товстішою при натисканні
         pressed_style = f"background-color: {color_rgb_str}; border: 2px solid darkblue; border-radius: 3px;"
         
         btn.setStyleSheet(normal_style)
         btn.setToolTip(f"Обгорнути тегом {{Color:{color_name.capitalize()}}}")
 
-        # Обробка натискання
         btn.pressed.connect(lambda s=pressed_style: btn.setStyleSheet(s))
         
-        # Обробка відпускання кнопки та основна дія
-        # Released спрацьовує перед clicked, якщо обидва підключені до QPushButton.
-        # Clicked спрацьовує, коли кнопка миші відпущена НАД кнопкою.
-        # Нам потрібно, щоб меню закрилося ПІСЛЯ виконання дії.
         def on_button_clicked():
             self.mouse_handler._wrap_selection_with_color(color_name)
-            # Меню має закритися автоматично, оскільки QWidgetAction містить QPushButton.
-            # Якщо ні, можна додати menu_to_close.close() або menu_to_close.hide()
-            # але це може викликати проблеми, якщо клік був поза кнопкою.
-            # Повертаємо стиль до нормального, хоча це може бути зайвим, якщо меню закривається.
-            btn.setStyleSheet(normal_style) # Відновлення стилю
+            btn.setStyleSheet(normal_style)
 
         btn.clicked.connect(on_button_clicked)
         
@@ -152,13 +141,12 @@ class LineNumberedTextEdit(QPlainTextEdit):
                 palette_layout.setSpacing(4)
 
                 colors_map = {
-                    "Red": "rgb(200,0,0)", # Трохи темніший червоний для кращого контрасту рамки
+                    "Red": "rgb(200,0,0)",
                     "Green": "rgb(0,100,0)", 
-                    "Blue": "rgb(0,0,200)"  # Трохи темніший синій
+                    "Blue": "rgb(0,0,200)"
                 }
                 
                 for color_name_str, color_rgb_str in colors_map.items():
-                    # Передаємо 'menu' як menu_to_close, хоча QPushButton сам має закривати меню
                     color_button = self._create_color_button(color_palette_widget, color_name_str, color_rgb_str, menu)
                     palette_layout.addWidget(color_button)
                 
@@ -169,7 +157,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
                 log_debug(f"LNET ({self.objectName()}): No selection.")
 
         elif self.objectName() == "preview_text_edit":
-            # ... (решта коду для preview_text_edit залишається без змін) ...
             log_debug(f"LNET ({self.objectName()}): Adding actions for preview.")
             if hasattr(main_window, 'data_processor') and hasattr(main_window, 'editor_operation_handler'):
                 current_block_idx_data = main_window.current_block_idx
@@ -219,7 +206,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
                         calc_width_action.setEnabled(False)
 
         elif self.objectName() == "original_text_edit":
-            # ... (решта коду для original_text_edit залишається без змін) ...
             log_debug(f"LNET ({self.objectName()}): Adding actions for original.")
             tag_text_curly, _, _ = self.mouse_handler.get_tag_at_cursor(self.cursorForPosition(position_in_widget_coords), r"\{[^}]*\}")
             if tag_text_curly:
@@ -359,6 +345,18 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
     def hasWidthExceededHighlight(self, line_number = None) -> bool:
         return self.highlight_interface.hasWidthExceededHighlight(line_number)
+    
+    def addShortLineHighlight(self, line_number: int):
+        self.highlight_interface.addShortLineHighlight(line_number)
+
+    def removeShortLineHighlight(self, line_number: int) -> bool:
+        return self.highlight_interface.removeShortLineHighlight(line_number)
+
+    def clearShortLineHighlights(self):
+        self.highlight_interface.clearShortLineHighlights()
+
+    def hasShortLineHighlight(self, line_number = None) -> bool:
+        return self.highlight_interface.hasShortLineHighlight(line_number)
 
     def setPreviewSelectedLineHighlight(self, line_number: int):
         self.highlight_interface.setPreviewSelectedLineHighlight(line_number)

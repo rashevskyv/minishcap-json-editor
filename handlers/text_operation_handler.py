@@ -71,6 +71,50 @@ class TextOperationHandler(BaseHandler):
                 del self.mw.width_exceeded_lines_per_block[block_key]
         return state_changed
 
+    def _check_and_update_short_line_status(self, block_idx: int, string_idx: int, text_to_check: str) -> bool:
+        block_key = str(block_idx)
+        is_candidate_for_short = False
+        
+        sub_lines = str(text_to_check).split('\n')
+        if not sub_lines: return False
+
+        last_sub_line_text = sub_lines[-1]
+        current_sub_line_no_tags_stripped = remove_all_tags(last_sub_line_text).strip()
+
+        if current_sub_line_no_tags_stripped:
+            sentence_end_chars = ('.', '!', '?')
+            if not current_sub_line_no_tags_stripped.endswith(sentence_end_chars):
+                if string_idx + 1 < len(self.mw.data[block_idx]):
+                    next_full_line_text, _ = self.data_processor.get_current_string_text(block_idx, string_idx + 1)
+                    if next_full_line_text and str(next_full_line_text).strip():
+                        first_word_next_line_text_raw = str(next_full_line_text).split('\n')[0]
+                        if first_word_next_line_text_raw.strip():
+                            first_word_next_line_width = self.mw.app_action_handler._get_first_word_width(first_word_next_line_text_raw)
+                            if first_word_next_line_width > 0:
+                                current_last_sub_line_width = calculate_string_width(remove_all_tags(last_sub_line_text), self.mw.font_map)
+                                space_width = calculate_string_width(" ", self.mw.font_map)
+                                remaining_width = self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS - current_last_sub_line_width
+                                if remaining_width >= (first_word_next_line_width + space_width):
+                                    is_candidate_for_short = True
+        
+        short_lines_set = self.mw.short_lines_per_block.get(block_key, set()).copy()
+        state_changed = False
+        if is_candidate_for_short:
+            if string_idx not in short_lines_set:
+                short_lines_set.add(string_idx)
+                state_changed = True
+        else:
+            if string_idx in short_lines_set:
+                short_lines_set.discard(string_idx)
+                state_changed = True
+        
+        if state_changed:
+            if short_lines_set:
+                self.mw.short_lines_per_block[block_key] = short_lines_set
+            elif block_key in self.mw.short_lines_per_block:
+                del self.mw.short_lines_per_block[block_key]
+        return state_changed
+
 
     def text_edited(self):
         log_debug(f"TextOperationHandler.text_edited: Start. Programmatic change? {self.mw.is_programmatically_changing_text}")
@@ -139,6 +183,17 @@ class TextOperationHandler(BaseHandler):
             width_state_changed_for_block_list = self._check_and_update_width_exceeded_status(block_idx, string_idx_in_block, actual_text_with_spaces)
             if width_state_changed_for_block_list:
                 problems_updated_for_block_list = True
+            
+            short_line_state_changed_for_block_list_current = self._check_and_update_short_line_status(block_idx, string_idx_in_block, actual_text_with_spaces)
+            if short_line_state_changed_for_block_list_current:
+                problems_updated_for_block_list = True
+            
+            if string_idx_in_block > 0:
+                prev_string_idx = string_idx_in_block - 1
+                prev_text, _ = self.data_processor.get_current_string_text(block_idx, prev_string_idx)
+                short_line_state_changed_for_block_list_prev = self._check_and_update_short_line_status(block_idx, prev_string_idx, prev_text)
+                if short_line_state_changed_for_block_list_prev:
+                    problems_updated_for_block_list = True
                     
             if problems_updated_for_block_list and hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
                 self.ui_updater.update_block_item_text_with_problem_count(block_idx)
@@ -165,6 +220,7 @@ class TextOperationHandler(BaseHandler):
         self.mw.before_paste_critical_problems_snapshot = { k: v.copy() for k, v in self.mw.critical_problem_lines_per_block.items() }
         self.mw.before_paste_warning_problems_snapshot = { k: v.copy() for k, v in self.mw.warning_problem_lines_per_block.items() }
         self.mw.before_paste_width_exceeded_snapshot = { k: v.copy() for k, v in self.mw.width_exceeded_lines_per_block.items() }
+        self.mw.before_paste_short_lines_snapshot = { k: v.copy() for k, v in self.mw.short_lines_per_block.items()}
         self.mw.before_paste_block_idx_affected = block_idx
         
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
@@ -174,6 +230,7 @@ class TextOperationHandler(BaseHandler):
         self.mw.critical_problem_lines_per_block.pop(block_key, None)
         self.mw.warning_problem_lines_per_block.pop(block_key, None)
         self.mw.width_exceeded_lines_per_block.pop(block_key, None)
+        self.mw.short_lines_per_block.pop(block_key, None)
         
         if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
             self.ui_updater.update_block_item_text_with_problem_count(block_idx)
@@ -222,6 +279,7 @@ class TextOperationHandler(BaseHandler):
 
             successfully_processed_count += 1
             self._check_and_update_width_exceeded_status(block_idx, current_target_string_idx, final_text_to_apply)
+            self._check_and_update_short_line_status(block_idx, current_target_string_idx, final_text_to_apply)
 
 
         if successfully_processed_count > 0:
@@ -234,11 +292,13 @@ class TextOperationHandler(BaseHandler):
         num_critical_total_for_block = len(self.mw.critical_problem_lines_per_block.get(block_key, set()))
         num_warning_total_for_block = len(self.mw.warning_problem_lines_per_block.get(block_key, set()))
         num_width_exceeded_total_for_block = len(self.mw.width_exceeded_lines_per_block.get(block_key, set()))
+        num_short_lines_total_for_block = len(self.mw.short_lines_per_block.get(block_key, set()))
         
         message_parts = []
         if num_critical_total_for_block > 0: message_parts.append(f"{num_critical_total_for_block} line(s) have critical tag issues.")
         if num_warning_total_for_block > 0: message_parts.append(f"{num_warning_total_for_block} line(s) have tag warnings.")
         if num_width_exceeded_total_for_block > 0: message_parts.append(f"{num_width_exceeded_total_for_block} line(s) exceed width limit ({self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS}px).")
+        if num_short_lines_total_for_block > 0: message_parts.append(f"{num_short_lines_total_for_block} line(s) are potentially too short.")
         
         if message_parts:
             error_summary = (f"Pasted {successfully_processed_count} segment(s) into Block '{self.mw.block_names.get(block_key, block_key)}'.\n" + "\n".join(message_parts) + "\nPlease review.")
@@ -253,7 +313,7 @@ class TextOperationHandler(BaseHandler):
         self.ui_updater.update_block_item_text_with_problem_count(self.mw.current_block_idx)
         self.mw.is_programmatically_changing_text = False
         
-        if any_change_applied_to_data or num_critical_total_for_block > 0 or num_warning_total_for_block > 0 or num_width_exceeded_total_for_block > 0:
+        if any_change_applied_to_data or num_critical_total_for_block > 0 or num_warning_total_for_block > 0 or num_width_exceeded_total_for_block > 0 or num_short_lines_total_for_block > 0 :
             self.mw.can_undo_paste = True
             if hasattr(self.mw, 'undo_paste_action'): self.mw.undo_paste_action.setEnabled(True)
         else:
@@ -305,6 +365,13 @@ class TextOperationHandler(BaseHandler):
         
         width_state_changed = self._check_and_update_width_exceeded_status(block_idx, line_index, original_text)
         if width_state_changed: problems_updated = True
+        
+        short_line_state_changed_current = self._check_and_update_short_line_status(block_idx, line_index, original_text)
+        if short_line_state_changed_current: problems_updated = True
+        if line_index > 0:
+            prev_text, _ = self.data_processor.get_current_string_text(block_idx, line_index - 1)
+            short_line_state_changed_prev = self._check_and_update_short_line_status(block_idx, line_index - 1, prev_text)
+            if short_line_state_changed_prev: problems_updated = True
 
         if self.mw.current_string_idx == line_index:
              self.ui_updater.update_text_views()
@@ -348,6 +415,8 @@ class TextOperationHandler(BaseHandler):
 
         max_allowed_width = self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS
         warning_threshold = self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
+        space_width = calculate_string_width(" ", self.mw.font_map)
+        sentence_end_chars = ('.', '!', '?')
         
         info_parts = [f"Data Line {data_line_idx + 1} (Block {self.mw.current_block_idx}):\nMax Allowed Width (Game Dialog): {max_allowed_width}px\nWidth Warning Threshold (Editor): {warning_threshold}px\n"]
 
@@ -359,8 +428,23 @@ class TextOperationHandler(BaseHandler):
             sub_line_no_tags = remove_all_tags(sub_line)
             width_px = calculate_string_width(sub_line_no_tags, self.mw.font_map)
             status = "OK"
+            short_status = ""
             if width_px > warning_threshold: status = "EXCEEDED (Editor)"
-            info_parts.append(f"  Sub-line {i+1}: {width_px}px (Status: {status}) '{sub_line_no_tags[:40]}...'")
+
+            if i == len(sub_lines_current) -1 :
+                current_sub_line_no_tags_stripped_calc = remove_all_tags(sub_line).strip()
+                if current_sub_line_no_tags_stripped_calc and not current_sub_line_no_tags_stripped_calc.endswith(sentence_end_chars):
+                    if self.mw.current_block_idx != -1 and data_line_idx + 1 < len(self.mw.data[self.mw.current_block_idx]):
+                        next_full_line_text_calc, _ = self.data_processor.get_current_string_text(self.mw.current_block_idx, data_line_idx + 1)
+                        if next_full_line_text_calc and str(next_full_line_text_calc).strip():
+                            first_word_next_line_text_raw_calc = str(next_full_line_text_calc).split('\n')[0]
+                            if first_word_next_line_text_raw_calc.strip():
+                                first_word_next_line_width_calc = self.mw.app_action_handler._get_first_word_width(first_word_next_line_text_raw_calc)
+                                if first_word_next_line_width_calc > 0:
+                                    remaining_width_calc = max_allowed_width - width_px
+                                    if remaining_width_calc >= (first_word_next_line_width_calc + space_width):
+                                        short_status = f"SHORT (can fit {first_word_next_line_width_calc + space_width}px, has {remaining_width_calc}px)"
+            info_parts.append(f"  Sub-line {i+1}: {width_px}px (Status: {status}) {short_status} '{sub_line_no_tags[:40]}...'")
         
         info_parts.append(f"\n--- Original Text ---")
         sub_lines_original = str(original_text_data_line).split('\n')
@@ -370,8 +454,23 @@ class TextOperationHandler(BaseHandler):
             sub_line_no_tags = remove_all_tags(sub_line)
             width_px = calculate_string_width(sub_line_no_tags, self.mw.font_map)
             status = "OK"
+            short_status_orig = ""
             if width_px > warning_threshold: status = "EXCEEDED (Editor)"
-            info_parts.append(f"  Sub-line {i+1}: {width_px}px (Status: {status}) '{sub_line_no_tags[:40]}...'")
+
+            if i == len(sub_lines_original) -1:
+                original_sub_line_no_tags_stripped_calc = remove_all_tags(sub_line).strip()
+                if original_sub_line_no_tags_stripped_calc and not original_sub_line_no_tags_stripped_calc.endswith(sentence_end_chars):
+                    if self.mw.current_block_idx != -1 and data_line_idx + 1 < len(self.mw.data[self.mw.current_block_idx]):
+                        next_full_line_text_orig_calc = self.data_processor._get_string_from_source(self.mw.current_block_idx, data_line_idx + 1, self.mw.data, "orig_calc_width")
+                        if next_full_line_text_orig_calc and str(next_full_line_text_orig_calc).strip():
+                            first_word_next_line_text_raw_orig_calc = str(next_full_line_text_orig_calc).split('\n')[0]
+                            if first_word_next_line_text_raw_orig_calc.strip():
+                                first_word_next_line_width_orig_calc = self.mw.app_action_handler._get_first_word_width(first_word_next_line_text_raw_orig_calc)
+                                if first_word_next_line_width_orig_calc > 0:
+                                    remaining_width_orig_calc = max_allowed_width - width_px
+                                    if remaining_width_orig_calc >= (first_word_next_line_width_orig_calc + space_width):
+                                        short_status_orig = f"SHORT (can fit {first_word_next_line_width_orig_calc+space_width}px, has {remaining_width_orig_calc}px)"
+            info_parts.append(f"  Sub-line {i+1}: {width_px}px (Status: {status}) {short_status_orig} '{sub_line_no_tags[:40]}...'")
 
         QMessageBox.information(self.mw, "Line Width Calculation", "\n".join(info_parts))
         log_debug(f"<-- TextOperationHandler: calculate_width_for_data_line_action finished.")
