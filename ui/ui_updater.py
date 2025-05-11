@@ -114,11 +114,11 @@ class UIUpdater:
         self.mw.is_programmatically_changing_text = True 
         
         editors_to_clear_and_update_LNA = [preview_edit, original_edit, edited_edit]
-        for editor in editors_to_clear_and_update_LNA:
-            if editor and hasattr(editor, 'clearAllProblemTypeHighlights'):
-                editor.clearAllProblemTypeHighlights()
-            if editor and hasattr(editor, 'clearPreviewSelectedLineHighlight') and editor == preview_edit:
-                 editor.clearPreviewSelectedLineHighlight()
+        for editor_widget_loop in editors_to_clear_and_update_LNA: # Renamed loop variable
+            if editor_widget_loop and hasattr(editor_widget_loop, 'clearAllProblemTypeHighlights'):
+                editor_widget_loop.clearAllProblemTypeHighlights()
+            if editor_widget_loop and hasattr(editor_widget_loop, 'clearPreviewSelectedLineHighlight') and editor_widget_loop == preview_edit:
+                 editor_widget_loop.clearPreviewSelectedLineHighlight()
 
 
         preview_lines = []
@@ -128,8 +128,8 @@ class UIUpdater:
             if edited_edit: edited_edit.setPlainText("")
             self.update_text_views(); self.synchronize_original_cursor() 
             if preview_edit: preview_edit.verticalScrollBar().setValue(old_preview_scrollbar_value)
-            for editor_widget in editors_to_clear_and_update_LNA:
-                if editor_widget and hasattr(editor_widget, 'lineNumberArea'): editor_widget.lineNumberArea.update()
+            for editor_widget_loop in editors_to_clear_and_update_LNA:
+                if editor_widget_loop and hasattr(editor_widget_loop, 'lineNumberArea'): editor_widget_loop.lineNumberArea.update()
             self.mw.is_programmatically_changing_text = False 
             return
         
@@ -140,7 +140,8 @@ class UIUpdater:
                 preview_line = text_with_converted_spaces.replace('\n', getattr(self.mw, "newline_display_symbol", "↵"))
                 preview_lines.append(preview_line)
             
-            preview_edit.setPlainText("\n".join(preview_lines))
+            if preview_edit.toPlainText() != "\n".join(preview_lines):
+                 preview_edit.setPlainText("\n".join(preview_lines))
             
             for line_num in range(len(preview_lines)): 
                 if line_num in critical_lines_data:
@@ -159,8 +160,8 @@ class UIUpdater:
         
         self.update_text_views() 
         
-        for editor_widget in editors_to_clear_and_update_LNA:
-            if editor_widget and hasattr(editor_widget, 'lineNumberArea'): editor_widget.lineNumberArea.update()
+        for editor_widget_loop in editors_to_clear_and_update_LNA:
+            if editor_widget_loop and hasattr(editor_widget_loop, 'lineNumberArea'): editor_widget_loop.lineNumberArea.update()
 
         self.synchronize_original_cursor() 
         self.mw.is_programmatically_changing_text = False 
@@ -176,8 +177,7 @@ class UIUpdater:
         cursor = editor.textCursor()
 
         if cursor.hasSelection():
-            # If selection is active, let update_status_bar_selection handle the labels
-            self.update_status_bar_selection()
+            self.update_status_bar_selection() 
         else:
             block = cursor.block()
             pos_in_block = cursor.positionInBlock()
@@ -210,8 +210,20 @@ class UIUpdater:
         cursor = editor.textCursor()
 
         if not cursor.hasSelection():
-            # Called when selection is cleared, fall back to regular status bar update
-            self.update_status_bar() 
+            block = cursor.block()
+            pos_in_block = cursor.positionInBlock()
+            line_text_with_dots = block.text()
+            line_text_with_spaces = convert_dots_to_spaces_from_editor(line_text_with_dots)
+            line_text_no_all_tags = remove_all_tags(line_text_with_spaces)
+            line_len_no_tags = len(line_text_no_all_tags)
+            line_len_with_tags = len(line_text_with_spaces)
+            text_to_cursor_with_dots = line_text_with_dots[:pos_in_block]
+            text_to_cursor_with_spaces = convert_dots_to_spaces_from_editor(text_to_cursor_with_dots)
+            text_to_cursor_no_all_tags = remove_all_tags(text_to_cursor_with_spaces)
+            pixel_width = calculate_string_width(text_to_cursor_no_all_tags, self.mw.font_map)
+            self.mw.status_label_part1.setText(f"Pos: {pos_in_block}")
+            self.mw.status_label_part2.setText(f"Line: {line_len_no_tags}/{line_len_with_tags}")
+            self.mw.status_label_part3.setText(f"Width: {pixel_width}px")
             return
 
         selected_text_with_dots = cursor.selectedText()
@@ -222,14 +234,12 @@ class UIUpdater:
         pixel_width = calculate_string_width(selected_text_no_all_tags, self.mw.font_map)
         
         sel_start_abs = cursor.selectionStart()
-        sel_start_block_obj = editor.document().findBlock(sel_start_abs) # Use findBlock
+        sel_start_block_obj = editor.document().findBlock(sel_start_abs)
         sel_start_pos_in_block = sel_start_abs - sel_start_block_obj.position()
         
         self.mw.status_label_part1.setText(f"Sel: {len_no_tags}/{len_with_tags}")
         self.mw.status_label_part2.setText(f"At: {sel_start_pos_in_block}")
         self.mw.status_label_part3.setText(f"Width: {pixel_width}px")
-        
-        # self.synchronize_original_cursor() # Not strictly needed here as cursor pos didn't change its own signal
 
 
     def clear_status_bar(self):
@@ -316,28 +326,30 @@ class UIUpdater:
         
         orig_edit = self.mw.original_text_edit
         if orig_edit:
-            orig_text_edit_cursor_pos = orig_edit.textCursor().position()
-            orig_anchor_pos = orig_edit.textCursor().anchor()
-            orig_has_selection = orig_edit.textCursor().hasSelection()
-            if orig_edit.toPlainText() != original_text_for_display: orig_edit.setPlainText(original_text_for_display)
-            new_orig_cursor = orig_edit.textCursor()
-            new_orig_cursor.setPosition(min(orig_anchor_pos, len(original_text_for_display)))
-            if orig_has_selection: new_orig_cursor.setPosition(min(orig_text_edit_cursor_pos, len(original_text_for_display)), QTextCursor.KeepAnchor)
-            else: new_orig_cursor.setPosition(min(orig_text_edit_cursor_pos, len(original_text_for_display)))
-            orig_edit.setTextCursor(new_orig_cursor)
+            if orig_edit.toPlainText() != original_text_for_display:
+                orig_text_edit_cursor_pos = orig_edit.textCursor().position()
+                orig_anchor_pos = orig_edit.textCursor().anchor()
+                orig_has_selection = orig_edit.textCursor().hasSelection()
+                orig_edit.setPlainText(original_text_for_display)
+                new_orig_cursor = orig_edit.textCursor()
+                new_orig_cursor.setPosition(min(orig_anchor_pos, len(original_text_for_display)))
+                if orig_has_selection: new_orig_cursor.setPosition(min(orig_text_edit_cursor_pos, len(original_text_for_display)), QTextCursor.KeepAnchor)
+                else: new_orig_cursor.setPosition(min(orig_text_edit_cursor_pos, len(original_text_for_display)))
+                orig_edit.setTextCursor(new_orig_cursor)
+            else:
+                log_debug(f"UIUpdater: update_text_views - Content for {orig_edit.objectName()} matches. No setPlainText needed.")
+
 
         edited_widget = self.mw.edited_text_edit
         if edited_widget:
-            text_in_widget_for_display = edited_widget.toPlainText()
-            
-            if text_in_widget_for_display != edited_text_for_display_converted:
-                log_debug(f"UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating. Programmatic context: {is_programmatic_call_flag}")
+            if edited_widget.toPlainText() != edited_text_for_display_converted:
+                log_debug(f"UIUpdater: update_text_views - Content mismatch for {edited_widget.objectName()}. Updating. Programmatic context: {is_programmatic_call_flag}")
                 saved_edited_cursor_pos = edited_widget.textCursor().position()
                 saved_edited_anchor_pos = edited_widget.textCursor().anchor()
                 saved_edited_has_selection = edited_widget.textCursor().hasSelection()
                 
                 edited_widget.setPlainText(edited_text_for_display_converted)
-                log_debug(f"  UIUpdater: setPlainText called on edited_text_edit. Undo available after: {edited_widget.document().isUndoAvailable()}")
+                log_debug(f"  UIUpdater: setPlainText called on {edited_widget.objectName()}. Undo available after: {edited_widget.document().isUndoAvailable()}")
 
                 restored_cursor = edited_widget.textCursor()
                 new_edited_anchor_pos = min(saved_edited_anchor_pos, len(edited_text_for_display_converted))
@@ -347,9 +359,13 @@ class UIUpdater:
                 else: restored_cursor.setPosition(new_edited_cursor_pos)
                 edited_widget.setTextCursor(restored_cursor)
             else:
-                 log_debug(f"UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: {is_programmatic_call_flag}")
+                 log_debug(f"UIUpdater: update_text_views - Content for {edited_widget.objectName()} matches. No setPlainText needed.")
 
-        if self.mw.edited_text_edit and self.mw.edited_text_edit.textCursor().hasSelection():
-            self.update_status_bar_selection()
-        else:
-            self.update_status_bar()
+        # Ensure status bar is updated based on the final state of edited_widget
+        if self.mw.edited_text_edit: # Check if it exists
+            if self.mw.edited_text_edit.textCursor().hasSelection():
+                self.update_status_bar_selection()
+            else:
+                self.update_status_bar()
+        else: # Fallback if edited_text_edit is None for some reason
+            self.clear_status_bar()

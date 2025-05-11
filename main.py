@@ -4,7 +4,7 @@ import json
 import copy
 import re
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QPlainTextEdit, QVBoxLayout, QSpinBox, QWidget, QLabel
-from PyQt5.QtCore import Qt, QEvent
+from PyQt5.QtCore import Qt, QEvent, QRect
 from PyQt5.QtGui import QKeyEvent, QTextCursor, QKeySequence, QFont
 
 from components.LineNumberArea import LineNumberArea
@@ -71,6 +71,9 @@ class MainWindow(QMainWindow):
 
         self.initial_load_path = None
         self.initial_edited_load_path = None
+
+        self.window_was_maximized_on_close = False
+        self.window_normal_geometry_on_close: QRect = None
 
 
         self.newline_display_symbol = "↵"
@@ -217,8 +220,6 @@ class MainWindow(QMainWindow):
         editor = self.edited_text_edit
         cursor = editor.textCursor()
 
-        # If selection is active, selectionChanged will handle status bar updates.
-        # We only handle non-selection cursor moves here for tag adjustment.
         if not cursor.hasSelection():
             self.is_adjusting_cursor = True
             
@@ -236,7 +237,7 @@ class MainWindow(QMainWindow):
                     break 
             self.is_adjusting_cursor = False
         
-        self.ui_updater.update_status_bar() # This will now check for selection itself.
+        self.ui_updater.update_status_bar()
 
 
     def handle_edited_selection_changed(self):

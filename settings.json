@@ -187,22 +187,23 @@
         "Гей, {Color:Green}Лінк",
         "Так Ні"
     ],
-    "last_selected_block_index": 1,
-    "last_selected_string_index": 24,
-    "last_cursor_position_in_edited": 79,
+    "last_selected_block_index": 11,
+    "last_selected_string_index": 92,
+    "last_cursor_position_in_edited": 187,
     "last_edited_text_edit_scroll_value_v": 0,
     "last_edited_text_edit_scroll_value_h": 0,
-    "last_preview_text_edit_scroll_value_v": 2,
+    "last_preview_text_edit_scroll_value_v": 0,
     "last_original_text_edit_scroll_value_v": 0,
     "last_original_text_edit_scroll_value_h": 0,
     "font_size": 11,
     "original_file_path": "//192.168.50.168/tloz_tmc_ua/UKR_orig.json",
     "edited_file_path": "//192.168.50.168/tloz_tmc_ua/UKR.json",
-    "window_geometry": {
-        "x": 602,
-        "y": 235,
-        "width": 1650,
-        "height": 1134
+    "window_was_maximized": false,
+    "window_normal_geometry": {
+        "x": 477,
+        "y": 171,
+        "width": 1430,
+        "height": 1002
     },
     "main_splitter_state": "AAAA/wAAAAEAAAACAAABvQAAA+4B/////wEAAAABAA==",
     "right_splitter_state": "AAAA/wAAAAEAAAACAAABuAAAAW8B/////wEAAAACAA==",
@@ -239,11 +240,7 @@
             63
         ],
         "9": [
-            4,
-            69
-        ],
-        "11": [
-            92
+            4
         ],
         "12": [
             97,
@@ -709,7 +706,6 @@
             17,
             19,
             20,
-            24,
             26,
             28
         ],
@@ -757,21 +753,20 @@
             133,
             6,
             134,
-            8,
+            135,
             9,
             10,
-            135,
-            12,
             137,
+            12,
+            138,
             14,
             15,
             16,
             17,
-            138,
-            19,
             139,
-            21,
+            19,
             144,
+            21,
             23,
             36,
             37,
@@ -877,7 +872,6 @@
             66,
             67,
             68,
-            69,
             70,
             72,
             73,
@@ -960,7 +954,6 @@
             69,
             86,
             87,
-            92,
             96,
             100,
             106,

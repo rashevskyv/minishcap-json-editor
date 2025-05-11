@@ -1,4 +1,5 @@
 from PyQt5.QtWidgets import QMessageBox, QApplication
+from PyQt5.QtCore import QRect
 from utils import log_debug
 import copy
 import os
@@ -140,9 +141,27 @@ class MainWindowHelper:
         if self.mw.search_panel_widget:
             self.mw.search_history_to_save = self.mw.search_panel_widget.get_history()
             log_debug(f"MainWindowHelper: Updated search_history_to_save: {len(self.mw.search_history_to_save)} items")
+        
+        self.mw.window_was_maximized_on_close = self.mw.isMaximized()
+        if self.mw.window_was_maximized_on_close:
+            self.mw.window_normal_geometry_on_close = self.mw.normalGeometry()
+        else:
+            self.mw.window_normal_geometry_on_close = self.mw.geometry() # Store current as normal if not maximized
+
 
     def restore_state_after_settings_load(self):
         log_debug("MainWindowHelper: restore_state_after_settings_load called.")
+        
+        if hasattr(self.mw, 'window_geometry_to_restore') and self.mw.window_geometry_to_restore:
+            geom_dict = self.mw.window_geometry_to_restore
+            if all(k in geom_dict for k in ('x', 'y', 'width', 'height')):
+                self.mw.setGeometry(geom_dict['x'], geom_dict['y'], geom_dict['width'], geom_dict['height'])
+                log_debug(f"Restored window geometry from settings: {geom_dict}")
+            if hasattr(self.mw, 'window_was_maximized_at_save') and self.mw.window_was_maximized_at_save:
+                self.mw.showMaximized()
+                log_debug("Window was maximized, restored to maximized state.")
+
+
         if self.mw.initial_load_path and os.path.exists(self.mw.initial_load_path):
             log_debug(f"MainWindowHelper: Attempting to load initial file from settings: {self.mw.initial_load_path}")
             self.mw.app_action_handler.load_all_data_for_path(self.mw.initial_load_path, self.mw.initial_edited_load_path, is_initial_load_from_settings=True)

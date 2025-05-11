@@ -1,7 +1,7 @@
 import json
 import os
 import base64
-from PyQt5.QtCore import QByteArray
+from PyQt5.QtCore import QByteArray, QRect
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QFont
 from utils.utils import log_debug
@@ -94,6 +94,8 @@ class SettingsManager:
             "last_original_text_edit_scroll_value_v": 0,
             "last_original_text_edit_scroll_value_h": 0,
             "font_size": default_font_size,
+            "window_was_maximized": False, # New setting
+            "window_normal_geometry": None # New setting
         }
 
         settings_data = {}
@@ -115,6 +117,8 @@ class SettingsManager:
             log_debug(f"Settings file '{self.settings_file_path}' not found. Using default values already set.")
             setattr(self.mw, "original_file_path", None)
             setattr(self.mw, "edited_file_path", None)
+            self.mw.window_geometry_to_restore = None # For helper
+            self.mw.window_was_maximized_at_save = False # For helper
         else:
             try:
                 with open(self.settings_file_path, 'r', encoding='utf-8') as f:
@@ -123,11 +127,11 @@ class SettingsManager:
 
                 temp_original_file_path = settings_data.get("original_file_path")
                 temp_edited_file_path = settings_data.get("edited_file_path")
+                
+                # Geometry is handled by helper after window is shown
+                self.mw.window_geometry_to_restore = settings_data.get("window_normal_geometry") # Store for helper
+                self.mw.window_was_maximized_at_save = settings_data.get("window_was_maximized", False) # Store for helper
 
-                window_geom = settings_data.get("window_geometry")
-                if window_geom and isinstance(window_geom, dict) and all(k in window_geom for k in ('x', 'y', 'width', 'height')):
-                    try: self.mw.setGeometry(window_geom['x'], window_geom['y'], window_geom['width'], window_geom['height'])
-                    except Exception as e: log_debug(f"WARN: Failed to restore window geometry: {e}")
                 try:
                     if self.mw.main_splitter and "main_splitter_state" in settings_data: self.mw.main_splitter.restoreState(QByteArray(base64.b64decode(settings_data["main_splitter_state"])))
                     if self.mw.right_splitter and "right_splitter_state" in settings_data: self.mw.right_splitter.restoreState(QByteArray(base64.b64decode(settings_data["right_splitter_state"])))
@@ -138,6 +142,8 @@ class SettingsManager:
 
 
                 for key_from_defaults, _ in default_settings_values.items():
+                    if key_from_defaults in ["window_normal_geometry", "window_was_maximized"]: # Handled separately
+                        continue
                     if key_from_defaults in settings_data:
                         value_from_file = settings_data[key_from_defaults]
                         if key_from_defaults == "font_size":
@@ -184,8 +190,13 @@ class SettingsManager:
 
             except json.JSONDecodeError as e:
                 log_debug(f"ERROR reading or parsing settings file '{self.settings_file_path}': {e}. Using ALL default values set initially.")
+                self.mw.window_geometry_to_restore = None
+                self.mw.window_was_maximized_at_save = False
             except Exception as e:
                 log_debug(f"UNEXPECTED ERROR while processing settings file '{self.settings_file_path}': {e}. Using ALL default values set initially.")
+                self.mw.window_geometry_to_restore = None
+                self.mw.window_was_maximized_at_save = False
+
 
         log_debug(f"SettingsManager: After potential load from file, self.mw.current_font_size is {self.mw.current_font_size}")
         self.mw.apply_font_size()
@@ -202,8 +213,8 @@ class SettingsManager:
 
         if not self.mw.initial_load_path and not self.mw.json_path:
             log_debug("SettingsManager: No initial_load_path from settings and no current json_path, ensuring UI is cleared.")
-            self.mw.ui_updater.populate_blocks()
-            self.mw.ui_updater.populate_strings_for_block(-1)
+            self.ui_updater.populate_blocks()
+            self.ui_updater.populate_strings_for_block(-1)
 
         log_debug("<-- SettingsManager: load_settings finished")
 
@@ -222,6 +233,7 @@ class SettingsManager:
             "last_preview_text_edit_scroll_value_v",
             "last_original_text_edit_scroll_value_v", "last_original_text_edit_scroll_value_h",
             "font_size"
+            # "window_was_maximized" and "window_normal_geometry" are handled below
         ]
 
         for key in keys_to_save:
@@ -246,7 +258,15 @@ class SettingsManager:
 
         log_debug(f"Saving paths: original_file_path='{settings_data.get('original_file_path')}', edited_file_path='{settings_data.get('edited_file_path')}'")
 
-        geom = self.mw.geometry(); settings_data["window_geometry"] = {"x": geom.x(), "y": geom.y(), "width": geom.width(), "height": geom.height()}
+        settings_data["window_was_maximized"] = self.mw.window_was_maximized_on_close
+        if self.mw.window_normal_geometry_on_close:
+            geom = self.mw.window_normal_geometry_on_close
+            settings_data["window_normal_geometry"] = {"x": geom.x(), "y": geom.y(), "width": geom.width(), "height": geom.height()}
+        else: # Should ideally not happen if was_maximized_on_close is true, but as a fallback
+            geom = self.mw.geometry()
+            settings_data["window_normal_geometry"] = {"x": geom.x(), "y": geom.y(), "width": geom.width(), "height": geom.height()}
+
+
         try:
             if self.mw.main_splitter: settings_data["main_splitter_state"] = base64.b64encode(self.mw.main_splitter.saveState().data()).decode('ascii')
             if self.mw.right_splitter: settings_data["right_splitter_state"] = base64.b64encode(self.mw.right_splitter.saveState().data()).decode('ascii')
