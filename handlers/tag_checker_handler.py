@@ -9,6 +9,8 @@ from constants import ORIGINAL_PLAYER_TAG
 PLAYER_REPLACEMENT_CURLY_PATTERN_STR = r"\{Color:Green\}Лінк\w*\{Color:White\}"
 PLAYER_REPLACEMENT_CURLY_PATTERN_COMPILED = re.compile(PLAYER_REPLACEMENT_CURLY_PATTERN_STR, re.IGNORECASE)
 GENERIC_TAG_PATTERN = re.compile(r"\{[^}]*\}")
+NON_WHITE_COLOR_TAG_PATTERN = re.compile(r"\{Color:(?!White)[^}]*\}", re.IGNORECASE)
+WHITE_COLOR_TAG_PATTERN = re.compile(r"\{Color:White\}", re.IGNORECASE)
 
 
 class TagCheckerHandler:
@@ -33,6 +35,10 @@ class TagCheckerHandler:
             'tag_text': '' 
         }
         self.is_search_active = False
+        self._used_translation_spans_for_current_s_idx = []
+        self._last_s_idx_processed_for_spans = -1
+        self._last_b_idx_processed_for_spans = -1
+
 
     def _get_initial_search_indices(self) -> tuple[int, int]:
         current_block_idx_ui = self.mw.current_block_idx
@@ -62,17 +68,17 @@ class TagCheckerHandler:
             tags.append((match.group(0), match.start(), match.end()))
         return tags
 
-    def _find_tag_in_translation(self, original_tag_text: str, translation_line_text: str, used_translation_tag_matches: list[tuple[int, int]]) -> tuple[bool, Optional[tuple[int,int]]]:
+    def _find_tag_in_translation(self, original_tag_text: str, translation_line_text: str, used_translation_tag_spans: list[tuple[int, int]]) -> tuple[bool, Optional[tuple[int,int]]]:
         
-        def is_match_used(match_start, match_end, used_matches):
-            for used_start_existing, used_end_existing in used_matches:
-                if match_start == used_start_existing and match_end == used_end_existing:
+        def is_match_used(match_start, match_end, used_spans):
+            for used_s, used_e in used_spans:
+                if match_start == used_s and match_end == used_e:
                     return True
             return False
 
         if original_tag_text == ORIGINAL_PLAYER_TAG:
             for match in PLAYER_REPLACEMENT_CURLY_PATTERN_COMPILED.finditer(translation_line_text):
-                if not is_match_used(match.start(), match.end(), used_translation_tag_matches):
+                if not is_match_used(match.start(), match.end(), used_translation_tag_spans):
                     return True, (match.start(), match.end())
             return False, None
         else:
@@ -82,13 +88,10 @@ class TagCheckerHandler:
                     match_pos = translation_line_text.index(original_tag_text, current_pos)
                     match_start = match_pos
                     match_end = match_pos + len(original_tag_text)
-                    if not is_match_used(match_start, match_end, used_translation_tag_matches):
-                        is_a_tag_in_translation = False
-                        for trans_match in GENERIC_TAG_PATTERN.finditer(translation_line_text):
-                            if trans_match.start() == match_start and trans_match.end() == match_end and trans_match.group(0) == original_tag_text:
-                                is_a_tag_in_translation = True
-                                break
-                        if is_a_tag_in_translation:
+                    if not is_match_used(match_start, match_end, used_translation_tag_spans):
+                        translation_tags_at_pos = self._get_tags_from_string(translation_line_text[match_start:match_end])
+                        if translation_tags_at_pos and translation_tags_at_pos[0][0] == original_tag_text and \
+                           translation_tags_at_pos[0][1] == 0 and translation_tags_at_pos[0][2] == len(original_tag_text):
                             return True, (match_start, match_end)
                     current_pos = match_end 
                 except ValueError:
@@ -171,6 +174,10 @@ class TagCheckerHandler:
         self.search_start_point = {'block_idx': -1, 'string_idx': -1}
         self.is_search_active = False
         self._remove_mismatch_highlight()
+        self._used_translation_spans_for_current_s_idx = []
+        self._last_s_idx_processed_for_spans = -1
+        self._last_b_idx_processed_for_spans = -1
+
 
     def _show_completion_popup(self, all_ok_during_run: bool):
         if all_ok_during_run:
@@ -200,6 +207,10 @@ class TagCheckerHandler:
             }
             self.search_start_point = {'block_idx': start_b_idx, 'string_idx': start_s_idx}
             log_debug(f"TagChecker: New search initiated. Start: B{start_b_idx}, S{start_s_idx}")
+            self._used_translation_spans_for_current_s_idx = []
+            self._last_s_idx_processed_for_spans = -1
+            self._last_b_idx_processed_for_spans = -1
+
 
         self.is_search_active = True 
         
@@ -212,6 +223,14 @@ class TagCheckerHandler:
             b_idx_current_iter = self.current_search_state['block_idx']
             s_idx_current_iter = self.current_search_state['string_idx']
             tag_orig_idx_current_iter = self.current_search_state['original_tag_idx_in_current_string']
+
+            if self._last_b_idx_processed_for_spans != b_idx_current_iter or \
+               self._last_s_idx_processed_for_spans != s_idx_current_iter:
+                self._used_translation_spans_for_current_s_idx = []
+                self._last_b_idx_processed_for_spans = b_idx_current_iter
+                self._last_s_idx_processed_for_spans = s_idx_current_iter
+                log_debug(f"TagChecker: Reset used_translation_spans for B{b_idx_current_iter}, S{s_idx_current_iter}")
+
 
             if processed_at_least_one_tag_this_call and \
                b_idx_current_iter == self.search_start_point['block_idx'] and \
@@ -234,6 +253,10 @@ class TagCheckerHandler:
                 self.current_search_state['block_idx'] = (b_idx_current_iter + 1) % num_blocks
                 self.current_search_state['string_idx'] = 0
                 self.current_search_state['original_tag_idx_in_current_string'] = 0
+                # Reset span tracking as we are moving to a new block/string from error
+                self._used_translation_spans_for_current_s_idx = []
+                self._last_s_idx_processed_for_spans = -1 
+                self._last_b_idx_processed_for_spans = -1
                 log_debug(f"TagChecker: End of block {b_idx_current_iter} or invalid string index. Moving to B{self.current_search_state['block_idx']}, S0")
                 continue 
 
@@ -245,35 +268,59 @@ class TagCheckerHandler:
             if not original_tags_with_pos_list or tag_orig_idx_current_iter >= len(original_tags_with_pos_list):
                 self.current_search_state['string_idx'] += 1
                 self.current_search_state['original_tag_idx_in_current_string'] = 0
+                # Reset span tracking as we are moving to a new string
+                self._used_translation_spans_for_current_s_idx = []
+                self._last_s_idx_processed_for_spans = -1 # Mark as needing reset on next actual string
                 log_debug(f"TagChecker: No more tags in B{b_idx_current_iter},S{s_idx_current_iter} or all checked for this string. Moving to S{self.current_search_state['string_idx']}")
                 continue 
             
             current_orig_tag_text, current_orig_tag_start, current_orig_tag_end = original_tags_with_pos_list[tag_orig_idx_current_iter]
             
-            used_translation_tag_matches_for_current_original_row = []
-            for i in range(tag_orig_idx_current_iter): 
-                prev_orig_tag_text_iter, _, _ = original_tags_with_pos_list[i]
-                found_prev_iter, prev_match_span_iter = self._find_tag_in_translation(
-                    prev_orig_tag_text_iter, 
-                    translation_row_text_data, 
-                    used_translation_tag_matches_for_current_original_row 
-                )
-                if found_prev_iter and prev_match_span_iter:
-                    used_translation_tag_matches_for_current_original_row.append(prev_match_span_iter)
-            
-            found_current_tag, _ = self._find_tag_in_translation(
+            if NON_WHITE_COLOR_TAG_PATTERN.fullmatch(current_orig_tag_text) and \
+               tag_orig_idx_current_iter + 1 < len(original_tags_with_pos_list):
+                next_orig_tag_text, next_orig_tag_start, next_orig_tag_end = original_tags_with_pos_list[tag_orig_idx_current_iter + 1]
+                if WHITE_COLOR_TAG_PATTERN.fullmatch(next_orig_tag_text):
+                    text_between_tags = original_row_text_data[current_orig_tag_end:next_orig_tag_start]
+                    if not text_between_tags.strip(): 
+                        empty_pair_in_original = current_orig_tag_text + text_between_tags + next_orig_tag_text
+                        
+                        # Try to find this exact pair in translation, respecting already used spans for THIS s_idx
+                        found_empty_pair_in_translation, pair_span = self._find_tag_in_translation(
+                            empty_pair_in_original, # We search for the whole pair as a single "tag"
+                            translation_row_text_data, 
+                            self._used_translation_spans_for_current_s_idx
+                        )
+                        
+                        if not found_empty_pair_in_translation:
+                            log_debug(f"TagChecker: Empty color pair construct '{empty_pair_in_original}' (orig tags: '{current_orig_tag_text}', '{next_orig_tag_text}') "
+                                      f"in original, absent in translation. Skipping both original tags.")
+                            self.current_search_state['original_tag_idx_in_current_string'] += 2 
+                            continue 
+                        else:
+                            # The empty pair *was* found in translation. We should consume it.
+                            log_debug(f"TagChecker: Empty color pair construct '{empty_pair_in_original}' found in translation. Matching both.")
+                            if pair_span:
+                                self._used_translation_spans_for_current_s_idx.append(pair_span)
+                            # We still need to "consume" the two original tags
+                            self.current_search_state['original_tag_idx_in_current_string'] += 2 
+                            continue
+
+
+            found_current_tag, match_span_in_translation = self._find_tag_in_translation(
                 current_orig_tag_text, 
                 translation_row_text_data, 
-                used_translation_tag_matches_for_current_original_row
+                self._used_translation_spans_for_current_s_idx
             )
             
             if found_current_tag:
                 log_debug(f"TagChecker: Match! B{b_idx_current_iter},S{s_idx_current_iter}. Tag '{current_orig_tag_text}' (orig_idx {tag_orig_idx_current_iter}).")
+                if match_span_in_translation:
+                    self._used_translation_spans_for_current_s_idx.append(match_span_in_translation)
                 self.current_search_state['original_tag_idx_in_current_string'] += 1 
             else:
                 log_debug(f"TagChecker: Mismatch! B{b_idx_current_iter},S{s_idx_current_iter}. Original Tag (idx {tag_orig_idx_current_iter}) '{current_orig_tag_text}' "
                           f"not found in translation '{translation_row_text_data}'. "
-                          f"Used translation tags for previous original tags in this row: {used_translation_tag_matches_for_current_original_row}")
+                          f"Used translation spans for this s_idx: {self._used_translation_spans_for_current_s_idx}")
                 
                 mismatch_found_in_this_run = True
                 self._highlight_mismatched_tag(b_idx_current_iter, s_idx_current_iter, current_orig_tag_text, current_orig_tag_start, current_orig_tag_end)
