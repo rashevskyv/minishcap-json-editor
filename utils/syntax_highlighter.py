@@ -7,6 +7,11 @@ from PyQt5.QtWidgets import QWidget
 from .utils import log_debug, SPACE_DOT_SYMBOL
 
 class JsonTagHighlighter(QSyntaxHighlighter):
+    STATE_DEFAULT = 0
+    STATE_RED = 1
+    STATE_GREEN = 2
+    STATE_BLUE = 3
+
     def __init__(self, parent=None): 
         super().__init__(parent)
         log_debug("JsonTagHighlighter initialized.")
@@ -100,7 +105,7 @@ class JsonTagHighlighter(QSyntaxHighlighter):
         except Exception: self.space_dot_format.setForeground(QColor(Qt.lightGray))
 
         self.red_text_format.setForeground(QColor(Qt.red))
-        self.green_text_format.setForeground(QColor(Qt.darkGreen)) # Змінено на Qt.darkGreen
+        self.green_text_format.setForeground(QColor(Qt.darkGreen))
         self.blue_text_format.setForeground(QColor(Qt.blue))
         self.default_color_text_format.setForeground(self.default_text_color)
 
@@ -109,7 +114,26 @@ class JsonTagHighlighter(QSyntaxHighlighter):
              self.rehighlight()
 
     def highlightBlock(self, text):
-        current_text_format = QTextCharFormat(self.default_color_text_format) 
+        previous_color_state = self.previousBlockState()
+        if previous_color_state == -1: # First block
+            previous_color_state = self.STATE_DEFAULT
+
+        current_text_format = QTextCharFormat(self.default_color_text_format)
+        current_block_color_state = self.STATE_DEFAULT
+
+        if previous_color_state == self.STATE_RED:
+            current_text_format = QTextCharFormat(self.red_text_format)
+            current_block_color_state = self.STATE_RED
+        elif previous_color_state == self.STATE_GREEN:
+            current_text_format = QTextCharFormat(self.green_text_format)
+            current_block_color_state = self.STATE_GREEN
+        elif previous_color_state == self.STATE_BLUE:
+            current_text_format = QTextCharFormat(self.blue_text_format)
+            current_block_color_state = self.STATE_BLUE
+        else: # Default or unknown
+            current_text_format = QTextCharFormat(self.default_color_text_format)
+            current_block_color_state = self.STATE_DEFAULT
+            
         last_pos = 0
         
         parts = [
@@ -159,12 +183,16 @@ class JsonTagHighlighter(QSyntaxHighlighter):
                 self.setFormat(start, end - start, self.curly_tag_format) 
                 if color_name.lower() == 'red':
                     current_text_format = QTextCharFormat(self.red_text_format)
+                    current_block_color_state = self.STATE_RED
                 elif color_name.lower() == 'green':
                     current_text_format = QTextCharFormat(self.green_text_format)
+                    current_block_color_state = self.STATE_GREEN
                 elif color_name.lower() == 'blue':
                     current_text_format = QTextCharFormat(self.blue_text_format)
+                    current_block_color_state = self.STATE_BLUE
                 elif color_name.lower() == 'white':
                     current_text_format = QTextCharFormat(self.default_color_text_format)
+                    current_block_color_state = self.STATE_DEFAULT
             elif other_curly_tag: 
                 self.setFormat(start, end - start, self.curly_tag_format)
             elif bracket_tag: 
@@ -180,3 +208,5 @@ class JsonTagHighlighter(QSyntaxHighlighter):
             
         if last_pos < len(text):
             self.setFormat(last_pos, len(text) - last_pos, current_text_format)
+        
+        self.setCurrentBlockState(current_block_color_state)
