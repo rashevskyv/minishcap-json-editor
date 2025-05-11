@@ -35,7 +35,7 @@ class LNETPaintHandlers:
         painter.fillRect(event.rect(), default_bg_color_for_area)
 
         main_window_ref = self.editor.window()
-        active_data_line_idx = -1
+        active_data_line_idx = -1 # This is the index of the currently selected Data String
         current_block_idx_data = -1
         if isinstance(main_window_ref, QMainWindow):
             active_data_line_idx = main_window_ref.current_string_idx
@@ -45,7 +45,7 @@ class LNETPaintHandlers:
         even_bg_color_const = default_bg_color_for_area
         
         current_q_block = self.editor.firstVisibleBlock()
-        current_q_block_number = current_q_block.blockNumber()
+        current_q_block_number = current_q_block.blockNumber() # This is the index of the QTextBlock in the editor
         top = int(self.editor.blockBoundingGeometry(current_q_block).translated(self.editor.contentOffset()).top())
         bottom = top + int(self.editor.blockBoundingRect(current_q_block).height())
 
@@ -60,6 +60,8 @@ class LNETPaintHandlers:
 
         current_font_for_numbers = self.editor.font()
         painter.setFont(current_font_for_numbers)
+        
+        sentence_end_chars = ('.', '!', '?') # For checking short lines in editor
 
         while current_q_block.isValid() and top <= event.rect().bottom():
             if current_q_block.isVisible() and bottom >= event.rect().top():
@@ -83,25 +85,44 @@ class LNETPaintHandlers:
                     bg_for_extra_part = current_bg_for_number_part 
 
                     if self.editor.objectName() == "original_text_edit" or self.editor.objectName() == "edited_text_edit":
-                        q_block_text_raw = current_q_block.text()
-                        text_for_width_calc = convert_dots_to_spaces_from_editor(q_block_text_raw)
-                        text_for_width_calc = remove_all_tags(text_for_width_calc)
+                        q_block_text_raw_dots = current_q_block.text()
+                        q_block_text_spaces = convert_dots_to_spaces_from_editor(q_block_text_raw_dots)
+                        text_for_width_calc = remove_all_tags(q_block_text_spaces)
                         pixel_width = calculate_string_width(text_for_width_calc, self.editor.font_map)
                         width_str = str(pixel_width)
                         text_color_for_extra_part = QColor(Qt.black)
                         
-                        is_part_of_short_data_line = False
-                        if isinstance(main_window_ref, QMainWindow) and current_block_idx_data != -1 and active_data_line_idx != -1:
-                            block_key_str = str(current_block_idx_data)
-                            if active_data_line_idx in main_window_ref.short_lines_per_block.get(block_key_str, set()):
-                                text_of_active_data_line, _ = main_window_ref.data_processor.get_current_string_text(current_block_idx_data, active_data_line_idx)
-                                num_q_blocks_in_active_data_line = str(text_of_active_data_line).count('\n')
-                                if current_q_block_number == num_q_blocks_in_active_data_line:
-                                    is_part_of_short_data_line = True
+                        # Check if this specific QTextBlock is short
+                        is_this_qblock_short = False
+                        if isinstance(main_window_ref, QMainWindow) and \
+                           current_block_idx_data != -1 and active_data_line_idx != -1 and \
+                           active_data_line_idx in main_window_ref.short_lines_per_block.get(str(current_block_idx_data), set()):
+                            
+                            active_data_string_text, _ = main_window_ref.data_processor.get_current_string_text(current_block_idx_data, active_data_line_idx)
+                            sub_lines_of_active_data_string = str(active_data_string_text).split('\n')
+                            
+                            if current_q_block_number < len(sub_lines_of_active_data_string) -1: # Must not be the last sub_line
+                                current_sub_line_from_data = sub_lines_of_active_data_string[current_q_block_number]
+                                current_sub_line_clean_stripped = remove_all_tags(current_sub_line_from_data).strip()
+
+                                if current_sub_line_clean_stripped and not current_sub_line_clean_stripped.endswith(sentence_end_chars):
+                                    next_sub_line_from_data = sub_lines_of_active_data_string[current_q_block_number + 1]
+                                    next_sub_line_clean_stripped = remove_all_tags(next_sub_line_from_data).strip()
+                                    
+                                    if next_sub_line_clean_stripped:
+                                        first_word_next = next_sub_line_clean_stripped.split(maxsplit=1)[0] if next_sub_line_clean_stripped else ""
+                                        if first_word_next:
+                                            first_word_next_width = calculate_string_width(first_word_next, main_window_ref.font_map)
+                                            space_width = calculate_string_width(" ", main_window_ref.font_map)
+                                            # Width of the current QTextBlock (which is text_for_width_calc's width)
+                                            current_qblock_pixel_width = pixel_width 
+                                            remaining_width_for_qblock = main_window_ref.GAME_DIALOG_MAX_WIDTH_PIXELS - current_qblock_pixel_width
+                                            if remaining_width_for_qblock >= (first_word_next_width + space_width):
+                                                is_this_qblock_short = True
                         
-                        if is_part_of_short_data_line:
+                        if is_this_qblock_short:
                              bg_for_extra_part = SHORT_LINE_COLOR
-                        elif pixel_width > self.editor.LINE_WIDTH_WARNING_THRESHOLD_PIXELS: # Original logic for width number bg
+                        elif pixel_width > self.editor.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
                              bg_for_extra_part = self.editor.lineNumberArea.width_indicator_exceeded_color
                         
                         painter.fillRect(extra_info_rect.adjusted(0,0,3,0), bg_for_extra_part)

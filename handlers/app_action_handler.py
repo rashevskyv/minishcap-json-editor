@@ -35,7 +35,7 @@ class AppActionHandler(BaseHandler):
         current_block_critical_indices = set()
         current_block_warning_indices = set()
         current_block_width_exceeded_indices = set()
-        current_block_short_line_indices = set()
+        current_block_short_line_indices = set() # Stores data_line_idx if any of its sub_lines is short
         changes_made_to_edited_data_in_this_block = False
         
         num_strings_in_block = len(self.mw.data[block_idx])
@@ -64,47 +64,47 @@ class AppActionHandler(BaseHandler):
             
             sub_lines = str(text_to_analyze).split('\n')
             line_exceeds_width_flag = False
-            is_short_line_candidate = False
+            data_string_is_short_flag = False
 
-            if string_idx < num_strings_in_block - 1: # Тільки якщо це не останній рядок у блоці даних
+            if len(sub_lines) > 1: # Only check for short if there are multiple sub-lines
                 for sub_line_idx, sub_line_text in enumerate(sub_lines):
-                    pixel_width = calculate_string_width(remove_all_tags(sub_line_text), self.mw.font_map)
-                    if pixel_width > self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
+                    # Width check for current sub-line (applies to the whole data_string if any sub_line exceeds)
+                    pixel_width_current_sub = calculate_string_width(remove_all_tags(sub_line_text), self.mw.font_map)
+                    if pixel_width_current_sub > self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
                         line_exceeds_width_flag = True
-                    
-                    if sub_line_idx == len(sub_lines) - 1:
-                        current_sub_line_no_tags_stripped = remove_all_tags(sub_line_text).strip()
-                        if not current_sub_line_no_tags_stripped:
+
+                    # Short line check (only for non-last sub-lines)
+                    if sub_line_idx < len(sub_lines) - 1:
+                        current_sub_line_clean_stripped = remove_all_tags(sub_line_text).strip()
+                        if not current_sub_line_clean_stripped:
                             continue 
+                        if current_sub_line_clean_stripped.endswith(sentence_end_chars):
+                            continue
                         
-                        if current_sub_line_no_tags_stripped.endswith(sentence_end_chars):
+                        next_sub_line_text = sub_lines[sub_line_idx + 1]
+                        next_sub_line_clean_stripped = remove_all_tags(next_sub_line_text).strip()
+                        if not next_sub_line_clean_stripped:
                             continue
 
-                        # string_idx + 1 тут гарантовано існує через зовнішню умову
-                        next_full_line_text, _ = self.data_processor.get_current_string_text(block_idx, string_idx + 1)
-                        if not next_full_line_text or not str(next_full_line_text).strip():
+                        first_word_next_sub_line = next_sub_line_clean_stripped.split(maxsplit=1)[0] if next_sub_line_clean_stripped else ""
+                        if not first_word_next_sub_line:
                             continue
                         
-                        first_word_next_line_text_raw = str(next_full_line_text).split('\n')[0]
-                        if not first_word_next_line_text_raw.strip(): 
-                            continue
-
-                        first_word_next_line_width = self._get_first_word_width(first_word_next_line_text_raw)
-                        
-                        if first_word_next_line_width > 0:
-                            remaining_width = self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS - pixel_width
-                            if remaining_width >= (first_word_next_line_width + space_width):
-                                is_short_line_candidate = True
-            else: # Для останнього рядка у блоці даних просто перевіряємо ширину
-                 for sub_line_text in sub_lines:
-                    pixel_width = calculate_string_width(remove_all_tags(sub_line_text), self.mw.font_map)
-                    if pixel_width > self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
+                        first_word_next_width = calculate_string_width(first_word_next_sub_line, self.mw.font_map)
+                        if first_word_next_width > 0:
+                            remaining_width = self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS - pixel_width_current_sub
+                            if remaining_width >= (first_word_next_width + space_width):
+                                data_string_is_short_flag = True
+                                break # Found one short sub-line, mark data_string and stop checking its sub-lines
+            else: # Single sub-line in data_string, only check width
+                if sub_lines: # Should always be true if len(sub_lines) == 1
+                    pixel_width_current_sub = calculate_string_width(remove_all_tags(sub_lines[0]), self.mw.font_map)
+                    if pixel_width_current_sub > self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
                         line_exceeds_width_flag = True
-                        break
             
             if line_exceeds_width_flag:
                 current_block_width_exceeded_indices.add(string_idx)
-            if is_short_line_candidate:
+            if data_string_is_short_flag:
                 current_block_short_line_indices.add(string_idx)
 
 
@@ -439,7 +439,7 @@ class AppActionHandler(BaseHandler):
         space_width = calculate_string_width(" ", self.mw.font_map)
         sentence_end_chars = ('.', '!', '?')
         
-        for i in range(num_strings):
+        for i in range(num_strings): # i is data_line_index
             progress.setValue(i)
             if progress.wasCanceled():
                 log_debug("Width calculation for block cancelled by user.")
@@ -451,62 +451,64 @@ class AppActionHandler(BaseHandler):
             line_report_parts = [f"Data Line {i+1}:"]
 
             line_report_parts.append(f"  Current (src:{source}):")
-            current_sub_lines = str(current_text_data).split('\n')
+            current_data_string_sub_lines = str(current_text_data).split('\n')
             current_total_game_width = calculate_string_width(remove_all_tags(str(current_text_data).replace('\n','')), self.mw.font_map)
             game_status_current = "OK"
             if current_total_game_width > max_allowed_width_game: game_status_current = f"EXCEEDS GAME LIMIT ({current_total_game_width - max_allowed_width_game}px)"
             line_report_parts.append(f"    Total (game-like): {current_total_game_width}px ({game_status_current})")
-            for j, sub_line in enumerate(current_sub_lines):
+
+            for j, sub_line in enumerate(current_data_string_sub_lines): # j is sub_line_index
                 sub_line_no_tags = remove_all_tags(sub_line)
                 width_px = calculate_string_width(sub_line_no_tags, self.mw.font_map)
                 editor_status = "OK"
                 short_status = ""
                 if width_px > editor_warning_threshold: editor_status = f"EXCEEDS EDITOR THRESHOLD ({width_px - editor_warning_threshold}px)"
                 
-                if j == len(current_sub_lines) -1 :
-                    current_sub_line_no_tags_stripped_rpt = remove_all_tags(sub_line).strip()
-                    if current_sub_line_no_tags_stripped_rpt and not current_sub_line_no_tags_stripped_rpt.endswith(sentence_end_chars):
-                        if i + 1 < num_strings: # Check if it's not the last string in the block
-                            next_full_line_text_rpt, _ = self.data_processor.get_current_string_text(block_idx, i + 1)
-                            if next_full_line_text_rpt and str(next_full_line_text_rpt).strip():
-                                first_word_next_line_text_raw_rpt = str(next_full_line_text_rpt).split('\n')[0]
-                                if first_word_next_line_text_raw_rpt.strip():
-                                    first_word_next_line_width_rpt = self._get_first_word_width(first_word_next_line_text_raw_rpt)
-                                    if first_word_next_line_width_rpt > 0:
-                                        remaining_width_rpt = max_allowed_width_game - width_px
-                                        if remaining_width_rpt >= (first_word_next_line_width_rpt + space_width):
-                                            short_status = f"SHORT (can fit {first_word_next_line_width_rpt+space_width}px, has {remaining_width_rpt}px)"
+                if len(current_data_string_sub_lines) > 1 and j < len(current_data_string_sub_lines) - 1:
+                    current_sub_line_clean_stripped_rpt = remove_all_tags(sub_line).strip()
+                    if current_sub_line_clean_stripped_rpt and not current_sub_line_clean_stripped_rpt.endswith(sentence_end_chars):
+                        next_sub_line_text_rpt = current_data_string_sub_lines[j+1]
+                        next_sub_line_clean_stripped_rpt = remove_all_tags(next_sub_line_text_rpt).strip()
+                        if next_sub_line_clean_stripped_rpt:
+                            first_word_next_sub_line_rpt = next_sub_line_clean_stripped_rpt.split(maxsplit=1)[0] if next_sub_line_clean_stripped_rpt else ""
+                            if first_word_next_sub_line_rpt:
+                                first_word_next_width_rpt = calculate_string_width(first_word_next_sub_line_rpt, self.mw.font_map)
+                                if first_word_next_width_rpt > 0:
+                                    remaining_width_rpt = max_allowed_width_game - width_px
+                                    if remaining_width_rpt >= (first_word_next_width_rpt + space_width):
+                                        short_status = f"SHORT (can fit {first_word_next_width_rpt+space_width}px, has {remaining_width_rpt}px)"
                 
                 line_report_parts.append(f"    Sub {j+1}: {width_px}px (Editor: {editor_status}) {short_status} '{sub_line_no_tags[:30]}...'")
 
 
             line_report_parts.append(f"  Original:")
-            original_sub_lines = str(original_text_data).split('\n')
+            original_data_string_sub_lines = str(original_text_data).split('\n')
             original_total_game_width = calculate_string_width(remove_all_tags(str(original_text_data).replace('\n','')), self.mw.font_map)
             game_status_original = "OK"
             if original_total_game_width > max_allowed_width_game: game_status_original = f"EXCEEDS GAME LIMIT ({original_total_game_width - max_allowed_width_game}px)"
             line_report_parts.append(f"    Total (game-like): {original_total_game_width}px ({game_status_original})")
-            for j, sub_line in enumerate(original_sub_lines):
+
+            for j, sub_line in enumerate(original_data_string_sub_lines): # j is sub_line_index
                 sub_line_no_tags = remove_all_tags(sub_line)
                 width_px = calculate_string_width(sub_line_no_tags, self.mw.font_map)
                 editor_status = "OK"
                 short_status_orig = ""
                 if width_px > editor_warning_threshold: editor_status = f"EXCEEDS EDITOR THRESHOLD ({width_px - editor_warning_threshold}px)"
 
-                if j == len(original_sub_lines) -1:
-                    original_sub_line_no_tags_stripped_rpt = remove_all_tags(sub_line).strip()
-                    if original_sub_line_no_tags_stripped_rpt and not original_sub_line_no_tags_stripped_rpt.endswith(sentence_end_chars):
-                        if i + 1 < num_strings: # Check if it's not the last string in the block
-                            next_full_line_text_orig_rpt = self.data_processor._get_string_from_source(block_idx, i + 1, self.mw.data, "orig_report")
-                            if next_full_line_text_orig_rpt and str(next_full_line_text_orig_rpt).strip():
-                                first_word_next_line_text_raw_orig_rpt = str(next_full_line_text_orig_rpt).split('\n')[0]
-                                if first_word_next_line_text_raw_orig_rpt.strip():
-                                    first_word_next_line_width_orig_rpt = self._get_first_word_width(first_word_next_line_text_raw_orig_rpt)
-                                    if first_word_next_line_width_orig_rpt > 0:
-                                        remaining_width_orig_rpt = max_allowed_width_game - width_px
-                                        if remaining_width_orig_rpt >= (first_word_next_line_width_orig_rpt + space_width):
-                                            short_status_orig = f"SHORT (can fit {first_word_next_line_width_orig_rpt+space_width}px, has {remaining_width_orig_rpt}px)"
-
+                if len(original_data_string_sub_lines) > 1 and j < len(original_data_string_sub_lines) -1:
+                    original_sub_line_clean_stripped_rpt = remove_all_tags(sub_line).strip()
+                    if original_sub_line_clean_stripped_rpt and not original_sub_line_clean_stripped_rpt.endswith(sentence_end_chars):
+                        next_original_sub_line_text_rpt = original_data_string_sub_lines[j+1]
+                        next_original_sub_line_clean_stripped_rpt = remove_all_tags(next_original_sub_line_text_rpt).strip()
+                        if next_original_sub_line_clean_stripped_rpt:
+                            first_word_next_original_sub_line_rpt = next_original_sub_line_clean_stripped_rpt.split(maxsplit=1)[0] if next_original_sub_line_clean_stripped_rpt else ""
+                            if first_word_next_original_sub_line_rpt:
+                                first_word_next_original_width_rpt = calculate_string_width(first_word_next_original_sub_line_rpt, self.mw.font_map)
+                                if first_word_next_original_width_rpt > 0:
+                                    remaining_width_orig_rpt = max_allowed_width_game - width_px
+                                    if remaining_width_orig_rpt >= (first_word_next_original_width_rpt + space_width):
+                                        short_status_orig = f"SHORT (can fit {first_word_next_original_width_rpt+space_width}px, has {remaining_width_orig_rpt}px)"
+                
                 line_report_parts.append(f"    Sub {j+1}: {width_px}px (Editor: {editor_status}) {short_status_orig} '{sub_line_no_tags[:30]}...'")
             
             results.append("\n".join(line_report_parts))
