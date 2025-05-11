@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (
     QStyle, QSpinBox
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon, QFont, QFontMetrics
+from PyQt5.QtGui import QIcon, QFont, QFontMetrics, QKeySequence # QFontMetrics moved here
 from components.LineNumberedTextEdit import LineNumberedTextEdit
 from components.CustomListWidget import CustomListWidget
 from utils.utils import log_debug
@@ -76,23 +76,22 @@ def setup_main_window_ui(main_window):
     main_window.status_label_part2 = QLabel("Line: 000/000")
     main_window.status_label_part3 = QLabel("Width: 0000px")
     
-    # Use a default font or the app's font for metrics if available early
     font_for_metrics = QFont() 
-    if main_window.font() and main_window.font().family(): # Check if main_window font is already set
+    if main_window.font() and main_window.font().family(): 
         font_for_metrics = main_window.font()
 
-    font_metrics = QFontMetrics(font_for_metrics)
-    main_window.status_label_part1.setMinimumWidth(font_metrics.horizontalAdvance("Sel: 000/000") + 15) # Max expected for Sel
-    main_window.status_label_part2.setMinimumWidth(font_metrics.horizontalAdvance("Line: 000/000") + 15) # Max expected for Line/At
+    font_metrics = QFontMetrics(font_for_metrics) # QFontMetrics is from QtGui
+    main_window.status_label_part1.setMinimumWidth(font_metrics.horizontalAdvance("Sel: 000/000") + 15) 
+    main_window.status_label_part2.setMinimumWidth(font_metrics.horizontalAdvance("Line: 000/000") + 15) 
     main_window.status_label_part3.setMinimumWidth(font_metrics.horizontalAdvance("Width: 0000px") + 10)
     
     main_window.statusBar.addWidget(main_window.original_path_label)
     main_window.statusBar.addWidget(QLabel("|"))
     main_window.statusBar.addWidget(main_window.edited_path_label)
     main_window.statusBar.addPermanentWidget(main_window.status_label_part1)
-    main_window.statusBar.addPermanentWidget(QLabel("|")) # Separator
+    main_window.statusBar.addPermanentWidget(QLabel("|")) 
     main_window.statusBar.addPermanentWidget(main_window.status_label_part2)
-    main_window.statusBar.addPermanentWidget(QLabel("|")) # Separator
+    main_window.statusBar.addPermanentWidget(QLabel("|")) 
     main_window.statusBar.addPermanentWidget(main_window.status_label_part3)
 
 
@@ -143,12 +142,11 @@ def setup_main_window_ui(main_window):
 
     redo_icon = style.standardIcon(QStyle.SP_ArrowForward)
     main_window.redo_typing_action = QAction(redo_icon, '&Redo Typing', main_window)
-    main_window.redo_typing_action.setShortcut('Ctrl+Y')
+    main_window.redo_typing_action.setShortcuts([QKeySequence('Ctrl+Y'), QKeySequence('Ctrl+Shift+Z')])
     edit_menu.addAction(main_window.redo_typing_action)
     edit_menu.addSeparator()
 
     main_window.undo_paste_action = QAction(undo_icon, 'Undo &Paste Block', main_window)
-    main_window.undo_paste_action.setShortcut('Ctrl+Shift+Z')
     main_window.undo_paste_action.setEnabled(False)
     edit_menu.addAction(main_window.undo_paste_action)
     edit_menu.addSeparator()
