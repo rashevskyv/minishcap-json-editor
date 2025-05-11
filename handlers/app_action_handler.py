@@ -23,9 +23,9 @@ class AppActionHandler(BaseHandler):
     def _get_first_word_width(self, text: str) -> int:
         if not text:
             return 0
-        stripped_text = remove_all_tags(text.lstrip())
+        stripped_text = remove_all_tags(text.lstrip()) # lstrip for first word
         first_word = stripped_text.split(maxsplit=1)[0] if stripped_text else ""
-        return calculate_string_width(first_word, self.mw.font_map)
+        return calculate_string_width(first_word, self.mw.font_map) # first_word is already tagless
 
     def _perform_issues_scan_for_block(self, block_idx: int, is_single_block_scan: bool = False, use_default_mappings_in_scan: bool = False) -> tuple[int, int, int, int, bool]:
         if not (0 <= block_idx < len(self.mw.data)):
@@ -69,12 +69,14 @@ class AppActionHandler(BaseHandler):
 
             if len(sub_lines) > 1:
                 for sub_line_idx, sub_line_text in enumerate(sub_lines):
-                    pixel_width_current_sub = calculate_string_width(remove_all_tags(sub_line_text), self.mw.font_map)
+                    sub_line_text_no_tags_rstripped = remove_all_tags(sub_line_text).rstrip()
+                    pixel_width_current_sub = calculate_string_width(sub_line_text_no_tags_rstripped, self.mw.font_map)
+                    
                     if pixel_width_current_sub > self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
                         line_exceeds_width_flag = True
 
                     if sub_line_idx < len(sub_lines) - 1:
-                        current_sub_line_clean_stripped = remove_all_tags(sub_line_text).strip()
+                        current_sub_line_clean_stripped = remove_all_tags(sub_line_text).strip() # .strip() for sentence end check
                         if not current_sub_line_clean_stripped:
                             continue 
                         if current_sub_line_clean_stripped.endswith(sentence_end_chars):
@@ -89,15 +91,17 @@ class AppActionHandler(BaseHandler):
                         if not first_word_next_sub_line:
                             continue
                         
-                        first_word_next_width = calculate_string_width(first_word_next_sub_line, self.mw.font_map)
+                        first_word_next_width = calculate_string_width(first_word_next_sub_line, self.mw.font_map) # Already tagless
                         if first_word_next_width > 0:
-                            remaining_width = max_width_for_short_check - pixel_width_current_sub
+                            # Use rstripped width for remaining_width calculation
+                            remaining_width = max_width_for_short_check - pixel_width_current_sub 
                             if remaining_width >= (first_word_next_width + space_width):
                                 data_string_is_short_flag = True
                                 break 
             else: 
                 if sub_lines:
-                    pixel_width_current_sub = calculate_string_width(remove_all_tags(sub_lines[0]), self.mw.font_map)
+                    sub_line_text_no_tags_rstripped = remove_all_tags(sub_lines[0]).rstrip()
+                    pixel_width_current_sub = calculate_string_width(sub_line_text_no_tags_rstripped, self.mw.font_map)
                     if pixel_width_current_sub > self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
                         line_exceeds_width_flag = True
             
@@ -105,7 +109,6 @@ class AppActionHandler(BaseHandler):
                 current_block_width_exceeded_indices.add(string_idx)
             if data_string_is_short_flag:
                 current_block_short_line_indices.add(string_idx)
-
 
         if current_block_critical_indices: self.mw.critical_problem_lines_per_block[block_key] = current_block_critical_indices
         elif block_key in self.mw.critical_problem_lines_per_block: del self.mw.critical_problem_lines_per_block[block_key]
@@ -433,13 +436,12 @@ class AppActionHandler(BaseHandler):
         progress.setMinimumDuration(0)
 
         results = []
-        # Use LINE_WIDTH_WARNING_THRESHOLD_PIXELS as the max width for short line calculation
         max_width_for_short_check_report = self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
-        editor_warning_threshold = self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS # This is the same, but for clarity
+        editor_warning_threshold = self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
         space_width = calculate_string_width(" ", self.mw.font_map)
         sentence_end_chars = ('.', '!', '?')
         
-        for i in range(num_strings): # i is data_line_index
+        for i in range(num_strings): 
             progress.setValue(i)
             if progress.wasCanceled():
                 log_debug("Width calculation for block cancelled by user.")
@@ -452,22 +454,21 @@ class AppActionHandler(BaseHandler):
 
             line_report_parts.append(f"  Current (src:{source}):")
             current_data_string_sub_lines = str(current_text_data).split('\n')
-            # Total width for game dialog should still use GAME_DIALOG_MAX_WIDTH_PIXELS if that's its purpose
-            current_total_game_width = calculate_string_width(remove_all_tags(str(current_text_data).replace('\n','')), self.mw.font_map)
+            current_total_game_width = calculate_string_width(remove_all_tags(str(current_text_data).replace('\n','')).rstrip(), self.mw.font_map)
             game_status_current = "OK"
             if current_total_game_width > self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS: 
-                game_status_current = f"EXCEEDS GAME LIMIT ({current_total_game_width - self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS}px)"
-            line_report_parts.append(f"    Total (game dialog): {current_total_game_width}px ({game_status_current})")
+                game_status_current = f"EXCEEDS GAME DIALOG LIMIT ({current_total_game_width - self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS}px)"
+            line_report_parts.append(f"    Total (game dialog, rstripped): {current_total_game_width}px ({game_status_current})")
 
-            for j, sub_line in enumerate(current_data_string_sub_lines): # j is sub_line_index
-                sub_line_no_tags = remove_all_tags(sub_line)
-                width_px = calculate_string_width(sub_line_no_tags, self.mw.font_map)
+            for j, sub_line in enumerate(current_data_string_sub_lines): 
+                sub_line_no_tags_rstripped = remove_all_tags(sub_line).rstrip()
+                width_px = calculate_string_width(sub_line_no_tags_rstripped, self.mw.font_map)
                 editor_status = "OK"
                 short_status = ""
                 if width_px > editor_warning_threshold: editor_status = f"EXCEEDS EDITOR THRESHOLD ({width_px - editor_warning_threshold}px)"
                 
                 if len(current_data_string_sub_lines) > 1 and j < len(current_data_string_sub_lines) - 1:
-                    current_sub_line_clean_stripped_rpt = remove_all_tags(sub_line).strip()
+                    current_sub_line_clean_stripped_rpt = remove_all_tags(sub_line).strip() # For sentence end check, .strip() is fine
                     if current_sub_line_clean_stripped_rpt and not current_sub_line_clean_stripped_rpt.endswith(sentence_end_chars):
                         next_sub_line_text_rpt = current_data_string_sub_lines[j+1]
                         next_sub_line_clean_stripped_rpt = remove_all_tags(next_sub_line_text_rpt).strip()
@@ -476,24 +477,24 @@ class AppActionHandler(BaseHandler):
                             if first_word_next_sub_line_rpt:
                                 first_word_next_width_rpt = calculate_string_width(first_word_next_sub_line_rpt, self.mw.font_map)
                                 if first_word_next_width_rpt > 0:
-                                    remaining_width_rpt = max_width_for_short_check_report - width_px
+                                    remaining_width_rpt = max_width_for_short_check_report - width_px # width_px is rstripped here
                                     if remaining_width_rpt >= (first_word_next_width_rpt + space_width):
                                         short_status = f"SHORT (can fit {first_word_next_width_rpt+space_width}px into {max_width_for_short_check_report}px, has {remaining_width_rpt}px left)"
                 
-                line_report_parts.append(f"    Sub {j+1}: {width_px}px (Editor: {editor_status}) {short_status} '{sub_line_no_tags[:30]}...'")
+                line_report_parts.append(f"    Sub {j+1} (rstripped): {width_px}px (Editor: {editor_status}) {short_status} '{sub_line_no_tags_rstripped[:30]}...'")
 
 
             line_report_parts.append(f"  Original:")
             original_data_string_sub_lines = str(original_text_data).split('\n')
-            original_total_game_width = calculate_string_width(remove_all_tags(str(original_text_data).replace('\n','')), self.mw.font_map)
+            original_total_game_width = calculate_string_width(remove_all_tags(str(original_text_data).replace('\n','')).rstrip(), self.mw.font_map)
             game_status_original = "OK"
             if original_total_game_width > self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS: 
-                game_status_original = f"EXCEEDS GAME LIMIT ({original_total_game_width - self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS}px)"
-            line_report_parts.append(f"    Total (game dialog): {original_total_game_width}px ({game_status_original})")
+                game_status_original = f"EXCEEDS GAME DIALOG LIMIT ({original_total_game_width - self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS}px)"
+            line_report_parts.append(f"    Total (game dialog, rstripped): {original_total_game_width}px ({game_status_original})")
 
-            for j, sub_line in enumerate(original_data_string_sub_lines): # j is sub_line_index
-                sub_line_no_tags = remove_all_tags(sub_line)
-                width_px = calculate_string_width(sub_line_no_tags, self.mw.font_map)
+            for j, sub_line in enumerate(original_data_string_sub_lines): 
+                sub_line_no_tags_rstripped = remove_all_tags(sub_line).rstrip()
+                width_px = calculate_string_width(sub_line_no_tags_rstripped, self.mw.font_map)
                 editor_status = "OK"
                 short_status_orig = ""
                 if width_px > editor_warning_threshold: editor_status = f"EXCEEDS EDITOR THRESHOLD ({width_px - editor_warning_threshold}px)"
@@ -512,7 +513,7 @@ class AppActionHandler(BaseHandler):
                                     if remaining_width_orig_rpt >= (first_word_next_original_width_rpt + space_width):
                                         short_status_orig = f"SHORT (can fit {first_word_next_original_width_rpt+space_width}px into {max_width_for_short_check_report}px, has {remaining_width_orig_rpt}px left)"
                 
-                line_report_parts.append(f"    Sub {j+1}: {width_px}px (Editor: {editor_status}) {short_status_orig} '{sub_line_no_tags[:30]}...'")
+                line_report_parts.append(f"    Sub {j+1} (rstripped): {width_px}px (Editor: {editor_status}) {short_status_orig} '{sub_line_no_tags_rstripped[:30]}...'")
             
             results.append("\n".join(line_report_parts))
         
@@ -523,7 +524,8 @@ class AppActionHandler(BaseHandler):
             return
             
         result_text_title = (f"Widths for Block {self.mw.block_names.get(str(block_idx), str(block_idx))}\n"
-                             f"(Max Game Dialog Width for Short Check: {max_width_for_short_check_report}px, Editor Warning Threshold: {editor_warning_threshold}px)\n")
+                             f"(Max Width for Short Check/Editor Warning: {max_width_for_short_check_report}px)\n"
+                             f"(Game Dialog Max Width (for total only): {self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS}px)\n")
         result_text = result_text_title + "\n" + "\n\n".join(results)
         
         result_dialog = QMessageBox(self.mw)

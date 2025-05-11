@@ -89,41 +89,40 @@ class LNETPaintHandlers:
                     if self.editor.objectName() == "original_text_edit" or self.editor.objectName() == "edited_text_edit":
                         q_block_text_raw_dots = current_q_block.text()
                         q_block_text_spaces = convert_dots_to_spaces_from_editor(q_block_text_raw_dots)
-                        text_for_width_calc = remove_all_tags(q_block_text_spaces)
-                        pixel_width = calculate_string_width(text_for_width_calc, self.editor.font_map)
+                        text_for_width_calc_rstripped = remove_all_tags(q_block_text_spaces).rstrip()
+                        pixel_width = calculate_string_width(text_for_width_calc_rstripped, self.editor.font_map)
                         width_str = str(pixel_width)
                         text_color_for_extra_part = QColor(Qt.black)
                         
-                        is_this_qblock_short = False
+                        is_this_qblock_short_for_bg = False
                         if isinstance(main_window_ref, QMainWindow) and \
                            current_block_idx_data != -1 and active_data_line_idx != -1 and \
                            active_data_line_idx in main_window_ref.short_lines_per_block.get(str(current_block_idx_data), set()):
                             
-                            active_data_string_text, _ = main_window_ref.data_processor.get_current_string_text(current_block_idx_data, active_data_line_idx)
-                            sub_lines_of_active_data_string = str(active_data_string_text).split('\n')
+                            active_data_string_text_for_editor, _ = main_window_ref.data_processor.get_current_string_text(current_block_idx_data, active_data_line_idx)
+                            sub_lines_of_active_data_string_for_editor = str(active_data_string_text_for_editor).split('\n')
                             
-                            if current_q_block_number < len(sub_lines_of_active_data_string) -1: 
-                                current_sub_line_from_data = sub_lines_of_active_data_string[current_q_block_number]
-                                current_sub_line_clean_stripped = remove_all_tags(current_sub_line_from_data).strip()
+                            if current_q_block_number < len(sub_lines_of_active_data_string_for_editor) -1: 
+                                current_sub_line_from_data_editor = sub_lines_of_active_data_string_for_editor[current_q_block_number]
+                                current_sub_line_clean_stripped_editor = remove_all_tags(current_sub_line_from_data_editor).strip()
 
-                                if current_sub_line_clean_stripped and not current_sub_line_clean_stripped.endswith(sentence_end_chars):
-                                    next_sub_line_from_data = sub_lines_of_active_data_string[current_q_block_number + 1]
-                                    next_sub_line_clean_stripped = remove_all_tags(next_sub_line_from_data).strip()
+                                if current_sub_line_clean_stripped_editor and not current_sub_line_clean_stripped_editor.endswith(sentence_end_chars):
+                                    next_sub_line_from_data_editor = sub_lines_of_active_data_string_for_editor[current_q_block_number + 1]
+                                    next_sub_line_clean_stripped_editor = remove_all_tags(next_sub_line_from_data_editor).strip()
                                     
-                                    if next_sub_line_clean_stripped:
-                                        first_word_next = next_sub_line_clean_stripped.split(maxsplit=1)[0] if next_sub_line_clean_stripped else ""
-                                        if first_word_next:
-                                            first_word_next_width = calculate_string_width(first_word_next, main_window_ref.font_map)
-                                            space_width = calculate_string_width(" ", main_window_ref.font_map)
-                                            current_qblock_pixel_width = pixel_width 
-                                            remaining_width_for_qblock = max_width_for_short_check_paint - current_qblock_pixel_width
-                                            if remaining_width_for_qblock >= (first_word_next_width + space_width):
-                                                is_this_qblock_short = True
+                                    if next_sub_line_clean_stripped_editor:
+                                        first_word_next_editor = next_sub_line_clean_stripped_editor.split(maxsplit=1)[0] if next_sub_line_clean_stripped_editor else ""
+                                        if first_word_next_editor:
+                                            first_word_next_width_editor = calculate_string_width(first_word_next_editor, main_window_ref.font_map)
+                                            space_width_editor = calculate_string_width(" ", main_window_ref.font_map)
+                                            current_qblock_pixel_width_rstripped_editor = calculate_string_width(remove_all_tags(current_sub_line_from_data_editor).rstrip(), main_window_ref.font_map)
+                                            remaining_width_for_qblock_editor = max_width_for_short_check_paint - current_qblock_pixel_width_rstripped_editor
+                                            if remaining_width_for_qblock_editor >= (first_word_next_width_editor + space_width_editor):
+                                                is_this_qblock_short_for_bg = True
                         
-                        # Priority to width exceeded
                         if pixel_width > self.editor.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
                              bg_for_extra_part = self.editor.lineNumberArea.width_indicator_exceeded_color
-                        elif is_this_qblock_short:
+                        elif is_this_qblock_short_for_bg:
                              bg_for_extra_part = SHORT_LINE_COLOR
                         
                         painter.fillRect(extra_info_rect.adjusted(0,0,3,0), bg_for_extra_part)
@@ -136,7 +135,7 @@ class LNETPaintHandlers:
 
                         indicator_x_start = number_part_width + 2
                         block_key_str_for_preview = str(current_block_idx_data)
-                        data_line_index_preview = current_q_block_number
+                        data_line_index_preview = current_q_block_number # For preview, QTextBlock index IS data_line_index
 
                         indicators_to_draw_preview = []
                         if data_line_index_preview in main_window_ref.critical_problem_lines_per_block.get(block_key_str_for_preview, set()):
@@ -150,7 +149,34 @@ class LNETPaintHandlers:
                              if len(indicators_to_draw_preview) < 3 and preview_width_color_temp not in indicators_to_draw_preview:
                                 indicators_to_draw_preview.append(preview_width_color_temp)
                         
+                        # Dynamic check for short line indicator in preview
+                        should_draw_short_indicator_for_preview = False
                         if data_line_index_preview in main_window_ref.short_lines_per_block.get(block_key_str_for_preview, set()):
+                            data_string_for_preview, _ = main_window_ref.data_processor.get_current_string_text(current_block_idx_data, data_line_index_preview)
+                            sub_lines_for_preview_check = str(data_string_for_preview).split('\n')
+                            if len(sub_lines_for_preview_check) > 1:
+                                for sub_idx_preview, sub_text_preview in enumerate(sub_lines_for_preview_check):
+                                    if sub_idx_preview < len(sub_lines_for_preview_check) - 1:
+                                        curr_sub_clean_strip_prev = remove_all_tags(sub_text_preview).strip()
+                                        if not curr_sub_clean_strip_prev or curr_sub_clean_strip_prev.endswith(sentence_end_chars):
+                                            continue
+                                        next_sub_text_prev = sub_lines_for_preview_check[sub_idx_preview+1]
+                                        next_sub_clean_strip_prev = remove_all_tags(next_sub_text_prev).strip()
+                                        if not next_sub_clean_strip_prev: continue
+                                        
+                                        first_word_next_prev = next_sub_clean_strip_prev.split(maxsplit=1)[0] if next_sub_clean_strip_prev else ""
+                                        if not first_word_next_prev: continue
+
+                                        first_word_next_width_prev = calculate_string_width(first_word_next_prev, main_window_ref.font_map)
+                                        if first_word_next_width_prev > 0:
+                                            curr_sub_pixel_width_prev = calculate_string_width(remove_all_tags(sub_text_preview).rstrip(), main_window_ref.font_map)
+                                            space_w_prev = calculate_string_width(" ", main_window_ref.font_map)
+                                            remaining_w_prev = max_width_for_short_check_paint - curr_sub_pixel_width_prev
+                                            if remaining_w_prev >= (first_word_next_width_prev + space_w_prev):
+                                                should_draw_short_indicator_for_preview = True
+                                                break 
+                        
+                        if should_draw_short_indicator_for_preview:
                             preview_short_color_temp = SHORT_LINE_COLOR
                             if preview_short_color_temp.alpha() < 100: preview_short_color_temp = preview_short_color_temp.lighter(120)
                             if len(indicators_to_draw_preview) < 3 and preview_short_color_temp not in indicators_to_draw_preview:
