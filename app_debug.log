@@ -1,536 +1,128 @@
-Log started at 2025-05-11 12:46:02.957
+Log started at 2025-05-11 14:52:02.163
 ==================================================
-[2025-05-11 12:46:02.978] DEBUG: ================= Application Start =================
-[2025-05-11 12:46:02.991] DEBUG: ++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++
-[2025-05-11 12:46:02.991] DEBUG: MainWindow: Initializing Core Components...
-[2025-05-11 12:46:02.991] DEBUG: MainWindow: Initializing Handlers (Pre-UI setup)...
-2025-05-11 12:46:02,991 - DEBUG - logging_utils - log_debug - Handler 'ListSelectionHandler' initialized.
-2025-05-11 12:46:02,992 - DEBUG - logging_utils - log_debug - Handler 'TextOperationHandler' initialized.
-2025-05-11 12:46:02,992 - DEBUG - logging_utils - log_debug - Handler 'AppActionHandler' initialized.
-2025-05-11 12:46:02,992 - DEBUG - logging_utils - log_debug - Handler 'SearchHandler' initialized.
-[2025-05-11 12:46:02.993] DEBUG: MainWindow: Setting up UI...
-[2025-05-11 12:46:02.993] DEBUG: setup_main_window_ui: Starting UI setup.
-[2025-05-11 12:46:02.994] DEBUG: CustomListWidget INITIALIZED, parent: <__main__.MainWindow object at 0x000001D6F7552AF0>
-[2025-05-11 12:46:02.994] DEBUG: CustomListWidget: Item delegate set to <components.CustomListItemDelegate.CustomListItemDelegate object at 0x000001D6F756D040>
-[2025-05-11 12:46:03.004] DEBUG: JsonTagHighlighter initialized.
-[2025-05-11 12:46:03.004] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-[2025-05-11 12:46:03.004] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
-[2025-05-11 12:46:03.004] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-11 12:46:03.167] DEBUG: JsonTagHighlighter initialized.
-[2025-05-11 12:46:03.167] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-[2025-05-11 12:46:03.167] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
-[2025-05-11 12:46:03.168] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-11 12:46:03.169] DEBUG: JsonTagHighlighter initialized.
-[2025-05-11 12:46:03.169] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-[2025-05-11 12:46:03.169] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
-[2025-05-11 12:46:03.169] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-11 12:46:03.188] DEBUG: setup_main_window_ui: UI setup complete.
-[2025-05-11 12:46:03.188] DEBUG: MainWindow: Initializing Handlers (Post-UI setup)...
-[2025-05-11 12:46:03.189] DEBUG: MainWindow: Connecting Signals...
-[2025-05-11 12:46:03.189] DEBUG: --> MainWindow: connect_signals() started
-[2025-05-11 12:46:03.190] DEBUG: --> MainWindow: connect_signals() finished
-[2025-05-11 12:46:03.190] DEBUG: MainWindow: Loading Editor Settings via SettingsManager...
-[2025-05-11 12:46:03.190] DEBUG: --> SettingsManager: load_settings from settings.json
-[2025-05-11 12:46:03.190] DEBUG: --> SettingsManager: load_font_map from font_map.json
-[2025-05-11 12:46:03.191] DEBUG: Successfully loaded font_map. Count: 115
-[2025-05-11 12:46:03.191] DEBUG: SettingsManager: Initial default_font_size (from QFont or 10): 8
-[2025-05-11 12:46:03.191] DEBUG: SettingsManager: Applied all default values. self.mw.current_font_size is now 10 (from defaults)
-[2025-05-11 12:46:03.192] DEBUG: SettingsManager: Successfully parsed settings.json. Content keys: ['default_tag_mappings', 'block_names', 'newline_display_symbol', 'newline_css', 'tag_css', 'show_multiple_spaces_as_dots', 'space_dot_color_hex', 'preview_wrap_lines', 'editors_wrap_lines', 'bracket_tag_color_hex', 'game_dialog_max_width_pixels', 'line_width_warning_threshold_pixels', 'search_history', 'last_selected_block_index', 'last_selected_string_index', 'last_cursor_position_in_edited', 'last_edited_text_edit_scroll_value_v', 'last_edited_text_edit_scroll_value_h', 'last_preview_text_edit_scroll_value_v', 'last_original_text_edit_scroll_value_v', 'last_original_text_edit_scroll_value_h', 'font_size', 'original_file_path', 'edited_file_path', 'window_geometry', 'main_splitter_state', 'right_splitter_state', 'bottom_right_splitter_state', 'critical_problem_lines_per_block', 'warning_problem_lines_per_block', 'width_exceeded_lines_per_block', 'short_lines_per_block']
-[2025-05-11 12:46:03.192] DEBUG: SettingsManager: Found 'font_size' in settings file: 11. Current self.mw.current_font_size: 10
-[2025-05-11 12:46:03.192] DEBUG: SettingsManager: Set self.mw.current_font_size to 11 from file.
-[2025-05-11 12:46:03.192] DEBUG: SettingsManager: Final MainWindow.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 210
-[2025-05-11 12:46:03.192] DEBUG: SettingsManager: After potential load from file, self.mw.current_font_size is 11
-[2025-05-11 12:46:03.192] DEBUG: MainWindow: Applying font. General: Family='Segoe UI', Editor: Family='Courier New', Size=11
-[2025-05-11 12:46:03.200] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:46:03.200] DEBUG: TextOperationHandler.text_edited: No block/string selected, returning.
-[2025-05-11 12:46:03.210] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: -1, string: -1
-[2025-05-11 12:46:03.211] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-11 12:46:03.211] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: False
-[2025-05-11 12:46:03.211] DEBUG: [UIUpdater] populate_blocks called.
-[2025-05-11 12:46:03.212] DEBUG: [UIUpdater] populate_blocks: No original data.
-[2025-05-11 12:46:03.212] DEBUG: UIUpdater: populate_strings_for_block for block_idx: -1. Current string_idx: -1
-[2025-05-11 12:46:03.212] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-11 12:46:03.212] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
-[2025-05-11 12:46:03.213] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: -1, string: -1
-[2025-05-11 12:46:03.213] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-11 12:46:03.213] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
-[2025-05-11 12:46:03.213] DEBUG: Settings loaded. Last block: 1, string: -1
-[2025-05-11 12:46:03.214] DEBUG: Settings loaded. Original path from mw: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Edited path from mw: '//192.168.50.168/tloz_tmc_ua/UKR.json'
-2025-05-11 12:46:03,214 - DEBUG - logging_utils - log_debug - Applying text wrap settings: Preview wrap: False, Editors wrap: False
-2025-05-11 12:46:03,214 - DEBUG - logging_utils - log_debug - MainWindowHelper: Reconfiguring all highlighters...
-[2025-05-11 12:46:03.215] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
-[2025-05-11 12:46:03.215] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-11 12:46:03.215] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
-[2025-05-11 12:46:03.215] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-11 12:46:03.215] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
-[2025-05-11 12:46:03.215] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-11 12:46:03.215] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:46:03.216] DEBUG: TextOperationHandler.text_edited: No block/string selected, returning.
-[2025-05-11 12:46:03.216] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:46:03.216] DEBUG: TextOperationHandler.text_edited: No block/string selected, returning.
-2025-05-11 12:46:03,216 - DEBUG - logging_utils - log_debug - MainWindowHelper: Highlighter reconfiguration attempt complete.
-[2025-05-11 12:46:03.216] DEBUG: <-- SettingsManager: load_settings finished
-[2025-05-11 12:46:03.217] DEBUG: MainWindow: After SettingsManager.load_settings(), self.current_font_size = 11, general_family = Segoe UI, editor_family = Courier New
-[2025-05-11 12:46:03.217] DEBUG: MainWindow: change_font_size_action called with size 11
-[2025-05-11 12:46:03.217] DEBUG: MainWindow: After load_settings, self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 210
-[2025-05-11 12:46:03.217] DEBUG: MainWindow: After load_settings, self.initial_load_path = //192.168.50.168/tloz_tmc_ua/UKR_orig.json
-[2025-05-11 12:46:03.217] DEBUG: MainWindow: After load_settings, self.initial_edited_load_path = //192.168.50.168/tloz_tmc_ua/UKR.json
-[2025-05-11 12:46:03.217] DEBUG: MainWindow: Set preview_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 210
-[2025-05-11 12:46:03.218] DEBUG: MainWindow: Set original_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 210
-[2025-05-11 12:46:03.218] DEBUG: MainWindow: Set edited_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 210
-2025-05-11 12:46:03,219 - DEBUG - logging_utils - log_debug - MainWindowHelper: restore_state_after_settings_load called.
-2025-05-11 12:46:03,221 - DEBUG - logging_utils - log_debug - MainWindowHelper: Attempting to load initial file from settings: //192.168.50.168/tloz_tmc_ua/UKR_orig.json
-[2025-05-11 12:46:03.221] DEBUG: --> AppActionHandler: load_all_data_for_path START. Original: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Manual Edit Path: '//192.168.50.168/tloz_tmc_ua/UKR.json', InitialLoad: True
-[2025-05-11 12:46:03.222] DEBUG: load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', expected_type: list
-[2025-05-11 12:46:03.236] DEBUG: load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR_orig.json'.
-[2025-05-11 12:46:03.240] DEBUG: load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR.json', expected_type: list
-[2025-05-11 12:46:03.260] DEBUG: load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR.json'.
-[2025-05-11 12:46:03.260] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-11 12:46:03.260] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
-[2025-05-11 12:46:03.260] DEBUG: Initial load from settings: Assuming problem data is from settings or will be calculated if missing.
-[2025-05-11 12:46:03.260] DEBUG: critical_problem_lines_per_block data not found in settings or empty, performing full scan.
-[2025-05-11 12:46:03.261] DEBUG: AppActionHandler: Performing initial silent scan for ALL issues (tags, width, short lines)...
-[2025-05-11 12:46:03.261] DEBUG: UIUpdater: Cleared all problem/warning/width/short block highlights and count texts.
-[2025-05-11 12:46:03.325] DEBUG: AppActionHandler: Initial silent scan for ALL issues complete.
-[2025-05-11 12:46:03.325] DEBUG: [UIUpdater] populate_blocks called.
-[2025-05-11 12:46:03.326] DEBUG: [UIUpdater] populate_blocks: Added 80 items.
-[2025-05-11 12:46:03.326] DEBUG: --> ListSelectionHandler: block_selected. Item: 'Системні (1 width, 4 short)', Index: 0
-[2025-05-11 12:46:03.326] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 0. Current string_idx: -1
-[2025-05-11 12:46:03.327] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 0, string: -1
-[2025-05-11 12:46:03.327] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-11 12:46:03.327] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
-[2025-05-11 12:46:03.328] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-11 12:46:03.328] DEBUG: <-- ListSelectionHandler: block_selected finished.
-[2025-05-11 12:46:03.329] DEBUG: <-- AppActionHandler: load_all_data_for_path FINISHED (Success)
-[2025-05-11 12:46:03.329] DEBUG: --> ListSelectionHandler: block_selected. Item: 'Титри (2 warn, 1 width, 18 short)', Index: 1
-[2025-05-11 12:46:03.329] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 1. Current string_idx: -1
-[2025-05-11 12:46:03.349] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 1, string: -1
-[2025-05-11 12:46:03.349] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-11 12:46:03.349] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
-[2025-05-11 12:46:03.349] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-11 12:46:03.350] DEBUG: <-- ListSelectionHandler: block_selected finished.
-2025-05-11 12:46:03,351 - DEBUG - logging_utils - log_debug - MainWindowHelper: last_selected_string_index (-1) is out of bounds for block 1. Skipping string/cursor restore.
-2025-05-11 12:46:03,351 - DEBUG - logging_utils - log_debug - MainWindowHelper: Search history loaded into panel. Last query (if any) set in SearchHandler: ��� ͳ
-2025-05-11 12:46:03,351 - DEBUG - logging_utils - log_debug - Rebuilt unsaved_block_indices: set()
-[2025-05-11 12:46:03.352] DEBUG: ++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++
-[2025-05-11 12:46:03.503] DEBUG: Starting Qt event loop...
-[2025-05-11 12:47:12.362] DEBUG: --> ListSelectionHandler: string_selected_from_preview. Data Line number: 12
-[2025-05-11 12:47:12.362] DEBUG: Set current_string_idx = 12.
-[2025-05-11 12:47:12.363] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 1. Current string_idx: 12
-[2025-05-11 12:47:12.369] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 1, string: 12
-[2025-05-11 12:47:12.372] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating. Programmatic context: True
-[2025-05-11 12:47:12.374] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-11 12:47:12.374] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
-[2025-05-11 12:47:12.374] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-11 12:47:12.375] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-11 12:47:12.375] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 1, string: 12
-[2025-05-11 12:47:12.375] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: False
-[2025-05-11 12:47:12.376] DEBUG: <-- ListSelectionHandler: string_selected_from_preview finished.
-[2025-05-11 12:47:19.160] DEBUG: --> ListSelectionHandler: block_selected. Item: 'Системні (1 width, 4 short)', Index: 0
-[2025-05-11 12:47:19.160] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 0. Current string_idx: -1
-[2025-05-11 12:47:19.163] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 0, string: -1
-[2025-05-11 12:47:19.163] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-11 12:47:19.164] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating. Programmatic context: True
-[2025-05-11 12:47:19.164] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-11 12:47:19.164] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
-[2025-05-11 12:47:19.165] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-11 12:47:19.165] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-11 12:47:19.165] DEBUG: <-- ListSelectionHandler: block_selected finished.
-[2025-05-11 12:47:21.446] DEBUG: --> ListSelectionHandler: string_selected_from_preview. Data Line number: 5
-[2025-05-11 12:47:21.447] DEBUG: Set current_string_idx = 5.
-[2025-05-11 12:47:21.447] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 0. Current string_idx: 5
-[2025-05-11 12:47:21.449] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 0, string: 5
-[2025-05-11 12:47:21.450] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating. Programmatic context: True
-[2025-05-11 12:47:21.450] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-11 12:47:21.450] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
-[2025-05-11 12:47:21.450] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-11 12:47:21.451] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-11 12:47:21.451] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 0, string: 5
-[2025-05-11 12:47:21.451] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: False
-[2025-05-11 12:47:21.451] DEBUG: <-- ListSelectionHandler: string_selected_from_preview finished.
-[2025-05-11 12:47:28.284] DEBUG: --> ListSelectionHandler: block_selected. Item: 'Перша зустріч з Езло (4 warn, 19 short)', Index: 17
-[2025-05-11 12:47:28.284] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 17. Current string_idx: -1
-[2025-05-11 12:47:28.293] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 17, string: -1
-[2025-05-11 12:47:28.293] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-11 12:47:28.294] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating. Programmatic context: True
-[2025-05-11 12:47:28.294] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-11 12:47:28.295] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
-[2025-05-11 12:47:28.295] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-11 12:47:28.295] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-11 12:47:28.296] DEBUG: <-- ListSelectionHandler: block_selected finished.
-[2025-05-11 12:47:29.437] DEBUG: --> ListSelectionHandler: string_selected_from_preview. Data Line number: 23
-[2025-05-11 12:47:29.437] DEBUG: Set current_string_idx = 23.
-[2025-05-11 12:47:29.438] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 17. Current string_idx: 23
-[2025-05-11 12:47:29.447] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 17, string: 23
-[2025-05-11 12:47:29.449] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating. Programmatic context: True
-[2025-05-11 12:47:29.449] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-11 12:47:29.449] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
-[2025-05-11 12:47:29.450] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-11 12:47:29.451] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-11 12:47:29.451] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 17, string: 23
-[2025-05-11 12:47:29.451] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: False
-[2025-05-11 12:47:29.452] DEBUG: <-- ListSelectionHandler: string_selected_from_preview finished.
-[2025-05-11 12:47:59.189] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:47:59.190] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.190] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:47:59.190] DEBUG: DSP.update_edited_data: Unsaved changes status changed to True
-[2025-05-11 12:47:59.190] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.190] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:47:59.191] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.191] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:47:59.436] DEBUG: Timer timeout: Updating preview content.
-[2025-05-11 12:47:59.437] DEBUG:   _update_preview_content: Set is_programmatically_changing_text to True (was False)
-[2025-05-11 12:47:59.437] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 17. Current string_idx: 23
-[2025-05-11 12:47:59.446] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 17, string: 23
-[2025-05-11 12:47:59.446] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
-[2025-05-11 12:47:59.447] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-11 12:47:59.447] DEBUG:   _update_preview_content: Restored is_programmatically_changing_text to False
-[2025-05-11 12:47:59.447] DEBUG: Preview content update finished.
-[2025-05-11 12:47:59.453] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:47:59.454] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.454] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:47:59.454] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.454] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:47:59.454] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.454] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:47:59.505] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:47:59.505] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.505] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:47:59.505] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.505] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:47:59.505] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.506] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:47:59.665] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:47:59.665] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.666] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:47:59.666] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.666] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:47:59.667] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.667] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:47:59.668] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:47:59.668] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.668] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:47:59.668] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.668] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:47:59.669] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.669] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:47:59.691] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:47:59.691] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.691] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:47:59.691] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.692] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:47:59.692] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.693] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:47:59.695] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:47:59.695] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.695] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:47:59.695] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.695] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:47:59.695] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.696] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:47:59.697] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:47:59.697] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.697] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:47:59.697] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.697] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:47:59.698] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.698] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:47:59.766] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:47:59.766] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.766] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:47:59.766] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.766] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:47:59.766] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.767] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:47:59.782] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:47:59.782] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.782] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:47:59.782] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.782] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:47:59.782] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.783] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:47:59.910] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:47:59.910] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.910] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:47:59.910] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.910] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:47:59.911] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.911] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:47:59.992] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:47:59.992] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.993] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:47:59.993] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.993] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:47:59.993] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:47:59.994] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:00.090] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:00.090] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:00.090] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:00.090] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:00.091] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:00.091] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:00.091] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:00.165] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:00.165] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:00.165] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:00.165] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:00.165] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:00.166] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:00.166] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:00.419] DEBUG: Timer timeout: Updating preview content.
-[2025-05-11 12:48:00.419] DEBUG:   _update_preview_content: Set is_programmatically_changing_text to True (was False)
-[2025-05-11 12:48:00.420] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 17. Current string_idx: 23
-[2025-05-11 12:48:00.429] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 17, string: 23
-[2025-05-11 12:48:00.429] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
-[2025-05-11 12:48:00.430] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-11 12:48:00.430] DEBUG:   _update_preview_content: Restored is_programmatically_changing_text to False
-[2025-05-11 12:48:00.430] DEBUG: Preview content update finished.
-[2025-05-11 12:48:01.756] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:01.756] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:01.756] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:01.757] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:01.757] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:01.757] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:01.758] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:01.958] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:01.958] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:01.958] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:01.958] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:01.959] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:01.959] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:01.959] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:02.204] DEBUG: Timer timeout: Updating preview content.
-[2025-05-11 12:48:02.204] DEBUG:   _update_preview_content: Set is_programmatically_changing_text to True (was False)
-[2025-05-11 12:48:02.204] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 17. Current string_idx: 23
-[2025-05-11 12:48:02.213] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 17, string: 23
-[2025-05-11 12:48:02.214] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
-[2025-05-11 12:48:02.214] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-11 12:48:02.214] DEBUG:   _update_preview_content: Restored is_programmatically_changing_text to False
-[2025-05-11 12:48:02.215] DEBUG: Preview content update finished.
-[2025-05-11 12:48:02.982] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:02.982] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:02.982] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:02.982] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:02.983] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:02.983] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:02.983] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:03.147] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:03.147] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:03.147] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:03.147] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:03.147] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:03.147] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:03.148] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:03.282] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:03.282] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:03.282] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:03.282] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:03.282] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:03.283] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:03.283] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:03.425] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:03.425] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:03.426] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:03.426] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:03.426] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:03.426] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:03.427] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:03.580] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:03.580] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:03.581] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:03.581] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:03.581] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:03.581] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:03.581] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:03.696] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:03.697] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:03.697] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:03.697] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:03.697] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:03.698] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:03.698] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:03.833] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:03.834] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:03.834] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:03.834] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:03.834] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:03.834] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:03.835] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:03.989] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:03.989] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:03.989] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:03.989] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:03.989] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:03.990] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:03.990] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:04.115] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:04.115] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:04.115] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:04.116] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:04.116] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:04.116] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:04.117] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:04.250] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:04.250] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:04.251] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:04.251] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:04.251] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:04.251] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:04.251] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:04.386] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:04.386] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:04.386] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:04.386] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:04.386] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:04.387] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:04.387] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:04.505] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:04.505] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:04.505] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:04.506] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:04.506] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:04.506] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:04.506] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:04.663] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:04.663] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:04.663] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:04.663] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:04.663] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:04.663] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:04.664] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:04.792] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:04.792] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:04.793] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:04.793] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:04.793] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:04.793] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:04.793] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:04.941] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:04.941] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:04.941] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:04.941] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:04.942] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:04.942] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:04.942] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:05.082] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:05.083] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:05.083] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:05.083] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:05.083] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:05.083] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:05.084] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:05.219] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:05.220] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:05.220] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:05.220] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:05.220] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:05.220] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:05.221] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:05.362] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:05.362] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:05.363] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:05.363] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:05.363] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:05.363] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:05.364] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:05.506] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:05.506] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:05.506] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:05.507] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:05.507] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:05.507] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:05.507] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:05.748] DEBUG: Timer timeout: Updating preview content.
-[2025-05-11 12:48:05.748] DEBUG:   _update_preview_content: Set is_programmatically_changing_text to True (was False)
-[2025-05-11 12:48:05.748] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 17. Current string_idx: 23
-[2025-05-11 12:48:05.759] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 17, string: 23
-[2025-05-11 12:48:05.760] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
-[2025-05-11 12:48:05.760] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-11 12:48:05.760] DEBUG:   _update_preview_content: Restored is_programmatically_changing_text to False
-[2025-05-11 12:48:05.760] DEBUG: Preview content update finished.
-2025-05-11 12:48:06,556 - DEBUG - logging_utils - log_debug - EventFilter KeyPress: Key 16777249, Modifiers: <PyQt5.QtCore.Qt.KeyboardModifiers object at 0x000001D6F80CD2E0>, Text: '', Focused widget: edited_text_edit
-[2025-05-11 12:48:06.557] DEBUG: MainWindow keyPressEvent: This should not be called if eventFilter is working.
-2025-05-11 12:48:07,149 - DEBUG - logging_utils - log_debug - EventFilter KeyPress: Key 16777249, Modifiers: <PyQt5.QtCore.Qt.KeyboardModifiers object at 0x000001D6F80CD120>, Text: '', Focused widget: edited_text_edit
-[2025-05-11 12:48:07.150] DEBUG: MainWindow keyPressEvent: This should not be called if eventFilter is working.
-[2025-05-11 12:48:07.276] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:07.276] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:07.277] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:07.277] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:07.277] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:07.277] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:07.277] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:07.405] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:07.406] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:07.406] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:07.406] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:07.406] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:07.406] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:07.407] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:07.651] DEBUG: Timer timeout: Updating preview content.
-[2025-05-11 12:48:07.651] DEBUG:   _update_preview_content: Set is_programmatically_changing_text to True (was False)
-[2025-05-11 12:48:07.651] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 17. Current string_idx: 23
-[2025-05-11 12:48:07.659] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 17, string: 23
-[2025-05-11 12:48:07.660] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
-[2025-05-11 12:48:07.660] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-11 12:48:07.660] DEBUG:   _update_preview_content: Restored is_programmatically_changing_text to False
-[2025-05-11 12:48:07.660] DEBUG: Preview content update finished.
-[2025-05-11 12:48:07.779] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:07.779] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:07.780] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:07.780] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:07.780] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:07.780] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:07.781] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:08.027] DEBUG: Timer timeout: Updating preview content.
-[2025-05-11 12:48:08.027] DEBUG:   _update_preview_content: Set is_programmatically_changing_text to True (was False)
-[2025-05-11 12:48:08.027] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 17. Current string_idx: 23
-[2025-05-11 12:48:08.035] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 17, string: 23
-[2025-05-11 12:48:08.036] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
-[2025-05-11 12:48:08.036] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-11 12:48:08.036] DEBUG:   _update_preview_content: Restored is_programmatically_changing_text to False
-[2025-05-11 12:48:08.036] DEBUG: Preview content update finished.
-[2025-05-11 12:48:08.193] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:08.193] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:08.193] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:08.193] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:08.193] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:08.193] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:08.194] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:08.436] DEBUG: Timer timeout: Updating preview content.
-[2025-05-11 12:48:08.436] DEBUG:   _update_preview_content: Set is_programmatically_changing_text to True (was False)
-[2025-05-11 12:48:08.437] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 17. Current string_idx: 23
-[2025-05-11 12:48:08.445] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 17, string: 23
-[2025-05-11 12:48:08.445] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
-[2025-05-11 12:48:08.446] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-11 12:48:08.446] DEBUG:   _update_preview_content: Restored is_programmatically_changing_text to False
-[2025-05-11 12:48:08.446] DEBUG: Preview content update finished.
-[2025-05-11 12:48:08.575] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:08.575] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:08.576] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:08.576] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:08.576] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:08.576] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = True
-[2025-05-11 12:48:08.576] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-11 12:48:08.825] DEBUG: Timer timeout: Updating preview content.
-[2025-05-11 12:48:08.825] DEBUG:   _update_preview_content: Set is_programmatically_changing_text to True (was False)
-[2025-05-11 12:48:08.825] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 17. Current string_idx: 23
-[2025-05-11 12:48:08.838] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 17, string: 23
-[2025-05-11 12:48:08.838] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
-[2025-05-11 12:48:08.839] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-11 12:48:08.839] DEBUG:   _update_preview_content: Restored is_programmatically_changing_text to False
-[2025-05-11 12:48:08.839] DEBUG: Preview content update finished.
-[2025-05-11 12:48:08.995] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-11 12:48:08.996] DEBUG: TextOperationHandler.text_edited: Before user change processing, edited_text_edit.undoAvailable = False
-[2025-05-11 12:48:08.996] DEBUG: DSP.update_edited_data: Key (17, 23) updated. New edited_data size: 1
-[2025-05-11 12:48:08.996] DEBUG: TextOperationHandler.text_edited: After data_processor.update_edited_data, edited_text_edit.undoAvailable = False
-[2025-05-11 12:48:08.996] DEBUG: TextOperationHandler.text_edited: undo_typing_action.isEnabled() after update = True
-[2025-05-11 12:48:08.997] DEBUG: TextOperationHandler.text_edited: Before starting timer, edited_text_edit.undoAvailable = False
-[2025-05-11 12:48:08.997] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = False
-[2025-05-11 12:48:09.251] DEBUG: Timer timeout: Updating preview content.
-[2025-05-11 12:48:09.251] DEBUG:   _update_preview_content: Set is_programmatically_changing_text to True (was False)
-[2025-05-11 12:48:09.252] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 17. Current string_idx: 23
-[2025-05-11 12:48:09.260] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 17, string: 23
-[2025-05-11 12:48:09.260] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
-[2025-05-11 12:48:09.261] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-11 12:48:09.261] DEBUG:   _update_preview_content: Restored is_programmatically_changing_text to False
-[2025-05-11 12:48:09.261] DEBUG: Preview content update finished.
+[2025-05-11 14:52:02.173] DEBUG: ================= Application Start =================
+[2025-05-11 14:52:02.185] DEBUG: ++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++
+[2025-05-11 14:52:02.185] DEBUG: MainWindow: Initializing Core Components...
+[2025-05-11 14:52:02.185] DEBUG: MainWindow: Initializing Handlers (Pre-UI setup)...
+2025-05-11 14:52:02,185 - DEBUG - logging_utils - log_debug - Handler 'ListSelectionHandler' initialized.
+2025-05-11 14:52:02,186 - DEBUG - logging_utils - log_debug - Handler 'TextOperationHandler' initialized.
+2025-05-11 14:52:02,186 - DEBUG - logging_utils - log_debug - Handler 'AppActionHandler' initialized.
+2025-05-11 14:52:02,186 - DEBUG - logging_utils - log_debug - Handler 'SearchHandler' initialized.
+[2025-05-11 14:52:02.186] DEBUG: MainWindow: Setting up UI...
+[2025-05-11 14:52:02.186] DEBUG: setup_main_window_ui: Starting UI setup.
+[2025-05-11 14:52:02.187] DEBUG: CustomListWidget INITIALIZED, parent: <__main__.MainWindow object at 0x000001FCE435AA60>
+[2025-05-11 14:52:02.187] DEBUG: CustomListWidget: Item delegate set to <components.CustomListItemDelegate.CustomListItemDelegate object at 0x000001FCE435AF70>
+[2025-05-11 14:52:02.195] DEBUG: JsonTagHighlighter initialized.
+[2025-05-11 14:52:02.196] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+[2025-05-11 14:52:02.196] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
+[2025-05-11 14:52:02.196] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-11 14:52:02.348] DEBUG: JsonTagHighlighter initialized.
+[2025-05-11 14:52:02.349] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+[2025-05-11 14:52:02.349] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
+[2025-05-11 14:52:02.349] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-11 14:52:02.350] DEBUG: JsonTagHighlighter initialized.
+[2025-05-11 14:52:02.350] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+[2025-05-11 14:52:02.350] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
+[2025-05-11 14:52:02.350] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-11 14:52:02.365] DEBUG: setup_main_window_ui: UI setup complete.
+[2025-05-11 14:52:02.365] DEBUG: MainWindow: Initializing Handlers (Post-UI setup)...
+[2025-05-11 14:52:02.366] DEBUG: MainWindow: Connecting Signals...
+[2025-05-11 14:52:02.366] DEBUG: --> MainWindow: connect_signals() started
+[2025-05-11 14:52:02.367] DEBUG: --> MainWindow: connect_signals() finished
+[2025-05-11 14:52:02.367] DEBUG: MainWindow: Loading Editor Settings via SettingsManager...
+[2025-05-11 14:52:02.367] DEBUG: --> SettingsManager: load_settings from settings.json
+[2025-05-11 14:52:02.367] DEBUG: --> SettingsManager: load_font_map from font_map.json
+[2025-05-11 14:52:02.368] DEBUG: Successfully loaded font_map. Count: 115
+[2025-05-11 14:52:02.368] DEBUG: SettingsManager: Initial default_font_size (from QFont or 10): 8
+[2025-05-11 14:52:02.368] DEBUG: SettingsManager: Applied all default values. self.mw.current_font_size is now 10 (from defaults)
+[2025-05-11 14:52:02.369] DEBUG: SettingsManager: Successfully parsed settings.json. Content keys: ['default_tag_mappings', 'block_names', 'newline_display_symbol', 'newline_css', 'tag_css', 'show_multiple_spaces_as_dots', 'space_dot_color_hex', 'preview_wrap_lines', 'editors_wrap_lines', 'bracket_tag_color_hex', 'game_dialog_max_width_pixels', 'line_width_warning_threshold_pixels', 'search_history', 'last_selected_block_index', 'last_selected_string_index', 'last_cursor_position_in_edited', 'last_edited_text_edit_scroll_value_v', 'last_edited_text_edit_scroll_value_h', 'last_preview_text_edit_scroll_value_v', 'last_original_text_edit_scroll_value_v', 'last_original_text_edit_scroll_value_h', 'font_size', 'original_file_path', 'edited_file_path', 'window_geometry', 'main_splitter_state', 'right_splitter_state', 'bottom_right_splitter_state', 'critical_problem_lines_per_block', 'warning_problem_lines_per_block', 'width_exceeded_lines_per_block', 'short_lines_per_block']
+[2025-05-11 14:52:02.369] DEBUG: SettingsManager: Found 'font_size' in settings file: 11. Current self.mw.current_font_size: 10
+[2025-05-11 14:52:02.369] DEBUG: SettingsManager: Set self.mw.current_font_size to 11 from file.
+[2025-05-11 14:52:02.369] DEBUG: SettingsManager: Final MainWindow.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 210
+[2025-05-11 14:52:02.369] DEBUG: SettingsManager: After potential load from file, self.mw.current_font_size is 11
+[2025-05-11 14:52:02.369] DEBUG: MainWindow: Applying font. General: Family='Segoe UI', Editor: Family='Courier New', Size=11
+[2025-05-11 14:52:02.375] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-11 14:52:02.375] DEBUG: TextOperationHandler.text_edited: No block/string selected, returning.
+[2025-05-11 14:52:02.385] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: -1, string: -1
+[2025-05-11 14:52:02.385] DEBUG:   No active block/string selected. Text views will be cleared.
+[2025-05-11 14:52:02.386] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: False
+[2025-05-11 14:52:02.386] DEBUG: [UIUpdater] populate_blocks called.
+[2025-05-11 14:52:02.386] DEBUG: [UIUpdater] populate_blocks: No original data.
+[2025-05-11 14:52:02.386] DEBUG: UIUpdater: populate_strings_for_block for block_idx: -1. Current string_idx: -1
+[2025-05-11 14:52:02.386] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
+[2025-05-11 14:52:02.387] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
+[2025-05-11 14:52:02.387] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: -1, string: -1
+[2025-05-11 14:52:02.387] DEBUG:   No active block/string selected. Text views will be cleared.
+[2025-05-11 14:52:02.387] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
+[2025-05-11 14:52:02.387] DEBUG: Settings loaded. Last block: 1, string: 24
+[2025-05-11 14:52:02.388] DEBUG: Settings loaded. Original path from mw: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Edited path from mw: '//192.168.50.168/tloz_tmc_ua/UKR.json'
+2025-05-11 14:52:02,388 - DEBUG - logging_utils - log_debug - Applying text wrap settings: Preview wrap: False, Editors wrap: False
+2025-05-11 14:52:02,388 - DEBUG - logging_utils - log_debug - MainWindowHelper: Reconfiguring all highlighters...
+[2025-05-11 14:52:02.388] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
+[2025-05-11 14:52:02.388] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-11 14:52:02.389] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
+[2025-05-11 14:52:02.389] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-11 14:52:02.389] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
+[2025-05-11 14:52:02.389] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-11 14:52:02.389] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-11 14:52:02.390] DEBUG: TextOperationHandler.text_edited: No block/string selected, returning.
+[2025-05-11 14:52:02.390] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-11 14:52:02.390] DEBUG: TextOperationHandler.text_edited: No block/string selected, returning.
+2025-05-11 14:52:02,390 - DEBUG - logging_utils - log_debug - MainWindowHelper: Highlighter reconfiguration attempt complete.
+[2025-05-11 14:52:02.390] DEBUG: <-- SettingsManager: load_settings finished
+[2025-05-11 14:52:02.391] DEBUG: MainWindow: After SettingsManager.load_settings(), self.current_font_size = 11, general_family = Segoe UI, editor_family = Courier New
+[2025-05-11 14:52:02.391] DEBUG: MainWindow: change_font_size_action called with size 11
+[2025-05-11 14:52:02.391] DEBUG: MainWindow: After load_settings, self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 210
+[2025-05-11 14:52:02.391] DEBUG: MainWindow: After load_settings, self.initial_load_path = //192.168.50.168/tloz_tmc_ua/UKR_orig.json
+[2025-05-11 14:52:02.391] DEBUG: MainWindow: After load_settings, self.initial_edited_load_path = //192.168.50.168/tloz_tmc_ua/UKR.json
+[2025-05-11 14:52:02.391] DEBUG: MainWindow: Set preview_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 210
+[2025-05-11 14:52:02.392] DEBUG: MainWindow: Set original_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 210
+[2025-05-11 14:52:02.392] DEBUG: MainWindow: Set edited_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 210
+2025-05-11 14:52:02,393 - DEBUG - logging_utils - log_debug - MainWindowHelper: restore_state_after_settings_load called.
+2025-05-11 14:52:02,396 - DEBUG - logging_utils - log_debug - MainWindowHelper: Attempting to load initial file from settings: //192.168.50.168/tloz_tmc_ua/UKR_orig.json
+[2025-05-11 14:52:02.396] DEBUG: --> AppActionHandler: load_all_data_for_path START. Original: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Manual Edit Path: '//192.168.50.168/tloz_tmc_ua/UKR.json', InitialLoad: True
+[2025-05-11 14:52:02.396] DEBUG: load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', expected_type: list
+[2025-05-11 14:52:02.409] DEBUG: load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR_orig.json'.
+[2025-05-11 14:52:02.413] DEBUG: load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR.json', expected_type: list
+[2025-05-11 14:52:02.432] DEBUG: load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR.json'.
+[2025-05-11 14:52:02.433] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
+[2025-05-11 14:52:02.433] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
+[2025-05-11 14:52:02.433] DEBUG: Initial load from settings: Assuming problem data is from settings or will be calculated if missing.
+[2025-05-11 14:52:02.433] DEBUG: critical_problem_lines_per_block data not found in settings or empty, performing full scan.
+[2025-05-11 14:52:02.433] DEBUG: AppActionHandler: Performing initial silent scan for ALL issues (tags, width, short lines)...
+[2025-05-11 14:52:02.433] DEBUG: UIUpdater: Cleared all problem/warning/width/short block highlights and count texts.
+[2025-05-11 14:52:02.511] DEBUG: AppActionHandler: Initial silent scan for ALL issues complete.
+[2025-05-11 14:52:02.512] DEBUG: [UIUpdater] populate_blocks called.
+[2025-05-11 14:52:02.512] DEBUG: [UIUpdater] populate_blocks: Added 80 items.
+[2025-05-11 14:52:02.513] DEBUG: --> ListSelectionHandler: block_selected. Item: 'Системні (1 width, 4 short)', Index: 0
+[2025-05-11 14:52:02.513] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 0. Current string_idx: -1
+[2025-05-11 14:52:02.513] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 0, string: -1
+[2025-05-11 14:52:02.514] DEBUG:   No active block/string selected. Text views will be cleared.
+[2025-05-11 14:52:02.514] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
+[2025-05-11 14:52:02.514] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-11 14:52:02.514] DEBUG: <-- ListSelectionHandler: block_selected finished.
+[2025-05-11 14:52:02.514] DEBUG: <-- AppActionHandler: load_all_data_for_path FINISHED (Success)
+[2025-05-11 14:52:02.514] DEBUG: --> ListSelectionHandler: block_selected. Item: 'Титри (2 warn, 16 short)', Index: 1
+[2025-05-11 14:52:02.515] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 1. Current string_idx: -1
+[2025-05-11 14:52:02.532] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 1, string: -1
+[2025-05-11 14:52:02.532] DEBUG:   No active block/string selected. Text views will be cleared.
+[2025-05-11 14:52:02.532] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: True
+[2025-05-11 14:52:02.532] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-11 14:52:02.532] DEBUG: <-- ListSelectionHandler: block_selected finished.
+[2025-05-11 14:52:02.533] DEBUG: --> ListSelectionHandler: string_selected_from_preview. Data Line number: 24
+[2025-05-11 14:52:02.533] DEBUG: Set current_string_idx = 24.
+[2025-05-11 14:52:02.534] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 1. Current string_idx: 24
+[2025-05-11 14:52:02.537] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 1, string: 24
+[2025-05-11 14:52:02.538] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating. Programmatic context: True
+[2025-05-11 14:52:02.539] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
+[2025-05-11 14:52:02.539] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
+[2025-05-11 14:52:02.539] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
+[2025-05-11 14:52:02.541] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-11 14:52:02.541] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 1, string: 24
+[2025-05-11 14:52:02.542] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No UI update needed. Programmatic context: False
+[2025-05-11 14:52:02.542] DEBUG: <-- ListSelectionHandler: string_selected_from_preview finished.
+2025-05-11 14:52:02,543 - DEBUG - logging_utils - log_debug - MainWindowHelper: Restored selection to block 1, string 24, cursor 79
+2025-05-11 14:52:02,543 - DEBUG - logging_utils - log_debug - MainWindowHelper: Search history loaded into panel. Last query (if any) set in SearchHandler: ���
+2025-05-11 14:52:02,544 - DEBUG - logging_utils - log_debug - Rebuilt unsaved_block_indices: set()
+[2025-05-11 14:52:02.544] DEBUG: ++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++
+[2025-05-11 14:52:02.694] DEBUG: Starting Qt event loop...
