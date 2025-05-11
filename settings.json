@@ -174,25 +174,25 @@
     "tag_css": "color: #808080; font-style: italic;",
     "show_multiple_spaces_as_dots": true,
     "space_dot_color_hex": "#808080",
-    "preview_wrap_lines": false,
-    "editors_wrap_lines": false,
+    "preview_wrap_lines": true,
+    "editors_wrap_lines": true,
     "bracket_tag_color_hex": "#FFA500",
     "game_dialog_max_width_pixels": 210,
     "line_width_warning_threshold_pixels": 210,
     "search_history": [
-        "Так Ні",
-        "Гей, {Color:Green}Лінк",
-        "123",
-        "Гей, Лінк",
+        "лінк",
         "link",
-        "лінк"
+        "Гей, Лінк",
+        "123",
+        "Гей, {Color:Green}Лінк",
+        "Так Ні"
     ],
-    "last_selected_block_index": 5,
-    "last_selected_string_index": 116,
-    "last_cursor_position_in_edited": 58,
+    "last_selected_block_index": 12,
+    "last_selected_string_index": 101,
+    "last_cursor_position_in_edited": 65,
     "last_edited_text_edit_scroll_value_v": 0,
     "last_edited_text_edit_scroll_value_h": 0,
-    "last_preview_text_edit_scroll_value_v": 0,
+    "last_preview_text_edit_scroll_value_v": 12,
     "last_original_text_edit_scroll_value_v": 0,
     "last_original_text_edit_scroll_value_h": 0,
     "font_size": 11,
@@ -200,8 +200,8 @@
     "edited_file_path": "//192.168.50.168/tloz_tmc_ua/UKR.json",
     "window_was_maximized": false,
     "window_normal_geometry": {
-        "x": 477,
-        "y": 171,
+        "x": 438,
+        "y": 146,
         "width": 1430,
         "height": 1002
     },
@@ -243,7 +243,6 @@
         ],
         "12": [
             97,
-            101,
             8,
             48,
             49,
@@ -368,13 +367,9 @@
         ]
     },
     "width_exceeded_lines_per_block": {
-        "0": [
-            4
-        ],
         "3": [
             16,
-            40,
-            12
+            40
         ],
         "4": [
             57,
@@ -457,6 +452,7 @@
             97,
             99,
             100,
+            101,
             109,
             114,
             116,
@@ -705,13 +701,11 @@
             17,
             19,
             20,
-            26,
-            28
+            26
         ],
         "3": [
             9,
             11,
-            12,
             13,
             16,
             17,

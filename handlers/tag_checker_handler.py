@@ -25,29 +25,25 @@ class TagCheckerHandler:
         }
         self.search_start_point = {'block_idx': -1, 'string_idx': -1}
         self.currently_highlighted_mismatch = {
-            'block_idx': -1, # Блок, де була остання невідповідність
-            'string_idx': -1, # Рядок, де була остання невідповідність
-            'qtextblock_idx': -1, # QTextBlock в original_text_edit
-            'start_char_in_qtextblock': -1, # Позиція символу в QTextBlock
-            'length': -1, # Довжина тегу
-            'tag_text': '' # Текст тегу
+            'block_idx': -1, 
+            'string_idx': -1, 
+            'qtextblock_idx': -1, 
+            'start_char_in_qtextblock': -1, 
+            'length': -1, 
+            'tag_text': '' 
         }
-        self.is_search_active = False # Чи триває зараз активний пошук (був зупинений на розбіжності)
+        self.is_search_active = False
 
     def _get_initial_search_indices(self) -> tuple[int, int]:
-        # Визначає, з якого блоку/рядка починати абсолютно новий пошук
-        # або пошук після завершення повного кола.
-        # Намагається взяти поточний активний рядок в UI.
         current_block_idx_ui = self.mw.current_block_idx
         current_string_idx_ui = self.mw.current_string_idx
 
-        if current_block_idx_ui == -1: # Якщо жоден блок не обрано
+        if current_block_idx_ui == -1: 
             current_block_idx_ui = 0
             current_string_idx_ui = 0
-        elif current_string_idx_ui == -1: # Якщо блок обрано, але не рядок
+        elif current_string_idx_ui == -1: 
             current_string_idx_ui = 0
         
-        # Перевірка на вихід за межі
         if not self.mw.data or current_block_idx_ui >= len(self.mw.data):
             log_debug(f"TagChecker: _get_initial_search_indices - No data or block_idx {current_block_idx_ui} out of bounds. Returning 0,0")
             return 0,0
@@ -102,18 +98,20 @@ class TagCheckerHandler:
 
     def _highlight_mismatched_tag(self, original_block_idx_data: int, original_string_idx_data: int, 
                                   tag_text: str, tag_start_char_in_string_data: int, tag_end_char_in_string_data: int):
-        self._remove_mismatch_highlight() # Знімаємо попереднє, якщо було
+        self._remove_mismatch_highlight() 
         
-        # Переконуємося, що UI показує правильний рядок
+        if self.mw.block_list_widget.currentRow() != original_block_idx_data:
+            self.mw.block_list_widget.setCurrentRow(original_block_idx_data)
+            log_debug(f"TagChecker: Set current block in list to {original_block_idx_data}")
+            QApplication.processEvents() 
+
         if self.mw.current_block_idx != original_block_idx_data or \
            self.mw.current_string_idx != original_string_idx_data:
             log_debug(f"TagChecker: _highlight_mismatched_tag - UI (B{self.mw.current_block_idx},S{self.mw.current_string_idx}) "
-                      f"doesn't match mismatch location (B{original_block_idx_data},S{original_string_idx_data}). Syncing UI first.")
-            self.mw.current_block_idx = original_block_idx_data
+                      f"doesn't match mismatch location (B{original_block_idx_data},S{original_string_idx_data}). Syncing UI further.")
             self.mw.list_selection_handler.string_selected_from_preview(original_string_idx_data)
-            QApplication.processEvents() # Чекаємо, доки UI оновиться
+            QApplication.processEvents()
 
-        # Тепер, коли UI синхронізовано, original_text_edit має показувати потрібний рядок
         raw_text_of_displayed_original_line = self.mw.data[original_block_idx_data][original_string_idx_data]
         
         qtextblock_idx_in_displayed_editor = 0 
@@ -175,7 +173,6 @@ class TagCheckerHandler:
         self._remove_mismatch_highlight()
 
     def _show_completion_popup(self, all_ok_during_run: bool):
-        # all_ok_during_run: True якщо не було жодної зупинки на підсвічування
         if all_ok_during_run:
             QMessageBox.information(self.mw, "Перевірка тегів завершена", "Всі теги на місці!")
         else:
@@ -192,10 +189,9 @@ class TagCheckerHandler:
 
         if self.currently_highlighted_mismatch['block_idx'] != -1:
             self._remove_mismatch_highlight()
-            # Продовжуємо з НАСТУПНОГО тегу після того, що був підсвічений
             self.current_search_state['original_tag_idx_in_current_string'] += 1
             log_debug(f"TagChecker: Resuming after mismatch. Next original tag index: {self.current_search_state['original_tag_idx_in_current_string']}")
-        elif not self.is_search_active: # Початок абсолютно нового пошуку
+        elif not self.is_search_active: 
             start_b_idx, start_s_idx = self._get_initial_search_indices()
             self.current_search_state = {
                 'block_idx': start_b_idx,
@@ -204,25 +200,19 @@ class TagCheckerHandler:
             }
             self.search_start_point = {'block_idx': start_b_idx, 'string_idx': start_s_idx}
             log_debug(f"TagChecker: New search initiated. Start: B{start_b_idx}, S{start_s_idx}")
-        # Якщо is_search_active=True і немає highlighted_mismatch, це означає,
-        # що ми завершили коло і починаємо нове, або це помилковий стан.
-        # _reset_search_state_and_ui в _show_completion_popup має скинути is_search_active.
 
-        self.is_search_active = True # Позначаємо, що пошук триває/розпочато
+        self.is_search_active = True 
         
         num_blocks = len(self.mw.data)
         processed_at_least_one_tag_this_call = False
         mismatch_found_in_this_run = False
 
 
-        while True: # Внутрішній цикл для перебору
+        while True: 
             b_idx_current_iter = self.current_search_state['block_idx']
             s_idx_current_iter = self.current_search_state['string_idx']
             tag_orig_idx_current_iter = self.current_search_state['original_tag_idx_in_current_string']
 
-            # Перевірка на завершення повного кола
-            # Це має спрацювати, коли ми повернулися до search_start_point *і* tag_orig_idx_current_iter = 0
-            # *і* ми вже щось обробили (processed_at_least_one_tag_this_call)
             if processed_at_least_one_tag_this_call and \
                b_idx_current_iter == self.search_start_point['block_idx'] and \
                s_idx_current_iter == self.search_start_point['string_idx'] and \
@@ -231,9 +221,8 @@ class TagCheckerHandler:
                 self._show_completion_popup(not mismatch_found_in_this_run)
                 return 
             
-            processed_at_least_one_tag_this_call = True # Позначаємо, що ми пройшли хоча б одну ітерацію
+            processed_at_least_one_tag_this_call = True 
 
-            # Валідація індексів
             if b_idx_current_iter < 0 or b_idx_current_iter >= num_blocks:
                 log_debug(f"TagChecker: Invalid block index {b_idx_current_iter} encountered. Resetting.")
                 self._show_completion_popup(not mismatch_found_in_this_run)
@@ -242,12 +231,11 @@ class TagCheckerHandler:
             current_block_original_data = self.mw.data[b_idx_current_iter]
             if not isinstance(current_block_original_data, list) or \
                s_idx_current_iter < 0 or s_idx_current_iter >= len(current_block_original_data):
-                # Перехід до наступного блоку
                 self.current_search_state['block_idx'] = (b_idx_current_iter + 1) % num_blocks
                 self.current_search_state['string_idx'] = 0
                 self.current_search_state['original_tag_idx_in_current_string'] = 0
                 log_debug(f"TagChecker: End of block {b_idx_current_iter} or invalid string index. Moving to B{self.current_search_state['block_idx']}, S0")
-                continue # До наступної ітерації while
+                continue 
 
             original_row_text_data = current_block_original_data[s_idx_current_iter]
             translation_row_text_data, _ = self.data_processor.get_current_string_text(b_idx_current_iter, s_idx_current_iter)
@@ -255,28 +243,24 @@ class TagCheckerHandler:
             original_tags_with_pos_list = self._get_tags_from_string(original_row_text_data)
 
             if not original_tags_with_pos_list or tag_orig_idx_current_iter >= len(original_tags_with_pos_list):
-                # Немає тегів в оригіналі для поточного рядка або всі теги цього рядка вже перевірені
                 self.current_search_state['string_idx'] += 1
                 self.current_search_state['original_tag_idx_in_current_string'] = 0
                 log_debug(f"TagChecker: No more tags in B{b_idx_current_iter},S{s_idx_current_iter} or all checked for this string. Moving to S{self.current_search_state['string_idx']}")
-                continue # До наступної ітерації while
+                continue 
             
-            # Отримуємо поточний тег оригіналу для перевірки
             current_orig_tag_text, current_orig_tag_start, current_orig_tag_end = original_tags_with_pos_list[tag_orig_idx_current_iter]
             
-            # Збираємо "використані" теги в перекладі для ПОПЕРЕДНІХ тегів оригіналу ЦЬОГО Ж рядка
             used_translation_tag_matches_for_current_original_row = []
             for i in range(tag_orig_idx_current_iter): 
                 prev_orig_tag_text_iter, _, _ = original_tags_with_pos_list[i]
                 found_prev_iter, prev_match_span_iter = self._find_tag_in_translation(
                     prev_orig_tag_text_iter, 
                     translation_row_text_data, 
-                    used_translation_tag_matches_for_current_original_row # Передаємо список, який оновлюється
+                    used_translation_tag_matches_for_current_original_row 
                 )
                 if found_prev_iter and prev_match_span_iter:
                     used_translation_tag_matches_for_current_original_row.append(prev_match_span_iter)
             
-            # Перевіряємо поточний тег оригіналу
             found_current_tag, _ = self._find_tag_in_translation(
                 current_orig_tag_text, 
                 translation_row_text_data, 
@@ -286,24 +270,11 @@ class TagCheckerHandler:
             if found_current_tag:
                 log_debug(f"TagChecker: Match! B{b_idx_current_iter},S{s_idx_current_iter}. Tag '{current_orig_tag_text}' (orig_idx {tag_orig_idx_current_iter}).")
                 self.current_search_state['original_tag_idx_in_current_string'] += 1 
-                # Продовжуємо з наступним тегом оригіналу в цьому ж рядку (наступна ітерація while)
             else:
-                # Тег не знайдено!
                 log_debug(f"TagChecker: Mismatch! B{b_idx_current_iter},S{s_idx_current_iter}. Original Tag (idx {tag_orig_idx_current_iter}) '{current_orig_tag_text}' "
                           f"not found in translation '{translation_row_text_data}'. "
                           f"Used translation tags for previous original tags in this row: {used_translation_tag_matches_for_current_original_row}")
                 
                 mismatch_found_in_this_run = True
-                # Оновлюємо UI, щоб показати рядок з розбіжністю
-                if self.mw.current_block_idx != b_idx_current_iter or \
-                   self.mw.current_string_idx != s_idx_current_iter:
-                    log_debug(f"TagChecker: Syncing UI to mismatch location B{b_idx_current_iter}, S{s_idx_current_iter} before highlight.")
-                    self.mw.current_block_idx = b_idx_current_iter
-                    self.mw.list_selection_handler.string_selected_from_preview(s_idx_current_iter)
-                    QApplication.processEvents()
-                
                 self._highlight_mismatched_tag(b_idx_current_iter, s_idx_current_iter, current_orig_tag_text, current_orig_tag_start, current_orig_tag_end)
-                
-                # self.is_search_active залишається True. Стан (b_idx, s_idx, tag_orig_idx) збережено.
-                # Виходимо з функції, щоб чекати наступного кліку користувача.
                 return 
