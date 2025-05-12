@@ -19,7 +19,7 @@ from .LNET_constants import (
     PREVIEW_SELECTED_LINE_COLOR, CRITICAL_PROBLEM_LINE_COLOR,
     WARNING_PROBLEM_LINE_COLOR, TAG_INTERACTION_HIGHLIGHT_COLOR,
     SEARCH_MATCH_HIGHLIGHT_COLOR, WIDTH_EXCEEDED_LINE_COLOR, SHORT_LINE_COLOR,
-    EMPTY_ODD_SUBLINE_COLOR,
+    EMPTY_ODD_SUBLINE_COLOR, NEW_BLUE_SUBLINE_COLOR,
     CHARACTER_LIMIT_LINE_POSITION, CHARACTER_LIMIT_LINE_COLOR, CHARACTER_LIMIT_LINE_STYLE, CHARACTER_LIMIT_LINE_WIDTH,
     WIDTH_THRESHOLD_LINE_COLOR, WIDTH_THRESHOLD_LINE_STYLE, WIDTH_THRESHOLD_LINE_WIDTH
 )
@@ -49,6 +49,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.width_exceeded_line_color = WIDTH_EXCEEDED_LINE_COLOR 
         self.short_line_color = SHORT_LINE_COLOR 
         self.empty_odd_subline_color = EMPTY_ODD_SUBLINE_COLOR
+        self.new_blue_subline_color = NEW_BLUE_SUBLINE_COLOR # New color attribute
 
         self.highlightManager = TextHighlightManager(self)
         log_debug(f"LNET ({self.objectName()}): highlightManager created. Has 'clear_width_exceed_char_highlights': {hasattr(self.highlightManager, 'clear_width_exceed_char_highlights')}")

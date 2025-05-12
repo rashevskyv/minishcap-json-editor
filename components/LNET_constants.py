@@ -22,7 +22,9 @@ WIDTH_THRESHOLD_LINE_COLOR = QColor(0, 128, 0, 120)
 WIDTH_THRESHOLD_LINE_WIDTH = 3
 WIDTH_THRESHOLD_LINE_STYLE = Qt.DashLine
 
-# Нові константи для розділювальної лінії між парними підрядками
-PAIR_SEPARATOR_LINE_COLOR = QColor(0, 100, 0) # Темно-зелений
+PAIR_SEPARATOR_LINE_COLOR = QColor(0, 100, 0) 
 PAIR_SEPARATOR_LINE_STYLE = Qt.SolidLine
 PAIR_SEPARATOR_LINE_THICKNESS = 1
+
+# New color for the requested highlighting rule
+NEW_BLUE_SUBLINE_COLOR = QColor(0, 0, 255, 120)
