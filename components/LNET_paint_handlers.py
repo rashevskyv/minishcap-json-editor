@@ -394,18 +394,12 @@ class LNETPaintHandlers:
                         pixel_width = calculate_string_width(text_for_width_calc_rstripped_paint_text, self.editor.font_map)
 
                         width_str_text = str(pixel_width)
-                        text_color_for_extra_part = QColor(Qt.black) 
                         
-                        # Set pixel width text color based on the background color of the extra info area
-                        if bg_color_extra_info_area == width_exceeded_qtextblock_color:
-                             text_color_for_extra_part = QColor(Qt.darkRed)
-                        elif bg_color_extra_info_area == short_qtextblock_color:
-                             text_color_for_extra_part = QColor(Qt.darkGreen)
-                        elif bg_color_extra_info_area == empty_odd_qtextblock_problem_color:
-                             text_color_for_extra_part = QColor(Qt.darkRed)
-
-
+                        # --- Set pixel width text color explicitly to black ---
+                        text_color_for_extra_part = QColor(Qt.black) 
                         painter.setPen(text_color_for_extra_part)
+                        # --- End explicit set ---
+
                         painter.drawText(QRect(number_part_width, top, extra_part_width -3 , line_height), Qt.AlignRight | Qt.AlignVCenter, width_str_text)
                         
                     elif self.editor.objectName() == "preview_text_edit" and isinstance(main_window_ref, QMainWindow) and current_block_idx_data != -1:
