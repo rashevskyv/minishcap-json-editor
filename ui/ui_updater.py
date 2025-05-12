@@ -25,7 +25,9 @@ class UIUpdater:
             base_display_name = self.mw.block_names.get(str(i), f"Block {i}")
             
             num_critical = 0; num_warnings = 0; num_width_exceeded = 0; num_short = 0
+            num_empty_odd = 0 # Новий лічильник
             block_key = str(i)
+
             if hasattr(self.mw, 'critical_problem_lines_per_block'):
                 num_critical = len(self.mw.critical_problem_lines_per_block.get(block_key, set()))
             if hasattr(self.mw, 'warning_problem_lines_per_block'):
@@ -34,13 +36,16 @@ class UIUpdater:
                 num_width_exceeded = len(self.mw.width_exceeded_lines_per_block.get(block_key, set()))
             if hasattr(self.mw, 'short_lines_per_block'):
                 num_short = len(self.mw.short_lines_per_block.get(block_key, set()))
-            
+            if hasattr(self.mw, 'empty_odd_unisingle_subline_problem_strings'): # Нова перевірка
+                num_empty_odd = len(self.mw.empty_odd_unisingle_subline_problem_strings.get(block_key, set()))
+
             display_name_with_issues = base_display_name
             issue_texts = []
             if num_critical > 0: issue_texts.append(f"{num_critical} crit")
             if num_warnings > 0: issue_texts.append(f"{num_warnings} warn")
             if num_width_exceeded > 0: issue_texts.append(f"{num_width_exceeded} width")
             if num_short > 0: issue_texts.append(f"{num_short} short")
+            if num_empty_odd > 0: issue_texts.append(f"{num_empty_odd} emptyOdd") # Новий текст проблеми
             
             if issue_texts:
                 display_name_with_issues = f"{base_display_name} ({', '.join(issue_texts)})"
@@ -64,6 +69,7 @@ class UIUpdater:
 
         base_display_name = self.mw.block_names.get(str(block_idx), f"Block {block_idx}")
         num_critical = 0; num_warnings = 0; num_width_exceeded = 0; num_short = 0
+        num_empty_odd = 0 # Новий лічильник
         block_key = str(block_idx)
 
         if hasattr(self.mw, 'critical_problem_lines_per_block'):
@@ -74,6 +80,9 @@ class UIUpdater:
             num_width_exceeded = len(self.mw.width_exceeded_lines_per_block.get(block_key, set()))
         if hasattr(self.mw, 'short_lines_per_block'):
             num_short = len(self.mw.short_lines_per_block.get(block_key, set()))
+        if hasattr(self.mw, 'empty_odd_unisingle_subline_problem_strings'): # Нова перевірка
+            num_empty_odd = len(self.mw.empty_odd_unisingle_subline_problem_strings.get(block_key, set()))
+
 
         display_name_with_issues = base_display_name
         issue_texts = []
@@ -81,6 +90,8 @@ class UIUpdater:
         if num_warnings > 0: issue_texts.append(f"{num_warnings} warn")
         if num_width_exceeded > 0: issue_texts.append(f"{num_width_exceeded} width")
         if num_short > 0: issue_texts.append(f"{num_short} short")
+        if num_empty_odd > 0: issue_texts.append(f"{num_empty_odd} emptyOdd") # Новий текст проблеми
+
         
         if issue_texts:
             display_name_with_issues = f"{base_display_name} ({', '.join(issue_texts)})"
@@ -93,53 +104,61 @@ class UIUpdater:
         self.mw.block_list_widget.viewport().update()
 
     def _apply_empty_odd_subline_highlights_to_edited_text(self):
-        edited_edit = getattr(self.mw, 'edited_text_edit', None)
-        if not edited_edit or not hasattr(edited_edit, 'document'):
-            log_debug("UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: No edited_edit or document.")
-            return
+        # Цей метод більше не потрібен для підсвічування LineNumberArea в edited_text_edit,
+        # оскільки це тепер робиться напряму в LNETPaintHandlers.lineNumberAreaPaintEvent
+        # на основі pixel_width та непарності QTextBlock.
+        # Залишаємо його порожнім або видаляємо, якщо він більше ніде не використовується.
+        # Поки що просто закоментуємо його вміст, щоб не викликати помилок, якщо десь залишився виклик.
+        # edited_edit = getattr(self.mw, 'edited_text_edit', None)
+        # if not edited_edit or not hasattr(edited_edit, 'document'):
+        #     log_debug("UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: No edited_edit or document.")
+        #     return
 
-        log_debug("UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...")
-        if hasattr(edited_edit, 'clearEmptyOddSublineHighlights'):
-            log_debug("  Clearing previous empty odd subline highlights.")
-            edited_edit.clearEmptyOddSublineHighlights()
+        # log_debug("UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...")
+        # if hasattr(edited_edit, 'clearEmptyOddSublineHighlights'):
+        #     log_debug("  Clearing previous empty odd subline highlights.")
+        #     edited_edit.clearEmptyOddSublineHighlights()
 
-        doc = edited_edit.document()
-        block = doc.firstBlock()
-        qtextblock_index = 0
-        highlights_applied_this_run = False
-        while block.isValid():
-            text = block.text()
-            text_with_spaces = convert_dots_to_spaces_from_editor(text) if self.mw.show_multiple_spaces_as_dots else text
-            text_no_tags = remove_all_tags(text_with_spaces)
+        # doc = edited_edit.document()
+        # block = doc.firstBlock()
+        # qtextblock_index = 0
+        # highlights_applied_this_run = False
+        # while block.isValid():
+        #     text = block.text()
+        #     text_with_spaces = convert_dots_to_spaces_from_editor(text) if self.mw.show_multiple_spaces_as_dots else text
+        #     text_no_tags = remove_all_tags(text_with_spaces)
             
-            stripped_text_no_tags = text_no_tags.strip()
-            is_empty = not stripped_text_no_tags or stripped_text_no_tags == "0"
+        #     stripped_text_no_tags = text_no_tags.strip()
+        #     is_empty = not stripped_text_no_tags or stripped_text_no_tags == "0"
             
-            is_odd_qtextblock = (qtextblock_index + 1) % 2 != 0
+        #     is_odd_qtextblock = (qtextblock_index + 1) % 2 != 0
 
-            log_debug(f"  QTextBlock {qtextblock_index}: Text='{text[:30]}...', NoTagsStripped='{stripped_text_no_tags}', IsEmpty={is_empty}, IsOdd={is_odd_qtextblock}")
+        #     # log_debug(f"  QTextBlock {qtextblock_index}: Text='{text[:30]}...', NoTagsStripped='{stripped_text_no_tags}', IsEmpty={is_empty}, IsOdd={is_odd_qtextblock}")
 
-            if is_empty and is_odd_qtextblock:
-                if hasattr(edited_edit, 'addEmptyOddSublineHighlight'):
-                    log_debug(f"    Highlighting QTextBlock {qtextblock_index} (BlockNum: {block.blockNumber()}) as empty odd.")
-                    edited_edit.addEmptyOddSublineHighlight(block.blockNumber())
-                    highlights_applied_this_run = True
+        #     if is_empty and is_odd_qtextblock:
+        #         if hasattr(edited_edit, 'addEmptyOddSublineHighlight'):
+        #             # log_debug(f"    Highlighting QTextBlock {qtextblock_index} (BlockNum: {block.blockNumber()}) as empty odd.")
+        #             edited_edit.addEmptyOddSublineHighlight(block.blockNumber())
+        #             highlights_applied_this_run = True
             
-            block = block.next()
-            qtextblock_index += 1
+        #     block = block.next()
+        #     qtextblock_index += 1
         
-        if highlights_applied_this_run:
-            log_debug("  At least one empty odd subline highlight was added.")
-        else:
-            log_debug("  No empty odd subline highlights were added in this run.")
+        # if highlights_applied_this_run:
+        #     # log_debug("  At least one empty odd subline highlight was added.")
+        #     pass
+        # else:
+        #     # log_debug("  No empty odd subline highlights were added in this run.")
+        #     pass
 
-        if hasattr(edited_edit, 'applyQueuedHighlights'):
-            log_debug("  Calling applyQueuedHighlights on edited_edit.")
-            edited_edit.applyQueuedHighlights()
-        elif hasattr(edited_edit, 'highlightManager') and hasattr(edited_edit.highlightManager, 'applyHighlights'):
-            log_debug("  Calling highlightManager.applyHighlights on edited_edit.")
-            edited_edit.highlightManager.applyHighlights()
-        log_debug("UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.")
+        # if hasattr(edited_edit, 'applyQueuedHighlights'):
+        #     # log_debug("  Calling applyQueuedHighlights on edited_edit.")
+        #     edited_edit.applyQueuedHighlights()
+        # elif hasattr(edited_edit, 'highlightManager') and hasattr(edited_edit.highlightManager, 'applyHighlights'):
+        #      # log_debug("  Calling highlightManager.applyHighlights on edited_edit.")
+        #      edited_edit.highlightManager.applyHighlights()
+        # log_debug("UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.")
+        pass
 
 
     def populate_strings_for_block(self, block_idx):
@@ -167,9 +186,6 @@ class UIUpdater:
             if editor_widget_loop:
                 if hasattr(editor_widget_loop, 'clearAllProblemTypeHighlights'):
                     editor_widget_loop.clearAllProblemTypeHighlights()
-                if hasattr(editor_widget_loop, 'clearEmptyOddSublineHighlights') and editor_widget_loop == edited_edit:
-                    log_debug(f"  populate_strings_for_block: Clearing empty odd subline highlights for {edited_edit.objectName()}")
-                    editor_widget_loop.clearEmptyOddSublineHighlights()
                 if hasattr(editor_widget_loop, 'clearPreviewSelectedLineHighlight') and editor_widget_loop == preview_edit:
                     editor_widget_loop.clearPreviewSelectedLineHighlight()
 
@@ -398,10 +414,6 @@ class UIUpdater:
 
         edited_widget = self.mw.edited_text_edit
         if edited_widget:
-            if hasattr(edited_widget, 'clearEmptyOddSublineHighlights'):
-                log_debug(f"  update_text_views: Clearing empty odd subline highlights for {edited_widget.objectName()} before setPlainText.")
-                edited_widget.clearEmptyOddSublineHighlights()
-
             if edited_widget.toPlainText() != edited_text_for_display_converted:
                 log_debug(f"UIUpdater: update_text_views - Content mismatch for {edited_widget.objectName()}. Updating.")
                 saved_edited_cursor_pos = edited_widget.textCursor().position()
@@ -421,9 +433,6 @@ class UIUpdater:
             else:
                  log_debug(f"UIUpdater: update_text_views - Content for {edited_widget.objectName()} matches. No setPlainText needed.")
             
-            log_debug(f"  update_text_views: Calling _apply_empty_odd_subline_highlights_to_edited_text for {edited_widget.objectName()}.")
-            self._apply_empty_odd_subline_highlights_to_edited_text()
-
         self.mw.is_programmatically_changing_text = is_programmatic_call_flag_original
 
         if self.mw.edited_text_edit: 

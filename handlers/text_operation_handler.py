@@ -31,8 +31,6 @@ class TextOperationHandler(BaseHandler):
         was_programmatically_changing = main_window_ref.is_programmatically_changing_text
         main_window_ref.is_programmatically_changing_text = True
         
-        log_debug(f"  _update_preview_content: Set is_programmatically_changing_text to True (was {was_programmatically_changing})")
-
         self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
         
         if preview_edit: preview_edit.verticalScrollBar().setValue(old_scrollbar_value)
@@ -40,7 +38,6 @@ class TextOperationHandler(BaseHandler):
         if edited_edit and hasattr(edited_edit, 'lineNumberArea'): edited_edit.lineNumberArea.update()
 
         main_window_ref.is_programmatically_changing_text = was_programmatically_changing
-        log_debug(f"  _update_preview_content: Restored is_programmatically_changing_text to {was_programmatically_changing}")
         log_debug("Preview content update finished.")
 
     def _check_and_update_width_exceeded_status(self, block_idx: int, string_idx: int, text_to_check: str):
@@ -129,6 +126,43 @@ class TextOperationHandler(BaseHandler):
                 del self.mw.short_lines_per_block[block_key]
         return state_changed
 
+    def _check_and_update_empty_odd_unisingle_subline_status(self, block_idx: int, string_idx: int, data_string_text: str) -> bool:
+        block_key = str(block_idx)
+        sub_lines = str(data_string_text).split('\n')
+        
+        has_problem = False
+        if len(sub_lines) > 1: # Проблема може існувати тільки якщо є більше одного підрядка
+            for i, sub_line_text in enumerate(sub_lines):
+                is_odd_subline = (i + 1) % 2 != 0
+                if is_odd_subline:
+                    text_no_tags = remove_all_tags(sub_line_text)
+                    stripped_text_no_tags = text_no_tags.strip()
+                    is_empty_or_zero = not stripped_text_no_tags or stripped_text_no_tags == "0"
+                    if is_empty_or_zero:
+                        has_problem = True
+                        break
+        
+        problem_set = self.mw.empty_odd_unisingle_subline_problem_strings.get(block_key, set()).copy()
+        state_changed = False
+
+        if has_problem:
+            if string_idx not in problem_set:
+                problem_set.add(string_idx)
+                state_changed = True
+        else:
+            if string_idx in problem_set:
+                problem_set.discard(string_idx)
+                state_changed = True
+        
+        if state_changed:
+            if problem_set:
+                self.mw.empty_odd_unisingle_subline_problem_strings[block_key] = problem_set
+            elif block_key in self.mw.empty_odd_unisingle_subline_problem_strings:
+                del self.mw.empty_odd_unisingle_subline_problem_strings[block_key]
+        
+        return state_changed
+
+
     def text_edited(self):
         log_debug(f"TextOperationHandler.text_edited: Start. Programmatic change? {self.mw.is_programmatically_changing_text}")
         if self.mw.is_programmatically_changing_text:
@@ -150,7 +184,7 @@ class TextOperationHandler(BaseHandler):
         if needs_title_update:
             self.ui_updater.update_title()
             
-        problems_updated_for_block_list = False
+        problems_updated_for_block_list_or_preview = False
 
         original_text_for_comparison = self.data_processor._get_string_from_source(block_idx, string_idx_in_block, self.mw.data, "original_for_text_edited_check")
         if original_text_for_comparison is not None:
@@ -175,7 +209,7 @@ class TextOperationHandler(BaseHandler):
                 if is_warn_before: warn_problems.discard(string_idx_in_block); tag_state_changed = True
             
             if tag_state_changed:
-                problems_updated_for_block_list = True
+                problems_updated_for_block_list_or_preview = True
                 if crit_problems: self.mw.critical_problem_lines_per_block[block_key] = crit_problems
                 elif block_key in self.mw.critical_problem_lines_per_block: del self.mw.critical_problem_lines_per_block[block_key]
                 if warn_problems: self.mw.warning_problem_lines_per_block[block_key] = warn_problems
@@ -183,17 +217,22 @@ class TextOperationHandler(BaseHandler):
         
         width_state_changed = self._check_and_update_width_exceeded_status(block_idx, string_idx_in_block, actual_text_with_spaces)
         if width_state_changed:
-            problems_updated_for_block_list = True
+            problems_updated_for_block_list_or_preview = True
         
         short_line_state_changed_current = self._check_and_update_short_line_status_for_data_string(block_idx, string_idx_in_block, actual_text_with_spaces)
         if short_line_state_changed_current:
-            problems_updated_for_block_list = True
+            problems_updated_for_block_list_or_preview = True
+
+        empty_odd_unisingle_state_changed = self._check_and_update_empty_odd_unisingle_subline_status(block_idx, string_idx_in_block, actual_text_with_spaces)
+        if empty_odd_unisingle_state_changed:
+            problems_updated_for_block_list_or_preview = True
         
-        if problems_updated_for_block_list and hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
-            self.ui_updater.update_block_item_text_with_problem_count(block_idx)
-        
-        if hasattr(self.ui_updater, '_apply_empty_odd_subline_highlights_to_edited_text'):
-            self.ui_updater._apply_empty_odd_subline_highlights_to_edited_text()
+        if problems_updated_for_block_list_or_preview:
+            if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
+                self.ui_updater.update_block_item_text_with_problem_count(block_idx)
+            if hasattr(self.mw, 'preview_text_edit') and hasattr(self.mw.preview_text_edit, 'lineNumberArea'):
+                self.mw.preview_text_edit.lineNumberArea.update()
+
 
         self.preview_update_timer.start(PREVIEW_UPDATE_DELAY)
         self.ui_updater.update_status_bar() 
@@ -217,6 +256,7 @@ class TextOperationHandler(BaseHandler):
         self.mw.before_paste_warning_problems_snapshot = { k: v.copy() for k, v in self.mw.warning_problem_lines_per_block.items() }
         self.mw.before_paste_width_exceeded_snapshot = { k: v.copy() for k, v in self.mw.width_exceeded_lines_per_block.items() }
         self.mw.before_paste_short_lines_snapshot = { k: v.copy() for k, v in self.mw.short_lines_per_block.items()}
+        self.mw.before_paste_empty_odd_problems_snapshot = { k: v.copy() for k, v in self.mw.empty_odd_unisingle_subline_problem_strings.items()}
         self.mw.before_paste_block_idx_affected = block_idx
         
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
@@ -225,14 +265,14 @@ class TextOperationHandler(BaseHandler):
         
         edited_edit = getattr(self.mw, 'edited_text_edit', None)
         if edited_edit:
-            edited_edit.clearAllProblemTypeHighlights()
-            if hasattr(edited_edit, 'clearEmptyOddSublineHighlights'):
-                edited_edit.clearEmptyOddSublineHighlights()
+            if hasattr(edited_edit, 'clearAllProblemTypeHighlights'):
+                edited_edit.clearAllProblemTypeHighlights()
 
         self.mw.critical_problem_lines_per_block.pop(block_key, None)
         self.mw.warning_problem_lines_per_block.pop(block_key, None)
         self.mw.width_exceeded_lines_per_block.pop(block_key, None)
         self.mw.short_lines_per_block.pop(block_key, None)
+        self.mw.empty_odd_unisingle_subline_problem_strings.pop(block_key, None)
         
         if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
             self.ui_updater.update_block_item_text_with_problem_count(block_idx)
@@ -291,13 +331,15 @@ class TextOperationHandler(BaseHandler):
         num_warning_total_for_block = len(self.mw.warning_problem_lines_per_block.get(block_key, set()))
         num_width_exceeded_total_for_block = len(self.mw.width_exceeded_lines_per_block.get(block_key, set()))
         num_short_lines_total_for_block = len(self.mw.short_lines_per_block.get(block_key, set()))
+        num_empty_odd_total_for_block = len(self.mw.empty_odd_unisingle_subline_problem_strings.get(block_key,set()))
         
         message_parts = []
         if num_critical_total_for_block > 0: message_parts.append(f"{num_critical_total_for_block} line(s) have critical tag issues.")
         if num_warning_total_for_block > 0: message_parts.append(f"{num_warning_total_for_block} line(s) have tag warnings.")
         if num_width_exceeded_total_for_block > 0: message_parts.append(f"{num_width_exceeded_total_for_block} line(s) exceed width limit ({self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS}px).")
         if num_short_lines_total_for_block > 0: message_parts.append(f"{num_short_lines_total_for_block} line(s) are potentially too short.")
-        
+        if num_empty_odd_total_for_block > 0: message_parts.append(f"{num_empty_odd_total_for_block} line(s) have empty odd sub-lines.")
+
         if message_parts:
             error_summary = (f"Pasted {successfully_processed_count} segment(s) into Block '{self.mw.block_names.get(block_key, block_key)}'.\n" + "\n".join(message_parts) + "\nPlease review.")
             QMessageBox.warning(self.mw, "Paste with Issues/Warnings", error_summary)
@@ -311,7 +353,7 @@ class TextOperationHandler(BaseHandler):
         self.ui_updater.update_block_item_text_with_problem_count(self.mw.current_block_idx)
         self.mw.is_programmatically_changing_text = False
         
-        if any_change_applied_to_data or num_critical_total_for_block > 0 or num_warning_total_for_block > 0 or num_width_exceeded_total_for_block > 0 or num_short_lines_total_for_block > 0 :
+        if any_change_applied_to_data or num_critical_total_for_block > 0 or num_warning_total_for_block > 0 or num_width_exceeded_total_for_block > 0 or num_short_lines_total_for_block > 0 or num_empty_odd_total_for_block > 0 :
             self.mw.can_undo_paste = True
             if hasattr(self.mw, 'undo_paste_action'): self.mw.undo_paste_action.setEnabled(True)
         else:
@@ -412,7 +454,14 @@ class TextOperationHandler(BaseHandler):
                                 remaining_width_calc = max_allowed_width - width_px
                                 if remaining_width_calc >= (first_word_next_line_width_calc + space_width):
                                     short_status = f"SHORT (can fit {first_word_next_line_width_calc + space_width}px, has {remaining_width_calc}px)"
-            info_parts.append(f"  Sub-line {i+1}: {width_px}px (Status: {status}) {short_status} '{sub_line_no_tags[:40]}...'")
+            
+            is_odd_subline_report = (i + 1) % 2 != 0
+            is_empty_or_zero_report = not sub_line_no_tags.strip() or sub_line_no_tags.strip() == "0"
+            empty_odd_report_status = ""
+            if is_empty_or_zero_report and is_odd_subline_report and len(sub_lines_current) > 1:
+                empty_odd_report_status = "EMPTY ODD NON-SINGLE"
+
+            info_parts.append(f"  Sub-line {i+1}: {width_px}px (Status: {status}) {short_status} {empty_odd_report_status} '{sub_line_no_tags[:40]}...'")
         
         info_parts.append(f"\n--- Original Text ---")
         sub_lines_original = str(original_text_data_line).split('\n')
@@ -438,7 +487,14 @@ class TextOperationHandler(BaseHandler):
                                 remaining_width_orig_calc = max_allowed_width - width_px
                                 if remaining_width_orig_calc >= (first_word_next_original_line_width_calc + space_width):
                                     short_status_orig = f"SHORT (can fit {first_word_next_original_line_width_calc+space_width}px, has {remaining_width_orig_calc}px)"
-            info_parts.append(f"  Sub-line {i+1}: {width_px}px (Status: {status}) {short_status_orig} '{sub_line_no_tags[:40]}...'")
+            
+            is_odd_subline_report_orig = (i + 1) % 2 != 0
+            is_empty_or_zero_report_orig = not sub_line_no_tags.strip() or sub_line_no_tags.strip() == "0"
+            empty_odd_report_status_orig = ""
+            if is_empty_or_zero_report_orig and is_odd_subline_report_orig and len(sub_lines_original) > 1:
+                empty_odd_report_status_orig = "EMPTY ODD NON-SINGLE"
+
+            info_parts.append(f"  Sub-line {i+1}: {width_px}px (Status: {status}) {short_status_orig} {empty_odd_report_status_orig} '{sub_line_no_tags[:40]}...'")
 
         QMessageBox.information(self.mw, "Line Width Calculation", "\n".join(info_parts))
         log_debug(f"<-- TextOperationHandler: calculate_width_for_data_line_action finished.")

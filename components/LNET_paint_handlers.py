@@ -3,7 +3,7 @@ from PyQt5.QtGui import QPainter, QColor, QPen, QFontMetrics, QFont, QPaintEvent
 from PyQt5.QtCore import Qt, QRect, QSize
 from PyQt5.QtWidgets import QMainWindow, QTextEdit 
 from utils.utils import log_debug, calculate_string_width, remove_all_tags, convert_dots_to_spaces_from_editor, SPACE_DOT_SYMBOL, ALL_TAGS_PATTERN
-from components.LNET_constants import SHORT_LINE_COLOR, WIDTH_EXCEEDED_LINE_COLOR # EMPTY_ODD_SUBLINE_COLOR більше не потрібен тут напряму
+from components.LNET_constants import SHORT_LINE_COLOR, WIDTH_EXCEEDED_LINE_COLOR, EMPTY_ODD_SUBLINE_COLOR
 
 class LNETPaintHandlers:
     def __init__(self, editor):
@@ -156,7 +156,7 @@ class LNETPaintHandlers:
 
         odd_bg_color_const = self.editor.lineNumberArea.odd_line_background
         even_bg_color_const = default_bg_color_for_area
-        empty_odd_qtextblock_problem_color = QColor(255, 0, 0, 180) # Яскраво-червоний
+        empty_odd_qtextblock_problem_color = QColor(255, 0, 0, 180) 
         
         current_q_block = self.editor.firstVisibleBlock()
         current_q_block_number = current_q_block.blockNumber() 
@@ -188,30 +188,26 @@ class LNETPaintHandlers:
                 number_part_rect = QRect(0, top, number_part_width, line_height)
                 extra_info_part_rect = QRect(number_part_width, top, extra_part_width, line_height)
                 
-                # Визначаємо базовий фон
-                current_bg_for_number_part = even_bg_color_const
+                bg_for_number_part_final = even_bg_color_const
                 if (current_q_block_number + 1) % 2 != 0: 
-                    current_bg_for_number_part = odd_bg_color_const
+                    bg_for_number_part_final = odd_bg_color_const
                 
-                bg_for_extra_part = current_bg_for_number_part # За замовчуванням, зона ширини має той самий фон
+                bg_for_extra_part_final = bg_for_number_part_final 
 
-                # Обробка для original_text_edit та edited_text_edit (зона ширини)
-                if self.editor.objectName() == "original_text_edit" or self.editor.objectName() == "edited_text_edit":
+                if self.editor.objectName() == "edited_text_edit":
                     q_block_text_raw_dots = current_q_block.text()
                     q_block_text_spaces = convert_dots_to_spaces_from_editor(q_block_text_raw_dots)
                     text_for_width_calc_rstripped = remove_all_tags(q_block_text_spaces).rstrip()
                     pixel_width = calculate_string_width(text_for_width_calc_rstripped, self.editor.font_map)
-                    width_str = str(pixel_width)
                     
                     is_odd_qtextblock = (current_q_block_number + 1) % 2 != 0
-                    is_empty_pixel_width_zero = (pixel_width == 0)
+                    is_pixel_width_zero = (pixel_width == 0) 
+                    is_single_qtextblock_in_doc = (self.editor.document().blockCount() == 1)
 
-                    if self.editor.objectName() == "edited_text_edit" and is_empty_pixel_width_zero and is_odd_qtextblock:
-                        # Проблема порожнього непарного рядка
-                        current_bg_for_number_part = empty_odd_qtextblock_problem_color
-                        bg_for_extra_part = empty_odd_qtextblock_problem_color
+                    if is_pixel_width_zero and is_odd_qtextblock and not is_single_qtextblock_in_doc:
+                        bg_for_number_part_final = empty_odd_qtextblock_problem_color
+                        bg_for_extra_part_final = empty_odd_qtextblock_problem_color
                     else:
-                        # Інші проблеми (ширина, короткий рядок) для зони ширини
                         is_this_qblock_short_for_bg = False
                         if isinstance(main_window_ref, QMainWindow) and \
                            current_block_idx_data != -1 and active_data_line_idx != -1 and \
@@ -237,34 +233,82 @@ class LNETPaintHandlers:
                                                 is_this_qblock_short_for_bg = True
                         
                         if pixel_width > self.editor.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
-                             bg_for_extra_part = self.editor.lineNumberArea.width_indicator_exceeded_color
+                             bg_for_extra_part_final = self.editor.lineNumberArea.width_indicator_exceeded_color
                         elif is_this_qblock_short_for_bg:
-                             bg_for_extra_part = SHORT_LINE_COLOR
-                    
-                    painter.fillRect(number_part_rect, current_bg_for_number_part)
-                    painter.fillRect(extra_info_part_rect, bg_for_extra_part)
-                    painter.setPen(QColor(Qt.black))
-                    painter.drawText(QRect(0, top, number_part_width - 3, line_height), Qt.AlignRight | Qt.AlignVCenter, display_number_for_line_area)
-                    painter.drawText(QRect(number_part_width, top, extra_part_width -3 , line_height), Qt.AlignRight | Qt.AlignVCenter, width_str)
+                             bg_for_extra_part_final = SHORT_LINE_COLOR
+                
+                elif self.editor.objectName() == "original_text_edit": 
+                    q_block_text_raw_dots = current_q_block.text()
+                    q_block_text_spaces = convert_dots_to_spaces_from_editor(q_block_text_raw_dots)
+                    text_for_width_calc_rstripped = remove_all_tags(q_block_text_spaces).rstrip()
+                    pixel_width = calculate_string_width(text_for_width_calc_rstripped, self.editor.font_map)
+                    is_this_qblock_short_for_bg = False 
+                    if isinstance(main_window_ref, QMainWindow) and \
+                       current_block_idx_data != -1 and active_data_line_idx != -1 and \
+                       hasattr(main_window_ref, 'short_lines_per_block') and \
+                       hasattr(main_window_ref, 'data_processor') and \
+                       active_data_line_idx in main_window_ref.short_lines_per_block.get(str(current_block_idx_data), set()):
+                        active_data_string_text_for_editor, _ = main_window_ref.data_processor.get_current_string_text(current_block_idx_data, active_data_line_idx)
+                        sub_lines_of_active_data_string_for_editor = str(active_data_string_text_for_editor).split('\n')
+                        if current_q_block_number < len(sub_lines_of_active_data_string_for_editor) -1: 
+                            current_sub_line_from_data_editor = sub_lines_of_active_data_string_for_editor[current_q_block_number]
+                            current_sub_line_clean_stripped_editor = remove_all_tags(current_sub_line_from_data_editor).strip()
+                            if current_sub_line_clean_stripped_editor and not current_sub_line_clean_stripped_editor.endswith(sentence_end_tuples):
+                                next_sub_line_from_data_editor = sub_lines_of_active_data_string_for_editor[current_q_block_number + 1]
+                                next_sub_line_clean_stripped_editor = remove_all_tags(next_sub_line_from_data_editor).strip()
+                                if next_sub_line_clean_stripped_editor:
+                                    first_word_next_editor = next_sub_line_clean_stripped_editor.split(maxsplit=1)[0] if next_sub_line_clean_stripped_editor else ""
+                                    if first_word_next_editor:
+                                        first_word_next_width_editor = calculate_string_width(first_word_next_editor, main_window_ref.font_map)
+                                        space_width_editor = calculate_string_width(" ", main_window_ref.font_map)
+                                        current_qblock_pixel_width_rstripped_editor = calculate_string_width(remove_all_tags(current_sub_line_from_data_editor).rstrip(), main_window_ref.font_map)
+                                        remaining_width_for_qblock_editor = max_width_for_short_check_paint - current_qblock_pixel_width_rstripped_editor
+                                        if remaining_width_for_qblock_editor >= (first_word_next_width_editor + space_width_editor):
+                                            is_this_qblock_short_for_bg = True
+                    if pixel_width > self.editor.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
+                         bg_for_extra_part_final = self.editor.lineNumberArea.width_indicator_exceeded_color
+                    elif is_this_qblock_short_for_bg:
+                         bg_for_extra_part_final = SHORT_LINE_COLOR
 
-                elif self.editor.objectName() == "preview_text_edit": # Для preview_text_edit
-                    painter.fillRect(number_part_rect, current_bg_for_number_part)
-                    painter.fillRect(extra_info_part_rect, bg_for_extra_part) # Тут bg_for_extra_part буде таким же, як і для номера
-                    painter.setPen(QColor(Qt.black))
-                    painter.drawText(QRect(0, top, number_part_width - 3, line_height), Qt.AlignRight | Qt.AlignVCenter, display_number_for_line_area)
-                    
-                    if isinstance(main_window_ref, QMainWindow) and current_block_idx_data != -1:
+                painter.fillRect(number_part_rect, bg_for_number_part_final)
+                if extra_part_width > 0:
+                    painter.fillRect(extra_info_part_rect, bg_for_extra_part_final)
+
+                number_text_color = QColor(Qt.black)
+                painter.setPen(number_text_color)
+                painter.drawText(QRect(0, top, number_part_width - 3, line_height), Qt.AlignRight | Qt.AlignVCenter, display_number_for_line_area)
+
+                if extra_part_width > 0:
+                    if self.editor.objectName() == "original_text_edit" or self.editor.objectName() == "edited_text_edit":
+                        q_block_text_raw_dots_paint_text = current_q_block.text()
+                        q_block_text_spaces_paint_text = convert_dots_to_spaces_from_editor(q_block_text_raw_dots_paint_text)
+                        text_for_width_calc_rstripped_paint_text = remove_all_tags(q_block_text_spaces_paint_text).rstrip()
+                        pixel_width_text = calculate_string_width(text_for_width_calc_rstripped_paint_text, self.editor.font_map)
+                        width_str_text = str(pixel_width_text)
+                        text_color_for_extra_part = QColor(Qt.black)
+                        painter.setPen(text_color_for_extra_part)
+                        painter.drawText(QRect(number_part_width, top, extra_part_width -3 , line_height), Qt.AlignRight | Qt.AlignVCenter, width_str_text)
+                        
+                    elif self.editor.objectName() == "preview_text_edit" and isinstance(main_window_ref, QMainWindow) and current_block_idx_data != -1:
                         indicator_x_start = number_part_width + 2
                         block_key_str_for_preview = str(current_block_idx_data)
-                        data_line_index_preview = current_q_block_number
+                        data_line_index_preview = current_q_block_number 
                         indicators_to_draw_preview = []
-                        # ... (логіка додавання індикаторів для preview, не змінювалася) ...
+                        
                         if hasattr(main_window_ref, 'critical_problem_lines_per_block') and \
                            data_line_index_preview in main_window_ref.critical_problem_lines_per_block.get(block_key_str_for_preview, set()):
                             indicators_to_draw_preview.append(self.editor.lineNumberArea.preview_critical_indicator_color)
                         elif hasattr(main_window_ref, 'warning_problem_lines_per_block') and \
                              data_line_index_preview in main_window_ref.warning_problem_lines_per_block.get(block_key_str_for_preview, set()):
                             indicators_to_draw_preview.append(self.editor.lineNumberArea.preview_warning_indicator_color)
+
+                        if hasattr(main_window_ref, 'empty_odd_unisingle_subline_problem_strings') and \
+                            data_line_index_preview in main_window_ref.empty_odd_unisingle_subline_problem_strings.get(block_key_str_for_preview, set()):
+                            preview_empty_odd_color = EMPTY_ODD_SUBLINE_COLOR
+                            if preview_empty_odd_color.alpha() < 100: preview_empty_odd_color = preview_empty_odd_color.lighter(120)
+                            if len(indicators_to_draw_preview) < 3 and preview_empty_odd_color not in indicators_to_draw_preview:
+                                indicators_to_draw_preview.append(preview_empty_odd_color)
+
 
                         if hasattr(main_window_ref, 'width_exceeded_lines_per_block') and \
                            data_line_index_preview in main_window_ref.width_exceeded_lines_per_block.get(block_key_str_for_preview, set()):

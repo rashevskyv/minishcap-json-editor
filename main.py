@@ -59,8 +59,7 @@ class MainWindow(QMainWindow):
         self.block_names = {}; self.current_block_idx = -1; self.current_string_idx = -1
         self.unsaved_changes = False
         self.unsaved_block_indices = set()
-        self.empty_odd_qtextblocks_in_current_string = set()
-
+        
         self.last_selected_block_index = -1
         self.last_selected_string_index = -1
         self.last_cursor_position_in_edited = 0
@@ -100,6 +99,7 @@ class MainWindow(QMainWindow):
         self.warning_problem_lines_per_block = {}
         self.width_exceeded_lines_per_block = {}
         self.short_lines_per_block = {}
+        self.empty_odd_unisingle_subline_problem_strings = {} 
 
         self.can_undo_paste = False
         self.before_paste_edited_data_snapshot = {}
@@ -108,6 +108,8 @@ class MainWindow(QMainWindow):
         self.before_paste_warning_problems_snapshot = {}
         self.before_paste_width_exceeded_snapshot = {}
         self.before_paste_short_lines_snapshot = {}
+        self.before_paste_empty_odd_problems_snapshot = {}
+
 
         self.search_match_block_indices = set()
         self.current_search_results = []

@@ -19,6 +19,9 @@ class AppActionHandler(BaseHandler):
             self.mw.width_exceeded_lines_per_block = {}
         if not hasattr(self.mw, 'short_lines_per_block'):
             self.mw.short_lines_per_block = {}
+        if not hasattr(self.mw, 'empty_odd_unisingle_subline_problem_strings'): # Додано
+            self.mw.empty_odd_unisingle_subline_problem_strings = {}
+
 
     def _get_first_word_width(self, text: str) -> int:
         if not text:
@@ -27,15 +30,31 @@ class AppActionHandler(BaseHandler):
         first_word = stripped_text.split(maxsplit=1)[0] if stripped_text else ""
         return calculate_string_width(first_word, self.mw.font_map) 
 
-    def _perform_issues_scan_for_block(self, block_idx: int, is_single_block_scan: bool = False, use_default_mappings_in_scan: bool = False) -> tuple[int, int, int, int, bool]:
+    def _check_data_string_for_empty_odd_unisingle_subline(self, data_string_text: str) -> bool:
+        sub_lines = str(data_string_text).split('\n')
+        if len(sub_lines) <= 1: # Не може бути проблемою, якщо підрядок єдиний
+            return False
+        
+        for i, sub_line_text in enumerate(sub_lines):
+            is_odd_subline = (i + 1) % 2 != 0
+            if is_odd_subline:
+                text_no_tags = remove_all_tags(sub_line_text)
+                stripped_text_no_tags = text_no_tags.strip()
+                is_empty_or_zero = not stripped_text_no_tags or stripped_text_no_tags == "0"
+                if is_empty_or_zero:
+                    return True # Знайдено проблему
+        return False
+
+    def _perform_issues_scan_for_block(self, block_idx: int, is_single_block_scan: bool = False, use_default_mappings_in_scan: bool = False) -> tuple[int, int, int, int, int, bool]:
         if not (0 <= block_idx < len(self.mw.data)):
-            return 0, 0, 0, 0, False
+            return 0, 0, 0, 0, 0, False
 
         block_key = str(block_idx)
         current_block_critical_indices = set()
         current_block_warning_indices = set()
         current_block_width_exceeded_indices = set()
         current_block_short_line_indices = set()
+        current_block_empty_odd_unisingle_indices = set()
         changes_made_to_edited_data_in_this_block = False
         
         num_strings_in_block = len(self.mw.data[block_idx])
@@ -63,6 +82,10 @@ class AppActionHandler(BaseHandler):
             if tag_status == TAG_STATUS_UNRESOLVED_BRACKETS: current_block_critical_indices.add(string_idx)
             elif tag_status == TAG_STATUS_MISMATCHED_CURLY: current_block_warning_indices.add(string_idx)
             
+            # Перевірка на порожні непарні НЕєдині підрядки
+            if self._check_data_string_for_empty_odd_unisingle_subline(text_to_analyze):
+                current_block_empty_odd_unisingle_indices.add(string_idx)
+
             sub_lines = str(text_to_analyze).split('\n')
             line_exceeds_width_flag = False
             data_string_is_short_flag = False
@@ -120,33 +143,34 @@ class AppActionHandler(BaseHandler):
         
         if current_block_short_line_indices: self.mw.short_lines_per_block[block_key] = current_block_short_line_indices
         elif block_key in self.mw.short_lines_per_block: del self.mw.short_lines_per_block[block_key]
+
+        if current_block_empty_odd_unisingle_indices: self.mw.empty_odd_unisingle_subline_problem_strings[block_key] = current_block_empty_odd_unisingle_indices
+        elif block_key in self.mw.empty_odd_unisingle_subline_problem_strings: del self.mw.empty_odd_unisingle_subline_problem_strings[block_key]
         
         if is_single_block_scan and hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
             self.ui_updater.update_block_item_text_with_problem_count(block_idx)
         
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
-        edited_edit = getattr(self.mw, 'edited_text_edit', None)
-
         if is_single_block_scan and self.mw.current_block_idx == block_idx:
-            if preview_edit:
-                self.ui_updater.populate_strings_for_block(block_idx) 
-            if edited_edit and hasattr(self.ui_updater, '_apply_empty_odd_subline_highlights_to_edited_text'):
-                self.ui_updater._apply_empty_odd_subline_highlights_to_edited_text()
+            if preview_edit and hasattr(preview_edit, 'lineNumberArea'):
+                self.ui_updater.populate_strings_for_block(block_idx) # Це оновлює індикатори в preview
+                preview_edit.lineNumberArea.update()
         
-        return len(current_block_critical_indices), len(current_block_warning_indices), len(current_block_width_exceeded_indices), len(current_block_short_line_indices), changes_made_to_edited_data_in_this_block
+        return len(current_block_critical_indices), len(current_block_warning_indices), len(current_block_width_exceeded_indices), len(current_block_short_line_indices), len(current_block_empty_odd_unisingle_indices), changes_made_to_edited_data_in_this_block
 
     def _perform_initial_silent_scan_all_issues(self):
         if not self.mw.data:
             log_debug("AppActionHandler._perform_initial_silent_scan_all_issues: No data to scan.")
             return
         
-        log_debug("AppActionHandler: Performing initial silent scan for ALL issues (tags, width, short lines)...")
+        log_debug("AppActionHandler: Performing initial silent scan for ALL issues (tags, width, short lines, empty odd sublines)...")
         self.mw.is_programmatically_changing_text = True
         
         self.mw.critical_problem_lines_per_block.clear()
         self.mw.warning_problem_lines_per_block.clear()
         self.mw.width_exceeded_lines_per_block.clear()
         self.mw.short_lines_per_block.clear()
+        self.mw.empty_odd_unisingle_subline_problem_strings.clear() # Очищення нового типу проблем
         
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         if preview_edit and hasattr(preview_edit, 'clearAllProblemTypeHighlights'):
@@ -156,15 +180,13 @@ class AppActionHandler(BaseHandler):
         if edited_edit:
             if hasattr(edited_edit, 'clearAllProblemTypeHighlights'):
                 edited_edit.clearAllProblemTypeHighlights()
-            if hasattr(edited_edit, 'clearEmptyOddSublineHighlights'):
-                edited_edit.clearEmptyOddSublineHighlights()
         
         if hasattr(self.ui_updater, 'clear_all_problem_block_highlights_and_text'):
              self.ui_updater.clear_all_problem_block_highlights_and_text()
 
         any_changes_applied_globally = False
         for block_idx in range(len(self.mw.data)):
-            _num_crit, _num_warn, _num_width, _num_short, block_changes_applied = self._perform_issues_scan_for_block(block_idx, is_single_block_scan=False, use_default_mappings_in_scan=False)
+            _num_crit, _num_warn, _num_width, _num_short, _num_empty_odd, block_changes_applied = self._perform_issues_scan_for_block(block_idx, is_single_block_scan=False, use_default_mappings_in_scan=False)
             if block_changes_applied:
                 any_changes_applied_globally = True
         
@@ -216,7 +238,7 @@ class AppActionHandler(BaseHandler):
             
         log_debug(f"<<<<<<<<<< ACTION: Rescan Issues for Block {block_idx} Triggered. use_default_mappings={use_default_mappings} >>>>>>>>>>")
         self.mw.is_programmatically_changing_text = True
-        num_critical, num_warnings, num_width_exceeded, num_short, changes_applied = self._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=use_default_mappings)
+        num_critical, num_warnings, num_width_exceeded, num_short, num_empty_odd, changes_applied = self._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=use_default_mappings)
         self.mw.is_programmatically_changing_text = False
             
         if show_message_on_completion:
@@ -226,7 +248,8 @@ class AppActionHandler(BaseHandler):
             if num_warnings > 0: message_parts.append(f"{num_warnings} line(s) with tag warnings.")
             if num_width_exceeded > 0: message_parts.append(f"{num_width_exceeded} line(s) exceed width limit ({self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS}px).")
             if num_short > 0: message_parts.append(f"{num_short} line(s) are potentially too short.")
-            
+            if num_empty_odd > 0: message_parts.append(f"{num_empty_odd} line(s) have empty odd non-single sub-lines.")
+
             if not message_parts:
                 message = f"No issues found in Block '{block_name_str}'."
                 if changes_applied: message += "\nKnown editor tags were standardized using default mappings."
@@ -238,7 +261,7 @@ class AppActionHandler(BaseHandler):
                 QMessageBox.warning(self.mw, title, summary)
 
     def rescan_all_tags(self):
-        log_debug("<<<<<<<<<< ACTION: Rescan All Tags (and Widths/Shorts) Triggered >>>>>>>>>>")
+        log_debug("<<<<<<<<<< ACTION: Rescan All Tags (and Widths/Shorts/EmptyOdd) Triggered >>>>>>>>>>")
         if not self.mw.data:
             QMessageBox.information(self.mw, "Rescan All Issues", "No data loaded to rescan.")
             return
@@ -249,20 +272,23 @@ class AppActionHandler(BaseHandler):
         total_warning_lines = sum(len(s) for s in self.mw.warning_problem_lines_per_block.values())
         total_width_exceeded_lines = sum(len(s) for s in self.mw.width_exceeded_lines_per_block.values())
         total_short_lines = sum(len(s) for s in self.mw.short_lines_per_block.values())
+        total_empty_odd_lines = sum(len(s) for s in self.mw.empty_odd_unisingle_subline_problem_strings.values())
 
         total_blocks_with_critical = sum(1 for s in self.mw.critical_problem_lines_per_block.values() if s)
         total_blocks_with_warning = sum(1 for s in self.mw.warning_problem_lines_per_block.values() if s)
         total_blocks_with_width = sum(1 for s in self.mw.width_exceeded_lines_per_block.values() if s)
         total_blocks_with_short = sum(1 for s in self.mw.short_lines_per_block.values() if s)
+        total_blocks_with_empty_odd = sum(1 for s in self.mw.empty_odd_unisingle_subline_problem_strings.values() if s)
         
         message_parts = []
         if total_blocks_with_critical > 0: message_parts.append(f"Found {total_critical_lines} critical tag issue(s) across {total_blocks_with_critical} block(s).")
         if total_blocks_with_warning > 0: message_parts.append(f"Found {total_warning_lines} tag warning(s) across {total_blocks_with_warning} block(s).")
         if total_blocks_with_width > 0: message_parts.append(f"Found {total_width_exceeded_lines} line(s) exceeding width limit across {total_blocks_with_width} block(s).")
         if total_blocks_with_short > 0: message_parts.append(f"Found {total_short_lines} potentially short line(s) across {total_blocks_with_short} block(s).")
+        if total_blocks_with_empty_odd > 0: message_parts.append(f"Found {total_empty_odd_lines} line(s) with empty odd non-single sub-lines across {total_blocks_with_empty_odd} block(s).")
         
         if not message_parts:
-            message = "No issues (tags, width, or short lines) found in any block based on current data state."
+            message = "No issues (tags, width, short lines, empty odd sublines) found in any block based on current data state."
             QMessageBox.information(self.mw, "Rescan Complete", message)
         else:
             title = "Rescan Complete with Issues/Warnings"
@@ -359,6 +385,7 @@ class AppActionHandler(BaseHandler):
             self.mw.warning_problem_lines_per_block.clear()
             self.mw.width_exceeded_lines_per_block.clear()
             self.mw.short_lines_per_block.clear()
+            self.mw.empty_odd_unisingle_subline_problem_strings.clear()
             self.ui_updater.update_title(); self.ui_updater.update_statusbar_paths()
             self.ui_updater.populate_blocks(); self.ui_updater.populate_strings_for_block(-1)
             self.mw.is_programmatically_changing_text = False
@@ -390,7 +417,8 @@ class AppActionHandler(BaseHandler):
         if is_initial_load_from_settings:
             log_debug("Initial load from settings: Assuming problem data is from settings or will be calculated if missing.")
             problem_keys_to_check_in_mw = ['width_exceeded_lines_per_block', 'short_lines_per_block', 
-                                           'critical_problem_lines_per_block', 'warning_problem_lines_per_block']
+                                           'critical_problem_lines_per_block', 'warning_problem_lines_per_block',
+                                           'empty_odd_unisingle_subline_problem_strings'] # Додано сюди
             needs_full_scan = False
             for key in problem_keys_to_check_in_mw:
                 if not hasattr(self.mw, key) or not getattr(self.mw, key):
