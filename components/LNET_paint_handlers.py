@@ -328,10 +328,10 @@ class LNETPaintHandlers:
                 if (current_q_block_number + 1) % 2 != 0: 
                     bg_color_number_area = odd_bg_color_const
 
-                # --- Check for QTextBlock-based problems and apply background color to Number Area ---
-                bg_color_extra_info_area = bg_color_number_area # Start with the same background
+                # Determine background color for Extra Info Area based on specific QTextBlock properties
+                bg_color_extra_info_area = bg_color_number_area # Default to same as number area
 
-                if self.editor.objectName() != "preview_text_edit": # This check is only for editors showing QTextBlocks split by \n
+                if self.editor.objectName() != "preview_text_edit": # These checks are only for editors showing QTextBlocks split by \n
                     
                     # 1. Empty odd non-single QTextBlock (Priority 1)
                     q_block_text_raw_dots = current_q_block.text()
@@ -343,18 +343,19 @@ class LNETPaintHandlers:
                     is_single_qtextblock_in_doc = (self.editor.document().blockCount() == 1)
 
                     if is_pixel_width_zero and is_odd_qtextblock and not is_single_qtextblock_in_doc:
+                         # Applies to both number and extra info area
                          bg_color_number_area = empty_odd_qtextblock_problem_color
                          bg_color_extra_info_area = empty_odd_qtextblock_problem_color
                     else:
-                        # 2. New Blue Rule: Odd QTextBlock, starts lowercase, ends punctuation, next block non-empty (Priority 2)
+                        # 2. New Blue Rule: Odd QTextBlock, starts lowercase, ends punctuation, next block non-empty (Priority 2 for Extra Area)
                         next_q_block = current_q_block.next()
                         if next_q_block.isValid(): 
                             if self._check_new_blue_rule(current_q_block, next_q_block):
-                                bg_color_number_area = new_blue_subline_color
+                                # Apply blue to Extra Info Area, Number Area gets default or empty_odd
                                 bg_color_extra_info_area = new_blue_subline_color
 
                     # --- Check for Width/Short QTextBlock problems and apply background color to Extra Info Area ---
-                    # These checks apply *only* to the Extra Info Area (width/short indicators)
+                    # These checks apply *only* to the Extra Info Area (width/short indicators) and have higher priority than the blue rule within Extra Area
                     if self.editor.objectName() != "preview_text_edit": 
                         q_block_text_raw_dots_paint_text = current_q_block.text()
                         q_block_text_spaces_paint_text = convert_dots_to_spaces_from_editor(q_block_text_raw_dots_paint_text)
