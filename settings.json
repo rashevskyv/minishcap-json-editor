@@ -189,11 +189,11 @@
         "лінк"
     ],
     "last_selected_block_index": 5,
-    "last_selected_string_index": 18,
-    "last_cursor_position_in_edited": 0,
+    "last_selected_string_index": 27,
+    "last_cursor_position_in_edited": 157,
     "last_edited_text_edit_scroll_value_v": 0,
     "last_edited_text_edit_scroll_value_h": 0,
-    "last_preview_text_edit_scroll_value_v": 1,
+    "last_preview_text_edit_scroll_value_v": 45,
     "last_original_text_edit_scroll_value_v": 0,
     "last_original_text_edit_scroll_value_h": 0,
     "font_size": 11,
@@ -209,6 +209,9 @@
         ],
         "3": [
             "green"
+        ],
+        "4": [
+            "blue"
         ]
     },
     "original_file_path": "//192.168.50.168/tloz_tmc_ua/UKR_orig.json",
