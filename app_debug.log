@@ -1,312 +1,216 @@
-Log started at 2025-05-12 04:40:16.890
+Log started at 2025-05-12 05:06:02.469
 ==================================================
-[2025-05-12 04:40:16.907] DEBUG: ================= Application Start =================
-[2025-05-12 04:40:16.921] DEBUG: ++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++
-[2025-05-12 04:40:16.922] DEBUG: MainWindow: Initializing Core Components...
-[2025-05-12 04:40:16.922] DEBUG: MainWindow: Initializing Handlers (Pre-UI setup)...
-2025-05-12 04:40:16,922 - DEBUG - logging_utils - log_debug - Handler 'ListSelectionHandler' initialized.
-2025-05-12 04:40:16,922 - DEBUG - logging_utils - log_debug - Handler 'TextOperationHandler' initialized.
-2025-05-12 04:40:16,923 - DEBUG - logging_utils - log_debug - Handler 'AppActionHandler' initialized.
-2025-05-12 04:40:16,923 - DEBUG - logging_utils - log_debug - Handler 'SearchHandler' initialized.
-[2025-05-12 04:40:16.923] DEBUG: MainWindow: Setting up UI...
-[2025-05-12 04:40:16.923] DEBUG: setup_main_window_ui: Starting UI setup.
-[2025-05-12 04:40:16.924] DEBUG: CustomListWidget INITIALIZED, parent: <__main__.MainWindow object at 0x00000198566BB790>
-[2025-05-12 04:40:16.924] DEBUG: CustomListWidget: Item delegate set to <components.CustomListItemDelegate.CustomListItemDelegate object at 0x00000198566BBCA0>
-[2025-05-12 04:40:16.929] DEBUG: LNET (): highlightManager created. Has 'clear_width_exceed_char_highlights': True
-[2025-05-12 04:40:16.933] DEBUG: JsonTagHighlighter initialized.
-[2025-05-12 04:40:16.933] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-[2025-05-12 04:40:16.933] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
-[2025-05-12 04:40:16.933] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-12 04:40:17.115] DEBUG: LNET (): highlightManager created. Has 'clear_width_exceed_char_highlights': True
-[2025-05-12 04:40:17.115] DEBUG: JsonTagHighlighter initialized.
-[2025-05-12 04:40:17.115] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-[2025-05-12 04:40:17.115] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
-[2025-05-12 04:40:17.115] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-12 04:40:17.116] DEBUG: LNET (): highlightManager created. Has 'clear_width_exceed_char_highlights': True
-[2025-05-12 04:40:17.117] DEBUG: JsonTagHighlighter initialized.
-[2025-05-12 04:40:17.117] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-[2025-05-12 04:40:17.117] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
-[2025-05-12 04:40:17.117] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-12 04:40:17.134] DEBUG: setup_main_window_ui: UI setup complete.
-[2025-05-12 04:40:17.135] DEBUG: MainWindow: Initializing Handlers (Post-UI setup)...
-[2025-05-12 04:40:17.136] DEBUG: MainWindow: Connecting Signals...
-[2025-05-12 04:40:17.136] DEBUG: --> MainWindow: connect_signals() started
-[2025-05-12 04:40:17.136] DEBUG: --> MainWindow: connect_signals() finished
-[2025-05-12 04:40:17.136] DEBUG: MainWindow: Loading Editor Settings via SettingsManager...
-[2025-05-12 04:40:17.137] DEBUG: --> SettingsManager: load_settings from settings.json
-[2025-05-12 04:40:17.137] DEBUG: --> SettingsManager: load_font_map from font_map.json
-[2025-05-12 04:40:17.137] DEBUG: Successfully loaded font_map. Count: 117
-[2025-05-12 04:40:17.137] DEBUG: SettingsManager: Initial default_font_size (from QFont or 10): 8
-[2025-05-12 04:40:17.137] DEBUG: SettingsManager: Applied all default values. self.mw.current_font_size is now 10 (from defaults)
-[2025-05-12 04:40:17.138] DEBUG: SettingsManager: Successfully parsed settings.json. Content keys: ['default_tag_mappings', 'block_names', 'newline_display_symbol', 'newline_css', 'tag_css', 'show_multiple_spaces_as_dots', 'space_dot_color_hex', 'preview_wrap_lines', 'editors_wrap_lines', 'bracket_tag_color_hex', 'game_dialog_max_width_pixels', 'line_width_warning_threshold_pixels', 'search_history', 'last_selected_block_index', 'last_selected_string_index', 'last_cursor_position_in_edited', 'last_edited_text_edit_scroll_value_v', 'last_edited_text_edit_scroll_value_h', 'last_preview_text_edit_scroll_value_v', 'last_original_text_edit_scroll_value_v', 'last_original_text_edit_scroll_value_h', 'font_size', 'original_file_path', 'edited_file_path', 'window_was_maximized', 'window_normal_geometry', 'main_splitter_state', 'right_splitter_state', 'bottom_right_splitter_state', 'critical_problem_lines_per_block', 'warning_problem_lines_per_block', 'width_exceeded_lines_per_block', 'short_lines_per_block']
-[2025-05-12 04:40:17.139] DEBUG: SettingsManager: Found 'font_size' in settings file: 11. Current self.mw.current_font_size: 10
-[2025-05-12 04:40:17.139] DEBUG: SettingsManager: Set self.mw.current_font_size to 11 from file.
-[2025-05-12 04:40:17.139] DEBUG: SettingsManager: Final MainWindow.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 208
-[2025-05-12 04:40:17.139] DEBUG: SettingsManager: After potential load from file, self.mw.current_font_size is 11
-[2025-05-12 04:40:17.139] DEBUG: MainWindow: Applying font. General: Family='Segoe UI', Editor: Family='Courier New', Size=11
-[2025-05-12 04:40:17.146] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-12 04:40:17.146] DEBUG: TextOperationHandler.text_edited: No block/string selected, returning.
-[2025-05-12 04:40:17.158] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: -1, string: -1
-[2025-05-12 04:40:17.158] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-12 04:40:17.158] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:17.159] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:17.159] DEBUG: [UIUpdater] populate_blocks called.
-[2025-05-12 04:40:17.159] DEBUG: [UIUpdater] populate_blocks: No original data.
-[2025-05-12 04:40:17.159] DEBUG: UIUpdater: populate_strings_for_block for block_idx: -1. Current string_idx: -1
-[2025-05-12 04:40:17.160] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-12 04:40:17.160] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
-[2025-05-12 04:40:17.161] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: -1, string: -1
-[2025-05-12 04:40:17.161] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-12 04:40:17.161] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:17.161] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:17.161] DEBUG: Settings loaded. Last block: 9, string: 10
-[2025-05-12 04:40:17.161] DEBUG: Settings loaded. Original path from mw: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Edited path from mw: '//192.168.50.168/tloz_tmc_ua/UKR.json'
-2025-05-12 04:40:17,162 - DEBUG - logging_utils - log_debug - Applying text wrap settings: Preview wrap: False, Editors wrap: False
-2025-05-12 04:40:17,162 - DEBUG - logging_utils - log_debug - MainWindowHelper: Reconfiguring all highlighters...
-[2025-05-12 04:40:17.162] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
-[2025-05-12 04:40:17.162] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-12 04:40:17.163] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
-[2025-05-12 04:40:17.163] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-12 04:40:17.163] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
-[2025-05-12 04:40:17.163] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-12 04:40:17.163] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-12 04:40:17.163] DEBUG: TextOperationHandler.text_edited: No block/string selected, returning.
-[2025-05-12 04:40:17.164] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-12 04:40:17.164] DEBUG: TextOperationHandler.text_edited: No block/string selected, returning.
-2025-05-12 04:40:17,164 - DEBUG - logging_utils - log_debug - MainWindowHelper: Highlighter reconfiguration attempt complete.
-[2025-05-12 04:40:17.164] DEBUG: <-- SettingsManager: load_settings finished
-[2025-05-12 04:40:17.164] DEBUG: MainWindow: After SettingsManager.load_settings(), self.current_font_size = 11, general_family = Segoe UI, editor_family = Courier New
-[2025-05-12 04:40:17.164] DEBUG: MainWindow: change_font_size_action called with size 11
-[2025-05-12 04:40:17.165] DEBUG: MainWindow: After load_settings, self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 208
-[2025-05-12 04:40:17.165] DEBUG: MainWindow: After load_settings, self.initial_load_path = //192.168.50.168/tloz_tmc_ua/UKR_orig.json
-[2025-05-12 04:40:17.165] DEBUG: MainWindow: After load_settings, self.initial_edited_load_path = //192.168.50.168/tloz_tmc_ua/UKR.json
-[2025-05-12 04:40:17.165] DEBUG: MainWindow: Set preview_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 208
-[2025-05-12 04:40:17.165] DEBUG: MainWindow: Set original_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 208
-[2025-05-12 04:40:17.165] DEBUG: MainWindow: Set edited_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 208
-2025-05-12 04:40:17,165 - DEBUG - logging_utils - log_debug - MainWindowHelper: restore_state_after_settings_load called.
-2025-05-12 04:40:17,166 - DEBUG - logging_utils - log_debug - Restored window geometry from settings: {'x': 374, 'y': 220, 'width': 1966, 'height': 1002}
-2025-05-12 04:40:17,170 - DEBUG - logging_utils - log_debug - MainWindowHelper: Attempting to load initial file from settings: //192.168.50.168/tloz_tmc_ua/UKR_orig.json
-[2025-05-12 04:40:17.170] DEBUG: --> AppActionHandler: load_all_data_for_path START. Original: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Manual Edit Path: '//192.168.50.168/tloz_tmc_ua/UKR.json', InitialLoad: True
-[2025-05-12 04:40:17.171] DEBUG: load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', expected_type: list
-[2025-05-12 04:40:17.184] DEBUG: load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR_orig.json'.
-[2025-05-12 04:40:17.189] DEBUG: load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR.json', expected_type: list
-[2025-05-12 04:40:17.205] DEBUG: load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR.json'.
-[2025-05-12 04:40:17.206] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-12 04:40:17.206] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
-[2025-05-12 04:40:17.206] DEBUG: Initial load from settings: Assuming problem data is from settings or will be calculated if missing.
-[2025-05-12 04:40:17.206] DEBUG: critical_problem_lines_per_block data not found in settings or empty, performing full scan.
-[2025-05-12 04:40:17.207] DEBUG: AppActionHandler: Performing initial silent scan for ALL issues (tags, width, short lines, empty odd sublines)...
-[2025-05-12 04:40:17.207] DEBUG: UIUpdater: Cleared all problem/warning/width/short block highlights and count texts.
-[2025-05-12 04:40:17.312] DEBUG: AppActionHandler: Initial silent scan for ALL issues complete.
-[2025-05-12 04:40:17.313] DEBUG: [UIUpdater] populate_blocks called.
-[2025-05-12 04:40:17.314] DEBUG: [UIUpdater] populate_blocks: Added 80 items.
-[2025-05-12 04:40:17.314] DEBUG: --> ListSelectionHandler: block_selected. Item: 'Системні (4 short, 9 emptyOdd)', Index: 0
-[2025-05-12 04:40:17.314] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 0. Current string_idx: -1
-[2025-05-12 04:40:17.315] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 0, string: -1
-[2025-05-12 04:40:17.315] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-12 04:40:17.315] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:17.315] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:17.316] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-12 04:40:17.316] DEBUG: <-- ListSelectionHandler: block_selected finished.
-[2025-05-12 04:40:17.316] DEBUG: <-- AppActionHandler: load_all_data_for_path FINISHED (Success)
-[2025-05-12 04:40:17.316] DEBUG: --> ListSelectionHandler: block_selected. Item: 'Опис статуеток (1 warn, 51 width, 36 short, 1 emptyOdd)', Index: 9
-[2025-05-12 04:40:17.316] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 9. Current string_idx: -1
-[2025-05-12 04:40:17.333] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: -1
-[2025-05-12 04:40:17.334] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-12 04:40:17.334] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:17.334] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:17.334] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-12 04:40:17.334] DEBUG: <-- ListSelectionHandler: block_selected finished.
-[2025-05-12 04:40:17.336] DEBUG: --> ListSelectionHandler: string_selected_from_preview. Data Line number: 10
-[2025-05-12 04:40:17.336] DEBUG: Set current_string_idx = 10.
-[2025-05-12 04:40:17.337] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 9. Current string_idx: 10
-[2025-05-12 04:40:17.338] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: 10
-[2025-05-12 04:40:17.340] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-12 04:40:17.340] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-12 04:40:17.340] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
-[2025-05-12 04:40:17.341] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-12 04:40:17.341] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-12 04:40:17.341] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 9, string: 10
-[2025-05-12 04:40:17.341] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:17.341] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:17.342] DEBUG: <-- ListSelectionHandler: string_selected_from_preview finished.
-2025-05-12 04:40:17,344 - DEBUG - logging_utils - log_debug - MainWindowHelper: Restored selection to block 9, string 10, cursor 0
-2025-05-12 04:40:17,344 - DEBUG - logging_utils - log_debug - MainWindowHelper: Search history loaded into panel. Last query (if any) set in SearchHandler: ���
-2025-05-12 04:40:17,345 - DEBUG - logging_utils - log_debug - Rebuilt unsaved_block_indices: set()
-[2025-05-12 04:40:17.345] DEBUG: ++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++
-[2025-05-12 04:40:17.527] DEBUG: Starting Qt event loop...
-[2025-05-12 04:40:19.400] DEBUG: TextOperationHandler.auto_fix_current_string: Called.
-[2025-05-12 04:40:19.400] DEBUG: Auto-fix: Iteration 1 for string 9-10
-[2025-05-12 04:40:19.401] DEBUG:   Change after width_fix: 'Друга за посадою на пошті Гайрулу.
+[2025-05-12 05:06:02.482] DEBUG: ================= Application Start =================
+[2025-05-12 05:06:02.496] DEBUG: ++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++
+[2025-05-12 05:06:02.496] DEBUG: MainWindow: Initializing Core Components...
+[2025-05-12 05:06:02.496] DEBUG: MainWindow: Initializing Handlers (Pre-UI setup)...
+2025-05-12 05:06:02,496 - DEBUG - logging_utils - log_debug - Handler 'ListSelectionHandler' initialized.
+2025-05-12 05:06:02,497 - DEBUG - logging_utils - log_debug - Handler 'TextOperationHandler' initialized.
+2025-05-12 05:06:02,497 - DEBUG - logging_utils - log_debug - Handler 'AppActionHandler' initialized.
+2025-05-12 05:06:02,497 - DEBUG - logging_utils - log_debug - Handler 'SearchHandler' initialized.
+[2025-05-12 05:06:02.497] DEBUG: MainWindow: Setting up UI...
+[2025-05-12 05:06:02.498] DEBUG: setup_main_window_ui: Starting UI setup.
+[2025-05-12 05:06:02.499] DEBUG: CustomListWidget INITIALIZED, parent: <__main__.MainWindow object at 0x000001C7DB79F700>
+[2025-05-12 05:06:02.499] DEBUG: CustomListWidget: Item delegate set to <components.CustomListItemDelegate.CustomListItemDelegate object at 0x000001C7DB79FC10>
+[2025-05-12 05:06:02.502] DEBUG: LNET (): highlightManager created. Has 'clear_width_exceed_char_highlights': True
+[2025-05-12 05:06:02.506] DEBUG: JsonTagHighlighter initialized.
+[2025-05-12 05:06:02.506] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+[2025-05-12 05:06:02.506] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
+[2025-05-12 05:06:02.506] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-12 05:06:02.728] DEBUG: LNET (): highlightManager created. Has 'clear_width_exceed_char_highlights': True
+[2025-05-12 05:06:02.729] DEBUG: JsonTagHighlighter initialized.
+[2025-05-12 05:06:02.729] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+[2025-05-12 05:06:02.729] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
+[2025-05-12 05:06:02.729] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-12 05:06:02.731] DEBUG: LNET (): highlightManager created. Has 'clear_width_exceed_char_highlights': True
+[2025-05-12 05:06:02.731] DEBUG: JsonTagHighlighter initialized.
+[2025-05-12 05:06:02.731] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+[2025-05-12 05:06:02.732] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
+[2025-05-12 05:06:02.732] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-12 05:06:02.751] DEBUG: setup_main_window_ui: UI setup complete.
+[2025-05-12 05:06:02.751] DEBUG: MainWindow: Initializing Handlers (Post-UI setup)...
+[2025-05-12 05:06:02.754] DEBUG: MainWindow: Connecting Signals...
+[2025-05-12 05:06:02.755] DEBUG: --> MainWindow: connect_signals() started
+[2025-05-12 05:06:02.755] DEBUG: --> MainWindow: connect_signals() finished
+[2025-05-12 05:06:02.755] DEBUG: MainWindow: Loading Editor Settings via SettingsManager...
+[2025-05-12 05:06:02.756] DEBUG: --> SettingsManager: load_settings from settings.json
+[2025-05-12 05:06:02.756] DEBUG: --> SettingsManager: load_font_map from font_map.json
+[2025-05-12 05:06:02.757] DEBUG: Successfully loaded font_map. Count: 117
+[2025-05-12 05:06:02.757] DEBUG: SettingsManager: Initial default_font_size (from QFont or 10): 8
+[2025-05-12 05:06:02.757] DEBUG: SettingsManager: Applied all default values. self.mw.current_font_size is now 10 (from defaults)
+[2025-05-12 05:06:02.758] DEBUG: SettingsManager: Successfully parsed settings.json. Content keys: ['default_tag_mappings', 'block_names', 'newline_display_symbol', 'newline_css', 'tag_css', 'show_multiple_spaces_as_dots', 'space_dot_color_hex', 'preview_wrap_lines', 'editors_wrap_lines', 'bracket_tag_color_hex', 'game_dialog_max_width_pixels', 'line_width_warning_threshold_pixels', 'search_history', 'last_selected_block_index', 'last_selected_string_index', 'last_cursor_position_in_edited', 'last_edited_text_edit_scroll_value_v', 'last_edited_text_edit_scroll_value_h', 'last_preview_text_edit_scroll_value_v', 'last_original_text_edit_scroll_value_v', 'last_original_text_edit_scroll_value_h', 'font_size', 'original_file_path', 'edited_file_path', 'window_was_maximized', 'window_normal_geometry', 'main_splitter_state', 'right_splitter_state', 'bottom_right_splitter_state', 'critical_problem_lines_per_block', 'warning_problem_lines_per_block', 'width_exceeded_lines_per_block', 'short_lines_per_block']
+[2025-05-12 05:06:02.758] DEBUG: SettingsManager: Found 'font_size' in settings file: 11. Current self.mw.current_font_size: 10
+[2025-05-12 05:06:02.758] DEBUG: SettingsManager: Set self.mw.current_font_size to 11 from file.
+[2025-05-12 05:06:02.759] DEBUG: SettingsManager: Final MainWindow.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 208
+[2025-05-12 05:06:02.759] DEBUG: SettingsManager: After potential load from file, self.mw.current_font_size is 11
+[2025-05-12 05:06:02.759] DEBUG: MainWindow: Applying font. General: Family='Segoe UI', Editor: Family='Courier New', Size=11
+[2025-05-12 05:06:02.767] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-12 05:06:02.767] DEBUG: TextOperationHandler.text_edited: No block/string selected, returning.
+[2025-05-12 05:06:02.783] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: -1, string: -1
+[2025-05-12 05:06:02.784] DEBUG:   No active block/string selected. Text views will be cleared.
+[2025-05-12 05:06:02.784] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-12 05:06:02.784] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-12 05:06:02.785] DEBUG: [UIUpdater] populate_blocks called.
+[2025-05-12 05:06:02.785] DEBUG: [UIUpdater] populate_blocks: No original data.
+[2025-05-12 05:06:02.785] DEBUG: UIUpdater: populate_strings_for_block for block_idx: -1. Current string_idx: -1
+[2025-05-12 05:06:02.786] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
+[2025-05-12 05:06:02.786] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
+[2025-05-12 05:06:02.786] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: -1, string: -1
+[2025-05-12 05:06:02.786] DEBUG:   No active block/string selected. Text views will be cleared.
+[2025-05-12 05:06:02.786] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-12 05:06:02.787] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-12 05:06:02.787] DEBUG: Settings loaded. Last block: 9, string: 10
+[2025-05-12 05:06:02.787] DEBUG: Settings loaded. Original path from mw: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Edited path from mw: '//192.168.50.168/tloz_tmc_ua/UKR.json'
+2025-05-12 05:06:02,787 - DEBUG - logging_utils - log_debug - Applying text wrap settings: Preview wrap: False, Editors wrap: False
+2025-05-12 05:06:02,788 - DEBUG - logging_utils - log_debug - MainWindowHelper: Reconfiguring all highlighters...
+[2025-05-12 05:06:02.788] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
+[2025-05-12 05:06:02.788] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-12 05:06:02.789] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
+[2025-05-12 05:06:02.789] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-12 05:06:02.789] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
+[2025-05-12 05:06:02.789] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-12 05:06:02.790] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-12 05:06:02.790] DEBUG: TextOperationHandler.text_edited: No block/string selected, returning.
+[2025-05-12 05:06:02.790] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-12 05:06:02.790] DEBUG: TextOperationHandler.text_edited: No block/string selected, returning.
+2025-05-12 05:06:02,790 - DEBUG - logging_utils - log_debug - MainWindowHelper: Highlighter reconfiguration attempt complete.
+[2025-05-12 05:06:02.791] DEBUG: <-- SettingsManager: load_settings finished
+[2025-05-12 05:06:02.791] DEBUG: MainWindow: After SettingsManager.load_settings(), self.current_font_size = 11, general_family = Segoe UI, editor_family = Courier New
+[2025-05-12 05:06:02.791] DEBUG: MainWindow: change_font_size_action called with size 11
+[2025-05-12 05:06:02.791] DEBUG: MainWindow: After load_settings, self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 208
+[2025-05-12 05:06:02.791] DEBUG: MainWindow: After load_settings, self.initial_load_path = //192.168.50.168/tloz_tmc_ua/UKR_orig.json
+[2025-05-12 05:06:02.792] DEBUG: MainWindow: After load_settings, self.initial_edited_load_path = //192.168.50.168/tloz_tmc_ua/UKR.json
+[2025-05-12 05:06:02.792] DEBUG: MainWindow: Set preview_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 208
+[2025-05-12 05:06:02.792] DEBUG: MainWindow: Set original_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 208
+[2025-05-12 05:06:02.793] DEBUG: MainWindow: Set edited_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 208
+2025-05-12 05:06:02,793 - DEBUG - logging_utils - log_debug - MainWindowHelper: restore_state_after_settings_load called.
+2025-05-12 05:06:02,794 - DEBUG - logging_utils - log_debug - Restored window geometry from settings: {'x': 374, 'y': 220, 'width': 1966, 'height': 1002}
+2025-05-12 05:06:02,799 - DEBUG - logging_utils - log_debug - MainWindowHelper: Attempting to load initial file from settings: //192.168.50.168/tloz_tmc_ua/UKR_orig.json
+[2025-05-12 05:06:02.799] DEBUG: --> AppActionHandler: load_all_data_for_path START. Original: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Manual Edit Path: '//192.168.50.168/tloz_tmc_ua/UKR.json', InitialLoad: True
+[2025-05-12 05:06:02.800] DEBUG: load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', expected_type: list
+[2025-05-12 05:06:02.815] DEBUG: load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR_orig.json'.
+[2025-05-12 05:06:02.819] DEBUG: load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR.json', expected_type: list
+[2025-05-12 05:06:02.839] DEBUG: load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR.json'.
+[2025-05-12 05:06:02.840] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
+[2025-05-12 05:06:02.840] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
+[2025-05-12 05:06:02.840] DEBUG: Initial load from settings: Assuming problem data is from settings or will be calculated if missing.
+[2025-05-12 05:06:02.840] DEBUG: critical_problem_lines_per_block data not found in settings or empty, performing full scan.
+[2025-05-12 05:06:02.840] DEBUG: AppActionHandler: Performing initial silent scan for ALL issues (tags, width, short lines, empty odd sublines)...
+[2025-05-12 05:06:02.841] DEBUG: UIUpdater: Cleared all problem/warning/width/short block highlights and count texts.
+[2025-05-12 05:06:02.946] DEBUG: AppActionHandler: Initial silent scan for ALL issues complete.
+[2025-05-12 05:06:02.946] DEBUG: [UIUpdater] populate_blocks called.
+[2025-05-12 05:06:02.947] DEBUG: [UIUpdater] populate_blocks: Added 80 items.
+[2025-05-12 05:06:02.947] DEBUG: --> ListSelectionHandler: block_selected. Item: 'Системні (4 short, 9 emptyOdd)', Index: 0
+[2025-05-12 05:06:02.947] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 0. Current string_idx: -1
+[2025-05-12 05:06:02.948] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 0, string: -1
+[2025-05-12 05:06:02.948] DEBUG:   No active block/string selected. Text views will be cleared.
+[2025-05-12 05:06:02.949] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-12 05:06:02.949] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-12 05:06:02.949] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-12 05:06:02.949] DEBUG: <-- ListSelectionHandler: block_selected finished.
+[2025-05-12 05:06:02.949] DEBUG: <-- AppActionHandler: load_all_data_for_path FINISHED (Success)
+[2025-05-12 05:06:02.950] DEBUG: --> ListSelectionHandler: block_selected. Item: 'Опис статуеток (1 warn, 51 width, 36 short, 1 emptyOdd)', Index: 9
+[2025-05-12 05:06:02.950] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 9. Current string_idx: -1
+[2025-05-12 05:06:02.967] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: -1
+[2025-05-12 05:06:02.968] DEBUG:   No active block/string selected. Text views will be cleared.
+[2025-05-12 05:06:02.968] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-12 05:06:02.968] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-12 05:06:02.968] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-12 05:06:02.968] DEBUG: <-- ListSelectionHandler: block_selected finished.
+[2025-05-12 05:06:02.969] DEBUG: --> ListSelectionHandler: string_selected_from_preview. Data Line number: 10
+[2025-05-12 05:06:02.969] DEBUG: Set current_string_idx = 10.
+[2025-05-12 05:06:02.970] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 9. Current string_idx: 10
+[2025-05-12 05:06:02.971] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: 10
+[2025-05-12 05:06:02.973] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
+[2025-05-12 05:06:02.973] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
+[2025-05-12 05:06:02.973] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
+[2025-05-12 05:06:02.974] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
+[2025-05-12 05:06:02.974] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-12 05:06:02.974] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 9, string: 10
+[2025-05-12 05:06:02.974] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-12 05:06:02.974] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-12 05:06:02.974] DEBUG: <-- ListSelectionHandler: string_selected_from_preview finished.
+2025-05-12 05:06:02,975 - DEBUG - logging_utils - log_debug - MainWindowHelper: Restored selection to block 9, string 10, cursor 0
+2025-05-12 05:06:02,975 - DEBUG - logging_utils - log_debug - MainWindowHelper: Search history loaded into panel. Last query (if any) set in SearchHandler: ����������
+2025-05-12 05:06:02,976 - DEBUG - logging_utils - log_debug - Rebuilt unsaved_block_indices: set()
+[2025-05-12 05:06:02.976] DEBUG: ++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++
+[2025-05-12 05:06:03.151] DEBUG: Starting Qt event loop...
+[2025-05-12 05:06:04.266] DEBUG: TextAutofixLogic.auto_fix_current_string: Called.
+[2025-05-12 05:06:04.266] DEBUG: Auto-fix: Iteration 1 for string 9-10
+[2025-05-12 05:06:04.267] DEBUG:   Change after width_fix: 'Друга за посадою на пошті Гайрулу.
 Вона спокійна т' -> 'Друга за посадою на пошті
 Гайрулу.
 Вона спокійна т'
-[2025-05-12 04:40:19.401] DEBUG: Auto-fix: Iteration 2 for string 9-10
-[2025-05-12 04:40:19.401] DEBUG: DSP.update_edited_data: Key (9, 10) updated. New edited_data size: 1
-[2025-05-12 04:40:19.401] DEBUG: DSP.update_edited_data: Unsaved changes status changed to True
-[2025-05-12 04:40:19.401] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: 10
-[2025-05-12 04:40:19.402] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:19.402] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-12 04:40:19.403] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-12 04:40:19.403] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
-[2025-05-12 04:40:19.403] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-12 04:40:19.410] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 9. Current string_idx: 10
-[2025-05-12 04:40:19.421] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: 10
-[2025-05-12 04:40:19.421] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:19.422] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:19.422] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-12 04:40:19.423] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 9. Current string_idx: 10
-[2025-05-12 04:40:19.424] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: 10
-[2025-05-12 04:40:19.424] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:19.424] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:19.425] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-12 04:40:19.425] DEBUG: TextOperationHandler.auto_fix_current_string: Finished.
-[2025-05-12 04:40:21.701] DEBUG: --> ListSelectionHandler: string_selected_from_preview. Data Line number: 16
-[2025-05-12 04:40:21.702] DEBUG: Set current_string_idx = 16.
-[2025-05-12 04:40:21.702] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 9. Current string_idx: 16
-[2025-05-12 04:40:21.703] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: 16
-[2025-05-12 04:40:21.705] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-12 04:40:21.706] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-12 04:40:21.706] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
-[2025-05-12 04:40:21.706] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-12 04:40:21.707] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-12 04:40:21.707] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 9, string: 16
-[2025-05-12 04:40:21.707] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:21.707] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:21.707] DEBUG: <-- ListSelectionHandler: string_selected_from_preview finished.
-[2025-05-12 04:40:22.838] DEBUG: TextOperationHandler.auto_fix_current_string: Called.
-[2025-05-12 04:40:22.838] DEBUG: Auto-fix: Iteration 1 for string 9-16
-[2025-05-12 04:40:22.839] DEBUG:   Change after short_fix: 'Місцевий продавець речей,
-знаний як {Color:Blue}За' -> 'Місцевий продавець речей, знаний
-як {Color:Blue}За'
-[2025-05-12 04:40:22.839] DEBUG: Auto-fix: Iteration 2 for string 9-16
-[2025-05-12 04:40:22.839] DEBUG: DSP.update_edited_data: Key (9, 16) updated. New edited_data size: 2
-[2025-05-12 04:40:22.840] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: 16
-[2025-05-12 04:40:22.840] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:22.840] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-12 04:40:22.841] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-12 04:40:22.841] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
-[2025-05-12 04:40:22.842] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-12 04:40:22.850] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 9. Current string_idx: 16
-[2025-05-12 04:40:22.861] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: 16
-[2025-05-12 04:40:22.861] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:22.861] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:22.862] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-12 04:40:22.863] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 9. Current string_idx: 16
-[2025-05-12 04:40:22.864] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: 16
-[2025-05-12 04:40:22.864] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:22.864] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:22.865] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-12 04:40:22.865] DEBUG: TextOperationHandler.auto_fix_current_string: Finished.
-[2025-05-12 04:40:23.950] DEBUG: --> ListSelectionHandler: string_selected_from_preview. Data Line number: 15
-[2025-05-12 04:40:23.950] DEBUG: Set current_string_idx = 15.
-[2025-05-12 04:40:23.950] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 9. Current string_idx: 15
-[2025-05-12 04:40:23.952] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: 15
-[2025-05-12 04:40:23.953] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-12 04:40:23.953] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-12 04:40:23.953] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
-[2025-05-12 04:40:23.954] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-12 04:40:23.954] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-12 04:40:23.954] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 9, string: 15
-[2025-05-12 04:40:23.954] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:23.954] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:23.955] DEBUG: <-- ListSelectionHandler: string_selected_from_preview finished.
-[2025-05-12 04:40:26.765] DEBUG: --> ListSelectionHandler: string_selected_from_preview. Data Line number: 27
-[2025-05-12 04:40:26.765] DEBUG: Set current_string_idx = 27.
-[2025-05-12 04:40:26.766] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 9. Current string_idx: 27
-[2025-05-12 04:40:26.767] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: 27
-[2025-05-12 04:40:26.768] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-12 04:40:26.768] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-12 04:40:26.769] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
-[2025-05-12 04:40:26.769] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-12 04:40:26.769] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-12 04:40:26.770] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 9, string: 27
-[2025-05-12 04:40:26.770] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:26.770] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:26.770] DEBUG: <-- ListSelectionHandler: string_selected_from_preview finished.
-[2025-05-12 04:40:28.077] DEBUG: TextOperationHandler.auto_fix_current_string: Called.
-[2025-05-12 04:40:28.077] DEBUG: Auto-fix: Iteration 1 for string 9-27
-[2025-05-12 04:40:28.078] DEBUG:   Change after short_fix: 'Дух стародавнього правителя Гайрулу,
-що навіть піс' -> 'Дух стародавнього правителя Гайрулу,
-що навіть піс'
-[2025-05-12 04:40:28.078] DEBUG:   Change after width_fix: 'Дух стародавнього правителя Гайрулу,
-що навіть піс' -> 'Дух стародавнього правителя
-Гайрулу,
-що навіть піс'
-[2025-05-12 04:40:28.078] DEBUG: Auto-fix: Iteration 2 for string 9-27
-[2025-05-12 04:40:28.080] DEBUG:   Change after short_fix: 'Дух стародавнього правителя
-Гайрулу,
-що навіть піс' -> 'Дух стародавнього правителя
-Гайрулу, що навіть піс'
-[2025-05-12 04:40:28.080] DEBUG: Auto-fix: Iteration 3 for string 9-27
-[2025-05-12 04:40:28.081] DEBUG: DSP.update_edited_data: Key (9, 27) updated. New edited_data size: 3
-[2025-05-12 04:40:28.081] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: 27
-[2025-05-12 04:40:28.081] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:28.081] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-12 04:40:28.082] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-12 04:40:28.082] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
-[2025-05-12 04:40:28.082] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-12 04:40:28.089] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 9. Current string_idx: 27
-[2025-05-12 04:40:28.101] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: 27
-[2025-05-12 04:40:28.102] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:28.102] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:28.102] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-12 04:40:28.102] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 9. Current string_idx: 27
-[2025-05-12 04:40:28.103] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: 27
-[2025-05-12 04:40:28.104] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:28.104] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:28.105] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-12 04:40:28.105] DEBUG: TextOperationHandler.auto_fix_current_string: Finished.
-[2025-05-12 04:40:33.056] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-12 04:40:33.056] DEBUG: DSP.update_edited_data: Key (9, 27) updated. New edited_data size: 3
-[2025-05-12 04:40:33.057] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-12 04:40:33.216] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-12 04:40:33.216] DEBUG: DSP.update_edited_data: Key (9, 27) updated. New edited_data size: 3
-[2025-05-12 04:40:33.217] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-12 04:40:33.364] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-12 04:40:33.364] DEBUG: DSP.update_edited_data: Key (9, 27) updated. New edited_data size: 3
-[2025-05-12 04:40:33.365] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
-[2025-05-12 04:40:33.606] DEBUG: Timer timeout: Updating preview content.
-[2025-05-12 04:40:33.606] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 9. Current string_idx: 27
-[2025-05-12 04:40:33.616] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: 27
-[2025-05-12 04:40:33.616] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:33.616] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:33.616] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-12 04:40:33.617] DEBUG: Preview content update finished.
-[2025-05-12 04:40:34.059] DEBUG: TextOperationHandler.auto_fix_current_string: Called.
-[2025-05-12 04:40:34.059] DEBUG: Auto-fix: Iteration 1 for string 9-27
-[2025-05-12 04:40:34.060] DEBUG:   Change after empty_odd_fix: 'Дух стародавнього правителя
-Гайрулу, що навіть піс' -> 'Дух стародавнього правителя
-Гайрулу, що навіть піс'
-[2025-05-12 04:40:34.060] DEBUG: Auto-fix: Iteration 2 for string 9-27
-[2025-05-12 04:40:34.060] DEBUG:   Change after empty_odd_fix: 'Дух стародавнього правителя
-Гайрулу, що навіть піс' -> 'Дух стародавнього правителя
-Гайрулу, що навіть піс'
-[2025-05-12 04:40:34.060] DEBUG: Auto-fix: Iteration 3 for string 9-27
-[2025-05-12 04:40:34.061] DEBUG: DSP.update_edited_data: Key (9, 27) updated. New edited_data size: 3
-[2025-05-12 04:40:34.061] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: 27
-[2025-05-12 04:40:34.061] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:34.061] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-12 04:40:34.061] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-12 04:40:34.062] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
-[2025-05-12 04:40:34.062] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-12 04:40:34.072] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 9. Current string_idx: 27
-[2025-05-12 04:40:34.082] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: 27
-[2025-05-12 04:40:34.082] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:34.082] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:34.083] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-12 04:40:34.083] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 9. Current string_idx: 27
-[2025-05-12 04:40:34.084] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: 27
-[2025-05-12 04:40:34.085] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:34.085] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-12 04:40:34.085] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-12 04:40:34.085] DEBUG: TextOperationHandler.auto_fix_current_string: Finished.
-[2025-05-12 04:40:42.745] DEBUG: --> MainWindow: closeEvent received.
-2025-05-12 04:40:42,745 - DEBUG - logging_utils - log_debug - MainWindowHelper: prepare_to_close called.
-2025-05-12 04:40:42,746 - DEBUG - logging_utils - log_debug - MainWindowHelper: Updated search_history_to_save: 7 items
-[2025-05-12 04:40:42.746] DEBUG: --> AppActionHandler: handle_close_event called.
-[2025-05-12 04:40:43.870] DEBUG: <-- AppActionHandler: handle_close_event finished.
-[2025-05-12 04:40:43.871] DEBUG: Close accepted (unsaved changes were handled). Settings should have been saved by AppActionHandler or by user choice during handle_close_event.
-[2025-05-12 04:40:43.871] DEBUG: <-- MainWindow: closeEvent finished.
-[2025-05-12 04:40:43.900] DEBUG: Qt event loop finished with exit code: 0
-[2025-05-12 04:40:43.901] DEBUG: ================= Application End =================
+[2025-05-12 05:06:04.267] DEBUG: Auto-fix: Iteration 2 for string 9-10
+[2025-05-12 05:06:04.267] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-12 05:06:04.268] DEBUG: DSP.update_edited_data: Key (9, 10) updated. New edited_data size: 1
+[2025-05-12 05:06:04.268] DEBUG: DSP.update_edited_data: Unsaved changes status changed to True
+[2025-05-12 05:06:04.268] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-12 05:06:04.269] DEBUG: Auto-fix: Text in edited_text_edit updated directly. Undo available: True
+[2025-05-12 05:06:04.275] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 9. Current string_idx: 10
+[2025-05-12 05:06:04.283] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: 10
+[2025-05-12 05:06:04.284] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-12 05:06:04.284] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-12 05:06:04.284] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-12 05:06:04.284] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 9. Current string_idx: 10
+[2025-05-12 05:06:04.286] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: 10
+[2025-05-12 05:06:04.286] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-12 05:06:04.286] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-12 05:06:04.286] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-12 05:06:04.286] DEBUG: TextAutofixLogic.auto_fix_current_string: Finished.
+[2025-05-12 05:06:04.509] DEBUG: Timer timeout: Updating preview content.
+[2025-05-12 05:06:04.510] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 9. Current string_idx: 10
+[2025-05-12 05:06:04.511] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: 10
+[2025-05-12 05:06:04.511] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-12 05:06:04.511] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-12 05:06:04.512] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-12 05:06:04.512] DEBUG: Preview content update finished.
+2025-05-12 05:06:04,834 - DEBUG - logging_utils - log_debug - EventFilter KeyPress: Key 16777249, Modifiers: <PyQt5.QtCore.Qt.KeyboardModifiers object at 0x000001C7DC394890>, Text: '', Focused widget: edited_text_edit
+[2025-05-12 05:06:04.835] DEBUG: MainWindow keyPressEvent: This should not be called if eventFilter is working.
+[2025-05-12 05:06:04.885] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-12 05:06:04.885] DEBUG: DSP.update_edited_data: Key (9, 10) updated. New edited_data size: 1
+[2025-05-12 05:06:04.886] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = False
+[2025-05-12 05:06:05.137] DEBUG: Timer timeout: Updating preview content.
+[2025-05-12 05:06:05.137] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 9. Current string_idx: 10
+[2025-05-12 05:06:05.148] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: 10
+[2025-05-12 05:06:05.148] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-12 05:06:05.148] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-12 05:06:05.149] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-12 05:06:05.149] DEBUG: Preview content update finished.
+2025-05-12 05:06:05,344 - DEBUG - logging_utils - log_debug - EventFilter KeyPress: Key 16777249, Modifiers: <PyQt5.QtCore.Qt.KeyboardModifiers object at 0x000001C7DC38AF90>, Text: '', Focused widget: edited_text_edit
+[2025-05-12 05:06:05.344] DEBUG: MainWindow keyPressEvent: This should not be called if eventFilter is working.
+2025-05-12 05:06:06,148 - DEBUG - logging_utils - log_debug - EventFilter KeyPress: Key 16777249, Modifiers: <PyQt5.QtCore.Qt.KeyboardModifiers object at 0x000001C7DC38A970>, Text: '', Focused widget: edited_text_edit
+[2025-05-12 05:06:06.149] DEBUG: MainWindow keyPressEvent: This should not be called if eventFilter is working.
+2025-05-12 05:06:06,170 - DEBUG - logging_utils - log_debug - EventFilter KeyPress: Key 16777248, Modifiers: <PyQt5.QtCore.Qt.KeyboardModifiers object at 0x000001C7DC38A2E0>, Text: '', Focused widget: edited_text_edit
+[2025-05-12 05:06:06.171] DEBUG: MainWindow keyPressEvent: This should not be called if eventFilter is working.
+[2025-05-12 05:06:06.336] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-12 05:06:06.336] DEBUG: DSP.update_edited_data: Key (9, 10) updated. New edited_data size: 1
+[2025-05-12 05:06:06.337] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-12 05:06:06.586] DEBUG: Timer timeout: Updating preview content.
+[2025-05-12 05:06:06.586] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 9. Current string_idx: 10
+[2025-05-12 05:06:06.598] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: 10
+[2025-05-12 05:06:06.598] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-12 05:06:06.599] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-12 05:06:06.599] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-12 05:06:06.599] DEBUG: Preview content update finished.
+2025-05-12 05:06:06,883 - DEBUG - logging_utils - log_debug - EventFilter KeyPress: Key 16777249, Modifiers: <PyQt5.QtCore.Qt.KeyboardModifiers object at 0x000001C7DC394F90>, Text: '', Focused widget: edited_text_edit
+[2025-05-12 05:06:06.884] DEBUG: MainWindow keyPressEvent: This should not be called if eventFilter is working.
+[2025-05-12 05:06:06.988] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-12 05:06:06.988] DEBUG: DSP.update_edited_data: Key (9, 10) updated. New edited_data size: 1
+[2025-05-12 05:06:06.989] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = False
+[2025-05-12 05:06:07.232] DEBUG: Timer timeout: Updating preview content.
+[2025-05-12 05:06:07.232] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 9. Current string_idx: 10
+[2025-05-12 05:06:07.241] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 9, string: 10
+[2025-05-12 05:06:07.241] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-12 05:06:07.241] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-12 05:06:07.241] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-12 05:06:07.241] DEBUG: Preview content update finished.
+[2025-05-12 05:06:08.464] DEBUG: --> MainWindow: closeEvent received.
+2025-05-12 05:06:08,465 - DEBUG - logging_utils - log_debug - MainWindowHelper: prepare_to_close called.
+2025-05-12 05:06:08,465 - DEBUG - logging_utils - log_debug - MainWindowHelper: Updated search_history_to_save: 7 items
+[2025-05-12 05:06:08.466] DEBUG: --> AppActionHandler: handle_close_event called.
+[2025-05-12 05:06:09.520] DEBUG: <-- AppActionHandler: handle_close_event finished.
+[2025-05-12 05:06:09.521] DEBUG: Close accepted (unsaved changes were handled). Settings should have been saved by AppActionHandler or by user choice during handle_close_event.
+[2025-05-12 05:06:09.521] DEBUG: <-- MainWindow: closeEvent finished.
+[2025-05-12 05:06:09.539] DEBUG: Qt event loop finished with exit code: 0
+[2025-05-12 05:06:09.539] DEBUG: ================= Application End =================

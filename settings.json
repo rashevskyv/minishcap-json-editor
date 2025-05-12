@@ -180,13 +180,13 @@
     "game_dialog_max_width_pixels": 208,
     "line_width_warning_threshold_pixels": 208,
     "search_history": [
-        "лінк",
-        "link",
-        "Гей, Лінк",
-        "123",
-        "Гей, {Color:Green}Лінк",
+        "спрацювати",
         "Так Ні",
-        "спрацювати"
+        "Гей, {Color:Green}Лінк",
+        "123",
+        "Гей, Лінк",
+        "link",
+        "лінк"
     ],
     "last_selected_block_index": 9,
     "last_selected_string_index": 10,
