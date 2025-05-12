@@ -1,24 +1,20 @@
-from PyQt5.QtWidgets import QInputDialog, QTextEdit # Added QTextEdit
+from PyQt5.QtWidgets import QInputDialog, QTextEdit 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QTextCursor, QTextBlockFormat, QColor, QTextBlock # Added QTextBlock
+from PyQt5.QtGui import QTextCursor, QTextBlockFormat, QColor, QTextBlock 
 from .base_handler import BaseHandler
-from utils.utils import log_debug, calculate_string_width, remove_all_tags
-from components.LNET_paint_handlers import LNETPaintHandlers # For _check_new_blue_rule
+from utils.utils import log_debug, calculate_string_width, remove_all_tags, ALL_TAGS_PATTERN
+from components.LNET_paint_handlers import LNETPaintHandlers 
 
 class ListSelectionHandler(BaseHandler):
     def __init__(self, main_window, data_processor, ui_updater):
         super().__init__(main_window, data_processor, ui_updater)
-        # For _check_new_blue_rule, we might need a temporary paint handler or access to its logic
-        # This is a bit of a workaround; ideally, rule checking should be more centralized.
         if hasattr(self.mw, 'preview_text_edit') and hasattr(self.mw.preview_text_edit, 'paint_handler'):
             self._paint_handler_for_blue_rule = self.mw.preview_text_edit.paint_handler 
         else:
-            # Create a dummy one if not available, though it might not work perfectly without a real editor context
             class DummyEditor:
                 def __init__(self):
-                    self.font_map = {} # Needs font_map for width calculations if used by rule
-                    # Add other attributes that _check_new_blue_rule might expect from editor
-                    self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 208 # Example value
+                    self.font_map = {} 
+                    self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 208 
             self._paint_handler_for_blue_rule = LNETPaintHandlers(DummyEditor())
 
 
@@ -82,10 +78,6 @@ class ListSelectionHandler(BaseHandler):
             self.mw.current_string_idx = line_number
             log_debug(f"Set current_string_idx = {line_number}.")
             
-            # UI update for preview selection highlight and problems will be handled by populate_strings_for_block
-            # if preview_edit and hasattr(preview_edit, 'setPreviewSelectedLineHighlight'):
-            #     preview_edit.setPreviewSelectedLineHighlight(line_number)
-            
             current_text_for_width_check, _ = self.data_processor.get_current_string_text(self.mw.current_block_idx, line_number)
             width_status_changed = False
             if hasattr(self.mw.editor_operation_handler, '_check_and_update_width_exceeded_status'):
@@ -99,12 +91,10 @@ class ListSelectionHandler(BaseHandler):
                 if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
                     self.ui_updater.update_block_item_text_with_problem_count(self.mw.current_block_idx)
             
-            # Always repopulate strings for the block to ensure all highlights are correct
             self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
 
         self.ui_updater.update_text_views()
 
-        # Ensure the newly selected line in preview is visible
         if preview_edit and self.mw.current_string_idx != -1 and \
            0 <= self.mw.current_string_idx < preview_edit.document().blockCount():
             block_to_show = preview_edit.document().findBlockByNumber(self.mw.current_string_idx)
@@ -137,7 +127,14 @@ class ListSelectionHandler(BaseHandler):
         if string_idx in self.mw.warning_problem_lines_per_block.get(block_key, set()): return True
         if string_idx in self.mw.width_exceeded_lines_per_block.get(block_key, set()): return True
         if string_idx in self.mw.short_lines_per_block.get(block_key, set()): return True
-        if string_idx in self.mw.empty_odd_unisingle_subline_problem_strings.get(block_key, set()): return True
+        
+        # Updated check for empty_odd_unisingle_subline_problem_strings
+        # This check now relies on the AppActionHandler's method which already considers tags
+        if hasattr(self.mw, 'app_action_handler') and \
+           hasattr(self.mw.app_action_handler, '_check_data_string_for_empty_odd_unisingle_subline'):
+            data_string_text_for_empty_check, _ = self.data_processor.get_current_string_text(block_idx, string_idx)
+            if self.mw.app_action_handler._check_data_string_for_empty_odd_unisingle_subline(str(data_string_text_for_empty_check)):
+                return True
         
         data_string_text, _ = self.data_processor.get_current_string_text(block_idx, string_idx)
         if data_string_text:
@@ -146,13 +143,12 @@ class ListSelectionHandler(BaseHandler):
             doc = temp_doc_holder.document()
             current_block_in_temp_doc = doc.firstBlock()
             paint_handler_to_use = self._paint_handler_for_blue_rule
-            if hasattr(self.mw, 'preview_text_edit') and hasattr(self.mw.preview_text_edit, 'paint_handler'): # Prefer actual editor's handler
+            if hasattr(self.mw, 'preview_text_edit') and hasattr(self.mw.preview_text_edit, 'paint_handler'): 
                  paint_handler_to_use = self.mw.preview_text_edit.paint_handler
 
             while current_block_in_temp_doc.isValid():
                 next_block_in_temp_doc = current_block_in_temp_doc.next()
                 if hasattr(paint_handler_to_use, '_check_new_blue_rule'):
-                    # Ensure the paint handler's editor context has necessary attributes if it's a dummy
                     if not hasattr(paint_handler_to_use.editor, 'font_map'):
                         paint_handler_to_use.editor.font_map = self.mw.font_map if hasattr(self.mw, 'font_map') else {}
                     if not hasattr(paint_handler_to_use.editor, 'LINE_WIDTH_WARNING_THRESHOLD_PIXELS'):

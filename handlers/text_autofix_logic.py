@@ -55,19 +55,41 @@ class TextAutofixLogic:
             return text
 
         new_sub_lines = []
+        made_change_in_this_fix = False
         for i, sub_line in enumerate(sub_lines):
             is_odd_subline = (i + 1) % 2 != 0
-            text_no_tags = remove_all_tags(sub_line)
+            
+            # Check for tags first. If tags exist, it's not an "empty" problem for this rule.
+            if ALL_TAGS_PATTERN.search(sub_line):
+                new_sub_lines.append(sub_line)
+                continue
+                
+            text_no_tags = remove_all_tags(sub_line) # Should be redundant if tags already checked
             stripped_text_no_tags = text_no_tags.strip()
             is_empty_or_zero = not stripped_text_no_tags or stripped_text_no_tags == "0"
 
             if is_odd_subline and is_empty_or_zero and len(sub_lines) > 1 :
-                continue
+                made_change_in_this_fix = True
+                continue # Skip adding this line
             new_sub_lines.append(sub_line)
         
-        if text and not new_sub_lines:
+        if not made_change_in_this_fix:
+            return text # No changes made, return original text
+
+        if text and not new_sub_lines: # If original text was not empty but all lines were removed
              return "" 
         
+        # Remove trailing empty lines if the original didn't end with multiple newlines
+        # This is a simple heuristic to avoid adding too many empty lines at the end.
+        while len(new_sub_lines) > 1 and not new_sub_lines[-1].strip() and not new_sub_lines[-2].strip():
+            new_sub_lines.pop()
+        
+        # If the result is just one empty line, but original was not, return original.
+        # This handles cases where all lines become empty.
+        if len(new_sub_lines) == 1 and not new_sub_lines[0].strip() and text.strip():
+            return text
+
+
         joined_text = "\n".join(new_sub_lines)
         return joined_text
 
@@ -258,7 +280,7 @@ class TextAutofixLogic:
         modified_text = str(current_text)
         max_iterations = 10 
         iterations = 0
-        changes_were_made_by_autofix = False
+        # changes_were_made_by_autofix = False # Not needed here, decided by final_text_to_apply != current_text
         
         edited_text_edit = self.mw.edited_text_edit
         
@@ -267,43 +289,47 @@ class TextAutofixLogic:
             iterations += 1
             log_debug(f"Auto-fix: Iteration {iterations} for string {block_idx}-{string_idx}")
 
-            text_before_this_pass = str(modified_text)
+            # text_before_this_pass = str(modified_text) # Not directly used for logic, only logging
 
+            # Fix empty odd sublines (that don't contain tags)
             temp_text_after_empty_fix = self._fix_empty_odd_sublines(modified_text)
             if temp_text_after_empty_fix != modified_text:
                 log_debug(f"  Change after empty_odd_fix: '{modified_text[:50]}' -> '{temp_text_after_empty_fix[:50]}'")
                 modified_text = temp_text_after_empty_fix
                 made_change_in_this_pass = True
             
+            # Fix "blue" sublines (add empty line after)
             temp_text_after_blue_fix = self._fix_blue_sublines(modified_text)
             if temp_text_after_blue_fix != modified_text:
                 log_debug(f"  Change after blue_sublines_fix: '{modified_text[:50]}' -> '{temp_text_after_blue_fix[:50]}'")
                 modified_text = temp_text_after_blue_fix
                 made_change_in_this_pass = True
 
+            # Fix short lines (merge with next word if possible)
             temp_text_after_short_fix = self._fix_short_lines(modified_text)
             if temp_text_after_short_fix != modified_text:
                 log_debug(f"  Change after short_fix: '{modified_text[:50]}' -> '{temp_text_after_short_fix[:50]}'")
                 modified_text = temp_text_after_short_fix
                 made_change_in_this_pass = True
             
+            # Fix lines exceeding width (split line)
             temp_text_after_width_fix = self._fix_width_exceeded(modified_text)
             if temp_text_after_width_fix != modified_text:
                 log_debug(f"  Change after width_fix: '{modified_text[:50]}' -> '{temp_text_after_width_fix[:50]}'")
                 modified_text = temp_text_after_width_fix
                 made_change_in_this_pass = True
             
-            if not made_change_in_this_pass: # Якщо жоден з фіксів не змінив текст, виходимо
+            if not made_change_in_this_pass: # If no fix changed the text in this pass, break
                 break
         
-        if iterations == max_iterations and made_change_in_this_pass:
+        if iterations == max_iterations and made_change_in_this_pass: # made_change_in_this_pass to ensure it wasn't just max_iterations with no changes
             log_debug("Auto-fix: Max iterations reached, potential complex case or loop.")
             QMessageBox.warning(self.mw, "Auto-fix", "Auto-fix reached maximum iterations. Result might be incomplete.")
 
         final_text_to_apply = modified_text
         
         if final_text_to_apply != current_text:
-            changes_were_made_by_autofix = True
+            # changes_were_made_by_autofix = True # Already determined by comparison
             
             if edited_text_edit:
                 text_for_display = convert_spaces_to_dots_for_display(final_text_to_apply, self.mw.show_multiple_spaces_as_dots)

@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QMessageBox, QApplication
 from PyQt5.QtGui import QTextCursor, QTextBlock
 from PyQt5.QtCore import QTimer
 from .base_handler import BaseHandler
-from utils.utils import log_debug, convert_dots_to_spaces_from_editor, convert_spaces_to_dots_for_display, calculate_string_width, remove_all_tags, SPACE_DOT_SYMBOL
+from utils.utils import log_debug, convert_dots_to_spaces_from_editor, convert_spaces_to_dots_for_display, calculate_string_width, remove_all_tags, SPACE_DOT_SYMBOL, ALL_TAGS_PATTERN
 from core.tag_utils import apply_default_mappings_only, analyze_tags_for_issues, \
                       process_segment_tags_aggressively, \
                       TAG_STATUS_OK, TAG_STATUS_CRITICAL, \
@@ -137,7 +137,11 @@ class TextOperationHandler(BaseHandler):
             for i, sub_line_text in enumerate(sub_lines):
                 is_odd_subline = (i + 1) % 2 != 0
                 if is_odd_subline:
-                    text_no_tags = remove_all_tags(sub_line_text)
+                    # Check for tags first. If tags exist, it's not an "empty" problem for this rule.
+                    if ALL_TAGS_PATTERN.search(sub_line_text):
+                        continue 
+                    
+                    text_no_tags = remove_all_tags(sub_line_text) # Should be redundant if tags already checked
                     stripped_text_no_tags = text_no_tags.strip()
                     is_empty_or_zero = not stripped_text_no_tags or stripped_text_no_tags == "0"
                     if is_empty_or_zero:
@@ -458,7 +462,10 @@ class TextOperationHandler(BaseHandler):
                                     short_status = f"SHORT (can fit {first_word_next_line_width_calc + space_width}px into {warning_threshold}px, has {remaining_width_calc}px left)"
             
             is_odd_subline_report = (i + 1) % 2 != 0
-            is_empty_or_zero_report = not sub_line_no_tags.strip() or sub_line_no_tags.strip() == "0"
+            # Check for tags. If tags exist, it's not an "empty" problem for this rule.
+            contains_tags_report = bool(ALL_TAGS_PATTERN.search(sub_line))
+            is_empty_or_zero_report = (not sub_line_no_tags.strip() or sub_line_no_tags.strip() == "0") and not contains_tags_report
+
             empty_odd_report_status = ""
             if is_empty_or_zero_report and is_odd_subline_report and len(sub_lines_current) > 1:
                 empty_odd_report_status = "EMPTY ODD NON-SINGLE"
@@ -491,7 +498,8 @@ class TextOperationHandler(BaseHandler):
                                     short_status_orig = f"SHORT (can fit {first_word_next_original_line_width_calc+space_width}px into {warning_threshold}px, has {remaining_width_orig_calc}px left)"
             
             is_odd_subline_report_orig = (i + 1) % 2 != 0
-            is_empty_or_zero_report_orig = not sub_line_no_tags.strip() or sub_line_no_tags.strip() == "0"
+            contains_tags_report_orig = bool(ALL_TAGS_PATTERN.search(sub_line))
+            is_empty_or_zero_report_orig = (not sub_line_no_tags.strip() or sub_line_no_tags.strip() == "0") and not contains_tags_report_orig
             empty_odd_report_status_orig = ""
             if is_empty_or_zero_report_orig and is_odd_subline_report_orig and len(sub_lines_original) > 1:
                 empty_odd_report_status_orig = "EMPTY ODD NON-SINGLE"

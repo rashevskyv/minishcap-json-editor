@@ -2,7 +2,7 @@ import os
 from PyQt5.QtWidgets import QMessageBox, QFileDialog, QProgressDialog, QPlainTextEdit
 from PyQt5.QtCore import Qt
 from .base_handler import BaseHandler
-from utils.utils import log_debug, convert_dots_to_spaces_from_editor, calculate_string_width, remove_all_tags
+from utils.utils import log_debug, convert_dots_to_spaces_from_editor, calculate_string_width, remove_all_tags, ALL_TAGS_PATTERN
 from core.tag_utils import apply_default_mappings_only, analyze_tags_for_issues, \
                       TAG_STATUS_OK, TAG_STATUS_UNRESOLVED_BRACKETS, TAG_STATUS_MISMATCHED_CURLY
 from core.data_manager import load_json_file
@@ -38,7 +38,11 @@ class AppActionHandler(BaseHandler):
         for i, sub_line_text in enumerate(sub_lines):
             is_odd_subline = (i + 1) % 2 != 0
             if is_odd_subline:
-                text_no_tags = remove_all_tags(sub_line_text)
+                # Check for tags first. If tags exist, it's not an "empty" problem for this rule.
+                if ALL_TAGS_PATTERN.search(sub_line_text):
+                    continue
+
+                text_no_tags = remove_all_tags(sub_line_text) # Should be redundant if tags already checked
                 stripped_text_no_tags = text_no_tags.strip()
                 is_empty_or_zero = not stripped_text_no_tags or stripped_text_no_tags == "0"
                 if is_empty_or_zero:
@@ -82,7 +86,7 @@ class AppActionHandler(BaseHandler):
             if tag_status == TAG_STATUS_UNRESOLVED_BRACKETS: current_block_critical_indices.add(string_idx)
             elif tag_status == TAG_STATUS_MISMATCHED_CURLY: current_block_warning_indices.add(string_idx)
             
-            # Перевірка на порожні непарні НЕєдині підрядки
+            # Перевірка на порожні непарні НЕєдині підрядки (оновлена логіка)
             if self._check_data_string_for_empty_odd_unisingle_subline(text_to_analyze):
                 current_block_empty_odd_unisingle_indices.add(string_idx)
 
@@ -418,7 +422,7 @@ class AppActionHandler(BaseHandler):
             log_debug("Initial load from settings: Assuming problem data is from settings or will be calculated if missing.")
             problem_keys_to_check_in_mw = ['width_exceeded_lines_per_block', 'short_lines_per_block', 
                                            'critical_problem_lines_per_block', 'warning_problem_lines_per_block',
-                                           'empty_odd_unisingle_subline_problem_strings'] # Додано сюди
+                                           'empty_odd_unisingle_subline_problem_strings'] 
             needs_full_scan = False
             for key in problem_keys_to_check_in_mw:
                 if not hasattr(self.mw, key) or not getattr(self.mw, key):
@@ -515,13 +519,23 @@ class AppActionHandler(BaseHandler):
                         if next_sub_line_clean_stripped_rpt:
                             first_word_next_sub_line_rpt = next_sub_line_clean_stripped_rpt.split(maxsplit=1)[0] if next_sub_line_clean_stripped_rpt else ""
                             if first_word_next_sub_line_rpt:
-                                first_word_next_width_rpt = calculate_string_width(first_word_next_sub_line_rpt, self.mw.font_map)
-                                if first_word_next_width_rpt > 0:
+                                first_word_next_line_width_calc = calculate_string_width(first_word_next_sub_line_rpt, self.mw.font_map)
+                                if first_word_next_line_width_calc > 0:
                                     remaining_width_rpt = max_width_for_short_check_report - width_px 
-                                    if remaining_width_rpt >= (first_word_next_width_rpt + space_width):
-                                        short_status = f"SHORT (can fit {first_word_next_width_rpt+space_width}px into {max_width_for_short_check_report}px, has {remaining_width_rpt}px left)"
+                                    if remaining_width_rpt >= (first_word_next_line_width_calc + space_width):
+                                        short_status = f"SHORT (can fit {first_word_next_line_width_calc+space_width}px into {max_width_for_short_check_report}px, has {remaining_width_rpt}px left)"
                 
-                line_report_parts.append(f"    Sub {j+1} (rstripped): {width_px}px (Editor: {editor_status}) {short_status} '{sub_line_no_tags_rstripped[:30]}...'")
+                # For empty odd check in report:
+                is_odd_subline_report = (j + 1) % 2 != 0
+                contains_tags_report = bool(ALL_TAGS_PATTERN.search(sub_line))
+                is_empty_or_zero_report = (not sub_line_no_tags_rstripped.strip() or sub_line_no_tags_rstripped.strip() == "0") and not contains_tags_report
+
+                empty_odd_report_status = ""
+                if is_empty_or_zero_report and is_odd_subline_report and len(current_data_string_sub_lines) > 1:
+                    empty_odd_report_status = "EMPTY ODD NON-SINGLE"
+
+
+                line_report_parts.append(f"    Sub {j+1} (rstripped): {width_px}px (Editor: {editor_status}) {short_status} {empty_odd_report_status} '{sub_line_no_tags_rstripped[:30]}...'")
 
 
             line_report_parts.append(f"  Original:")
@@ -553,7 +567,14 @@ class AppActionHandler(BaseHandler):
                                     if remaining_width_orig_rpt >= (first_word_next_original_width_rpt + space_width):
                                         short_status_orig = f"SHORT (can fit {first_word_next_original_width_rpt+space_width}px into {max_width_for_short_check_report}px, has {remaining_width_orig_rpt}px left)"
                 
-                line_report_parts.append(f"    Sub {j+1} (rstripped): {width_px}px (Editor: {editor_status}) {short_status_orig} '{sub_line_no_tags_rstripped[:30]}...'")
+                is_odd_subline_report_orig = (j + 1) % 2 != 0
+                contains_tags_report_orig = bool(ALL_TAGS_PATTERN.search(sub_line))
+                is_empty_or_zero_report_orig = (not sub_line_no_tags_rstripped.strip() or sub_line_no_tags_rstripped.strip() == "0") and not contains_tags_report_orig
+                empty_odd_report_status_orig = ""
+                if is_empty_or_zero_report_orig and is_odd_subline_report_orig and len(original_data_string_sub_lines) > 1:
+                    empty_odd_report_status_orig = "EMPTY ODD NON-SINGLE"
+
+                line_report_parts.append(f"    Sub {j+1} (rstripped): {width_px}px (Editor: {editor_status}) {short_status_orig} {empty_odd_report_status_orig} '{sub_line_no_tags_rstripped[:30]}...'")
             
             results.append("\n".join(line_report_parts))
         
