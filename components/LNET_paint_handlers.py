@@ -3,7 +3,10 @@ from PyQt5.QtGui import QPainter, QColor, QPen, QFontMetrics, QFont, QPaintEvent
 from PyQt5.QtCore import Qt, QRect, QSize
 from PyQt5.QtWidgets import QMainWindow, QTextEdit 
 from utils.utils import log_debug, calculate_string_width, remove_all_tags, convert_dots_to_spaces_from_editor, SPACE_DOT_SYMBOL, ALL_TAGS_PATTERN
-from components.LNET_constants import SHORT_LINE_COLOR, WIDTH_EXCEEDED_LINE_COLOR, EMPTY_ODD_SUBLINE_COLOR
+from components.LNET_constants import (
+    SHORT_LINE_COLOR, WIDTH_EXCEEDED_LINE_COLOR, EMPTY_ODD_SUBLINE_COLOR,
+    PAIR_SEPARATOR_LINE_COLOR, PAIR_SEPARATOR_LINE_STYLE, PAIR_SEPARATOR_LINE_THICKNESS
+)
 
 class LNETPaintHandlers:
     def __init__(self, editor):
@@ -60,17 +63,62 @@ class LNETPaintHandlers:
         return min(target_no_tag_index_in_segment, len(raw_qtextline_text) -1 if raw_qtextline_text else 0)
 
     def paintEvent(self, event: QPaintEvent):
+        # Малювання розділювальних ліній ДО основного вмісту
+        if self.editor.objectName() != "preview_text_edit":
+            painter_lines = QPainter(self.editor.viewport()) # Малюємо на viewport
+            pen_lines = QPen(PAIR_SEPARATOR_LINE_COLOR)
+            pen_lines.setStyle(PAIR_SEPARATOR_LINE_STYLE)
+            pen_lines.setWidth(PAIR_SEPARATOR_LINE_THICKNESS)
+            painter_lines.setPen(pen_lines)
+
+            block = self.editor.firstVisibleBlock()
+            viewport_offset = self.editor.contentOffset()
+            qtextblock_visual_line_index_overall = 0
+
+            while block.isValid() and block.layout():
+                layout = block.layout()
+                block_rect = self.editor.blockBoundingGeometry(block).translated(viewport_offset)
+
+                for i in range(layout.lineCount()):
+                    line = layout.lineAt(i)
+                    if not line.isValid():
+                        continue
+                    
+                    line_bottom_y_in_viewport = block_rect.top() + line.rect().bottom()
+
+                    if (qtextblock_visual_line_index_overall + 1) % 2 == 0:
+                        is_last_visual_line_in_block = (i == layout.lineCount() - 1)
+                        is_last_block_in_document = not block.next().isValid()
+
+                        if not (is_last_visual_line_in_block and is_last_block_in_document):
+                            if line_bottom_y_in_viewport >= -PAIR_SEPARATOR_LINE_THICKNESS and \
+                               line_bottom_y_in_viewport <= self.editor.viewport().height() + PAIR_SEPARATOR_LINE_THICKNESS:
+                                # Малюємо на всю ширину viewport
+                                painter_lines.drawLine(
+                                    0, # Від лівого краю viewport
+                                    int(line_bottom_y_in_viewport) -1, 
+                                    self.editor.viewport().width(), # До правого краю viewport
+                                    int(line_bottom_y_in_viewport) -1
+                                )
+                    qtextblock_visual_line_index_overall += 1
+
+                if block_rect.bottom() > self.editor.viewport().height():
+                    break 
+                block = block.next()
+            # painter_lines.end() # Не потрібно, якщо QPainter створюється зі вказанням widget
+
+
+        # Оригінальне малювання тексту та іншого
         if self.editor.objectName() == "edited_text_edit" and hasattr(self.editor, 'highlightManager'):
             if self.editor.highlightManager:
                 self.editor.highlightManager._width_exceed_char_selections = [] 
-
 
         self.editor.super_paintEvent(event) 
         
         main_window = self.editor.window()
         if not isinstance(main_window, QMainWindow):
             return
-
+        
         if self.editor.objectName() == "edited_text_edit":
             block = self.editor.firstVisibleBlock()
             while block.isValid() and block.isVisible():
