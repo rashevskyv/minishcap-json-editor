@@ -1,26 +1,158 @@
-from PyQt5.QtGui import QPainter, QColor, QPen, QFontMetrics, QFont, QPaintEvent
+import re
+from PyQt5.QtGui import QPainter, QColor, QPen, QFontMetrics, QFont, QPaintEvent, QTextLine
 from PyQt5.QtCore import Qt, QRect, QSize
-from PyQt5.QtWidgets import QMainWindow
-from utils.utils import log_debug, calculate_string_width, remove_all_tags, convert_dots_to_spaces_from_editor
+from PyQt5.QtWidgets import QMainWindow, QTextEdit 
+from utils.utils import log_debug, calculate_string_width, remove_all_tags, convert_dots_to_spaces_from_editor, SPACE_DOT_SYMBOL, ALL_TAGS_PATTERN
 from components.LNET_constants import SHORT_LINE_COLOR, WIDTH_EXCEEDED_LINE_COLOR
 
 class LNETPaintHandlers:
     def __init__(self, editor):
-        self.editor = editor
+        self.editor = editor # editor is LineNumberedTextEdit
+
+    def _map_no_tag_index_to_raw_text_index(self, raw_qtextline_text: str, line_text_segment_no_tags: str, target_no_tag_index_in_segment: int) -> int:
+        log_debug(f"    _map: Start map. target_no_tag_idx={target_no_tag_index_in_segment}, no_tag_segment='{line_text_segment_no_tags[:30]}...', raw_qtextline_text='{raw_qtextline_text[:30]}...'")
+
+        if target_no_tag_index_in_segment == 0:
+            current_idx = 0
+            while current_idx < len(raw_qtextline_text):
+                char = raw_qtextline_text[current_idx]
+                if char.isspace() or char == SPACE_DOT_SYMBOL: 
+                    current_idx += 1
+                    continue
+                is_tag_char = False
+                for tag_match in ALL_TAGS_PATTERN.finditer(raw_qtextline_text[current_idx:]):
+                    if tag_match.start() == 0:
+                        current_idx += len(tag_match.group(0))
+                        is_tag_char = True
+                        break 
+                if is_tag_char:
+                    continue
+                log_debug(f"    _map: For target_no_tag_idx 0, found raw_idx {current_idx} (first non-tag/display-space).")
+                return current_idx
+            log_debug(f"    _map: For target_no_tag_idx 0, raw line seems empty/all tags/spaces. Returning 0.")
+            return 0
+
+        words_no_tags = list(re.finditer(r'\S+', line_text_segment_no_tags))
+        target_word_text_no_tags = ""
+        current_word_idx_no_tags = -1 
+
+        for i, word_match_no_tags in enumerate(words_no_tags):
+            if word_match_no_tags.start() == target_no_tag_index_in_segment:
+                target_word_text_no_tags = word_match_no_tags.group(0)
+                current_word_idx_no_tags = i 
+                break
+        
+        if not target_word_text_no_tags : 
+            log_debug(f"    _map: Could not ID target word in no_tag_segment at no_tag_idx {target_no_tag_index_in_segment}. Fallback to no_tag_idx itself.")
+            return min(target_no_tag_index_in_segment, len(raw_qtextline_text) -1 if raw_qtextline_text else 0)
+
+        target_word_occurrence_count = 0
+        for i in range(current_word_idx_no_tags + 1):
+            if words_no_tags[i].group(0) == target_word_text_no_tags:
+                target_word_occurrence_count += 1
+        
+        actual_word_occurrence_in_raw = 0
+        for raw_match in re.finditer(r'\S+', raw_qtextline_text):
+            raw_word_from_match = raw_match.group(0)
+            raw_word_with_spaces = convert_dots_to_spaces_from_editor(raw_word_from_match)
+            cleaned_word_for_comparison = remove_all_tags(raw_word_with_spaces)
+
+            if cleaned_word_for_comparison == target_word_text_no_tags:
+                actual_word_occurrence_in_raw += 1
+                if actual_word_occurrence_in_raw == target_word_occurrence_count:
+                    log_debug(f"    _map: Found '{target_word_text_no_tags}' (occurrence {actual_word_occurrence_in_raw}) in raw at raw_idx {raw_match.start()}. Returning this index.")
+                    return raw_match.start()
+        
+        log_debug(f"    _map: Failed to find {target_word_occurrence_count}-th '{target_word_text_no_tags}' in raw. Fallback.")
+        return min(target_no_tag_index_in_segment, len(raw_qtextline_text) -1 if raw_qtextline_text else 0)
 
     def paintEvent(self, event: QPaintEvent):
-        self.editor.super_paintEvent(event)
-        if not self.editor.isReadOnly():
-            painter = QPainter(self.editor.viewport())
-            char_width = self.editor.fontMetrics().horizontalAdvance('0')
+        # Clear previous width exceed character highlights AT THE VERY START OF THE PAINT CYCLE FOR THIS EDITOR
+        if self.editor.objectName() == "edited_text_edit" and hasattr(self.editor, 'highlightManager'):
+            if self.editor.highlightManager:
+                # Only clear the list, don't trigger applyHighlights yet
+                self.editor.highlightManager._width_exceed_char_selections = [] 
+                log_debug(f"LNETPaintHandlers ({self.editor.objectName()}): Cleared _width_exceed_char_selections list at start of paintEvent.")
+
+
+        self.editor.super_paintEvent(event) # Standard painting happens first
+        
+        # Now, our custom logic to calculate and add new highlights for this paint cycle
+        main_window = self.editor.window()
+        if not isinstance(main_window, QMainWindow):
+            return
+
+        if self.editor.objectName() == "edited_text_edit":
+            # This flag is not strictly needed anymore if applyHighlights is always called at the end
+            # new_width_selections_added_this_paint = False 
             
-            x_pos = int(self.editor.document().documentMargin() + (self.editor.character_limit_line_position * char_width))
-            x_pos -= self.editor.horizontalScrollBar().value()
+            block = self.editor.firstVisibleBlock()
+            while block.isValid() and block.isVisible():
+                layout = block.layout()
+                if not layout:
+                    block = block.next()
+                    continue
+                
+                q_block_text_raw_dots = block.text() 
+
+                for i in range(layout.lineCount()):
+                    line: QTextLine = layout.lineAt(i)
+                    if not line.isValid():
+                        continue
+
+                    raw_line_text_with_tags_and_display_chars = q_block_text_raw_dots[line.textStart() : line.textStart() + line.textLength()]
+                    line_text_with_spaces_and_tags = convert_dots_to_spaces_from_editor(raw_line_text_with_tags_and_display_chars)
+                    line_text_no_tags_for_width_calc = remove_all_tags(line_text_with_spaces_and_tags).rstrip()
+
+                    if not line_text_no_tags_for_width_calc:
+                        continue
+
+                    visual_line_width_game_px = calculate_string_width(line_text_no_tags_for_width_calc, self.editor.font_map)
+                    current_threshold_game_px = self.editor.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
+                    
+                    if visual_line_width_game_px > current_threshold_game_px:
+                        log_debug(f"PaintEvent Line (Editor: {self.editor.objectName()}): Blk {block.blockNumber()}, QTL {i}, TextForWidth='{line_text_no_tags_for_width_calc}', GameW={visual_line_width_game_px} > Thr={current_threshold_game_px}. Finding char_idx...")
+                        words_in_no_tag_segment = []
+                        for match in re.finditer(r'\S+', line_text_no_tags_for_width_calc):
+                            words_in_no_tag_segment.append({'text': match.group(0), 'start_idx_in_segment': match.start()})
+                        
+                        target_char_index_in_no_tag_segment = 0
+                        if words_in_no_tag_segment:
+                            found_target_word = False
+                            for word_info in reversed(words_in_no_tag_segment):
+                                text_before_word_no_tags = line_text_no_tags_for_width_calc[:word_info['start_idx_in_segment']]
+                                width_before_word_game_px = calculate_string_width(text_before_word_no_tags, self.editor.font_map)
+                                if width_before_word_game_px <= current_threshold_game_px:
+                                    target_char_index_in_no_tag_segment = word_info['start_idx_in_segment']
+                                    found_target_word = True
+                                    log_debug(f"    Target word in no_tag_segment: '{word_info['text']}' starts at no_tag_idx {target_char_index_in_no_tag_segment} because width_before ({width_before_word_game_px}) <= threshold.")
+                                    break
+                            if not found_target_word:
+                                target_char_index_in_no_tag_segment = 0
+                                log_debug(f"    No suitable word found, target_char_index_in_no_tag_segment is 0.")
+                        else:
+                            log_debug(f"    No words in no_tag_segment, target_char_index_in_no_tag_segment is 0.")
+                        
+                        actual_char_index_in_raw_qtextline = self._map_no_tag_index_to_raw_text_index(
+                            raw_line_text_with_tags_and_display_chars,
+                            line_text_no_tags_for_width_calc, 
+                            target_char_index_in_no_tag_segment
+                        )
+                        
+                        char_index_in_block = line.textStart() + actual_char_index_in_raw_qtextline
+                        
+                        if hasattr(self.editor, 'highlightManager') and self.editor.highlightManager:
+                            highlight_color = QColor("#90EE90") 
+                            self.editor.highlightManager.add_width_exceed_char_highlight(block, char_index_in_block, highlight_color)
+                            # new_width_selections_added_this_paint = True # Not strictly needed if applyHighlights is always called
+                        break 
+                block = block.next()
             
-            pen = QPen(self.editor.character_limit_line_color, self.editor.character_limit_line_width)
-            pen.setStyle(Qt.SolidLine)
-            painter.setPen(pen)
-            painter.drawLine(x_pos, 0, x_pos, self.editor.viewport().height())
+            # Always call applyHighlights after processing all visible blocks in this paint event for this editor
+            if hasattr(self.editor, 'highlightManager') and self.editor.highlightManager:
+                log_debug(f"PaintEvent (Editor: {self.editor.objectName()}): >>> END OF BLOCK LOOP, CALLING applyHighlights.")
+                self.editor.highlightManager.applyHighlights()
+
 
     def super_paintEvent(self, event: QPaintEvent):
          super(type(self.editor), self.editor).paintEvent(event)
@@ -61,7 +193,7 @@ class LNETPaintHandlers:
         current_font_for_numbers = self.editor.font()
         painter.setFont(current_font_for_numbers)
         
-        sentence_end_chars = ('.', '!', '?') 
+        sentence_end_tuples = ('.', '!', '?', '."', '!"', '?"') 
         max_width_for_short_check_paint = main_window_ref.LINE_WIDTH_WARNING_THRESHOLD_PIXELS if isinstance(main_window_ref, QMainWindow) else 210
 
 
@@ -97,6 +229,8 @@ class LNETPaintHandlers:
                         is_this_qblock_short_for_bg = False
                         if isinstance(main_window_ref, QMainWindow) and \
                            current_block_idx_data != -1 and active_data_line_idx != -1 and \
+                           hasattr(main_window_ref, 'short_lines_per_block') and \
+                           hasattr(main_window_ref, 'data_processor') and \
                            active_data_line_idx in main_window_ref.short_lines_per_block.get(str(current_block_idx_data), set()):
                             
                             active_data_string_text_for_editor, _ = main_window_ref.data_processor.get_current_string_text(current_block_idx_data, active_data_line_idx)
@@ -106,7 +240,7 @@ class LNETPaintHandlers:
                                 current_sub_line_from_data_editor = sub_lines_of_active_data_string_for_editor[current_q_block_number]
                                 current_sub_line_clean_stripped_editor = remove_all_tags(current_sub_line_from_data_editor).strip()
 
-                                if current_sub_line_clean_stripped_editor and not current_sub_line_clean_stripped_editor.endswith(sentence_end_chars):
+                                if current_sub_line_clean_stripped_editor and not current_sub_line_clean_stripped_editor.endswith(sentence_end_tuples):
                                     next_sub_line_from_data_editor = sub_lines_of_active_data_string_for_editor[current_q_block_number + 1]
                                     next_sub_line_clean_stripped_editor = remove_all_tags(next_sub_line_from_data_editor).strip()
                                     
@@ -135,30 +269,34 @@ class LNETPaintHandlers:
 
                         indicator_x_start = number_part_width + 2
                         block_key_str_for_preview = str(current_block_idx_data)
-                        data_line_index_preview = current_q_block_number # For preview, QTextBlock index IS data_line_index
+                        data_line_index_preview = current_q_block_number
 
                         indicators_to_draw_preview = []
-                        if data_line_index_preview in main_window_ref.critical_problem_lines_per_block.get(block_key_str_for_preview, set()):
+                        if hasattr(main_window_ref, 'critical_problem_lines_per_block') and \
+                           data_line_index_preview in main_window_ref.critical_problem_lines_per_block.get(block_key_str_for_preview, set()):
                             indicators_to_draw_preview.append(self.editor.lineNumberArea.preview_critical_indicator_color)
-                        elif data_line_index_preview in main_window_ref.warning_problem_lines_per_block.get(block_key_str_for_preview, set()):
+                        elif hasattr(main_window_ref, 'warning_problem_lines_per_block') and \
+                             data_line_index_preview in main_window_ref.warning_problem_lines_per_block.get(block_key_str_for_preview, set()):
                             indicators_to_draw_preview.append(self.editor.lineNumberArea.preview_warning_indicator_color)
 
-                        if data_line_index_preview in main_window_ref.width_exceeded_lines_per_block.get(block_key_str_for_preview, set()):
+                        if hasattr(main_window_ref, 'width_exceeded_lines_per_block') and \
+                           data_line_index_preview in main_window_ref.width_exceeded_lines_per_block.get(block_key_str_for_preview, set()):
                              preview_width_color_temp = WIDTH_EXCEEDED_LINE_COLOR
                              if preview_width_color_temp.alpha() < 100: preview_width_color_temp = preview_width_color_temp.lighter(120) 
                              if len(indicators_to_draw_preview) < 3 and preview_width_color_temp not in indicators_to_draw_preview:
                                 indicators_to_draw_preview.append(preview_width_color_temp)
                         
-                        # Dynamic check for short line indicator in preview
                         should_draw_short_indicator_for_preview = False
-                        if data_line_index_preview in main_window_ref.short_lines_per_block.get(block_key_str_for_preview, set()):
+                        if hasattr(main_window_ref, 'short_lines_per_block') and \
+                           hasattr(main_window_ref, 'data_processor') and \
+                           data_line_index_preview in main_window_ref.short_lines_per_block.get(block_key_str_for_preview, set()):
                             data_string_for_preview, _ = main_window_ref.data_processor.get_current_string_text(current_block_idx_data, data_line_index_preview)
                             sub_lines_for_preview_check = str(data_string_for_preview).split('\n')
                             if len(sub_lines_for_preview_check) > 1:
                                 for sub_idx_preview, sub_text_preview in enumerate(sub_lines_for_preview_check):
                                     if sub_idx_preview < len(sub_lines_for_preview_check) - 1:
                                         curr_sub_clean_strip_prev = remove_all_tags(sub_text_preview).strip()
-                                        if not curr_sub_clean_strip_prev or curr_sub_clean_strip_prev.endswith(sentence_end_chars):
+                                        if not curr_sub_clean_strip_prev or curr_sub_clean_strip_prev.endswith(sentence_end_tuples):
                                             continue
                                         next_sub_text_prev = sub_lines_for_preview_check[sub_idx_preview+1]
                                         next_sub_clean_strip_prev = remove_all_tags(next_sub_text_prev).strip()
@@ -169,9 +307,9 @@ class LNETPaintHandlers:
 
                                         first_word_next_width_prev = calculate_string_width(first_word_next_prev, main_window_ref.font_map)
                                         if first_word_next_width_prev > 0:
-                                            curr_sub_pixel_width_prev = calculate_string_width(remove_all_tags(sub_text_preview).rstrip(), main_window_ref.font_map)
+                                            curr_sub_pixel_width_prev_rstripped = calculate_string_width(remove_all_tags(sub_text_preview).rstrip(), main_window_ref.font_map)
                                             space_w_prev = calculate_string_width(" ", main_window_ref.font_map)
-                                            remaining_w_prev = max_width_for_short_check_paint - curr_sub_pixel_width_prev
+                                            remaining_w_prev = max_width_for_short_check_paint - curr_sub_pixel_width_prev_rstripped
                                             if remaining_w_prev >= (first_word_next_width_prev + space_w_prev):
                                                 should_draw_short_indicator_for_preview = True
                                                 break 

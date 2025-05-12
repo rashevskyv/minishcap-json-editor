@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QTextEdit
-from PyQt5.QtGui import QColor, QTextBlockFormat, QTextFormat, QTextCursor, QTextCharFormat, QTextBlock
+from PyQt5.QtGui import QColor, QTextBlockFormat, QTextFormat, QTextCursor, QTextBlock, QTextCharFormat
 from PyQt5.QtCore import QTimer
 from typing import Optional, List, Tuple
 import re
@@ -16,6 +16,7 @@ class TextHighlightManager:
         self._preview_selected_line_selections = []
         self._tag_interaction_selections = []
         self._search_match_selections = []
+        self._width_exceed_char_selections = [] 
         
         self._tag_highlight_timer = QTimer()
         self._tag_highlight_timer.setSingleShot(True)
@@ -43,8 +44,6 @@ class TextHighlightManager:
         if not block.isValid():
             return None
         
-        log_debug(f"TextHighlightManager: Creating search match selection with color: RGB({color.red()}, {color.green()}, {color.blue()}), Alpha({color.alpha()})")
-
         selection = QTextEdit.ExtraSelection()
         selection.format.setBackground(color)
         
@@ -58,6 +57,7 @@ class TextHighlightManager:
         return None
 
     def applyHighlights(self):
+        log_debug(f"THM ({self.editor.objectName()}): applyHighlights CALLED. Num _width_exceed_char_selections = {len(self._width_exceed_char_selections)}, Num _critical_problem_selections = {len(self._critical_problem_selections)}")
         all_selections = []
         if self._active_line_selections: all_selections.extend(list(self._active_line_selections)) 
         if self._linked_cursor_selections: 
@@ -68,13 +68,16 @@ class TextHighlightManager:
         if self._warning_problem_selections: all_selections.extend(list(self._warning_problem_selections))
         
         if self._search_match_selections: all_selections.extend(list(self._search_match_selections))
+        if self._width_exceed_char_selections: all_selections.extend(list(self._width_exceed_char_selections))
+
 
         if self._linked_cursor_selections: 
             all_selections.extend([s for s in self._linked_cursor_selections if not s.format.property(QTextFormat.FullWidthSelection)]) 
         if self._tag_interaction_selections: all_selections.extend(list(self._tag_interaction_selections)) 
         
         self.editor.setExtraSelections(all_selections)
-        self.editor.lineNumberArea.update()
+        if hasattr(self.editor, 'lineNumberArea'): 
+            self.editor.lineNumberArea.update()
 
 
     def updateCurrentLineHighlight(self): 
@@ -244,12 +247,61 @@ class TextHighlightManager:
         if self._search_match_selections:
             self._search_match_selections = []
             self.applyHighlights()
+            
+    def add_width_exceed_char_highlight(self, block: QTextBlock, char_index_in_block: int, color: QColor):
+        log_debug(f"THM: add_width_exceed_char_highlight CALLED for block {block.blockNumber()}, char_idx_in_block {char_index_in_block}")
+        if not block.isValid():
+            log_debug("THM: Invalid block passed to add_width_exceed_char_highlight.")
+            return
+        selection = QTextEdit.ExtraSelection()
+        selection.format.setBackground(color)
+        
+        char_cursor = QTextCursor(block)
+        char_cursor.setPosition(block.position() + char_index_in_block)
+        char_cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1) 
+        log_debug(f"THM: Cursor selection after move: Start={char_cursor.selectionStart()}, End={char_cursor.selectionEnd()}, HasSelection={char_cursor.hasSelection()}")
+        
+        if char_cursor.hasSelection():
+            selection.cursor = char_cursor
+            already_exists = False
+            for existing_sel in self._width_exceed_char_selections:
+                if existing_sel.cursor.blockNumber() == selection.cursor.blockNumber() and \
+                   existing_sel.cursor.selectionStart() == selection.cursor.selectionStart() and \
+                   existing_sel.cursor.selectionEnd() == selection.cursor.selectionEnd():
+                    already_exists = True
+                    break
+            if not already_exists:
+                self._width_exceed_char_selections.append(selection)
+                log_debug(f"THM: Added width_exceed_char_highlight for block {block.blockNumber()}, char_index_in_block {char_index_in_block}. Total now: {len(self._width_exceed_char_selections)}")
+            else:
+                log_debug(f"THM: Width_exceed_char_highlight for block {block.blockNumber()}, char_index_in_block {char_index_in_block} already exists.")
+        else:
+            log_debug(f"THM: Could not create selection for width_exceed_char_highlight at block {block.blockNumber()}, char_idx_in_block {char_index_in_block}")
+
+
+    def clear_width_exceed_char_highlights(self):
+        # This method now ONLY clears the list. applyHighlights() is called by the painter.
+        if self._width_exceed_char_selections:
+            log_debug(f"THM: Clearing {len(self._width_exceed_char_selections)} width_exceed_char_highlights from list.")
+            self._width_exceed_char_selections = []
+            # DO NOT CALL applyHighlights() here. Let the paintEvent handle it.
+        else:
+            log_debug(f"THM: No width_exceed_char_highlights in list to clear.")
+
 
     def clearAllProblemHighlights(self):
         needs_update = bool(self._critical_problem_selections) or \
-                       bool(self._warning_problem_selections)
+                       bool(self._warning_problem_selections) 
+        
         self._critical_problem_selections = []
         self._warning_problem_selections = []
+        
+        # _width_exceed_char_selections are managed by paintEvent's cycle
+        # If this method is called for other reasons, ensure it's also cleared.
+        if self._width_exceed_char_selections:
+            self._width_exceed_char_selections = []
+            needs_update = True
+
         if needs_update: self.applyHighlights()
         
     def clearAllHighlights(self):
@@ -260,4 +312,5 @@ class TextHighlightManager:
         self._preview_selected_line_selections = []
         self._tag_interaction_selections = []
         self._search_match_selections = []
+        self._width_exceed_char_selections = [] 
         self.applyHighlights()

@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (QPlainTextEdit, QMainWindow, QMenu, QApplication, QAction, 
                              QWidget, QHBoxLayout, QPushButton, QWidgetAction) 
-from PyQt5.QtGui import (QPainter, QFont, QPaintEvent, QKeyEvent, QKeySequence, QMouseEvent, QIcon, QPixmap, QColor) 
+from PyQt5.QtGui import (QPainter, QFont, QPaintEvent, QKeyEvent, QKeySequence, QMouseEvent, QIcon, QPixmap, QColor, QTextLine) 
 from PyQt5.QtCore import Qt, QRect, QSize, QRectF, pyqtSignal
 
 from .LineNumberArea import LineNumberArea
@@ -19,8 +19,8 @@ from .LNET_constants import (
     PREVIEW_SELECTED_LINE_COLOR, CRITICAL_PROBLEM_LINE_COLOR,
     WARNING_PROBLEM_LINE_COLOR, TAG_INTERACTION_HIGHLIGHT_COLOR,
     SEARCH_MATCH_HIGHLIGHT_COLOR, WIDTH_EXCEEDED_LINE_COLOR, SHORT_LINE_COLOR,
-    CHARACTER_LIMIT_LINE_POSITION, CHARACTER_LIMIT_LINE_COLOR,
-    CHARACTER_LIMIT_LINE_WIDTH
+    CHARACTER_LIMIT_LINE_POSITION, CHARACTER_LIMIT_LINE_COLOR, CHARACTER_LIMIT_LINE_STYLE, CHARACTER_LIMIT_LINE_WIDTH,
+    WIDTH_THRESHOLD_LINE_COLOR, WIDTH_THRESHOLD_LINE_STYLE, WIDTH_THRESHOLD_LINE_WIDTH
 )
 from .LNET_mouse_handlers import LNETMouseHandlers
 from .LNET_highlight_interface import LNETHighlightInterface
@@ -45,10 +45,11 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.warning_problem_line_color = WARNING_PROBLEM_LINE_COLOR
         self.tag_interaction_highlight_color = TAG_INTERACTION_HIGHLIGHT_COLOR
         self.search_match_highlight_color = SEARCH_MATCH_HIGHLIGHT_COLOR
-        self.width_exceeded_line_color = WIDTH_EXCEEDED_LINE_COLOR
-        self.short_line_color = SHORT_LINE_COLOR
+        self.width_exceeded_line_color = WIDTH_EXCEEDED_LINE_COLOR 
+        self.short_line_color = SHORT_LINE_COLOR 
 
         self.highlightManager = TextHighlightManager(self)
+        log_debug(f"LNET ({self.objectName()}): highlightManager created. Has 'clear_width_exceed_char_highlights': {hasattr(self.highlightManager, 'clear_width_exceed_char_highlights')}")
         self.mouse_handler = LNETMouseHandlers(self) 
         self.highlight_interface = LNETHighlightInterface(self)
         self.paint_handler = LNETPaintHandlers(self)
@@ -79,7 +80,13 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
         self.character_limit_line_position = CHARACTER_LIMIT_LINE_POSITION
         self.character_limit_line_color = CHARACTER_LIMIT_LINE_COLOR
+        self.character_limit_line_style = CHARACTER_LIMIT_LINE_STYLE
         self.character_limit_line_width = CHARACTER_LIMIT_LINE_WIDTH
+        
+        self.width_threshold_line_color = WIDTH_THRESHOLD_LINE_COLOR
+        self.width_threshold_line_style = WIDTH_THRESHOLD_LINE_STYLE
+        self.width_threshold_line_width = WIDTH_THRESHOLD_LINE_WIDTH
+
 
         self.editor_player_tag = EDITOR_PLAYER_TAG_CONST
         self.original_player_tag = ORIGINAL_PLAYER_TAG_CONST
@@ -93,6 +100,8 @@ class LineNumberedTextEdit(QPlainTextEdit):
             self.font_map = getattr(parent, 'font_map', {})
             self.GAME_DIALOG_MAX_WIDTH_PIXELS = getattr(parent, 'GAME_DIALOG_MAX_WIDTH_PIXELS', DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS)
             self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = getattr(parent, 'LINE_WIDTH_WARNING_THRESHOLD_PIXELS', DEFAULT_LINE_WIDTH_WARNING_THRESHOLD)
+            self.character_limit_line_position = getattr(parent, 'editor_char_limit_line_pos', CHARACTER_LIMIT_LINE_POSITION)
+
 
         self._update_auxiliary_widths()
 
@@ -164,7 +173,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
                 clicked_data_line_number = clicked_cursor_obj.blockNumber()
 
                 if current_block_idx_data >= 0 and clicked_data_line_number >= 0:
-                    actions_for_preview_added = False
                     if not custom_actions_added_header:
                         menu.addSeparator()
                         custom_actions_added_header = True 
@@ -267,30 +275,38 @@ class LineNumberedTextEdit(QPlainTextEdit):
     def updateLineNumberAreaWidth(self, _):
         new_width = self.lineNumberAreaWidth()
         self.setViewportMargins(new_width, 0, 0, 0)
-        self.lineNumberArea.updateGeometry()
-        self.lineNumberArea.update()
+        if hasattr(self, 'lineNumberArea'): # Check before accessing
+            self.lineNumberArea.updateGeometry()
+            self.lineNumberArea.update()
 
     def updateLineNumberArea(self, rect: QRectF, dy: int):
-        if dy: self.lineNumberArea.scroll(0, dy)
-        else: self.lineNumberArea.update(0, 0, self.lineNumberArea.width(), self.lineNumberArea.height())
+        if hasattr(self, 'lineNumberArea'): # Check before accessing
+            if dy: self.lineNumberArea.scroll(0, dy)
+            else: self.lineNumberArea.update(0, 0, self.lineNumberArea.width(), self.lineNumberArea.height())
         if self.isVisible():
             self.updateLineNumberAreaWidth(0)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
         cr = self.contentsRect()
-        self.lineNumberArea.setGeometry(QRect(cr.left(), cr.top(), self.lineNumberAreaWidth(), cr.height()))
+        if hasattr(self, 'lineNumberArea'): # Check before accessing
+            self.lineNumberArea.setGeometry(QRect(cr.left(), cr.top(), self.lineNumberAreaWidth(), cr.height()))
         if self.isVisible():
             self.viewport().update()
 
     def paintEvent(self, event: QPaintEvent):
-        self.paint_handler.paintEvent(event)
+        if hasattr(self, 'paint_handler') and self.paint_handler: # Check before calling
+            self.paint_handler.paintEvent(event)
+        else:
+            super().paintEvent(event) # Fallback if paint_handler is not yet initialized
 
     def super_paintEvent(self, event: QPaintEvent):
         super().paintEvent(event)
 
     def lineNumberAreaPaintEvent(self, event, painter_device):
-        self.paint_handler.lineNumberAreaPaintEvent(event, painter_device)
+        if hasattr(self, 'paint_handler') and self.paint_handler: # Check before calling
+            self.paint_handler.lineNumberAreaPaintEvent(event, painter_device)
+        # No super call here as this is specific to our LineNumberArea
 
     def mousePressEvent(self, event: QMouseEvent):
         self.mouse_handler.mousePressEvent(event) 
