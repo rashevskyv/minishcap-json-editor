@@ -128,6 +128,7 @@ class MainWindow(QMainWindow):
         self.check_tags_action = None
         self.main_vertical_layout = None
         self.font_size_spinbox = None
+        self.auto_fix_button = None
         
         self.status_label_part1: QLabel = None
         self.status_label_part2: QLabel = None
@@ -360,6 +361,8 @@ class MainWindow(QMainWindow):
             self.font_size_spinbox.valueChanged.connect(self.change_font_size_action)
         if hasattr(self, 'check_tags_action') and self.check_tags_action:
             self.check_tags_action.triggered.connect(self.trigger_check_tags_action)
+        if hasattr(self, 'auto_fix_button') and self.auto_fix_button:
+            self.auto_fix_button.clicked.connect(self.editor_operation_handler.auto_fix_current_string)
 
 
         log_debug("--> MainWindow: connect_signals() finished")
@@ -384,7 +387,7 @@ class MainWindow(QMainWindow):
 
         editor_widgets = [self.preview_text_edit, self.original_text_edit, self.edited_text_edit]
         general_ui_widgets = [
-            self.block_list_widget, self.search_panel_widget, self.statusBar
+            self.block_list_widget, self.search_panel_widget, self.statusBar, self.auto_fix_button
         ]
 
         labels_in_status_bar = [self.original_path_label, self.edited_path_label, 

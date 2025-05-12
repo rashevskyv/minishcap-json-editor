@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QMessageBox, QApplication
 from PyQt5.QtGui import QTextCursor, QTextBlock
 from PyQt5.QtCore import QTimer
 from .base_handler import BaseHandler
-from utils.utils import log_debug, convert_dots_to_spaces_from_editor, convert_spaces_to_dots_for_display, calculate_string_width, remove_all_tags, SPACE_DOT_SYMBOL
+from utils.utils import log_debug, convert_dots_to_spaces_from_editor, convert_spaces_to_dots_for_display, calculate_string_width, remove_all_tags, SPACE_DOT_SYMBOL, ALL_TAGS_PATTERN
 from core.tag_utils import apply_default_mappings_only, analyze_tags_for_issues, \
                       process_segment_tags_aggressively, \
                       TAG_STATUS_OK, TAG_STATUS_CRITICAL, \
@@ -98,7 +98,7 @@ class TextOperationHandler(BaseHandler):
             first_word_next_width = calculate_string_width(first_word_next_sub_line, self.mw.font_map)
             if first_word_next_width > 0:
                 current_sub_line_pixel_width = calculate_string_width(remove_all_tags(current_sub_line_text), self.mw.font_map)
-                remaining_width = self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS - current_sub_line_pixel_width
+                remaining_width = self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS - current_sub_line_pixel_width
                 if remaining_width >= (first_word_next_width + space_width):
                     return True 
         return False
@@ -131,7 +131,7 @@ class TextOperationHandler(BaseHandler):
         sub_lines = str(data_string_text).split('\n')
         
         has_problem = False
-        if len(sub_lines) > 1: # Проблема може існувати тільки якщо є більше одного підрядка
+        if len(sub_lines) > 1: 
             for i, sub_line_text in enumerate(sub_lines):
                 is_odd_subline = (i + 1) % 2 != 0
                 if is_odd_subline:
@@ -451,9 +451,9 @@ class TextOperationHandler(BaseHandler):
                         if first_word_next_sub_line_calc:
                             first_word_next_line_width_calc = calculate_string_width(first_word_next_sub_line_calc, self.mw.font_map)
                             if first_word_next_line_width_calc > 0:
-                                remaining_width_calc = max_allowed_width - width_px
+                                remaining_width_calc = warning_threshold - width_px 
                                 if remaining_width_calc >= (first_word_next_line_width_calc + space_width):
-                                    short_status = f"SHORT (can fit {first_word_next_line_width_calc + space_width}px, has {remaining_width_calc}px)"
+                                    short_status = f"SHORT (can fit {first_word_next_line_width_calc + space_width}px into {warning_threshold}px, has {remaining_width_calc}px left)"
             
             is_odd_subline_report = (i + 1) % 2 != 0
             is_empty_or_zero_report = not sub_line_no_tags.strip() or sub_line_no_tags.strip() == "0"
@@ -484,9 +484,9 @@ class TextOperationHandler(BaseHandler):
                         if first_word_next_original_sub_line_calc:
                             first_word_next_original_line_width_calc = calculate_string_width(first_word_next_original_sub_line_calc, self.mw.font_map)
                             if first_word_next_original_line_width_calc > 0:
-                                remaining_width_orig_calc = max_allowed_width - width_px
+                                remaining_width_orig_calc = warning_threshold - width_px 
                                 if remaining_width_orig_calc >= (first_word_next_original_line_width_calc + space_width):
-                                    short_status_orig = f"SHORT (can fit {first_word_next_original_line_width_calc+space_width}px, has {remaining_width_orig_calc}px)"
+                                    short_status_orig = f"SHORT (can fit {first_word_next_original_line_width_calc+space_width}px into {warning_threshold}px, has {remaining_width_orig_calc}px left)"
             
             is_odd_subline_report_orig = (i + 1) % 2 != 0
             is_empty_or_zero_report_orig = not sub_line_no_tags.strip() or sub_line_no_tags.strip() == "0"
@@ -498,3 +498,308 @@ class TextOperationHandler(BaseHandler):
 
         QMessageBox.information(self.mw, "Line Width Calculation", "\n".join(info_parts))
         log_debug(f"<-- TextOperationHandler: calculate_width_for_data_line_action finished.")
+
+    def _fix_empty_odd_sublines(self, text: str) -> str:
+        sub_lines = text.split('\n')
+        if len(sub_lines) <= 1:
+            return text
+
+        new_sub_lines = []
+        for i, sub_line in enumerate(sub_lines):
+            is_odd_subline = (i + 1) % 2 != 0
+            text_no_tags = remove_all_tags(sub_line)
+            stripped_text_no_tags = text_no_tags.strip()
+            is_empty_or_zero = not stripped_text_no_tags or stripped_text_no_tags == "0"
+
+            if is_odd_subline and is_empty_or_zero and len(sub_lines) > 1 :
+                continue
+            new_sub_lines.append(sub_line)
+        
+        if text and not new_sub_lines:
+             return "" 
+        
+        joined_text = "\n".join(new_sub_lines)
+        return joined_text
+
+    def _extract_first_word_with_tags(self, text: str) -> tuple[str, str]:
+        if not text.strip():
+            return "", text 
+
+        first_word_text = ""
+        remaining_text = text
+        
+        char_idx = 0
+        while char_idx < len(text):
+            char = text[char_idx]
+            if char.isspace():
+                if first_word_text: 
+                    break
+                else: 
+                    first_word_text += char
+                    char_idx += 1
+                    continue
+            
+            is_tag_char = False
+            for tag_match in ALL_TAGS_PATTERN.finditer(text[char_idx:]):
+                if tag_match.start() == 0: 
+                    tag_content = tag_match.group(0)
+                    first_word_text += tag_content
+                    char_idx += len(tag_content)
+                    is_tag_char = True
+                    break
+            
+            if is_tag_char:
+                continue
+
+            first_word_text += char
+            char_idx += 1
+
+        remaining_text = text[len(first_word_text):].lstrip()
+        return first_word_text.rstrip(), remaining_text
+
+
+    def _fix_short_lines(self, text: str) -> str:
+        sub_lines = text.split('\n')
+        if len(sub_lines) <= 1:
+            return text
+
+        made_change_in_this_fix_pass = True 
+        while made_change_in_this_fix_pass:
+            made_change_in_this_fix_pass = False
+            new_sub_lines = list(sub_lines) 
+            i = len(new_sub_lines) - 2 
+            while i >= 0:
+                current_line = new_sub_lines[i]
+                next_line = new_sub_lines[i+1]
+
+                current_line_no_tags_stripped = remove_all_tags(current_line).strip()
+                if not current_line_no_tags_stripped or current_line_no_tags_stripped.endswith(('.', '!', '?')):
+                    i -= 1
+                    continue
+
+                first_word_next_raw, rest_of_next_line_raw = self._extract_first_word_with_tags(next_line)
+                first_word_next_no_tags = remove_all_tags(first_word_next_raw).strip()
+
+                if not first_word_next_no_tags:
+                    i -= 1
+                    continue
+                
+                width_current_line_rstripped = calculate_string_width(remove_all_tags(current_line.rstrip()), self.mw.font_map)
+                width_first_word_next = calculate_string_width(first_word_next_no_tags, self.mw.font_map)
+                space_width = calculate_string_width(" ", self.mw.font_map)
+                
+                if width_current_line_rstripped + space_width + width_first_word_next <= self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
+                    new_current_line_parts = [current_line.rstrip()]
+                    if current_line and current_line[-1] != ' ': 
+                        new_current_line_parts.append(" ")
+                    new_current_line_parts.append(first_word_next_raw)
+                    
+                    new_sub_lines[i] = "".join(new_current_line_parts)
+                    new_sub_lines[i+1] = rest_of_next_line_raw
+
+                    if not new_sub_lines[i+1].strip(): 
+                        del new_sub_lines[i+1]
+                    
+                    made_change_in_this_fix_pass = True
+                    sub_lines = list(new_sub_lines) 
+                    break 
+                i -= 1
+            
+            if not made_change_in_this_fix_pass:
+                break 
+                
+        return "\n".join(sub_lines)
+
+    def _extract_last_word_with_tags(self, text: str) -> tuple[str, str]:
+        if not text.strip():
+            return text, ""
+
+        words_and_tags = []
+        current_segment = ""
+        for char_idx, char in enumerate(text):
+            current_segment += char
+            # Перевіряємо, чи не починається тег з поточної позиції (зворотній пошук ускладнений)
+            # Тому будемо розбивати за пробілами, а потім аналізувати кінцівку кожного "слова"
+        
+        # Розділяємо за пробілами, але зберігаємо їх, щоб відновити рядок
+        parts = re.split(r'(\s+)', text) 
+        
+        last_word_with_tags = ""
+        elements_for_last_word = []
+
+        # Йдемо з кінця parts, збираючи не-пробільні частини до першого "справжнього" слова
+        temp_last_word_buffer = []
+        found_actual_char_in_buffer = False
+
+        for k in range(len(parts) -1, -1, -1):
+            part = parts[k]
+            if not part: continue # Пропускаємо порожні частини, якщо такі є
+
+            if part.isspace():
+                if found_actual_char_in_buffer: # Якщо ми вже знайшли символи слова, і наступний елемент - пробіл, то слово закінчилося
+                    break
+                else: # Якщо це кінцеві пробіли або пробіли між тегами в кінці
+                    temp_last_word_buffer.insert(0,part)
+            else: # Це не пробільна частина
+                temp_last_word_buffer.insert(0,part)
+                # Перевіримо, чи є в цій частині символи, що не є тегами
+                if remove_all_tags(part):
+                    found_actual_char_in_buffer = True
+        
+        last_word_with_tags = "".join(temp_last_word_buffer)
+        
+        # Визначаємо, де починається текст, що НЕ є останнім словом
+        if last_word_with_tags:
+            start_index_of_last_word_segment = text.rfind(last_word_with_tags)
+            # Переконуємось, що знайшли правильне входження (для випадків коли слово повторюється)
+            # Це спрощення, може бути неточним, якщо структура складна
+            # Більш надійний спосіб - відбудовувати рядок без останнього слова з parts
+            
+            num_parts_for_last_word = len(temp_last_word_buffer)
+            remaining_parts_count = len(parts) - num_parts_for_last_word
+            
+            text_before_last_word = "".join(parts[:remaining_parts_count])
+            
+            return text_before_last_word.rstrip(), last_word_with_tags.lstrip()
+        else: # Якщо весь рядок - це пробіли або порожній
+            return text, ""
+
+
+    def _fix_width_exceeded(self, text: str) -> str:
+        sub_lines = text.split('\n')
+        made_change_overall = False
+        
+        new_full_text_lines = []
+
+        for line_idx, current_line_text in enumerate(sub_lines):
+            current_processing_line = current_line_text
+            temp_newly_created_lines_for_this_original_line = []
+
+            while True: 
+                line_width_no_tags = calculate_string_width(remove_all_tags(current_processing_line), self.mw.font_map)
+
+                if line_width_no_tags <= self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
+                    if current_processing_line or not temp_newly_created_lines_for_this_original_line: # Додаємо, якщо не порожній або якщо це єдиний залишок
+                        temp_newly_created_lines_for_this_original_line.append(current_processing_line)
+                    break 
+
+                made_change_overall = True
+                
+                text_fits = ""
+                text_overflows = ""
+                
+                # Розбиваємо рядок на слова та теги
+                # Використовуємо регулярний вираз, щоб знайти або тег, або послідовність не-пробільних символів (слово)
+                # або послідовність пробільних символів.
+                line_parts = re.findall(r'(\{[^}]*\}|\[[^\]]*\]|\S+|\s+)', current_processing_line)
+
+                current_temp_width = 0
+                last_fit_index = -1
+
+                for i, part in enumerate(line_parts):
+                    part_no_tags = remove_all_tags(part)
+                    part_width = calculate_string_width(part_no_tags, self.mw.font_map)
+                    
+                    if part.isspace() and text_fits.endswith(" "): # Уникаємо подвійних пробілів на кінці
+                        can_add_part = True
+                    elif part.isspace():
+                         can_add_part = (current_temp_width + part_width <= self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS)
+                    else: # Слово або тег
+                        # Якщо це не перший елемент і попередній не був пробілом, і поточний не пробіл - потрібен пробіл
+                        needs_space_before = text_fits and not text_fits.endswith(" ") and not part.isspace()
+                        space_width_if_needed = calculate_string_width(" ", self.mw.font_map) if needs_space_before else 0
+                        
+                        can_add_part = (current_temp_width + space_width_if_needed + part_width <= self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS)
+
+                    if can_add_part:
+                        if needs_space_before:
+                            text_fits += " "
+                            current_temp_width += space_width_if_needed
+                        text_fits += part
+                        current_temp_width += part_width
+                        last_fit_index = i
+                    else:
+                        break 
+                
+                if last_fit_index != -1:
+                    text_overflows = "".join(line_parts[last_fit_index + 1:]).lstrip()
+                    temp_newly_created_lines_for_this_original_line.append(text_fits.rstrip())
+                    current_processing_line = text_overflows
+                    if not text_overflows: # Якщо перенесли все, виходимо
+                        break
+                else: # Не вдалося вмістити навіть перше слово/тег (дуже малоймовірно, якщо поріг адекватний)
+                    # У цьому випадку, щоб уникнути нескінченного циклу, просто додаємо як є і переходимо
+                    temp_newly_created_lines_for_this_original_line.append(current_processing_line)
+                    break
+            
+            new_full_text_lines.extend(temp_newly_created_lines_for_this_original_line)
+
+        if made_change_overall:
+            return "\n".join(new_full_text_lines)
+        return text
+        
+    def auto_fix_current_string(self):
+        log_debug(f"TextOperationHandler.auto_fix_current_string: Called.")
+        if self.mw.current_block_idx == -1 or self.mw.current_string_idx == -1:
+            QMessageBox.information(self.mw, "Auto-fix", "No string selected to fix.")
+            return
+
+        block_idx = self.mw.current_block_idx
+        string_idx = self.mw.current_string_idx
+        
+        current_text, _ = self.data_processor.get_current_string_text(block_idx, string_idx)
+        
+        modified_text = str(current_text)
+        max_iterations = 10 
+        iterations = 0
+        made_change_in_pass = True
+
+        while made_change_in_pass and iterations < max_iterations:
+            made_change_in_pass = False
+            iterations += 1
+            log_debug(f"Auto-fix: Iteration {iterations} for string {block_idx}-{string_idx}")
+
+            text_before_this_pass = str(modified_text)
+
+            temp_text_after_empty_fix = self._fix_empty_odd_sublines(modified_text)
+            if temp_text_after_empty_fix != modified_text:
+                log_debug(f"  Change after empty_odd_fix: '{modified_text[:50]}' -> '{temp_text_after_empty_fix[:50]}'")
+                modified_text = temp_text_after_empty_fix
+            
+            temp_text_after_short_fix = self._fix_short_lines(modified_text)
+            if temp_text_after_short_fix != modified_text:
+                log_debug(f"  Change after short_fix: '{modified_text[:50]}' -> '{temp_text_after_short_fix[:50]}'")
+                modified_text = temp_text_after_short_fix
+            
+            # Застосовуємо _fix_width_exceeded останнім у кожній ітерації
+            temp_text_after_width_fix = self._fix_width_exceeded(modified_text)
+            if temp_text_after_width_fix != modified_text:
+                log_debug(f"  Change after width_fix: '{modified_text[:50]}' -> '{temp_text_after_width_fix[:50]}'")
+                modified_text = temp_text_after_width_fix
+            
+            if text_before_this_pass != modified_text:
+                made_change_in_pass = True
+        
+        if iterations == max_iterations and made_change_in_pass:
+            log_debug("Auto-fix: Max iterations reached, potential complex case or loop.")
+            QMessageBox.warning(self.mw, "Auto-fix", "Auto-fix reached maximum iterations. Result might be incomplete.")
+
+        final_text_to_apply = modified_text
+        
+        if final_text_to_apply != current_text:
+            if self.data_processor.update_edited_data(block_idx, string_idx, final_text_to_apply):
+                self.ui_updater.update_title()
+            
+            self.mw.is_programmatically_changing_text = True
+            self.ui_updater.update_text_views() 
+            self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False)
+            self.ui_updater.populate_strings_for_block(block_idx) 
+            self.mw.is_programmatically_changing_text = False
+            
+            if hasattr(self.mw, 'statusBar'):
+                self.mw.statusBar.showMessage("Auto-fix applied to current string.", 2000)
+        else:
+            if hasattr(self.mw, 'statusBar'):
+                self.mw.statusBar.showMessage("Auto-fix: No changes made.", 2000)
+                
+        log_debug(f"TextOperationHandler.auto_fix_current_string: Finished.")
