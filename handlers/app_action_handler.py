@@ -23,9 +23,9 @@ class AppActionHandler(BaseHandler):
     def _get_first_word_width(self, text: str) -> int:
         if not text:
             return 0
-        stripped_text = remove_all_tags(text.lstrip()) # lstrip for first word
+        stripped_text = remove_all_tags(text.lstrip()) 
         first_word = stripped_text.split(maxsplit=1)[0] if stripped_text else ""
-        return calculate_string_width(first_word, self.mw.font_map) # first_word is already tagless
+        return calculate_string_width(first_word, self.mw.font_map) 
 
     def _perform_issues_scan_for_block(self, block_idx: int, is_single_block_scan: bool = False, use_default_mappings_in_scan: bool = False) -> tuple[int, int, int, int, bool]:
         if not (0 <= block_idx < len(self.mw.data)):
@@ -76,7 +76,7 @@ class AppActionHandler(BaseHandler):
                         line_exceeds_width_flag = True
 
                     if sub_line_idx < len(sub_lines) - 1:
-                        current_sub_line_clean_stripped = remove_all_tags(sub_line_text).strip() # .strip() for sentence end check
+                        current_sub_line_clean_stripped = remove_all_tags(sub_line_text).strip() 
                         if not current_sub_line_clean_stripped:
                             continue 
                         if current_sub_line_clean_stripped.endswith(sentence_end_chars):
@@ -91,9 +91,8 @@ class AppActionHandler(BaseHandler):
                         if not first_word_next_sub_line:
                             continue
                         
-                        first_word_next_width = calculate_string_width(first_word_next_sub_line, self.mw.font_map) # Already tagless
+                        first_word_next_width = calculate_string_width(first_word_next_sub_line, self.mw.font_map) 
                         if first_word_next_width > 0:
-                            # Use rstripped width for remaining_width calculation
                             remaining_width = max_width_for_short_check - pixel_width_current_sub 
                             if remaining_width >= (first_word_next_width + space_width):
                                 data_string_is_short_flag = True
@@ -126,8 +125,13 @@ class AppActionHandler(BaseHandler):
             self.ui_updater.update_block_item_text_with_problem_count(block_idx)
         
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
-        if is_single_block_scan and self.mw.current_block_idx == block_idx and preview_edit:
-            self.ui_updater.populate_strings_for_block(block_idx)
+        edited_edit = getattr(self.mw, 'edited_text_edit', None)
+
+        if is_single_block_scan and self.mw.current_block_idx == block_idx:
+            if preview_edit:
+                self.ui_updater.populate_strings_for_block(block_idx) 
+            if edited_edit and hasattr(self.ui_updater, '_apply_empty_odd_subline_highlights_to_edited_text'):
+                self.ui_updater._apply_empty_odd_subline_highlights_to_edited_text()
         
         return len(current_block_critical_indices), len(current_block_warning_indices), len(current_block_width_exceeded_indices), len(current_block_short_line_indices), changes_made_to_edited_data_in_this_block
 
@@ -147,6 +151,14 @@ class AppActionHandler(BaseHandler):
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         if preview_edit and hasattr(preview_edit, 'clearAllProblemTypeHighlights'):
             preview_edit.clearAllProblemTypeHighlights()
+
+        edited_edit = getattr(self.mw, 'edited_text_edit', None)
+        if edited_edit:
+            if hasattr(edited_edit, 'clearAllProblemTypeHighlights'):
+                edited_edit.clearAllProblemTypeHighlights()
+            if hasattr(edited_edit, 'clearEmptyOddSublineHighlights'):
+                edited_edit.clearEmptyOddSublineHighlights()
+        
         if hasattr(self.ui_updater, 'clear_all_problem_block_highlights_and_text'):
              self.ui_updater.clear_all_problem_block_highlights_and_text()
 
@@ -468,7 +480,7 @@ class AppActionHandler(BaseHandler):
                 if width_px > editor_warning_threshold: editor_status = f"EXCEEDS EDITOR THRESHOLD ({width_px - editor_warning_threshold}px)"
                 
                 if len(current_data_string_sub_lines) > 1 and j < len(current_data_string_sub_lines) - 1:
-                    current_sub_line_clean_stripped_rpt = remove_all_tags(sub_line).strip() # For sentence end check, .strip() is fine
+                    current_sub_line_clean_stripped_rpt = remove_all_tags(sub_line).strip() 
                     if current_sub_line_clean_stripped_rpt and not current_sub_line_clean_stripped_rpt.endswith(sentence_end_chars):
                         next_sub_line_text_rpt = current_data_string_sub_lines[j+1]
                         next_sub_line_clean_stripped_rpt = remove_all_tags(next_sub_line_text_rpt).strip()
@@ -477,7 +489,7 @@ class AppActionHandler(BaseHandler):
                             if first_word_next_sub_line_rpt:
                                 first_word_next_width_rpt = calculate_string_width(first_word_next_sub_line_rpt, self.mw.font_map)
                                 if first_word_next_width_rpt > 0:
-                                    remaining_width_rpt = max_width_for_short_check_report - width_px # width_px is rstripped here
+                                    remaining_width_rpt = max_width_for_short_check_report - width_px 
                                     if remaining_width_rpt >= (first_word_next_width_rpt + space_width):
                                         short_status = f"SHORT (can fit {first_word_next_width_rpt+space_width}px into {max_width_for_short_check_report}px, has {remaining_width_rpt}px left)"
                 

@@ -92,6 +92,55 @@ class UIUpdater:
         
         self.mw.block_list_widget.viewport().update()
 
+    def _apply_empty_odd_subline_highlights_to_edited_text(self):
+        edited_edit = getattr(self.mw, 'edited_text_edit', None)
+        if not edited_edit or not hasattr(edited_edit, 'document'):
+            log_debug("UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: No edited_edit or document.")
+            return
+
+        log_debug("UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...")
+        if hasattr(edited_edit, 'clearEmptyOddSublineHighlights'):
+            log_debug("  Clearing previous empty odd subline highlights.")
+            edited_edit.clearEmptyOddSublineHighlights()
+
+        doc = edited_edit.document()
+        block = doc.firstBlock()
+        qtextblock_index = 0
+        highlights_applied_this_run = False
+        while block.isValid():
+            text = block.text()
+            text_with_spaces = convert_dots_to_spaces_from_editor(text) if self.mw.show_multiple_spaces_as_dots else text
+            text_no_tags = remove_all_tags(text_with_spaces)
+            
+            stripped_text_no_tags = text_no_tags.strip()
+            is_empty = not stripped_text_no_tags or stripped_text_no_tags == "0"
+            
+            is_odd_qtextblock = (qtextblock_index + 1) % 2 != 0
+
+            log_debug(f"  QTextBlock {qtextblock_index}: Text='{text[:30]}...', NoTagsStripped='{stripped_text_no_tags}', IsEmpty={is_empty}, IsOdd={is_odd_qtextblock}")
+
+            if is_empty and is_odd_qtextblock:
+                if hasattr(edited_edit, 'addEmptyOddSublineHighlight'):
+                    log_debug(f"    Highlighting QTextBlock {qtextblock_index} (BlockNum: {block.blockNumber()}) as empty odd.")
+                    edited_edit.addEmptyOddSublineHighlight(block.blockNumber())
+                    highlights_applied_this_run = True
+            
+            block = block.next()
+            qtextblock_index += 1
+        
+        if highlights_applied_this_run:
+            log_debug("  At least one empty odd subline highlight was added.")
+        else:
+            log_debug("  No empty odd subline highlights were added in this run.")
+
+        if hasattr(edited_edit, 'applyQueuedHighlights'):
+            log_debug("  Calling applyQueuedHighlights on edited_edit.")
+            edited_edit.applyQueuedHighlights()
+        elif hasattr(edited_edit, 'highlightManager') and hasattr(edited_edit.highlightManager, 'applyHighlights'):
+            log_debug("  Calling highlightManager.applyHighlights on edited_edit.")
+            edited_edit.highlightManager.applyHighlights()
+        log_debug("UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.")
+
 
     def populate_strings_for_block(self, block_idx):
         log_debug(f"UIUpdater: populate_strings_for_block for block_idx: {block_idx}. Current string_idx: {self.mw.current_string_idx}")
@@ -114,11 +163,15 @@ class UIUpdater:
         self.mw.is_programmatically_changing_text = True 
         
         editors_to_clear_and_update_LNA = [preview_edit, original_edit, edited_edit]
-        for editor_widget_loop in editors_to_clear_and_update_LNA: # Renamed loop variable
-            if editor_widget_loop and hasattr(editor_widget_loop, 'clearAllProblemTypeHighlights'):
-                editor_widget_loop.clearAllProblemTypeHighlights()
-            if editor_widget_loop and hasattr(editor_widget_loop, 'clearPreviewSelectedLineHighlight') and editor_widget_loop == preview_edit:
-                 editor_widget_loop.clearPreviewSelectedLineHighlight()
+        for editor_widget_loop in editors_to_clear_and_update_LNA: 
+            if editor_widget_loop:
+                if hasattr(editor_widget_loop, 'clearAllProblemTypeHighlights'):
+                    editor_widget_loop.clearAllProblemTypeHighlights()
+                if hasattr(editor_widget_loop, 'clearEmptyOddSublineHighlights') and editor_widget_loop == edited_edit:
+                    log_debug(f"  populate_strings_for_block: Clearing empty odd subline highlights for {edited_edit.objectName()}")
+                    editor_widget_loop.clearEmptyOddSublineHighlights()
+                if hasattr(editor_widget_loop, 'clearPreviewSelectedLineHighlight') and editor_widget_loop == preview_edit:
+                    editor_widget_loop.clearPreviewSelectedLineHighlight()
 
 
         preview_lines = []
@@ -307,8 +360,11 @@ class UIUpdater:
 
             
     def update_text_views(self): 
-        is_programmatic_call_flag = self.mw.is_programmatically_changing_text
-        log_debug(f"UIUpdater.update_text_views: Called. Programmatic: {is_programmatic_call_flag}. Current block: {self.mw.current_block_idx}, string: {self.mw.current_string_idx}")
+        is_programmatic_call_flag_original = self.mw.is_programmatically_changing_text
+        log_debug(f"UIUpdater.update_text_views: Called. Programmatic: {is_programmatic_call_flag_original}. Current block: {self.mw.current_block_idx}, string: {self.mw.current_string_idx}")
+        
+        self.mw.is_programmatically_changing_text = True
+
         original_text_raw = ""
         edited_text_raw = ""
         if self.mw.current_block_idx != -1 and self.mw.current_string_idx != -1:
@@ -321,6 +377,7 @@ class UIUpdater:
                 original_text_raw = "[ORIGINAL DATA ERROR]"
             edited_text_raw, _ = self.data_processor.get_current_string_text(self.mw.current_block_idx, self.mw.current_string_idx)
         else: log_debug("  No active block/string selected. Text views will be cleared.")
+        
         original_text_for_display = convert_spaces_to_dots_for_display(str(original_text_raw), self.mw.show_multiple_spaces_as_dots)
         edited_text_for_display_converted = convert_spaces_to_dots_for_display(str(edited_text_raw), self.mw.show_multiple_spaces_as_dots)
         
@@ -339,11 +396,14 @@ class UIUpdater:
             else:
                 log_debug(f"UIUpdater: update_text_views - Content for {orig_edit.objectName()} matches. No setPlainText needed.")
 
-
         edited_widget = self.mw.edited_text_edit
         if edited_widget:
+            if hasattr(edited_widget, 'clearEmptyOddSublineHighlights'):
+                log_debug(f"  update_text_views: Clearing empty odd subline highlights for {edited_widget.objectName()} before setPlainText.")
+                edited_widget.clearEmptyOddSublineHighlights()
+
             if edited_widget.toPlainText() != edited_text_for_display_converted:
-                log_debug(f"UIUpdater: update_text_views - Content mismatch for {edited_widget.objectName()}. Updating. Programmatic context: {is_programmatic_call_flag}")
+                log_debug(f"UIUpdater: update_text_views - Content mismatch for {edited_widget.objectName()}. Updating.")
                 saved_edited_cursor_pos = edited_widget.textCursor().position()
                 saved_edited_anchor_pos = edited_widget.textCursor().anchor()
                 saved_edited_has_selection = edited_widget.textCursor().hasSelection()
@@ -360,12 +420,16 @@ class UIUpdater:
                 edited_widget.setTextCursor(restored_cursor)
             else:
                  log_debug(f"UIUpdater: update_text_views - Content for {edited_widget.objectName()} matches. No setPlainText needed.")
+            
+            log_debug(f"  update_text_views: Calling _apply_empty_odd_subline_highlights_to_edited_text for {edited_widget.objectName()}.")
+            self._apply_empty_odd_subline_highlights_to_edited_text()
 
-        # Ensure status bar is updated based on the final state of edited_widget
-        if self.mw.edited_text_edit: # Check if it exists
+        self.mw.is_programmatically_changing_text = is_programmatic_call_flag_original
+
+        if self.mw.edited_text_edit: 
             if self.mw.edited_text_edit.textCursor().hasSelection():
                 self.update_status_bar_selection()
             else:
                 self.update_status_bar()
-        else: # Fallback if edited_text_edit is None for some reason
+        else: 
             self.clear_status_bar()

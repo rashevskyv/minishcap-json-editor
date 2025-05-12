@@ -1,475 +1,634 @@
-Log started at 2025-05-12 02:59:46.562
+Log started at 2025-05-12 03:57:02.037
 ==================================================
-[2025-05-12 02:59:46.581] DEBUG: ================= Application Start =================
-[2025-05-12 02:59:46.594] DEBUG: ++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++
-[2025-05-12 02:59:46.594] DEBUG: MainWindow: Initializing Core Components...
-[2025-05-12 02:59:46.595] DEBUG: MainWindow: Initializing Handlers (Pre-UI setup)...
-2025-05-12 02:59:46,595 - DEBUG - logging_utils - log_debug - Handler 'ListSelectionHandler' initialized.
-2025-05-12 02:59:46,595 - DEBUG - logging_utils - log_debug - Handler 'TextOperationHandler' initialized.
-2025-05-12 02:59:46,595 - DEBUG - logging_utils - log_debug - Handler 'AppActionHandler' initialized.
-2025-05-12 02:59:46,596 - DEBUG - logging_utils - log_debug - Handler 'SearchHandler' initialized.
-[2025-05-12 02:59:46.596] DEBUG: MainWindow: Setting up UI...
-[2025-05-12 02:59:46.596] DEBUG: setup_main_window_ui: Starting UI setup.
-[2025-05-12 02:59:46.598] DEBUG: CustomListWidget INITIALIZED, parent: <__main__.MainWindow object at 0x0000022DFC6BBC10>
-[2025-05-12 02:59:46.598] DEBUG: CustomListWidget: Item delegate set to <components.CustomListItemDelegate.CustomListItemDelegate object at 0x0000022DFC6C8160>
-[2025-05-12 02:59:46.602] DEBUG: LNET (): highlightManager created. Has 'clear_width_exceed_char_highlights': True
-[2025-05-12 02:59:46.608] DEBUG: JsonTagHighlighter initialized.
-[2025-05-12 02:59:46.608] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-[2025-05-12 02:59:46.609] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
-[2025-05-12 02:59:46.609] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-12 02:59:46.610] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:46.784] DEBUG: LNET (): highlightManager created. Has 'clear_width_exceed_char_highlights': True
-[2025-05-12 02:59:46.784] DEBUG: JsonTagHighlighter initialized.
-[2025-05-12 02:59:46.784] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-[2025-05-12 02:59:46.784] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
-[2025-05-12 02:59:46.784] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-12 02:59:46.785] DEBUG: THM (original_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:46.786] DEBUG: LNET (): highlightManager created. Has 'clear_width_exceed_char_highlights': True
-[2025-05-12 02:59:46.786] DEBUG: JsonTagHighlighter initialized.
-[2025-05-12 02:59:46.786] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-[2025-05-12 02:59:46.786] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
-[2025-05-12 02:59:46.787] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-12 02:59:46.803] DEBUG: setup_main_window_ui: UI setup complete.
-[2025-05-12 02:59:46.803] DEBUG: MainWindow: Initializing Handlers (Post-UI setup)...
-[2025-05-12 02:59:46.804] DEBUG: MainWindow: Connecting Signals...
-[2025-05-12 02:59:46.804] DEBUG: --> MainWindow: connect_signals() started
-[2025-05-12 02:59:46.805] DEBUG: --> MainWindow: connect_signals() finished
-[2025-05-12 02:59:46.805] DEBUG: MainWindow: Loading Editor Settings via SettingsManager...
-[2025-05-12 02:59:46.805] DEBUG: --> SettingsManager: load_settings from settings.json
-[2025-05-12 02:59:46.805] DEBUG: --> SettingsManager: load_font_map from font_map.json
-[2025-05-12 02:59:46.806] DEBUG: Successfully loaded font_map. Count: 117
-[2025-05-12 02:59:46.806] DEBUG: SettingsManager: Initial default_font_size (from QFont or 10): 8
-[2025-05-12 02:59:46.806] DEBUG: SettingsManager: Applied all default values. self.mw.current_font_size is now 10 (from defaults)
-[2025-05-12 02:59:46.807] DEBUG: SettingsManager: Successfully parsed settings.json. Content keys: ['default_tag_mappings', 'block_names', 'newline_display_symbol', 'newline_css', 'tag_css', 'show_multiple_spaces_as_dots', 'space_dot_color_hex', 'preview_wrap_lines', 'editors_wrap_lines', 'bracket_tag_color_hex', 'game_dialog_max_width_pixels', 'line_width_warning_threshold_pixels', 'search_history', 'last_selected_block_index', 'last_selected_string_index', 'last_cursor_position_in_edited', 'last_edited_text_edit_scroll_value_v', 'last_edited_text_edit_scroll_value_h', 'last_preview_text_edit_scroll_value_v', 'last_original_text_edit_scroll_value_v', 'last_original_text_edit_scroll_value_h', 'font_size', 'original_file_path', 'edited_file_path', 'window_was_maximized', 'window_normal_geometry', 'main_splitter_state', 'right_splitter_state', 'bottom_right_splitter_state', 'critical_problem_lines_per_block', 'warning_problem_lines_per_block', 'width_exceeded_lines_per_block', 'short_lines_per_block']
-[2025-05-12 02:59:46.807] DEBUG: SettingsManager: Found 'font_size' in settings file: 11. Current self.mw.current_font_size: 10
-[2025-05-12 02:59:46.808] DEBUG: SettingsManager: Set self.mw.current_font_size to 11 from file.
-[2025-05-12 02:59:46.808] DEBUG: SettingsManager: Final MainWindow.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 208
-[2025-05-12 02:59:46.808] DEBUG: SettingsManager: After potential load from file, self.mw.current_font_size is 11
-[2025-05-12 02:59:46.808] DEBUG: MainWindow: Applying font. General: Family='Segoe UI', Editor: Family='Courier New', Size=11
-[2025-05-12 02:59:46.815] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-12 02:59:46.815] DEBUG: TextOperationHandler.text_edited: No block/string selected, returning.
-[2025-05-12 02:59:46.827] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: -1, string: -1
-[2025-05-12 02:59:46.827] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-12 02:59:46.827] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 02:59:46.827] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-12 02:59:46.828] DEBUG: [UIUpdater] populate_blocks called.
-[2025-05-12 02:59:46.828] DEBUG: [UIUpdater] populate_blocks: No original data.
-[2025-05-12 02:59:46.828] DEBUG: UIUpdater: populate_strings_for_block for block_idx: -1. Current string_idx: -1
-[2025-05-12 02:59:46.828] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-12 02:59:46.829] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
-[2025-05-12 02:59:46.829] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:46.829] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: -1, string: -1
-[2025-05-12 02:59:46.829] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-12 02:59:46.829] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 02:59:46.829] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-12 02:59:46.830] DEBUG: Settings loaded. Last block: 3, string: 16
-[2025-05-12 02:59:46.830] DEBUG: Settings loaded. Original path from mw: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Edited path from mw: '//192.168.50.168/tloz_tmc_ua/UKR.json'
-2025-05-12 02:59:46,830 - DEBUG - logging_utils - log_debug - Applying text wrap settings: Preview wrap: False, Editors wrap: False
-2025-05-12 02:59:46,830 - DEBUG - logging_utils - log_debug - MainWindowHelper: Reconfiguring all highlighters...
-[2025-05-12 02:59:46.830] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
-[2025-05-12 02:59:46.831] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-12 02:59:46.831] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
-[2025-05-12 02:59:46.831] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-12 02:59:46.831] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
-[2025-05-12 02:59:46.831] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-12 02:59:46.832] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-12 02:59:46.832] DEBUG: TextOperationHandler.text_edited: No block/string selected, returning.
-[2025-05-12 02:59:46.832] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-12 02:59:46.832] DEBUG: TextOperationHandler.text_edited: No block/string selected, returning.
-2025-05-12 02:59:46,832 - DEBUG - logging_utils - log_debug - MainWindowHelper: Highlighter reconfiguration attempt complete.
-[2025-05-12 02:59:46.832] DEBUG: <-- SettingsManager: load_settings finished
-[2025-05-12 02:59:46.832] DEBUG: MainWindow: After SettingsManager.load_settings(), self.current_font_size = 11, general_family = Segoe UI, editor_family = Courier New
-[2025-05-12 02:59:46.833] DEBUG: MainWindow: change_font_size_action called with size 11
-[2025-05-12 02:59:46.833] DEBUG: MainWindow: After load_settings, self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 208
-[2025-05-12 02:59:46.833] DEBUG: MainWindow: After load_settings, self.initial_load_path = //192.168.50.168/tloz_tmc_ua/UKR_orig.json
-[2025-05-12 02:59:46.833] DEBUG: MainWindow: After load_settings, self.initial_edited_load_path = //192.168.50.168/tloz_tmc_ua/UKR.json
-[2025-05-12 02:59:46.833] DEBUG: MainWindow: Set preview_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 208
-[2025-05-12 02:59:46.834] DEBUG: MainWindow: Set original_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 208
-[2025-05-12 02:59:46.834] DEBUG: MainWindow: Set edited_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 208
-2025-05-12 02:59:46,834 - DEBUG - logging_utils - log_debug - MainWindowHelper: restore_state_after_settings_load called.
-2025-05-12 02:59:46,834 - DEBUG - logging_utils - log_debug - Restored window geometry from settings: {'x': 374, 'y': 220, 'width': 1966, 'height': 1002}
-2025-05-12 02:59:46,838 - DEBUG - logging_utils - log_debug - MainWindowHelper: Attempting to load initial file from settings: //192.168.50.168/tloz_tmc_ua/UKR_orig.json
-[2025-05-12 02:59:46.838] DEBUG: --> AppActionHandler: load_all_data_for_path START. Original: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Manual Edit Path: '//192.168.50.168/tloz_tmc_ua/UKR.json', InitialLoad: True
-[2025-05-12 02:59:46.838] DEBUG: load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', expected_type: list
-[2025-05-12 02:59:46.850] DEBUG: load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR_orig.json'.
-[2025-05-12 02:59:46.854] DEBUG: load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR.json', expected_type: list
-[2025-05-12 02:59:46.879] DEBUG: load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR.json'.
-[2025-05-12 02:59:46.879] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-12 02:59:46.879] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
-[2025-05-12 02:59:46.880] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:46.880] DEBUG: Initial load from settings: Assuming problem data is from settings or will be calculated if missing.
-[2025-05-12 02:59:46.880] DEBUG: critical_problem_lines_per_block data not found in settings or empty, performing full scan.
-[2025-05-12 02:59:46.880] DEBUG: AppActionHandler: Performing initial silent scan for ALL issues (tags, width, short lines)...
-[2025-05-12 02:59:46.880] DEBUG: UIUpdater: Cleared all problem/warning/width/short block highlights and count texts.
-[2025-05-12 02:59:46.965] DEBUG: AppActionHandler: Initial silent scan for ALL issues complete.
-[2025-05-12 02:59:46.966] DEBUG: [UIUpdater] populate_blocks called.
-[2025-05-12 02:59:46.966] DEBUG: [UIUpdater] populate_blocks: Added 80 items.
-[2025-05-12 02:59:46.967] DEBUG: --> ListSelectionHandler: block_selected. Item: 'Системні (4 short)', Index: 0
-[2025-05-12 02:59:46.967] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 0. Current string_idx: -1
-[2025-05-12 02:59:46.968] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:46.968] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 0, string: -1
-[2025-05-12 02:59:46.968] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-12 02:59:46.968] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 02:59:46.968] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-12 02:59:46.968] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-12 02:59:46.969] DEBUG: <-- ListSelectionHandler: block_selected finished.
-[2025-05-12 02:59:46.969] DEBUG: <-- AppActionHandler: load_all_data_for_path FINISHED (Success)
-[2025-05-12 02:59:46.969] DEBUG: --> ListSelectionHandler: block_selected. Item: 'Бюлетень Мечника (2 warn, 9 width, 19 short)', Index: 3
-[2025-05-12 02:59:46.969] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 3. Current string_idx: -1
-[2025-05-12 02:59:46.988] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:46.995] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:46.996] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:46.996] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 3, string: -1
-[2025-05-12 02:59:46.996] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-12 02:59:46.996] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 02:59:46.996] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-12 02:59:46.996] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-12 02:59:46.997] DEBUG: <-- ListSelectionHandler: block_selected finished.
-[2025-05-12 02:59:46.998] DEBUG: --> ListSelectionHandler: string_selected_from_preview. Data Line number: 16
-[2025-05-12 02:59:46.998] DEBUG: Set current_string_idx = 16.
-[2025-05-12 02:59:46.998] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:46.998] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 3. Current string_idx: 16
-[2025-05-12 02:59:46.998] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:46.998] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:46.999] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:46.999] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:47.000] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:47.000] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:47.000] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 3, string: 16
-[2025-05-12 02:59:47.002] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating. Programmatic context: True
-[2025-05-12 02:59:47.002] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-12 02:59:47.002] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
-[2025-05-12 02:59:47.003] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:47.003] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-12 02:59:47.003] DEBUG: THM (original_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:47.003] DEBUG: THM (original_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:47.004] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-12 02:59:47.004] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 3, string: 16
-[2025-05-12 02:59:47.004] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 02:59:47.004] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-12 02:59:47.004] DEBUG: THM (original_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:47.005] DEBUG: <-- ListSelectionHandler: string_selected_from_preview finished.
-[2025-05-12 02:59:47.006] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:47.006] DEBUG: THM (original_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-2025-05-12 02:59:47,007 - DEBUG - logging_utils - log_debug - MainWindowHelper: Restored selection to block 3, string 16, cursor 78
-2025-05-12 02:59:47,008 - DEBUG - logging_utils - log_debug - MainWindowHelper: Search history loaded into panel. Last query (if any) set in SearchHandler: ���
-2025-05-12 02:59:47,008 - DEBUG - logging_utils - log_debug - Rebuilt unsaved_block_indices: set()
-[2025-05-12 02:59:47.008] DEBUG: ++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++
-[2025-05-12 02:59:47.140] DEBUG: Starting Qt event loop...
-[2025-05-12 02:59:47.160] DEBUG: LNETPaintHandlers (edited_text_edit): Cleared _width_exceed_char_selections list at start of paintEvent.
-[2025-05-12 02:59:47.176] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 2, QTL 0, TextForWidth='Ми отримали першого листа від читача!', GameW=233 > Thr=208. Finding char_idx...
-[2025-05-12 02:59:47.177] DEBUG:     Target word in no_tag_segment: 'читача!' starts at no_tag_idx 30 because width_before (190) <= threshold.
-[2025-05-12 02:59:47.177] DEBUG:     _map: Start map. target_no_tag_idx=30, no_tag_segment='Ми отримали першого листа від ...', raw_qtextline_text='Ми отримали першого листа від ...'
-[2025-05-12 02:59:47.177] DEBUG:     _map: Found 'читача!' (occurrence 1) in raw at raw_idx 30. Returning this index.
-[2025-05-12 02:59:47.177] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 2, char_idx_in_block 30
-[2025-05-12 02:59:47.178] DEBUG: THM: Cursor selection after move: Start=77, End=78, HasSelection=True
-[2025-05-12 02:59:47.178] DEBUG: THM: Added width_exceed_char_highlight for block 2, char_index_in_block 30. Total now: 1
-[2025-05-12 02:59:47.178] DEBUG: PaintEvent (Editor: edited_text_edit): >>> END OF BLOCK LOOP, CALLING applyHighlights.
-[2025-05-12 02:59:47.178] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 1, Num _critical_problem_selections = 0
-[2025-05-12 02:59:47.294] DEBUG: LNETPaintHandlers (edited_text_edit): Cleared _width_exceed_char_selections list at start of paintEvent.
-[2025-05-12 02:59:47.294] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 2, QTL 0, TextForWidth='Ми отримали першого листа від читача!', GameW=233 > Thr=208. Finding char_idx...
-[2025-05-12 02:59:47.294] DEBUG:     Target word in no_tag_segment: 'читача!' starts at no_tag_idx 30 because width_before (190) <= threshold.
-[2025-05-12 02:59:47.294] DEBUG:     _map: Start map. target_no_tag_idx=30, no_tag_segment='Ми отримали першого листа від ...', raw_qtextline_text='Ми отримали першого листа від ...'
-[2025-05-12 02:59:47.295] DEBUG:     _map: Found 'читача!' (occurrence 1) in raw at raw_idx 30. Returning this index.
-[2025-05-12 02:59:47.295] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 2, char_idx_in_block 30
-[2025-05-12 02:59:47.295] DEBUG: THM: Cursor selection after move: Start=77, End=78, HasSelection=True
-[2025-05-12 02:59:47.295] DEBUG: THM: Added width_exceed_char_highlight for block 2, char_index_in_block 30. Total now: 1
-[2025-05-12 02:59:47.295] DEBUG: PaintEvent (Editor: edited_text_edit): >>> END OF BLOCK LOOP, CALLING applyHighlights.
-[2025-05-12 02:59:47.295] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 1, Num _critical_problem_selections = 0
-[2025-05-12 02:59:50.748] DEBUG: --> ListSelectionHandler: string_selected_from_preview. Data Line number: 21
-[2025-05-12 02:59:50.749] DEBUG: Set current_string_idx = 21.
-[2025-05-12 02:59:50.749] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:50.749] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 3. Current string_idx: 21
-[2025-05-12 02:59:50.749] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:50.750] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:50.750] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:50.751] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:50.751] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:50.751] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:50.751] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:50.752] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 3, string: 21
-[2025-05-12 02:59:50.755] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating. Programmatic context: True
-[2025-05-12 02:59:50.756] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-12 02:59:50.756] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
-[2025-05-12 02:59:50.756] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:50.756] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-12 02:59:50.756] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:50.757] DEBUG: THM (original_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:50.757] DEBUG: THM (original_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:50.757] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-12 02:59:50.757] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 3, string: 21
-[2025-05-12 02:59:50.758] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 02:59:50.758] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-12 02:59:50.758] DEBUG: THM (original_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:50.758] DEBUG: <-- ListSelectionHandler: string_selected_from_preview finished.
-[2025-05-12 02:59:50.770] DEBUG: LNETPaintHandlers (edited_text_edit): Cleared _width_exceed_char_selections list at start of paintEvent.
-[2025-05-12 02:59:50.774] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 4, QTL 0, TextForWidth='Коли ти зливаєш уламки Дивокамня,', GameW=216 > Thr=208. Finding char_idx...
-[2025-05-12 02:59:50.774] DEBUG:     Target word in no_tag_segment: 'Дивокамня,' starts at no_tag_idx 23 because width_before (150) <= threshold.
-[2025-05-12 02:59:50.775] DEBUG:     _map: Start map. target_no_tag_idx=23, no_tag_segment='Коли ти зливаєш уламки Дивокам...', raw_qtextline_text='Коли ти зливаєш уламки Дивокам...'
-[2025-05-12 02:59:50.775] DEBUG:     _map: Found 'Дивокамня,' (occurrence 1) in raw at raw_idx 23. Returning this index.
-[2025-05-12 02:59:50.775] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 4, char_idx_in_block 23
-[2025-05-12 02:59:50.775] DEBUG: THM: Cursor selection after move: Start=111, End=112, HasSelection=True
-[2025-05-12 02:59:50.775] DEBUG: THM: Added width_exceed_char_highlight for block 4, char_index_in_block 23. Total now: 1
-[2025-05-12 02:59:50.775] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 5, QTL 0, TextForWidth='може випасти рідкісний шанс зустріти', GameW=224 > Thr=208. Finding char_idx...
-[2025-05-12 02:59:50.775] DEBUG:     Target word in no_tag_segment: 'зустріти' starts at no_tag_idx 28 because width_before (177) <= threshold.
-[2025-05-12 02:59:50.776] DEBUG:     _map: Start map. target_no_tag_idx=28, no_tag_segment='може випасти рідкісний шанс зу...', raw_qtextline_text='може випасти рідкісний шанс зу...'
-[2025-05-12 02:59:50.776] DEBUG:     _map: Found 'зустріти' (occurrence 1) in raw at raw_idx 28. Returning this index.
-[2025-05-12 02:59:50.776] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 5, char_idx_in_block 28
-[2025-05-12 02:59:50.776] DEBUG: THM: Cursor selection after move: Start=150, End=151, HasSelection=True
-[2025-05-12 02:59:50.776] DEBUG: THM: Added width_exceed_char_highlight for block 5, char_index_in_block 28. Total now: 2
-[2025-05-12 02:59:50.776] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 7, QTL 0, TextForWidth='за звичайну версію того ж монстра.', GameW=211 > Thr=208. Finding char_idx...
-[2025-05-12 02:59:50.776] DEBUG:     Target word in no_tag_segment: 'монстра.' starts at no_tag_idx 26 because width_before (162) <= threshold.
-[2025-05-12 02:59:50.777] DEBUG:     _map: Start map. target_no_tag_idx=26, no_tag_segment='за звичайну версію того ж монс...', raw_qtextline_text='за звичайну версію того ж монс...'
-[2025-05-12 02:59:50.777] DEBUG:     _map: Found 'монстра.' (occurrence 1) in raw at raw_idx 26. Returning this index.
-[2025-05-12 02:59:50.777] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 7, char_idx_in_block 26
-[2025-05-12 02:59:50.777] DEBUG: THM: Cursor selection after move: Start=216, End=217, HasSelection=True
-[2025-05-12 02:59:50.777] DEBUG: THM: Added width_exceed_char_highlight for block 7, char_index_in_block 26. Total now: 3
-[2025-05-12 02:59:50.777] DEBUG: PaintEvent (Editor: edited_text_edit): >>> END OF BLOCK LOOP, CALLING applyHighlights.
-[2025-05-12 02:59:50.777] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 3, Num _critical_problem_selections = 0
-[2025-05-12 02:59:50.788] DEBUG: LNETPaintHandlers (edited_text_edit): Cleared _width_exceed_char_selections list at start of paintEvent.
-[2025-05-12 02:59:50.788] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 4, QTL 0, TextForWidth='Коли ти зливаєш уламки Дивокамня,', GameW=216 > Thr=208. Finding char_idx...
-[2025-05-12 02:59:50.788] DEBUG:     Target word in no_tag_segment: 'Дивокамня,' starts at no_tag_idx 23 because width_before (150) <= threshold.
-[2025-05-12 02:59:50.788] DEBUG:     _map: Start map. target_no_tag_idx=23, no_tag_segment='Коли ти зливаєш уламки Дивокам...', raw_qtextline_text='Коли ти зливаєш уламки Дивокам...'
-[2025-05-12 02:59:50.789] DEBUG:     _map: Found 'Дивокамня,' (occurrence 1) in raw at raw_idx 23. Returning this index.
-[2025-05-12 02:59:50.789] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 4, char_idx_in_block 23
-[2025-05-12 02:59:50.789] DEBUG: THM: Cursor selection after move: Start=111, End=112, HasSelection=True
-[2025-05-12 02:59:50.789] DEBUG: THM: Added width_exceed_char_highlight for block 4, char_index_in_block 23. Total now: 1
-[2025-05-12 02:59:50.789] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 5, QTL 0, TextForWidth='може випасти рідкісний шанс зустріти', GameW=224 > Thr=208. Finding char_idx...
-[2025-05-12 02:59:50.790] DEBUG:     Target word in no_tag_segment: 'зустріти' starts at no_tag_idx 28 because width_before (177) <= threshold.
-[2025-05-12 02:59:50.790] DEBUG:     _map: Start map. target_no_tag_idx=28, no_tag_segment='може випасти рідкісний шанс зу...', raw_qtextline_text='може випасти рідкісний шанс зу...'
-[2025-05-12 02:59:50.790] DEBUG:     _map: Found 'зустріти' (occurrence 1) in raw at raw_idx 28. Returning this index.
-[2025-05-12 02:59:50.790] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 5, char_idx_in_block 28
-[2025-05-12 02:59:50.790] DEBUG: THM: Cursor selection after move: Start=150, End=151, HasSelection=True
-[2025-05-12 02:59:50.790] DEBUG: THM: Added width_exceed_char_highlight for block 5, char_index_in_block 28. Total now: 2
-[2025-05-12 02:59:50.790] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 7, QTL 0, TextForWidth='за звичайну версію того ж монстра.', GameW=211 > Thr=208. Finding char_idx...
-[2025-05-12 02:59:50.791] DEBUG:     Target word in no_tag_segment: 'монстра.' starts at no_tag_idx 26 because width_before (162) <= threshold.
-[2025-05-12 02:59:50.791] DEBUG:     _map: Start map. target_no_tag_idx=26, no_tag_segment='за звичайну версію того ж монс...', raw_qtextline_text='за звичайну версію того ж монс...'
-[2025-05-12 02:59:50.791] DEBUG:     _map: Found 'монстра.' (occurrence 1) in raw at raw_idx 26. Returning this index.
-[2025-05-12 02:59:50.791] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 7, char_idx_in_block 26
-[2025-05-12 02:59:50.791] DEBUG: THM: Cursor selection after move: Start=216, End=217, HasSelection=True
-[2025-05-12 02:59:50.791] DEBUG: THM: Added width_exceed_char_highlight for block 7, char_index_in_block 26. Total now: 3
-[2025-05-12 02:59:50.792] DEBUG: PaintEvent (Editor: edited_text_edit): >>> END OF BLOCK LOOP, CALLING applyHighlights.
-[2025-05-12 02:59:50.792] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 3, Num _critical_problem_selections = 0
-[2025-05-12 02:59:52.133] DEBUG: --> ListSelectionHandler: string_selected_from_preview. Data Line number: 27
-[2025-05-12 02:59:52.133] DEBUG: Set current_string_idx = 27.
-[2025-05-12 02:59:52.133] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:52.134] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 3. Current string_idx: 27
-[2025-05-12 02:59:52.134] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:52.134] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:52.135] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:52.135] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:52.136] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:52.136] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:52.136] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:52.136] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 3, string: 27
-[2025-05-12 02:59:52.137] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating. Programmatic context: True
-[2025-05-12 02:59:52.139] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-12 02:59:52.139] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
-[2025-05-12 02:59:52.139] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:52.139] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-12 02:59:52.139] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:52.140] DEBUG: THM (original_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:52.140] DEBUG: THM (original_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:52.140] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-12 02:59:52.140] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 3, string: 27
-[2025-05-12 02:59:52.141] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 02:59:52.141] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-12 02:59:52.141] DEBUG: THM (original_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:52.141] DEBUG: <-- ListSelectionHandler: string_selected_from_preview finished.
-[2025-05-12 02:59:52.152] DEBUG: LNETPaintHandlers (edited_text_edit): Cleared _width_exceed_char_selections list at start of paintEvent.
-[2025-05-12 02:59:52.153] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 2, QTL 0, TextForWidth='Я чув, що існує таємничий амулет,', GameW=210 > Thr=208. Finding char_idx...
-[2025-05-12 02:59:52.153] DEBUG:     Target word in no_tag_segment: 'амулет,' starts at no_tag_idx 26 because width_before (164) <= threshold.
-[2025-05-12 02:59:52.153] DEBUG:     _map: Start map. target_no_tag_idx=26, no_tag_segment='Я чув, що існує таємничий амул...', raw_qtextline_text='Я чув, що існує таємничий амул...'
-[2025-05-12 02:59:52.153] DEBUG:     _map: Found 'амулет,' (occurrence 1) in raw at raw_idx 26. Returning this index.
-[2025-05-12 02:59:52.153] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 2, char_idx_in_block 26
-[2025-05-12 02:59:52.153] DEBUG: THM: Cursor selection after move: Start=77, End=78, HasSelection=True
-[2025-05-12 02:59:52.154] DEBUG: THM: Added width_exceed_char_highlight for block 2, char_index_in_block 26. Total now: 1
-[2025-05-12 02:59:52.154] DEBUG: PaintEvent (Editor: edited_text_edit): >>> END OF BLOCK LOOP, CALLING applyHighlights.
-[2025-05-12 02:59:52.154] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 1, Num _critical_problem_selections = 0
-[2025-05-12 02:59:52.160] DEBUG: LNETPaintHandlers (edited_text_edit): Cleared _width_exceed_char_selections list at start of paintEvent.
-[2025-05-12 02:59:52.160] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 2, QTL 0, TextForWidth='Я чув, що існує таємничий амулет,', GameW=210 > Thr=208. Finding char_idx...
-[2025-05-12 02:59:52.160] DEBUG:     Target word in no_tag_segment: 'амулет,' starts at no_tag_idx 26 because width_before (164) <= threshold.
-[2025-05-12 02:59:52.160] DEBUG:     _map: Start map. target_no_tag_idx=26, no_tag_segment='Я чув, що існує таємничий амул...', raw_qtextline_text='Я чув, що існує таємничий амул...'
-[2025-05-12 02:59:52.160] DEBUG:     _map: Found 'амулет,' (occurrence 1) in raw at raw_idx 26. Returning this index.
-[2025-05-12 02:59:52.160] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 2, char_idx_in_block 26
-[2025-05-12 02:59:52.161] DEBUG: THM: Cursor selection after move: Start=77, End=78, HasSelection=True
-[2025-05-12 02:59:52.161] DEBUG: THM: Added width_exceed_char_highlight for block 2, char_index_in_block 26. Total now: 1
-[2025-05-12 02:59:52.161] DEBUG: PaintEvent (Editor: edited_text_edit): >>> END OF BLOCK LOOP, CALLING applyHighlights.
-[2025-05-12 02:59:52.161] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 1, Num _critical_problem_selections = 0
-[2025-05-12 02:59:55.388] DEBUG: --> ListSelectionHandler: string_selected_from_preview. Data Line number: 10
-[2025-05-12 02:59:55.389] DEBUG: Set current_string_idx = 10.
-[2025-05-12 02:59:55.389] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:55.389] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 3. Current string_idx: 10
-[2025-05-12 02:59:55.389] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:55.390] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:55.390] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:55.391] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:55.391] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:55.391] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:55.391] DEBUG: THM (preview_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:55.392] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 3, string: 10
-[2025-05-12 02:59:55.393] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating. Programmatic context: True
-[2025-05-12 02:59:55.394] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-12 02:59:55.394] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
-[2025-05-12 02:59:55.394] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:55.394] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-12 02:59:55.394] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:55.395] DEBUG: THM (original_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:55.395] DEBUG: THM (original_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:55.395] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-12 02:59:55.395] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 3, string: 10
-[2025-05-12 02:59:55.396] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-12 02:59:55.396] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-12 02:59:55.396] DEBUG: THM (original_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 02:59:55.396] DEBUG: <-- ListSelectionHandler: string_selected_from_preview finished.
-[2025-05-12 02:59:55.406] DEBUG: LNETPaintHandlers (edited_text_edit): Cleared _width_exceed_char_selections list at start of paintEvent.
-[2025-05-12 02:59:55.409] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 2, QTL 0, TextForWidth='Не здавайся! Почни тиснути кнопки!', GameW=211 > Thr=208. Finding char_idx...
-[2025-05-12 02:59:55.409] DEBUG:     Target word in no_tag_segment: 'кнопки!' starts at no_tag_idx 27 because width_before (168) <= threshold.
-[2025-05-12 02:59:55.409] DEBUG:     _map: Start map. target_no_tag_idx=27, no_tag_segment='Не здавайся! Почни тиснути кно...', raw_qtextline_text='Не здавайся! {Color:Blue}Почни...'
-[2025-05-12 02:59:55.409] DEBUG:     _map: Found 'кнопки!' (occurrence 1) in raw at raw_idx 39. Returning this index.
-[2025-05-12 02:59:55.409] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 2, char_idx_in_block 39
-[2025-05-12 02:59:55.409] DEBUG: THM: Cursor selection after move: Start=79, End=80, HasSelection=True
-[2025-05-12 02:59:55.410] DEBUG: THM: Added width_exceed_char_highlight for block 2, char_index_in_block 39. Total now: 1
-[2025-05-12 02:59:55.410] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 3, QTL 0, TextForWidth='Можливо, зможеш швидко вирватися!', GameW=210 > Thr=208. Finding char_idx...
-[2025-05-12 02:59:55.410] DEBUG:     Target word in no_tag_segment: 'вирватися!' starts at no_tag_idx 23 because width_before (152) <= threshold.
-[2025-05-12 02:59:55.410] DEBUG:     _map: Start map. target_no_tag_idx=23, no_tag_segment='Можливо, зможеш швидко вирвати...', raw_qtextline_text='Можливо, зможеш швидко вирвати...'
-[2025-05-12 02:59:55.410] DEBUG:     _map: Found 'вирватися!' (occurrence 1) in raw at raw_idx 23. Returning this index.
-[2025-05-12 02:59:55.410] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 3, char_idx_in_block 23
-[2025-05-12 02:59:55.411] DEBUG: THM: Cursor selection after move: Start=123, End=124, HasSelection=True
-[2025-05-12 02:59:55.411] DEBUG: THM: Added width_exceed_char_highlight for block 3, char_index_in_block 23. Total now: 2
-[2025-05-12 02:59:55.411] DEBUG: PaintEvent (Editor: edited_text_edit): >>> END OF BLOCK LOOP, CALLING applyHighlights.
-[2025-05-12 02:59:55.411] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 2, Num _critical_problem_selections = 0
-[2025-05-12 02:59:55.419] DEBUG: LNETPaintHandlers (edited_text_edit): Cleared _width_exceed_char_selections list at start of paintEvent.
-[2025-05-12 02:59:55.420] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 2, QTL 0, TextForWidth='Не здавайся! Почни тиснути кнопки!', GameW=211 > Thr=208. Finding char_idx...
-[2025-05-12 02:59:55.420] DEBUG:     Target word in no_tag_segment: 'кнопки!' starts at no_tag_idx 27 because width_before (168) <= threshold.
-[2025-05-12 02:59:55.420] DEBUG:     _map: Start map. target_no_tag_idx=27, no_tag_segment='Не здавайся! Почни тиснути кно...', raw_qtextline_text='Не здавайся! {Color:Blue}Почни...'
-[2025-05-12 02:59:55.420] DEBUG:     _map: Found 'кнопки!' (occurrence 1) in raw at raw_idx 39. Returning this index.
-[2025-05-12 02:59:55.420] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 2, char_idx_in_block 39
-[2025-05-12 02:59:55.421] DEBUG: THM: Cursor selection after move: Start=79, End=80, HasSelection=True
-[2025-05-12 02:59:55.421] DEBUG: THM: Added width_exceed_char_highlight for block 2, char_index_in_block 39. Total now: 1
-[2025-05-12 02:59:55.421] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 3, QTL 0, TextForWidth='Можливо, зможеш швидко вирватися!', GameW=210 > Thr=208. Finding char_idx...
-[2025-05-12 02:59:55.421] DEBUG:     Target word in no_tag_segment: 'вирватися!' starts at no_tag_idx 23 because width_before (152) <= threshold.
-[2025-05-12 02:59:55.421] DEBUG:     _map: Start map. target_no_tag_idx=23, no_tag_segment='Можливо, зможеш швидко вирвати...', raw_qtextline_text='Можливо, зможеш швидко вирвати...'
-[2025-05-12 02:59:55.422] DEBUG:     _map: Found 'вирватися!' (occurrence 1) in raw at raw_idx 23. Returning this index.
-[2025-05-12 02:59:55.422] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 3, char_idx_in_block 23
-[2025-05-12 02:59:55.422] DEBUG: THM: Cursor selection after move: Start=123, End=124, HasSelection=True
-[2025-05-12 02:59:55.422] DEBUG: THM: Added width_exceed_char_highlight for block 3, char_index_in_block 23. Total now: 2
-[2025-05-12 02:59:55.422] DEBUG: PaintEvent (Editor: edited_text_edit): >>> END OF BLOCK LOOP, CALLING applyHighlights.
-[2025-05-12 02:59:55.423] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 2, Num _critical_problem_selections = 0
-[2025-05-12 02:59:58.118] DEBUG: LNETPaintHandlers (edited_text_edit): Cleared _width_exceed_char_selections list at start of paintEvent.
-[2025-05-12 02:59:58.119] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 2, QTL 0, TextForWidth='Не здавайся! Почни тиснути кнопки!', GameW=211 > Thr=208. Finding char_idx...
-[2025-05-12 02:59:58.119] DEBUG:     Target word in no_tag_segment: 'кнопки!' starts at no_tag_idx 27 because width_before (168) <= threshold.
-[2025-05-12 02:59:58.119] DEBUG:     _map: Start map. target_no_tag_idx=27, no_tag_segment='Не здавайся! Почни тиснути кно...', raw_qtextline_text='Не здавайся! {Color:Blue}Почни...'
-[2025-05-12 02:59:58.119] DEBUG:     _map: Found 'кнопки!' (occurrence 1) in raw at raw_idx 39. Returning this index.
-[2025-05-12 02:59:58.120] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 2, char_idx_in_block 39
-[2025-05-12 02:59:58.120] DEBUG: THM: Cursor selection after move: Start=79, End=80, HasSelection=True
-[2025-05-12 02:59:58.120] DEBUG: THM: Added width_exceed_char_highlight for block 2, char_index_in_block 39. Total now: 1
-[2025-05-12 02:59:58.120] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 3, QTL 0, TextForWidth='Можливо, зможеш швидко вирватися!', GameW=210 > Thr=208. Finding char_idx...
-[2025-05-12 02:59:58.120] DEBUG:     Target word in no_tag_segment: 'вирватися!' starts at no_tag_idx 23 because width_before (152) <= threshold.
-[2025-05-12 02:59:58.120] DEBUG:     _map: Start map. target_no_tag_idx=23, no_tag_segment='Можливо, зможеш швидко вирвати...', raw_qtextline_text='Можливо, зможеш швидко вирвати...'
-[2025-05-12 02:59:58.121] DEBUG:     _map: Found 'вирватися!' (occurrence 1) in raw at raw_idx 23. Returning this index.
-[2025-05-12 02:59:58.121] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 3, char_idx_in_block 23
-[2025-05-12 02:59:58.121] DEBUG: THM: Cursor selection after move: Start=123, End=124, HasSelection=True
-[2025-05-12 02:59:58.121] DEBUG: THM: Added width_exceed_char_highlight for block 3, char_index_in_block 23. Total now: 2
-[2025-05-12 02:59:58.121] DEBUG: PaintEvent (Editor: edited_text_edit): >>> END OF BLOCK LOOP, CALLING applyHighlights.
-[2025-05-12 02:59:58.121] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 2, Num _critical_problem_selections = 0
-[2025-05-12 03:00:07.678] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 2, Num _critical_problem_selections = 0
-[2025-05-12 03:00:07.678] DEBUG: THM (original_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 0, Num _critical_problem_selections = 0
-[2025-05-12 03:00:07.680] DEBUG: LNETPaintHandlers (edited_text_edit): Cleared _width_exceed_char_selections list at start of paintEvent.
-[2025-05-12 03:00:07.681] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 2, QTL 0, TextForWidth='Не здавайся! Почни тиснути кнопки!', GameW=211 > Thr=208. Finding char_idx...
-[2025-05-12 03:00:07.681] DEBUG:     Target word in no_tag_segment: 'кнопки!' starts at no_tag_idx 27 because width_before (168) <= threshold.
-[2025-05-12 03:00:07.682] DEBUG:     _map: Start map. target_no_tag_idx=27, no_tag_segment='Не здавайся! Почни тиснути кно...', raw_qtextline_text='Не здавайся! {Color:Blue}Почни...'
-[2025-05-12 03:00:07.682] DEBUG:     _map: Found 'кнопки!' (occurrence 1) in raw at raw_idx 39. Returning this index.
-[2025-05-12 03:00:07.682] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 2, char_idx_in_block 39
-[2025-05-12 03:00:07.682] DEBUG: THM: Cursor selection after move: Start=79, End=80, HasSelection=True
-[2025-05-12 03:00:07.682] DEBUG: THM: Added width_exceed_char_highlight for block 2, char_index_in_block 39. Total now: 1
-[2025-05-12 03:00:07.682] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 3, QTL 0, TextForWidth='Можливо, зможеш швидко вирватися!', GameW=210 > Thr=208. Finding char_idx...
-[2025-05-12 03:00:07.683] DEBUG:     Target word in no_tag_segment: 'вирватися!' starts at no_tag_idx 23 because width_before (152) <= threshold.
-[2025-05-12 03:00:07.683] DEBUG:     _map: Start map. target_no_tag_idx=23, no_tag_segment='Можливо, зможеш швидко вирвати...', raw_qtextline_text='Можливо, зможеш швидко вирвати...'
-[2025-05-12 03:00:07.683] DEBUG:     _map: Found 'вирватися!' (occurrence 1) in raw at raw_idx 23. Returning this index.
-[2025-05-12 03:00:07.683] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 3, char_idx_in_block 23
-[2025-05-12 03:00:07.684] DEBUG: THM: Cursor selection after move: Start=123, End=124, HasSelection=True
-[2025-05-12 03:00:07.684] DEBUG: THM: Added width_exceed_char_highlight for block 3, char_index_in_block 23. Total now: 2
-[2025-05-12 03:00:07.684] DEBUG: PaintEvent (Editor: edited_text_edit): >>> END OF BLOCK LOOP, CALLING applyHighlights.
-[2025-05-12 03:00:07.684] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 2, Num _critical_problem_selections = 0
-[2025-05-12 03:00:07.716] DEBUG: LNETPaintHandlers (edited_text_edit): Cleared _width_exceed_char_selections list at start of paintEvent.
-[2025-05-12 03:00:07.717] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 2, QTL 0, TextForWidth='Не здавайся! Почни тиснути кнопки!', GameW=211 > Thr=208. Finding char_idx...
-[2025-05-12 03:00:07.717] DEBUG:     Target word in no_tag_segment: 'кнопки!' starts at no_tag_idx 27 because width_before (168) <= threshold.
-[2025-05-12 03:00:07.717] DEBUG:     _map: Start map. target_no_tag_idx=27, no_tag_segment='Не здавайся! Почни тиснути кно...', raw_qtextline_text='Не здавайся! {Color:Blue}Почни...'
-[2025-05-12 03:00:07.717] DEBUG:     _map: Found 'кнопки!' (occurrence 1) in raw at raw_idx 39. Returning this index.
-[2025-05-12 03:00:07.718] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 2, char_idx_in_block 39
-[2025-05-12 03:00:07.718] DEBUG: THM: Cursor selection after move: Start=79, End=80, HasSelection=True
-[2025-05-12 03:00:07.718] DEBUG: THM: Added width_exceed_char_highlight for block 2, char_index_in_block 39. Total now: 1
-[2025-05-12 03:00:07.718] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 3, QTL 0, TextForWidth='Можливо, зможеш швидко вирватися!', GameW=210 > Thr=208. Finding char_idx...
-[2025-05-12 03:00:07.719] DEBUG:     Target word in no_tag_segment: 'вирватися!' starts at no_tag_idx 23 because width_before (152) <= threshold.
-[2025-05-12 03:00:07.719] DEBUG:     _map: Start map. target_no_tag_idx=23, no_tag_segment='Можливо, зможеш швидко вирвати...', raw_qtextline_text='Можливо, зможеш швидко вирвати...'
-[2025-05-12 03:00:07.719] DEBUG:     _map: Found 'вирватися!' (occurrence 1) in raw at raw_idx 23. Returning this index.
-[2025-05-12 03:00:07.719] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 3, char_idx_in_block 23
-[2025-05-12 03:00:07.719] DEBUG: THM: Cursor selection after move: Start=123, End=124, HasSelection=True
-[2025-05-12 03:00:07.719] DEBUG: THM: Added width_exceed_char_highlight for block 3, char_index_in_block 23. Total now: 2
-[2025-05-12 03:00:07.720] DEBUG: PaintEvent (Editor: edited_text_edit): >>> END OF BLOCK LOOP, CALLING applyHighlights.
-[2025-05-12 03:00:07.720] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 2, Num _critical_problem_selections = 0
-[2025-05-12 03:00:08.195] DEBUG: LNETPaintHandlers (edited_text_edit): Cleared _width_exceed_char_selections list at start of paintEvent.
-[2025-05-12 03:00:08.196] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 2, QTL 0, TextForWidth='Не здавайся! Почни тиснути кнопки!', GameW=211 > Thr=208. Finding char_idx...
-[2025-05-12 03:00:08.196] DEBUG:     Target word in no_tag_segment: 'кнопки!' starts at no_tag_idx 27 because width_before (168) <= threshold.
-[2025-05-12 03:00:08.196] DEBUG:     _map: Start map. target_no_tag_idx=27, no_tag_segment='Не здавайся! Почни тиснути кно...', raw_qtextline_text='Не здавайся! {Color:Blue}Почни...'
-[2025-05-12 03:00:08.196] DEBUG:     _map: Found 'кнопки!' (occurrence 1) in raw at raw_idx 39. Returning this index.
-[2025-05-12 03:00:08.196] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 2, char_idx_in_block 39
-[2025-05-12 03:00:08.197] DEBUG: THM: Cursor selection after move: Start=79, End=80, HasSelection=True
-[2025-05-12 03:00:08.197] DEBUG: THM: Added width_exceed_char_highlight for block 2, char_index_in_block 39. Total now: 1
-[2025-05-12 03:00:08.197] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 3, QTL 0, TextForWidth='Можливо, зможеш швидко вирватися!', GameW=210 > Thr=208. Finding char_idx...
-[2025-05-12 03:00:08.197] DEBUG:     Target word in no_tag_segment: 'вирватися!' starts at no_tag_idx 23 because width_before (152) <= threshold.
-[2025-05-12 03:00:08.197] DEBUG:     _map: Start map. target_no_tag_idx=23, no_tag_segment='Можливо, зможеш швидко вирвати...', raw_qtextline_text='Можливо, зможеш швидко вирвати...'
-[2025-05-12 03:00:08.198] DEBUG:     _map: Found 'вирватися!' (occurrence 1) in raw at raw_idx 23. Returning this index.
-[2025-05-12 03:00:08.198] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 3, char_idx_in_block 23
-[2025-05-12 03:00:08.198] DEBUG: THM: Cursor selection after move: Start=123, End=124, HasSelection=True
-[2025-05-12 03:00:08.198] DEBUG: THM: Added width_exceed_char_highlight for block 3, char_index_in_block 23. Total now: 2
-[2025-05-12 03:00:08.198] DEBUG: PaintEvent (Editor: edited_text_edit): >>> END OF BLOCK LOOP, CALLING applyHighlights.
-[2025-05-12 03:00:08.198] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 2, Num _critical_problem_selections = 0
-[2025-05-12 03:00:08.727] DEBUG: LNETPaintHandlers (edited_text_edit): Cleared _width_exceed_char_selections list at start of paintEvent.
-[2025-05-12 03:00:08.728] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 2, QTL 0, TextForWidth='Не здавайся! Почни тиснути кнопки!', GameW=211 > Thr=208. Finding char_idx...
-[2025-05-12 03:00:08.728] DEBUG:     Target word in no_tag_segment: 'кнопки!' starts at no_tag_idx 27 because width_before (168) <= threshold.
-[2025-05-12 03:00:08.728] DEBUG:     _map: Start map. target_no_tag_idx=27, no_tag_segment='Не здавайся! Почни тиснути кно...', raw_qtextline_text='Не здавайся! {Color:Blue}Почни...'
-[2025-05-12 03:00:08.728] DEBUG:     _map: Found 'кнопки!' (occurrence 1) in raw at raw_idx 39. Returning this index.
-[2025-05-12 03:00:08.729] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 2, char_idx_in_block 39
-[2025-05-12 03:00:08.729] DEBUG: THM: Cursor selection after move: Start=79, End=80, HasSelection=True
-[2025-05-12 03:00:08.729] DEBUG: THM: Added width_exceed_char_highlight for block 2, char_index_in_block 39. Total now: 1
-[2025-05-12 03:00:08.729] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 3, QTL 0, TextForWidth='Можливо, зможеш швидко вирватися!', GameW=210 > Thr=208. Finding char_idx...
-[2025-05-12 03:00:08.729] DEBUG:     Target word in no_tag_segment: 'вирватися!' starts at no_tag_idx 23 because width_before (152) <= threshold.
-[2025-05-12 03:00:08.729] DEBUG:     _map: Start map. target_no_tag_idx=23, no_tag_segment='Можливо, зможеш швидко вирвати...', raw_qtextline_text='Можливо, зможеш швидко вирвати...'
-[2025-05-12 03:00:08.730] DEBUG:     _map: Found 'вирватися!' (occurrence 1) in raw at raw_idx 23. Returning this index.
-[2025-05-12 03:00:08.730] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 3, char_idx_in_block 23
-[2025-05-12 03:00:08.730] DEBUG: THM: Cursor selection after move: Start=123, End=124, HasSelection=True
-[2025-05-12 03:00:08.730] DEBUG: THM: Added width_exceed_char_highlight for block 3, char_index_in_block 23. Total now: 2
-[2025-05-12 03:00:08.730] DEBUG: PaintEvent (Editor: edited_text_edit): >>> END OF BLOCK LOOP, CALLING applyHighlights.
-[2025-05-12 03:00:08.731] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 2, Num _critical_problem_selections = 0
-[2025-05-12 03:00:09.258] DEBUG: LNETPaintHandlers (edited_text_edit): Cleared _width_exceed_char_selections list at start of paintEvent.
-[2025-05-12 03:00:09.259] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 2, QTL 0, TextForWidth='Не здавайся! Почни тиснути кнопки!', GameW=211 > Thr=208. Finding char_idx...
-[2025-05-12 03:00:09.259] DEBUG:     Target word in no_tag_segment: 'кнопки!' starts at no_tag_idx 27 because width_before (168) <= threshold.
-[2025-05-12 03:00:09.259] DEBUG:     _map: Start map. target_no_tag_idx=27, no_tag_segment='Не здавайся! Почни тиснути кно...', raw_qtextline_text='Не здавайся! {Color:Blue}Почни...'
-[2025-05-12 03:00:09.259] DEBUG:     _map: Found 'кнопки!' (occurrence 1) in raw at raw_idx 39. Returning this index.
-[2025-05-12 03:00:09.259] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 2, char_idx_in_block 39
-[2025-05-12 03:00:09.259] DEBUG: THM: Cursor selection after move: Start=79, End=80, HasSelection=True
-[2025-05-12 03:00:09.259] DEBUG: THM: Added width_exceed_char_highlight for block 2, char_index_in_block 39. Total now: 1
-[2025-05-12 03:00:09.260] DEBUG: PaintEvent Line (Editor: edited_text_edit): Blk 3, QTL 0, TextForWidth='Можливо, зможеш швидко вирватися!', GameW=210 > Thr=208. Finding char_idx...
-[2025-05-12 03:00:09.260] DEBUG:     Target word in no_tag_segment: 'вирватися!' starts at no_tag_idx 23 because width_before (152) <= threshold.
-[2025-05-12 03:00:09.260] DEBUG:     _map: Start map. target_no_tag_idx=23, no_tag_segment='Можливо, зможеш швидко вирвати...', raw_qtextline_text='Можливо, зможеш швидко вирвати...'
-[2025-05-12 03:00:09.260] DEBUG:     _map: Found 'вирватися!' (occurrence 1) in raw at raw_idx 23. Returning this index.
-[2025-05-12 03:00:09.260] DEBUG: THM: add_width_exceed_char_highlight CALLED for block 3, char_idx_in_block 23
-[2025-05-12 03:00:09.260] DEBUG: THM: Cursor selection after move: Start=123, End=124, HasSelection=True
-[2025-05-12 03:00:09.261] DEBUG: THM: Added width_exceed_char_highlight for block 3, char_index_in_block 23. Total now: 2
-[2025-05-12 03:00:09.261] DEBUG: PaintEvent (Editor: edited_text_edit): >>> END OF BLOCK LOOP, CALLING applyHighlights.
-[2025-05-12 03:00:09.261] DEBUG: THM (edited_text_edit): applyHighlights CALLED. Num _width_exceed_char_selections = 2, Num _critical_problem_selections = 0
-[2025-05-12 03:00:09.751] DEBUG: --> MainWindow: closeEvent received.
-2025-05-12 03:00:09,751 - DEBUG - logging_utils - log_debug - MainWindowHelper: prepare_to_close called.
-2025-05-12 03:00:09,752 - DEBUG - logging_utils - log_debug - MainWindowHelper: Updated search_history_to_save: 7 items
-[2025-05-12 03:00:09.752] DEBUG: --> AppActionHandler: handle_close_event called.
-[2025-05-12 03:00:09.752] DEBUG: <-- AppActionHandler: handle_close_event finished.
-[2025-05-12 03:00:09.752] DEBUG: Close accepted (no unsaved changes). Saving editor settings via SettingsManager.
-[2025-05-12 03:00:09.752] DEBUG: --> SettingsManager: save_settings to settings.json
-[2025-05-12 03:00:09.752] DEBUG: SettingsManager: Saving font_size: 11 (from self.mw.current_font_size: 11)
-[2025-05-12 03:00:09.752] DEBUG: Saving paths: original_file_path='//192.168.50.168/tloz_tmc_ua/UKR_orig.json', edited_file_path='//192.168.50.168/tloz_tmc_ua/UKR.json'
-[2025-05-12 03:00:09.755] DEBUG: <-- SettingsManager: save_settings finished
-[2025-05-12 03:00:09.755] DEBUG: <-- MainWindow: closeEvent finished.
-[2025-05-12 03:00:09.780] DEBUG: Qt event loop finished with exit code: 0
-[2025-05-12 03:00:09.780] DEBUG: ================= Application End =================
+[2025-05-12 03:57:02.055] DEBUG: ================= Application Start =================
+[2025-05-12 03:57:02.067] DEBUG: ++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++
+[2025-05-12 03:57:02.067] DEBUG: MainWindow: Initializing Core Components...
+[2025-05-12 03:57:02.068] DEBUG: MainWindow: Initializing Handlers (Pre-UI setup)...
+2025-05-12 03:57:02,068 - DEBUG - logging_utils - log_debug - Handler 'ListSelectionHandler' initialized.
+2025-05-12 03:57:02,068 - DEBUG - logging_utils - log_debug - Handler 'TextOperationHandler' initialized.
+2025-05-12 03:57:02,068 - DEBUG - logging_utils - log_debug - Handler 'AppActionHandler' initialized.
+2025-05-12 03:57:02,068 - DEBUG - logging_utils - log_debug - Handler 'SearchHandler' initialized.
+[2025-05-12 03:57:02.069] DEBUG: MainWindow: Setting up UI...
+[2025-05-12 03:57:02.069] DEBUG: setup_main_window_ui: Starting UI setup.
+[2025-05-12 03:57:02.070] DEBUG: CustomListWidget INITIALIZED, parent: <__main__.MainWindow object at 0x00000218F8FBF430>
+[2025-05-12 03:57:02.070] DEBUG: CustomListWidget: Item delegate set to <components.CustomListItemDelegate.CustomListItemDelegate object at 0x00000218F8FBF940>
+[2025-05-12 03:57:02.073] DEBUG: LNET (): highlightManager created. Has 'clear_width_exceed_char_highlights': True
+[2025-05-12 03:57:02.077] DEBUG: JsonTagHighlighter initialized.
+[2025-05-12 03:57:02.077] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+[2025-05-12 03:57:02.077] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
+[2025-05-12 03:57:02.077] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-12 03:57:02.236] DEBUG: LNET (): highlightManager created. Has 'clear_width_exceed_char_highlights': True
+[2025-05-12 03:57:02.237] DEBUG: JsonTagHighlighter initialized.
+[2025-05-12 03:57:02.237] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+[2025-05-12 03:57:02.237] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
+[2025-05-12 03:57:02.237] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-12 03:57:02.238] DEBUG: LNET (): highlightManager created. Has 'clear_width_exceed_char_highlights': True
+[2025-05-12 03:57:02.238] DEBUG: JsonTagHighlighter initialized.
+[2025-05-12 03:57:02.238] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+[2025-05-12 03:57:02.238] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
+[2025-05-12 03:57:02.238] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-12 03:57:02.254] DEBUG: setup_main_window_ui: UI setup complete.
+[2025-05-12 03:57:02.254] DEBUG: MainWindow: Initializing Handlers (Post-UI setup)...
+[2025-05-12 03:57:02.255] DEBUG: MainWindow: Connecting Signals...
+[2025-05-12 03:57:02.255] DEBUG: --> MainWindow: connect_signals() started
+[2025-05-12 03:57:02.256] DEBUG: --> MainWindow: connect_signals() finished
+[2025-05-12 03:57:02.256] DEBUG: MainWindow: Loading Editor Settings via SettingsManager...
+[2025-05-12 03:57:02.256] DEBUG: --> SettingsManager: load_settings from settings.json
+[2025-05-12 03:57:02.256] DEBUG: --> SettingsManager: load_font_map from font_map.json
+[2025-05-12 03:57:02.257] DEBUG: Successfully loaded font_map. Count: 117
+[2025-05-12 03:57:02.257] DEBUG: SettingsManager: Initial default_font_size (from QFont or 10): 8
+[2025-05-12 03:57:02.257] DEBUG: SettingsManager: Applied all default values. self.mw.current_font_size is now 10 (from defaults)
+[2025-05-12 03:57:02.258] DEBUG: SettingsManager: Successfully parsed settings.json. Content keys: ['default_tag_mappings', 'block_names', 'newline_display_symbol', 'newline_css', 'tag_css', 'show_multiple_spaces_as_dots', 'space_dot_color_hex', 'preview_wrap_lines', 'editors_wrap_lines', 'bracket_tag_color_hex', 'game_dialog_max_width_pixels', 'line_width_warning_threshold_pixels', 'search_history', 'last_selected_block_index', 'last_selected_string_index', 'last_cursor_position_in_edited', 'last_edited_text_edit_scroll_value_v', 'last_edited_text_edit_scroll_value_h', 'last_preview_text_edit_scroll_value_v', 'last_original_text_edit_scroll_value_v', 'last_original_text_edit_scroll_value_h', 'font_size', 'original_file_path', 'edited_file_path', 'window_was_maximized', 'window_normal_geometry', 'main_splitter_state', 'right_splitter_state', 'bottom_right_splitter_state', 'critical_problem_lines_per_block', 'warning_problem_lines_per_block', 'width_exceeded_lines_per_block', 'short_lines_per_block']
+[2025-05-12 03:57:02.258] DEBUG: SettingsManager: Found 'font_size' in settings file: 11. Current self.mw.current_font_size: 10
+[2025-05-12 03:57:02.258] DEBUG: SettingsManager: Set self.mw.current_font_size to 11 from file.
+[2025-05-12 03:57:02.259] DEBUG: SettingsManager: Final MainWindow.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 208
+[2025-05-12 03:57:02.259] DEBUG: SettingsManager: After potential load from file, self.mw.current_font_size is 11
+[2025-05-12 03:57:02.259] DEBUG: MainWindow: Applying font. General: Family='Segoe UI', Editor: Family='Courier New', Size=11
+[2025-05-12 03:57:02.266] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-12 03:57:02.266] DEBUG: TextOperationHandler.text_edited: No block/string selected, returning.
+[2025-05-12 03:57:02.277] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: -1, string: -1
+[2025-05-12 03:57:02.278] DEBUG:   No active block/string selected. Text views will be cleared.
+[2025-05-12 03:57:02.278] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-12 03:57:02.278] DEBUG:   update_text_views: Clearing empty odd subline highlights for edited_text_edit before setPlainText.
+[2025-05-12 03:57:02.278] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-12 03:57:02.278] DEBUG:   update_text_views: Calling _apply_empty_odd_subline_highlights_to_edited_text for edited_text_edit.
+[2025-05-12 03:57:02.278] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:57:02.279] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:57:02.279] DEBUG:   QTextBlock 0: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:57:02.279] DEBUG:     Highlighting QTextBlock 0 (BlockNum: 0) as empty odd.
+[2025-05-12 03:57:02.279] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:57:02.280] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:57:02.280] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:57:02.280] DEBUG: [UIUpdater] populate_blocks called.
+[2025-05-12 03:57:02.280] DEBUG: [UIUpdater] populate_blocks: No original data.
+[2025-05-12 03:57:02.280] DEBUG: UIUpdater: populate_strings_for_block for block_idx: -1. Current string_idx: -1
+[2025-05-12 03:57:02.280] DEBUG:   populate_strings_for_block: Clearing empty odd subline highlights for edited_text_edit
+[2025-05-12 03:57:02.281] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
+[2025-05-12 03:57:02.281] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
+[2025-05-12 03:57:02.281] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: -1, string: -1
+[2025-05-12 03:57:02.281] DEBUG:   No active block/string selected. Text views will be cleared.
+[2025-05-12 03:57:02.281] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-12 03:57:02.281] DEBUG:   update_text_views: Clearing empty odd subline highlights for edited_text_edit before setPlainText.
+[2025-05-12 03:57:02.282] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-12 03:57:02.282] DEBUG:   update_text_views: Calling _apply_empty_odd_subline_highlights_to_edited_text for edited_text_edit.
+[2025-05-12 03:57:02.282] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:57:02.282] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:57:02.282] DEBUG:   QTextBlock 0: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:57:02.282] DEBUG:     Highlighting QTextBlock 0 (BlockNum: 0) as empty odd.
+[2025-05-12 03:57:02.282] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:57:02.282] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:57:02.282] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:57:02.283] DEBUG: Settings loaded. Last block: 6, string: -1
+[2025-05-12 03:57:02.283] DEBUG: Settings loaded. Original path from mw: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Edited path from mw: '//192.168.50.168/tloz_tmc_ua/UKR.json'
+2025-05-12 03:57:02,283 - DEBUG - logging_utils - log_debug - Applying text wrap settings: Preview wrap: False, Editors wrap: False
+2025-05-12 03:57:02,283 - DEBUG - logging_utils - log_debug - MainWindowHelper: Reconfiguring all highlighters...
+[2025-05-12 03:57:02.284] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
+[2025-05-12 03:57:02.284] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-12 03:57:02.284] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
+[2025-05-12 03:57:02.284] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-12 03:57:02.284] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
+[2025-05-12 03:57:02.285] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-12 03:57:02.285] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-12 03:57:02.285] DEBUG: TextOperationHandler.text_edited: No block/string selected, returning.
+[2025-05-12 03:57:02.285] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-12 03:57:02.286] DEBUG: TextOperationHandler.text_edited: No block/string selected, returning.
+2025-05-12 03:57:02,286 - DEBUG - logging_utils - log_debug - MainWindowHelper: Highlighter reconfiguration attempt complete.
+[2025-05-12 03:57:02.286] DEBUG: <-- SettingsManager: load_settings finished
+[2025-05-12 03:57:02.286] DEBUG: MainWindow: After SettingsManager.load_settings(), self.current_font_size = 11, general_family = Segoe UI, editor_family = Courier New
+[2025-05-12 03:57:02.286] DEBUG: MainWindow: change_font_size_action called with size 11
+[2025-05-12 03:57:02.287] DEBUG: MainWindow: After load_settings, self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 208
+[2025-05-12 03:57:02.287] DEBUG: MainWindow: After load_settings, self.initial_load_path = //192.168.50.168/tloz_tmc_ua/UKR_orig.json
+[2025-05-12 03:57:02.287] DEBUG: MainWindow: After load_settings, self.initial_edited_load_path = //192.168.50.168/tloz_tmc_ua/UKR.json
+[2025-05-12 03:57:02.287] DEBUG: MainWindow: Set preview_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 208
+[2025-05-12 03:57:02.287] DEBUG: MainWindow: Set original_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 208
+[2025-05-12 03:57:02.287] DEBUG: MainWindow: Set edited_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 208
+2025-05-12 03:57:02,287 - DEBUG - logging_utils - log_debug - MainWindowHelper: restore_state_after_settings_load called.
+2025-05-12 03:57:02,288 - DEBUG - logging_utils - log_debug - Restored window geometry from settings: {'x': 374, 'y': 220, 'width': 1966, 'height': 1002}
+2025-05-12 03:57:02,290 - DEBUG - logging_utils - log_debug - MainWindowHelper: Attempting to load initial file from settings: //192.168.50.168/tloz_tmc_ua/UKR_orig.json
+[2025-05-12 03:57:02.290] DEBUG: --> AppActionHandler: load_all_data_for_path START. Original: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Manual Edit Path: '//192.168.50.168/tloz_tmc_ua/UKR.json', InitialLoad: True
+[2025-05-12 03:57:02.291] DEBUG: load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', expected_type: list
+[2025-05-12 03:57:02.299] DEBUG: load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR_orig.json'.
+[2025-05-12 03:57:02.302] DEBUG: load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR.json', expected_type: list
+[2025-05-12 03:57:02.315] DEBUG: load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR.json'.
+[2025-05-12 03:57:02.316] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
+[2025-05-12 03:57:02.316] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
+[2025-05-12 03:57:02.316] DEBUG: Initial load from settings: Assuming problem data is from settings or will be calculated if missing.
+[2025-05-12 03:57:02.316] DEBUG: critical_problem_lines_per_block data not found in settings or empty, performing full scan.
+[2025-05-12 03:57:02.317] DEBUG: AppActionHandler: Performing initial silent scan for ALL issues (tags, width, short lines)...
+[2025-05-12 03:57:02.317] DEBUG: UIUpdater: Cleared all problem/warning/width/short block highlights and count texts.
+[2025-05-12 03:57:02.413] DEBUG: AppActionHandler: Initial silent scan for ALL issues complete.
+[2025-05-12 03:57:02.413] DEBUG: [UIUpdater] populate_blocks called.
+[2025-05-12 03:57:02.414] DEBUG: [UIUpdater] populate_blocks: Added 80 items.
+[2025-05-12 03:57:02.414] DEBUG: --> ListSelectionHandler: block_selected. Item: 'Системні (4 short)', Index: 0
+[2025-05-12 03:57:02.415] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 0. Current string_idx: -1
+[2025-05-12 03:57:02.415] DEBUG:   populate_strings_for_block: Clearing empty odd subline highlights for edited_text_edit
+[2025-05-12 03:57:02.416] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 0, string: -1
+[2025-05-12 03:57:02.416] DEBUG:   No active block/string selected. Text views will be cleared.
+[2025-05-12 03:57:02.417] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-12 03:57:02.417] DEBUG:   update_text_views: Clearing empty odd subline highlights for edited_text_edit before setPlainText.
+[2025-05-12 03:57:02.417] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-12 03:57:02.417] DEBUG:   update_text_views: Calling _apply_empty_odd_subline_highlights_to_edited_text for edited_text_edit.
+[2025-05-12 03:57:02.417] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:57:02.417] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:57:02.418] DEBUG:   QTextBlock 0: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:57:02.418] DEBUG:     Highlighting QTextBlock 0 (BlockNum: 0) as empty odd.
+[2025-05-12 03:57:02.418] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:57:02.418] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:57:02.418] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:57:02.419] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-12 03:57:02.419] DEBUG: <-- ListSelectionHandler: block_selected finished.
+[2025-05-12 03:57:02.419] DEBUG: <-- AppActionHandler: load_all_data_for_path FINISHED (Success)
+[2025-05-12 03:57:02.419] DEBUG: --> ListSelectionHandler: block_selected. Item: 'Вказівники (15 short)', Index: 6
+[2025-05-12 03:57:02.419] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: -1
+[2025-05-12 03:57:02.419] DEBUG:   populate_strings_for_block: Clearing empty odd subline highlights for edited_text_edit
+[2025-05-12 03:57:02.421] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: -1
+[2025-05-12 03:57:02.422] DEBUG:   No active block/string selected. Text views will be cleared.
+[2025-05-12 03:57:02.422] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-12 03:57:02.422] DEBUG:   update_text_views: Clearing empty odd subline highlights for edited_text_edit before setPlainText.
+[2025-05-12 03:57:02.422] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-12 03:57:02.422] DEBUG:   update_text_views: Calling _apply_empty_odd_subline_highlights_to_edited_text for edited_text_edit.
+[2025-05-12 03:57:02.422] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:57:02.423] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:57:02.423] DEBUG:   QTextBlock 0: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:57:02.423] DEBUG:     Highlighting QTextBlock 0 (BlockNum: 0) as empty odd.
+[2025-05-12 03:57:02.423] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:57:02.423] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:57:02.423] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:57:02.424] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-12 03:57:02.424] DEBUG: <-- ListSelectionHandler: block_selected finished.
+2025-05-12 03:57:02,425 - DEBUG - logging_utils - log_debug - MainWindowHelper: last_selected_string_index (-1) is out of bounds for block 6. Skipping string/cursor restore.
+2025-05-12 03:57:02,426 - DEBUG - logging_utils - log_debug - MainWindowHelper: Search history loaded into panel. Last query (if any) set in SearchHandler: ���
+2025-05-12 03:57:02,426 - DEBUG - logging_utils - log_debug - Rebuilt unsaved_block_indices: set()
+[2025-05-12 03:57:02.426] DEBUG: ++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++
+[2025-05-12 03:57:02.584] DEBUG: Starting Qt event loop...
+2025-05-12 03:57:10,912 - DEBUG - logging_utils - log_debug - EventFilter KeyPress: Key 16777251, Modifiers: <PyQt5.QtCore.Qt.KeyboardModifiers object at 0x00000218FA3B19E0>, Text: '', Focused widget: edited_text_edit
+[2025-05-12 03:57:10.912] DEBUG: MainWindow keyPressEvent: This should not be called if eventFilter is working.
+[2025-05-12 03:57:46.743] DEBUG: --> ListSelectionHandler: string_selected_from_preview. Data Line number: 26
+[2025-05-12 03:57:46.744] DEBUG: Set current_string_idx = 26.
+[2025-05-12 03:57:46.744] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 26
+[2025-05-12 03:57:46.744] DEBUG:   populate_strings_for_block: Clearing empty odd subline highlights for edited_text_edit
+[2025-05-12 03:57:46.745] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 26
+[2025-05-12 03:57:46.745] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-12 03:57:46.745] DEBUG:   update_text_views: Clearing empty odd subline highlights for edited_text_edit before setPlainText.
+[2025-05-12 03:57:46.745] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-12 03:57:46.745] DEBUG:   update_text_views: Calling _apply_empty_odd_subline_highlights_to_edited_text for edited_text_edit.
+[2025-05-12 03:57:46.745] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:57:46.745] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:57:46.745] DEBUG:   QTextBlock 0: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:57:46.745] DEBUG:     Highlighting QTextBlock 0 (BlockNum: 0) as empty odd.
+[2025-05-12 03:57:46.746] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:57:46.746] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:57:46.746] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:57:46.746] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-12 03:57:46.746] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 6, string: 26
+[2025-05-12 03:57:46.746] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-12 03:57:46.747] DEBUG:   update_text_views: Clearing empty odd subline highlights for edited_text_edit before setPlainText.
+[2025-05-12 03:57:46.747] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-12 03:57:46.747] DEBUG:   update_text_views: Calling _apply_empty_odd_subline_highlights_to_edited_text for edited_text_edit.
+[2025-05-12 03:57:46.747] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:57:46.747] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:57:46.747] DEBUG:   QTextBlock 0: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:57:46.747] DEBUG:     Highlighting QTextBlock 0 (BlockNum: 0) as empty odd.
+[2025-05-12 03:57:46.748] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:57:46.748] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:57:46.748] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:57:46.748] DEBUG: <-- ListSelectionHandler: string_selected_from_preview finished.
+[2025-05-12 03:57:47.311] DEBUG: --> ListSelectionHandler: string_selected_from_preview. Data Line number: 33
+[2025-05-12 03:57:47.311] DEBUG: Set current_string_idx = 33.
+[2025-05-12 03:57:47.312] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 33
+[2025-05-12 03:57:47.312] DEBUG:   populate_strings_for_block: Clearing empty odd subline highlights for edited_text_edit
+[2025-05-12 03:57:47.313] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 33
+[2025-05-12 03:57:47.314] DEBUG:   update_text_views: Clearing empty odd subline highlights for edited_text_edit before setPlainText.
+[2025-05-12 03:57:47.314] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
+[2025-05-12 03:57:47.315] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
+[2025-05-12 03:57:47.315] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
+[2025-05-12 03:57:47.315] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
+[2025-05-12 03:57:47.315] DEBUG:   update_text_views: Calling _apply_empty_odd_subline_highlights_to_edited_text for edited_text_edit.
+[2025-05-12 03:57:47.316] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:57:47.316] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:57:47.316] DEBUG:   QTextBlock 0: Text='Обережно, крихкі стіни!...', NoTagsStripped='Обережно, крихкі стіни!', IsEmpty=False, IsOdd=True
+[2025-05-12 03:57:47.316] DEBUG:   QTextBlock 1: Text='Вибухові роботи суворо заборон...', NoTagsStripped='Вибухові роботи суворо заборонені.', IsEmpty=False, IsOdd=False
+[2025-05-12 03:57:47.316] DEBUG:   No empty odd subline highlights were added in this run.
+[2025-05-12 03:57:47.316] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:57:47.317] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:57:47.317] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-12 03:57:47.317] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 6, string: 33
+[2025-05-12 03:57:47.317] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-12 03:57:47.318] DEBUG:   update_text_views: Clearing empty odd subline highlights for edited_text_edit before setPlainText.
+[2025-05-12 03:57:47.318] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-12 03:57:47.318] DEBUG:   update_text_views: Calling _apply_empty_odd_subline_highlights_to_edited_text for edited_text_edit.
+[2025-05-12 03:57:47.318] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:57:47.318] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:57:47.318] DEBUG:   QTextBlock 0: Text='Обережно, крихкі стіни!...', NoTagsStripped='Обережно, крихкі стіни!', IsEmpty=False, IsOdd=True
+[2025-05-12 03:57:47.318] DEBUG:   QTextBlock 1: Text='Вибухові роботи суворо заборон...', NoTagsStripped='Вибухові роботи суворо заборонені.', IsEmpty=False, IsOdd=False
+[2025-05-12 03:57:47.319] DEBUG:   No empty odd subline highlights were added in this run.
+[2025-05-12 03:57:47.319] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:57:47.319] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:57:47.319] DEBUG: <-- ListSelectionHandler: string_selected_from_preview finished.
+[2025-05-12 03:57:47.751] DEBUG: --> ListSelectionHandler: string_selected_from_preview. Data Line number: 37
+[2025-05-12 03:57:47.751] DEBUG: Set current_string_idx = 37.
+[2025-05-12 03:57:47.751] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 37
+[2025-05-12 03:57:47.751] DEBUG:   populate_strings_for_block: Clearing empty odd subline highlights for edited_text_edit
+[2025-05-12 03:57:47.752] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 37
+[2025-05-12 03:57:47.753] DEBUG:   update_text_views: Clearing empty odd subline highlights for edited_text_edit before setPlainText.
+[2025-05-12 03:57:47.753] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
+[2025-05-12 03:57:47.753] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
+[2025-05-12 03:57:47.753] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
+[2025-05-12 03:57:47.753] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
+[2025-05-12 03:57:47.754] DEBUG:   update_text_views: Calling _apply_empty_odd_subline_highlights_to_edited_text for edited_text_edit.
+[2025-05-12 03:57:47.754] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:57:47.754] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:57:47.754] DEBUG:   QTextBlock 0: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:57:47.754] DEBUG:     Highlighting QTextBlock 0 (BlockNum: 0) as empty odd.
+[2025-05-12 03:57:47.755] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:57:47.755] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:57:47.755] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:57:47.756] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-12 03:57:47.756] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 6, string: 37
+[2025-05-12 03:57:47.756] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-12 03:57:47.756] DEBUG:   update_text_views: Clearing empty odd subline highlights for edited_text_edit before setPlainText.
+[2025-05-12 03:57:47.756] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-12 03:57:47.757] DEBUG:   update_text_views: Calling _apply_empty_odd_subline_highlights_to_edited_text for edited_text_edit.
+[2025-05-12 03:57:47.757] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:57:47.757] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:57:47.757] DEBUG:   QTextBlock 0: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:57:47.757] DEBUG:     Highlighting QTextBlock 0 (BlockNum: 0) as empty odd.
+[2025-05-12 03:57:47.757] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:57:47.757] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:57:47.758] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:57:47.758] DEBUG: <-- ListSelectionHandler: string_selected_from_preview finished.
+[2025-05-12 03:58:28.908] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-12 03:58:28.908] DEBUG: DSP.update_edited_data: Key (6, 37) updated. New edited_data size: 1
+[2025-05-12 03:58:28.908] DEBUG: DSP.update_edited_data: Unsaved changes status changed to True
+[2025-05-12 03:58:28.909] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:58:28.909] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:58:28.909] DEBUG:   QTextBlock 0: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:28.910] DEBUG:     Highlighting QTextBlock 0 (BlockNum: 0) as empty odd.
+[2025-05-12 03:58:28.910] DEBUG:   QTextBlock 1: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:28.910] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:58:28.910] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:58:28.910] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:58:28.910] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-12 03:58:29.056] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-12 03:58:29.056] DEBUG: DSP.update_edited_data: Key (6, 37) updated. New edited_data size: 1
+[2025-05-12 03:58:29.056] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:58:29.057] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:58:29.057] DEBUG:   QTextBlock 0: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:29.057] DEBUG:     Highlighting QTextBlock 0 (BlockNum: 0) as empty odd.
+[2025-05-12 03:58:29.057] DEBUG:   QTextBlock 1: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:29.057] DEBUG:   QTextBlock 2: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:29.058] DEBUG:     Highlighting QTextBlock 2 (BlockNum: 2) as empty odd.
+[2025-05-12 03:58:29.058] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:58:29.058] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:58:29.058] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:58:29.058] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-12 03:58:29.177] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-12 03:58:29.177] DEBUG: DSP.update_edited_data: Key (6, 37) updated. New edited_data size: 1
+[2025-05-12 03:58:29.177] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:58:29.178] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:58:29.178] DEBUG:   QTextBlock 0: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:29.178] DEBUG:     Highlighting QTextBlock 0 (BlockNum: 0) as empty odd.
+[2025-05-12 03:58:29.178] DEBUG:   QTextBlock 1: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:29.178] DEBUG:   QTextBlock 2: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:29.178] DEBUG:     Highlighting QTextBlock 2 (BlockNum: 2) as empty odd.
+[2025-05-12 03:58:29.179] DEBUG:   QTextBlock 3: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:29.179] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:58:29.179] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:58:29.179] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:58:29.179] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-12 03:58:29.356] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-12 03:58:29.356] DEBUG: DSP.update_edited_data: Key (6, 37) updated. New edited_data size: 1
+[2025-05-12 03:58:29.356] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:58:29.356] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:58:29.357] DEBUG:   QTextBlock 0: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:29.357] DEBUG:     Highlighting QTextBlock 0 (BlockNum: 0) as empty odd.
+[2025-05-12 03:58:29.357] DEBUG:   QTextBlock 1: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:29.357] DEBUG:   QTextBlock 2: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:29.357] DEBUG:     Highlighting QTextBlock 2 (BlockNum: 2) as empty odd.
+[2025-05-12 03:58:29.357] DEBUG:   QTextBlock 3: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:29.358] DEBUG:   QTextBlock 4: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:29.358] DEBUG:     Highlighting QTextBlock 4 (BlockNum: 4) as empty odd.
+[2025-05-12 03:58:29.358] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:58:29.358] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:58:29.358] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:58:29.359] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-12 03:58:29.529] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-12 03:58:29.529] DEBUG: DSP.update_edited_data: Key (6, 37) updated. New edited_data size: 1
+[2025-05-12 03:58:29.529] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:58:29.529] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:58:29.530] DEBUG:   QTextBlock 0: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:29.530] DEBUG:     Highlighting QTextBlock 0 (BlockNum: 0) as empty odd.
+[2025-05-12 03:58:29.530] DEBUG:   QTextBlock 1: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:29.530] DEBUG:   QTextBlock 2: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:29.531] DEBUG:     Highlighting QTextBlock 2 (BlockNum: 2) as empty odd.
+[2025-05-12 03:58:29.531] DEBUG:   QTextBlock 3: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:29.531] DEBUG:   QTextBlock 4: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:29.531] DEBUG:     Highlighting QTextBlock 4 (BlockNum: 4) as empty odd.
+[2025-05-12 03:58:29.531] DEBUG:   QTextBlock 5: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:29.531] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:58:29.531] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:58:29.532] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:58:29.532] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-12 03:58:29.634] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-12 03:58:29.634] DEBUG: DSP.update_edited_data: Key (6, 37) updated. New edited_data size: 1
+[2025-05-12 03:58:29.634] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:58:29.635] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:58:29.635] DEBUG:   QTextBlock 0: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:29.635] DEBUG:     Highlighting QTextBlock 0 (BlockNum: 0) as empty odd.
+[2025-05-12 03:58:29.635] DEBUG:   QTextBlock 1: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:29.635] DEBUG:   QTextBlock 2: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:29.635] DEBUG:     Highlighting QTextBlock 2 (BlockNum: 2) as empty odd.
+[2025-05-12 03:58:29.635] DEBUG:   QTextBlock 3: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:29.635] DEBUG:   QTextBlock 4: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:29.636] DEBUG:     Highlighting QTextBlock 4 (BlockNum: 4) as empty odd.
+[2025-05-12 03:58:29.636] DEBUG:   QTextBlock 5: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:29.636] DEBUG:   QTextBlock 6: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:29.636] DEBUG:     Highlighting QTextBlock 6 (BlockNum: 6) as empty odd.
+[2025-05-12 03:58:29.636] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:58:29.636] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:58:29.636] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:58:29.637] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-12 03:58:29.882] DEBUG: Timer timeout: Updating preview content.
+[2025-05-12 03:58:29.882] DEBUG:   _update_preview_content: Set is_programmatically_changing_text to True (was False)
+[2025-05-12 03:58:29.882] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 37
+[2025-05-12 03:58:29.883] DEBUG:   populate_strings_for_block: Clearing empty odd subline highlights for edited_text_edit
+[2025-05-12 03:58:29.888] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 37
+[2025-05-12 03:58:29.888] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-12 03:58:29.888] DEBUG:   update_text_views: Clearing empty odd subline highlights for edited_text_edit before setPlainText.
+[2025-05-12 03:58:29.888] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-12 03:58:29.888] DEBUG:   update_text_views: Calling _apply_empty_odd_subline_highlights_to_edited_text for edited_text_edit.
+[2025-05-12 03:58:29.888] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:58:29.888] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:58:29.888] DEBUG:   QTextBlock 0: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:29.888] DEBUG:     Highlighting QTextBlock 0 (BlockNum: 0) as empty odd.
+[2025-05-12 03:58:29.888] DEBUG:   QTextBlock 1: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:29.889] DEBUG:   QTextBlock 2: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:29.889] DEBUG:     Highlighting QTextBlock 2 (BlockNum: 2) as empty odd.
+[2025-05-12 03:58:29.889] DEBUG:   QTextBlock 3: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:29.889] DEBUG:   QTextBlock 4: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:29.889] DEBUG:     Highlighting QTextBlock 4 (BlockNum: 4) as empty odd.
+[2025-05-12 03:58:29.889] DEBUG:   QTextBlock 5: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:29.890] DEBUG:   QTextBlock 6: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:29.890] DEBUG:     Highlighting QTextBlock 6 (BlockNum: 6) as empty odd.
+[2025-05-12 03:58:29.890] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:58:29.890] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:58:29.890] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:58:29.891] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-12 03:58:29.891] DEBUG:   _update_preview_content: Restored is_programmatically_changing_text to False
+[2025-05-12 03:58:29.891] DEBUG: Preview content update finished.
+[2025-05-12 03:58:34.645] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-12 03:58:34.646] DEBUG: DSP.update_edited_data: Key (6, 37) updated. New edited_data size: 1
+[2025-05-12 03:58:34.646] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:58:34.646] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:58:34.646] DEBUG:   QTextBlock 0: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:34.646] DEBUG:     Highlighting QTextBlock 0 (BlockNum: 0) as empty odd.
+[2025-05-12 03:58:34.647] DEBUG:   QTextBlock 1: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:34.647] DEBUG:   QTextBlock 2: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:34.647] DEBUG:     Highlighting QTextBlock 2 (BlockNum: 2) as empty odd.
+[2025-05-12 03:58:34.647] DEBUG:   QTextBlock 3: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:34.647] DEBUG:   QTextBlock 4: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:34.647] DEBUG:     Highlighting QTextBlock 4 (BlockNum: 4) as empty odd.
+[2025-05-12 03:58:34.648] DEBUG:   QTextBlock 5: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:34.648] DEBUG:   QTextBlock 6: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:34.648] DEBUG:     Highlighting QTextBlock 6 (BlockNum: 6) as empty odd.
+[2025-05-12 03:58:34.648] DEBUG:   QTextBlock 7: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:34.648] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:58:34.648] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:58:34.648] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:58:34.649] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-12 03:58:34.809] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-12 03:58:34.810] DEBUG: DSP.update_edited_data: Key (6, 37) updated. New edited_data size: 1
+[2025-05-12 03:58:34.810] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:58:34.810] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:58:34.810] DEBUG:   QTextBlock 0: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:34.811] DEBUG:     Highlighting QTextBlock 0 (BlockNum: 0) as empty odd.
+[2025-05-12 03:58:34.811] DEBUG:   QTextBlock 1: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:34.811] DEBUG:   QTextBlock 2: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:34.811] DEBUG:     Highlighting QTextBlock 2 (BlockNum: 2) as empty odd.
+[2025-05-12 03:58:34.812] DEBUG:   QTextBlock 3: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:34.812] DEBUG:   QTextBlock 4: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:34.812] DEBUG:     Highlighting QTextBlock 4 (BlockNum: 4) as empty odd.
+[2025-05-12 03:58:34.812] DEBUG:   QTextBlock 5: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:34.813] DEBUG:   QTextBlock 6: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:34.813] DEBUG:     Highlighting QTextBlock 6 (BlockNum: 6) as empty odd.
+[2025-05-12 03:58:34.813] DEBUG:   QTextBlock 7: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:34.813] DEBUG:   QTextBlock 8: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:34.813] DEBUG:     Highlighting QTextBlock 8 (BlockNum: 8) as empty odd.
+[2025-05-12 03:58:34.814] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:58:34.814] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:58:34.814] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:58:34.814] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-12 03:58:35.054] DEBUG: Timer timeout: Updating preview content.
+[2025-05-12 03:58:35.054] DEBUG:   _update_preview_content: Set is_programmatically_changing_text to True (was False)
+[2025-05-12 03:58:35.054] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 37
+[2025-05-12 03:58:35.055] DEBUG:   populate_strings_for_block: Clearing empty odd subline highlights for edited_text_edit
+[2025-05-12 03:58:35.058] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 37
+[2025-05-12 03:58:35.058] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-12 03:58:35.058] DEBUG:   update_text_views: Clearing empty odd subline highlights for edited_text_edit before setPlainText.
+[2025-05-12 03:58:35.058] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-12 03:58:35.059] DEBUG:   update_text_views: Calling _apply_empty_odd_subline_highlights_to_edited_text for edited_text_edit.
+[2025-05-12 03:58:35.059] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:58:35.059] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:58:35.059] DEBUG:   QTextBlock 0: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:35.059] DEBUG:     Highlighting QTextBlock 0 (BlockNum: 0) as empty odd.
+[2025-05-12 03:58:35.059] DEBUG:   QTextBlock 1: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:35.059] DEBUG:   QTextBlock 2: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:35.060] DEBUG:     Highlighting QTextBlock 2 (BlockNum: 2) as empty odd.
+[2025-05-12 03:58:35.060] DEBUG:   QTextBlock 3: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:35.060] DEBUG:   QTextBlock 4: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:35.060] DEBUG:     Highlighting QTextBlock 4 (BlockNum: 4) as empty odd.
+[2025-05-12 03:58:35.060] DEBUG:   QTextBlock 5: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:35.060] DEBUG:   QTextBlock 6: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:35.060] DEBUG:     Highlighting QTextBlock 6 (BlockNum: 6) as empty odd.
+[2025-05-12 03:58:35.061] DEBUG:   QTextBlock 7: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:35.061] DEBUG:   QTextBlock 8: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:35.061] DEBUG:     Highlighting QTextBlock 8 (BlockNum: 8) as empty odd.
+[2025-05-12 03:58:35.062] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:58:35.062] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:58:35.062] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:58:35.062] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-12 03:58:35.062] DEBUG:   _update_preview_content: Restored is_programmatically_changing_text to False
+[2025-05-12 03:58:35.062] DEBUG: Preview content update finished.
+[2025-05-12 03:58:38.291] DEBUG: --> ListSelectionHandler: block_selected. Item: 'Зельда прийшла до Лінка, фестиваль, напад Вааті (5 warn, 5 width, 16 short)', Index: 16
+[2025-05-12 03:58:38.291] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 16. Current string_idx: -1
+[2025-05-12 03:58:38.292] DEBUG:   populate_strings_for_block: Clearing empty odd subline highlights for edited_text_edit
+[2025-05-12 03:58:38.305] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 16, string: -1
+[2025-05-12 03:58:38.305] DEBUG:   No active block/string selected. Text views will be cleared.
+[2025-05-12 03:58:38.305] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-12 03:58:38.305] DEBUG:   update_text_views: Clearing empty odd subline highlights for edited_text_edit before setPlainText.
+[2025-05-12 03:58:38.305] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
+[2025-05-12 03:58:38.305] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
+[2025-05-12 03:58:38.305] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
+[2025-05-12 03:58:38.305] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
+[2025-05-12 03:58:38.305] DEBUG:   update_text_views: Calling _apply_empty_odd_subline_highlights_to_edited_text for edited_text_edit.
+[2025-05-12 03:58:38.305] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:58:38.306] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:58:38.306] DEBUG:   QTextBlock 0: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:38.306] DEBUG:     Highlighting QTextBlock 0 (BlockNum: 0) as empty odd.
+[2025-05-12 03:58:38.306] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:58:38.306] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:58:38.306] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:58:38.307] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-12 03:58:38.307] DEBUG: <-- ListSelectionHandler: block_selected finished.
+[2025-05-12 03:58:39.050] DEBUG: --> ListSelectionHandler: string_selected_from_preview. Data Line number: 41
+[2025-05-12 03:58:39.050] DEBUG: Set current_string_idx = 41.
+[2025-05-12 03:58:39.050] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 16. Current string_idx: 41
+[2025-05-12 03:58:39.053] DEBUG:   populate_strings_for_block: Clearing empty odd subline highlights for edited_text_edit
+[2025-05-12 03:58:39.053] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 16, string: 41
+[2025-05-12 03:58:39.056] DEBUG:   update_text_views: Clearing empty odd subline highlights for edited_text_edit before setPlainText.
+[2025-05-12 03:58:39.056] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
+[2025-05-12 03:58:39.057] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
+[2025-05-12 03:58:39.057] DEBUG: TextOperationHandler.text_edited: Is programmatic, returning.
+[2025-05-12 03:58:39.057] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
+[2025-05-12 03:58:39.058] DEBUG:   update_text_views: Calling _apply_empty_odd_subline_highlights_to_edited_text for edited_text_edit.
+[2025-05-12 03:58:39.058] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:58:39.058] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:58:39.058] DEBUG:   QTextBlock 0: Text='Ні! Я хочу {Color:Red}щит{Colo...', NoTagsStripped='Ні! Я хочу щит.', IsEmpty=False, IsOdd=True
+[2025-05-12 03:58:39.058] DEBUG:   QTextBlock 1: Text='Можу його взяти?...', NoTagsStripped='Можу його взяти?', IsEmpty=False, IsOdd=False
+[2025-05-12 03:58:39.058] DEBUG:   No empty odd subline highlights were added in this run.
+[2025-05-12 03:58:39.059] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:58:39.059] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:58:39.059] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-12 03:58:39.060] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 16, string: 41
+[2025-05-12 03:58:39.060] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-12 03:58:39.060] DEBUG:   update_text_views: Clearing empty odd subline highlights for edited_text_edit before setPlainText.
+[2025-05-12 03:58:39.060] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-12 03:58:39.060] DEBUG:   update_text_views: Calling _apply_empty_odd_subline_highlights_to_edited_text for edited_text_edit.
+[2025-05-12 03:58:39.060] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:58:39.061] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:58:39.061] DEBUG:   QTextBlock 0: Text='Ні! Я хочу {Color:Red}щит{Colo...', NoTagsStripped='Ні! Я хочу щит.', IsEmpty=False, IsOdd=True
+[2025-05-12 03:58:39.061] DEBUG:   QTextBlock 1: Text='Можу його взяти?...', NoTagsStripped='Можу його взяти?', IsEmpty=False, IsOdd=False
+[2025-05-12 03:58:39.061] DEBUG:   No empty odd subline highlights were added in this run.
+[2025-05-12 03:58:39.061] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:58:39.061] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:58:39.062] DEBUG: <-- ListSelectionHandler: string_selected_from_preview finished.
+[2025-05-12 03:58:40.194] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-12 03:58:40.194] DEBUG: DSP.update_edited_data: Key (16, 41) updated. New edited_data size: 2
+[2025-05-12 03:58:40.194] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:58:40.194] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:58:40.195] DEBUG:   QTextBlock 0: Text='Ні! Я хочу {Color:Red}щит{Colo...', NoTagsStripped='Ні! Я хочу щит.', IsEmpty=False, IsOdd=True
+[2025-05-12 03:58:40.195] DEBUG:   QTextBlock 1: Text='Можу його взяти?...', NoTagsStripped='Можу його взяти?', IsEmpty=False, IsOdd=False
+[2025-05-12 03:58:40.195] DEBUG:   QTextBlock 2: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:40.195] DEBUG:     Highlighting QTextBlock 2 (BlockNum: 2) as empty odd.
+[2025-05-12 03:58:40.195] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:58:40.195] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:58:40.195] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:58:40.195] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-12 03:58:40.360] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-12 03:58:40.360] DEBUG: DSP.update_edited_data: Key (16, 41) updated. New edited_data size: 2
+[2025-05-12 03:58:40.361] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:58:40.361] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:58:40.361] DEBUG:   QTextBlock 0: Text='Ні! Я хочу {Color:Red}щит{Colo...', NoTagsStripped='Ні! Я хочу щит.', IsEmpty=False, IsOdd=True
+[2025-05-12 03:58:40.361] DEBUG:   QTextBlock 1: Text='Можу його взяти?...', NoTagsStripped='Можу його взяти?', IsEmpty=False, IsOdd=False
+[2025-05-12 03:58:40.361] DEBUG:   QTextBlock 2: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:40.361] DEBUG:     Highlighting QTextBlock 2 (BlockNum: 2) as empty odd.
+[2025-05-12 03:58:40.362] DEBUG:   QTextBlock 3: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:40.362] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:58:40.362] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:58:40.362] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:58:40.362] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-12 03:58:40.516] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-12 03:58:40.516] DEBUG: DSP.update_edited_data: Key (16, 41) updated. New edited_data size: 2
+[2025-05-12 03:58:40.517] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:58:40.517] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:58:40.517] DEBUG:   QTextBlock 0: Text='Ні! Я хочу {Color:Red}щит{Colo...', NoTagsStripped='Ні! Я хочу щит.', IsEmpty=False, IsOdd=True
+[2025-05-12 03:58:40.517] DEBUG:   QTextBlock 1: Text='Можу його взяти?...', NoTagsStripped='Можу його взяти?', IsEmpty=False, IsOdd=False
+[2025-05-12 03:58:40.517] DEBUG:   QTextBlock 2: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:40.517] DEBUG:     Highlighting QTextBlock 2 (BlockNum: 2) as empty odd.
+[2025-05-12 03:58:40.518] DEBUG:   QTextBlock 3: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:40.518] DEBUG:   QTextBlock 4: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:40.518] DEBUG:     Highlighting QTextBlock 4 (BlockNum: 4) as empty odd.
+[2025-05-12 03:58:40.518] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:58:40.518] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:58:40.519] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:58:40.519] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-12 03:58:40.639] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-12 03:58:40.639] DEBUG: DSP.update_edited_data: Key (16, 41) updated. New edited_data size: 2
+[2025-05-12 03:58:40.640] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:58:40.640] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:58:40.640] DEBUG:   QTextBlock 0: Text='Ні! Я хочу {Color:Red}щит{Colo...', NoTagsStripped='Ні! Я хочу щит.', IsEmpty=False, IsOdd=True
+[2025-05-12 03:58:40.640] DEBUG:   QTextBlock 1: Text='Можу його взяти?...', NoTagsStripped='Можу його взяти?', IsEmpty=False, IsOdd=False
+[2025-05-12 03:58:40.640] DEBUG:   QTextBlock 2: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:40.640] DEBUG:     Highlighting QTextBlock 2 (BlockNum: 2) as empty odd.
+[2025-05-12 03:58:40.641] DEBUG:   QTextBlock 3: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:40.641] DEBUG:   QTextBlock 4: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:40.641] DEBUG:     Highlighting QTextBlock 4 (BlockNum: 4) as empty odd.
+[2025-05-12 03:58:40.641] DEBUG:   QTextBlock 5: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:40.641] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:58:40.641] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:58:40.641] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:58:40.642] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-12 03:58:40.787] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-12 03:58:40.787] DEBUG: DSP.update_edited_data: Key (16, 41) updated. New edited_data size: 2
+[2025-05-12 03:58:40.788] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:58:40.788] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:58:40.788] DEBUG:   QTextBlock 0: Text='Ні! Я хочу {Color:Red}щит{Colo...', NoTagsStripped='Ні! Я хочу щит.', IsEmpty=False, IsOdd=True
+[2025-05-12 03:58:40.788] DEBUG:   QTextBlock 1: Text='Можу його взяти?...', NoTagsStripped='Можу його взяти?', IsEmpty=False, IsOdd=False
+[2025-05-12 03:58:40.789] DEBUG:   QTextBlock 2: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:40.789] DEBUG:     Highlighting QTextBlock 2 (BlockNum: 2) as empty odd.
+[2025-05-12 03:58:40.789] DEBUG:   QTextBlock 3: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:40.789] DEBUG:   QTextBlock 4: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:40.789] DEBUG:     Highlighting QTextBlock 4 (BlockNum: 4) as empty odd.
+[2025-05-12 03:58:40.789] DEBUG:   QTextBlock 5: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:40.789] DEBUG:   QTextBlock 6: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:40.790] DEBUG:     Highlighting QTextBlock 6 (BlockNum: 6) as empty odd.
+[2025-05-12 03:58:40.790] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:58:40.790] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:58:40.790] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:58:40.791] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-12 03:58:40.924] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
+[2025-05-12 03:58:40.924] DEBUG: DSP.update_edited_data: Key (16, 41) updated. New edited_data size: 2
+[2025-05-12 03:58:40.925] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:58:40.925] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:58:40.925] DEBUG:   QTextBlock 0: Text='Ні! Я хочу {Color:Red}щит{Colo...', NoTagsStripped='Ні! Я хочу щит.', IsEmpty=False, IsOdd=True
+[2025-05-12 03:58:40.925] DEBUG:   QTextBlock 1: Text='Можу його взяти?...', NoTagsStripped='Можу його взяти?', IsEmpty=False, IsOdd=False
+[2025-05-12 03:58:40.925] DEBUG:   QTextBlock 2: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:40.926] DEBUG:     Highlighting QTextBlock 2 (BlockNum: 2) as empty odd.
+[2025-05-12 03:58:40.926] DEBUG:   QTextBlock 3: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:40.926] DEBUG:   QTextBlock 4: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:40.926] DEBUG:     Highlighting QTextBlock 4 (BlockNum: 4) as empty odd.
+[2025-05-12 03:58:40.927] DEBUG:   QTextBlock 5: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:40.927] DEBUG:   QTextBlock 6: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:40.927] DEBUG:     Highlighting QTextBlock 6 (BlockNum: 6) as empty odd.
+[2025-05-12 03:58:40.927] DEBUG:   QTextBlock 7: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:40.927] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:58:40.927] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:58:40.928] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:58:40.928] DEBUG: TextOperationHandler.text_edited: End. Final undoAvailable = True
+[2025-05-12 03:58:41.166] DEBUG: Timer timeout: Updating preview content.
+[2025-05-12 03:58:41.166] DEBUG:   _update_preview_content: Set is_programmatically_changing_text to True (was False)
+[2025-05-12 03:58:41.166] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 16. Current string_idx: 41
+[2025-05-12 03:58:41.167] DEBUG:   populate_strings_for_block: Clearing empty odd subline highlights for edited_text_edit
+[2025-05-12 03:58:41.178] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 16, string: 41
+[2025-05-12 03:58:41.179] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-12 03:58:41.179] DEBUG:   update_text_views: Clearing empty odd subline highlights for edited_text_edit before setPlainText.
+[2025-05-12 03:58:41.179] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-12 03:58:41.179] DEBUG:   update_text_views: Calling _apply_empty_odd_subline_highlights_to_edited_text for edited_text_edit.
+[2025-05-12 03:58:41.179] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...
+[2025-05-12 03:58:41.179] DEBUG:   Clearing previous empty odd subline highlights.
+[2025-05-12 03:58:41.179] DEBUG:   QTextBlock 0: Text='Ні! Я хочу {Color:Red}щит{Colo...', NoTagsStripped='Ні! Я хочу щит.', IsEmpty=False, IsOdd=True
+[2025-05-12 03:58:41.180] DEBUG:   QTextBlock 1: Text='Можу його взяти?...', NoTagsStripped='Можу його взяти?', IsEmpty=False, IsOdd=False
+[2025-05-12 03:58:41.180] DEBUG:   QTextBlock 2: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:41.180] DEBUG:     Highlighting QTextBlock 2 (BlockNum: 2) as empty odd.
+[2025-05-12 03:58:41.180] DEBUG:   QTextBlock 3: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:41.180] DEBUG:   QTextBlock 4: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:41.180] DEBUG:     Highlighting QTextBlock 4 (BlockNum: 4) as empty odd.
+[2025-05-12 03:58:41.180] DEBUG:   QTextBlock 5: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:41.181] DEBUG:   QTextBlock 6: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=True
+[2025-05-12 03:58:41.181] DEBUG:     Highlighting QTextBlock 6 (BlockNum: 6) as empty odd.
+[2025-05-12 03:58:41.181] DEBUG:   QTextBlock 7: Text='...', NoTagsStripped='', IsEmpty=True, IsOdd=False
+[2025-05-12 03:58:41.181] DEBUG:   At least one empty odd subline highlight was added.
+[2025-05-12 03:58:41.181] DEBUG:   Calling applyQueuedHighlights on edited_edit.
+[2025-05-12 03:58:41.182] DEBUG: UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.
+[2025-05-12 03:58:41.182] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-12 03:58:41.182] DEBUG:   _update_preview_content: Restored is_programmatically_changing_text to False
+[2025-05-12 03:58:41.182] DEBUG: Preview content update finished.
+[2025-05-12 03:59:58.669] DEBUG: --> MainWindow: closeEvent received.
+2025-05-12 03:59:58,670 - DEBUG - logging_utils - log_debug - MainWindowHelper: prepare_to_close called.
+2025-05-12 03:59:58,670 - DEBUG - logging_utils - log_debug - MainWindowHelper: Updated search_history_to_save: 7 items
+[2025-05-12 03:59:58.671] DEBUG: --> AppActionHandler: handle_close_event called.
+[2025-05-12 04:00:00.276] DEBUG: <-- AppActionHandler: handle_close_event finished.
+[2025-05-12 04:00:00.276] DEBUG: Close accepted (unsaved changes were handled). Settings should have been saved by AppActionHandler or by user choice during handle_close_event.
+[2025-05-12 04:00:00.276] DEBUG: <-- MainWindow: closeEvent finished.
+[2025-05-12 04:00:00.303] DEBUG: Qt event loop finished with exit code: 0
+[2025-05-12 04:00:00.304] DEBUG: ================= Application End =================

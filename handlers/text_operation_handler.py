@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import QMessageBox, QApplication
 from PyQt5.QtGui import QTextCursor, QTextBlock
 from PyQt5.QtCore import QTimer
 from .base_handler import BaseHandler
-from utils.utils import log_debug, convert_dots_to_spaces_from_editor, convert_spaces_to_dots_for_display, calculate_string_width, remove_all_tags
+from utils.utils import log_debug, convert_dots_to_spaces_from_editor, convert_spaces_to_dots_for_display, calculate_string_width, remove_all_tags, SPACE_DOT_SYMBOL
 from core.tag_utils import apply_default_mappings_only, analyze_tags_for_issues, \
                       process_segment_tags_aggressively, \
                       TAG_STATUS_OK, TAG_STATUS_CRITICAL, \
@@ -72,19 +72,15 @@ class TextOperationHandler(BaseHandler):
         return state_changed
 
     def _determine_if_data_string_is_short(self, data_string_text: str) -> bool:
-        """
-        Determines if a data string (which can contain multiple sub-lines)
-        should be marked as short based on its internal sub-lines.
-        """
         sub_lines = str(data_string_text).split('\n')
         if len(sub_lines) <= 1:
-            return False # Cannot be short if only one or zero sub-lines
+            return False 
 
         sentence_end_chars = ('.', '!', '?')
         space_width = calculate_string_width(" ", self.mw.font_map)
 
         for sub_line_idx, current_sub_line_text in enumerate(sub_lines):
-            if sub_line_idx == len(sub_lines) - 1: # Last sub-line cannot be short relative to a next one
+            if sub_line_idx == len(sub_lines) - 1: 
                 break
 
             current_sub_line_clean_stripped = remove_all_tags(current_sub_line_text).strip()
@@ -107,7 +103,7 @@ class TextOperationHandler(BaseHandler):
                 current_sub_line_pixel_width = calculate_string_width(remove_all_tags(current_sub_line_text), self.mw.font_map)
                 remaining_width = self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS - current_sub_line_pixel_width
                 if remaining_width >= (first_word_next_width + space_width):
-                    return True # Found a sub-line that makes the data_string short
+                    return True 
         return False
 
     def _check_and_update_short_line_status_for_data_string(self, block_idx: int, string_idx: int, data_string_text: str) -> bool:
@@ -133,7 +129,6 @@ class TextOperationHandler(BaseHandler):
                 del self.mw.short_lines_per_block[block_key]
         return state_changed
 
-
     def text_edited(self):
         log_debug(f"TextOperationHandler.text_edited: Start. Programmatic change? {self.mw.is_programmatically_changing_text}")
         if self.mw.is_programmatically_changing_text:
@@ -157,7 +152,6 @@ class TextOperationHandler(BaseHandler):
             
         problems_updated_for_block_list = False
 
-        # --- Tag Issue Check ---
         original_text_for_comparison = self.data_processor._get_string_from_source(block_idx, string_idx_in_block, self.mw.data, "original_for_text_edited_check")
         if original_text_for_comparison is not None:
             tag_status, _ = analyze_tags_for_issues(actual_text_with_spaces, original_text_for_comparison, self.mw.EDITOR_PLAYER_TAG)
@@ -187,29 +181,22 @@ class TextOperationHandler(BaseHandler):
                 if warn_problems: self.mw.warning_problem_lines_per_block[block_key] = warn_problems
                 elif block_key in self.mw.warning_problem_lines_per_block: del self.mw.warning_problem_lines_per_block[block_key]
         
-        # --- Width Exceeded Check ---
         width_state_changed = self._check_and_update_width_exceeded_status(block_idx, string_idx_in_block, actual_text_with_spaces)
         if width_state_changed:
             problems_updated_for_block_list = True
         
-        # --- Short Line Check ---
         short_line_state_changed_current = self._check_and_update_short_line_status_for_data_string(block_idx, string_idx_in_block, actual_text_with_spaces)
         if short_line_state_changed_current:
             problems_updated_for_block_list = True
         
-        # Check previous line if its short status might have changed due to current line's edit
-        # This is only relevant if the current line was the "next line" for the previous one.
-        # The current logic for _check_and_update_short_line_status_for_data_string only looks *within* a data string.
-        # So, changing line N will only affect line N's short status based on its own sub-lines.
-        # If we need to re-evaluate line N-1 based on line N changing, that's a different scope.
-        # For now, the current logic _determine_if_data_string_is_short is self-contained per data_string.
-        # No need to re-check previous data_string explicitly here.
-
         if problems_updated_for_block_list and hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
             self.ui_updater.update_block_item_text_with_problem_count(block_idx)
         
+        if hasattr(self.ui_updater, '_apply_empty_odd_subline_highlights_to_edited_text'):
+            self.ui_updater._apply_empty_odd_subline_highlights_to_edited_text()
+
         self.preview_update_timer.start(PREVIEW_UPDATE_DELAY)
-        self.ui_updater.update_status_bar() # Will call update_status_bar_selection if needed
+        self.ui_updater.update_status_bar() 
         self.ui_updater.synchronize_original_cursor()
         
         edited_edit = getattr(self.mw, 'edited_text_edit', None)
@@ -236,6 +223,12 @@ class TextOperationHandler(BaseHandler):
         if preview_edit and hasattr(preview_edit, 'clearAllProblemTypeHighlights'):
             preview_edit.clearAllProblemTypeHighlights()
         
+        edited_edit = getattr(self.mw, 'edited_text_edit', None)
+        if edited_edit:
+            edited_edit.clearAllProblemTypeHighlights()
+            if hasattr(edited_edit, 'clearEmptyOddSublineHighlights'):
+                edited_edit.clearEmptyOddSublineHighlights()
+
         self.mw.critical_problem_lines_per_block.pop(block_key, None)
         self.mw.warning_problem_lines_per_block.pop(block_key, None)
         self.mw.width_exceeded_lines_per_block.pop(block_key, None)
@@ -290,7 +283,6 @@ class TextOperationHandler(BaseHandler):
                  any_change_applied_to_data = True
             successfully_processed_count += 1
 
-        # Rescan all potentially affected lines in the block for all issues
         if successfully_processed_count > 0:
              log_debug(f"Paste block finished. Triggering silent rescan for block {block_idx} due to paste.")
              self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False)
@@ -315,7 +307,7 @@ class TextOperationHandler(BaseHandler):
             QMessageBox.information(self.mw, "Paste", "Pasted text resulted in no changes to the data.")
         
         self.mw.is_programmatically_changing_text = True
-        self.ui_updater.populate_strings_for_block(self.mw.current_block_idx) # This will update highlights
+        self.ui_updater.populate_strings_for_block(self.mw.current_block_idx) 
         self.ui_updater.update_block_item_text_with_problem_count(self.mw.current_block_idx)
         self.mw.is_programmatically_changing_text = False
         
@@ -352,18 +344,14 @@ class TextOperationHandler(BaseHandler):
         if self.data_processor.update_edited_data(block_idx, line_index, original_text):
              self.ui_updater.update_title()
 
-        # Re-scan this specific line for all issues
         self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False)
         
-        # If the current line was reverted, its "shortness" or the "shortness" of the line before it might change.
-        # The call to _perform_issues_scan_for_block for the whole block will handle this.
-
-        if self.mw.current_string_idx == line_index: # If the reverted line is the currently displayed one
-             self.ui_updater.update_text_views() # Update original/edited text views
+        if self.mw.current_string_idx == line_index: 
+             self.ui_updater.update_text_views() 
         
         self.mw.is_programmatically_changing_text = True
-        self.ui_updater.populate_strings_for_block(block_idx) # Repopulate preview and update highlights
-        self.ui_updater.update_block_item_text_with_problem_count(block_idx) # Update block list item
+        self.ui_updater.populate_strings_for_block(block_idx) 
+        self.ui_updater.update_block_item_text_with_problem_count(block_idx) 
         self.mw.is_programmatically_changing_text = False
 
         if hasattr(self.mw, 'statusBar'):
@@ -411,7 +399,7 @@ class TextOperationHandler(BaseHandler):
             short_status = ""
             if width_px > warning_threshold: status = "EXCEEDED (Editor)"
 
-            if i < len(sub_lines_current) - 1 : # Check only if NOT the last sub_line
+            if i < len(sub_lines_current) - 1 : 
                 current_sub_line_no_tags_stripped_calc = remove_all_tags(sub_line).strip()
                 if current_sub_line_no_tags_stripped_calc and not current_sub_line_no_tags_stripped_calc.endswith(sentence_end_chars):
                     next_sub_line_text_calc = sub_lines_current[i+1]

@@ -19,6 +19,7 @@ from .LNET_constants import (
     PREVIEW_SELECTED_LINE_COLOR, CRITICAL_PROBLEM_LINE_COLOR,
     WARNING_PROBLEM_LINE_COLOR, TAG_INTERACTION_HIGHLIGHT_COLOR,
     SEARCH_MATCH_HIGHLIGHT_COLOR, WIDTH_EXCEEDED_LINE_COLOR, SHORT_LINE_COLOR,
+    EMPTY_ODD_SUBLINE_COLOR,
     CHARACTER_LIMIT_LINE_POSITION, CHARACTER_LIMIT_LINE_COLOR, CHARACTER_LIMIT_LINE_STYLE, CHARACTER_LIMIT_LINE_WIDTH,
     WIDTH_THRESHOLD_LINE_COLOR, WIDTH_THRESHOLD_LINE_STYLE, WIDTH_THRESHOLD_LINE_WIDTH
 )
@@ -47,6 +48,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.search_match_highlight_color = SEARCH_MATCH_HIGHLIGHT_COLOR
         self.width_exceeded_line_color = WIDTH_EXCEEDED_LINE_COLOR 
         self.short_line_color = SHORT_LINE_COLOR 
+        self.empty_odd_subline_color = EMPTY_ODD_SUBLINE_COLOR
 
         self.highlightManager = TextHighlightManager(self)
         log_debug(f"LNET ({self.objectName()}): highlightManager created. Has 'clear_width_exceed_char_highlights': {hasattr(self.highlightManager, 'clear_width_exceed_char_highlights')}")
@@ -275,12 +277,12 @@ class LineNumberedTextEdit(QPlainTextEdit):
     def updateLineNumberAreaWidth(self, _):
         new_width = self.lineNumberAreaWidth()
         self.setViewportMargins(new_width, 0, 0, 0)
-        if hasattr(self, 'lineNumberArea'): # Check before accessing
+        if hasattr(self, 'lineNumberArea'): 
             self.lineNumberArea.updateGeometry()
             self.lineNumberArea.update()
 
     def updateLineNumberArea(self, rect: QRectF, dy: int):
-        if hasattr(self, 'lineNumberArea'): # Check before accessing
+        if hasattr(self, 'lineNumberArea'): 
             if dy: self.lineNumberArea.scroll(0, dy)
             else: self.lineNumberArea.update(0, 0, self.lineNumberArea.width(), self.lineNumberArea.height())
         if self.isVisible():
@@ -289,24 +291,23 @@ class LineNumberedTextEdit(QPlainTextEdit):
     def resizeEvent(self, event):
         super().resizeEvent(event)
         cr = self.contentsRect()
-        if hasattr(self, 'lineNumberArea'): # Check before accessing
+        if hasattr(self, 'lineNumberArea'): 
             self.lineNumberArea.setGeometry(QRect(cr.left(), cr.top(), self.lineNumberAreaWidth(), cr.height()))
         if self.isVisible():
             self.viewport().update()
 
     def paintEvent(self, event: QPaintEvent):
-        if hasattr(self, 'paint_handler') and self.paint_handler: # Check before calling
+        if hasattr(self, 'paint_handler') and self.paint_handler: 
             self.paint_handler.paintEvent(event)
         else:
-            super().paintEvent(event) # Fallback if paint_handler is not yet initialized
+            super().paintEvent(event) 
 
     def super_paintEvent(self, event: QPaintEvent):
         super().paintEvent(event)
 
     def lineNumberAreaPaintEvent(self, event, painter_device):
-        if hasattr(self, 'paint_handler') and self.paint_handler: # Check before calling
+        if hasattr(self, 'paint_handler') and self.paint_handler: 
             self.paint_handler.lineNumberAreaPaintEvent(event, painter_device)
-        # No super call here as this is specific to our LineNumberArea
 
     def mousePressEvent(self, event: QMouseEvent):
         self.mouse_handler.mousePressEvent(event) 
@@ -373,6 +374,18 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
     def hasShortLineHighlight(self, line_number = None) -> bool:
         return self.highlight_interface.hasShortLineHighlight(line_number)
+
+    def addEmptyOddSublineHighlight(self, block_number: int):
+        self.highlight_interface.addEmptyOddSublineHighlight(block_number)
+
+    def removeEmptyOddSublineHighlight(self, block_number: int) -> bool:
+        return self.highlight_interface.removeEmptyOddSublineHighlight(block_number)
+
+    def clearEmptyOddSublineHighlights(self):
+        self.highlight_interface.clearEmptyOddSublineHighlights()
+
+    def hasEmptyOddSublineHighlight(self, block_number = None) -> bool:
+        return self.highlight_interface.hasEmptyOddSublineHighlight(block_number)
 
     def setPreviewSelectedLineHighlight(self, line_number: int):
         self.highlight_interface.setPreviewSelectedLineHighlight(line_number)

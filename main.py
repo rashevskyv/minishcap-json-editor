@@ -59,6 +59,7 @@ class MainWindow(QMainWindow):
         self.block_names = {}; self.current_block_idx = -1; self.current_string_idx = -1
         self.unsaved_changes = False
         self.unsaved_block_indices = set()
+        self.empty_odd_qtextblocks_in_current_string = set()
 
         self.last_selected_block_index = -1
         self.last_selected_string_index = -1

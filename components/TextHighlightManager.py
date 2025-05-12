@@ -17,6 +17,7 @@ class TextHighlightManager:
         self._tag_interaction_selections = []
         self._search_match_selections = []
         self._width_exceed_char_selections = [] 
+        self._empty_odd_subline_selections = []
         
         self._tag_highlight_timer = QTimer()
         self._tag_highlight_timer.setSingleShot(True)
@@ -57,7 +58,7 @@ class TextHighlightManager:
         return None
 
     def applyHighlights(self):
-        log_debug(f"THM ({self.editor.objectName()}): applyHighlights CALLED. Num _width_exceed_char_selections = {len(self._width_exceed_char_selections)}, Num _critical_problem_selections = {len(self._critical_problem_selections)}")
+        # log_debug(f"THM ({self.editor.objectName()}): applyHighlights CALLED. Num _width_exceed_char_selections = {len(self._width_exceed_char_selections)}, Num _critical_problem_selections = {len(self._critical_problem_selections)}")
         all_selections = []
         if self._active_line_selections: all_selections.extend(list(self._active_line_selections)) 
         if self._linked_cursor_selections: 
@@ -66,6 +67,7 @@ class TextHighlightManager:
         
         if self._critical_problem_selections: all_selections.extend(list(self._critical_problem_selections))
         if self._warning_problem_selections: all_selections.extend(list(self._warning_problem_selections))
+        if self._empty_odd_subline_selections: all_selections.extend(list(self._empty_odd_subline_selections))
         
         if self._search_match_selections: all_selections.extend(list(self._search_match_selections))
         if self._width_exceed_char_selections: all_selections.extend(list(self._width_exceed_char_selections))
@@ -249,9 +251,9 @@ class TextHighlightManager:
             self.applyHighlights()
             
     def add_width_exceed_char_highlight(self, block: QTextBlock, char_index_in_block: int, color: QColor):
-        log_debug(f"THM: add_width_exceed_char_highlight CALLED for block {block.blockNumber()}, char_idx_in_block {char_index_in_block}")
+        # log_debug(f"THM: add_width_exceed_char_highlight CALLED for block {block.blockNumber()}, char_idx_in_block {char_index_in_block}")
         if not block.isValid():
-            log_debug("THM: Invalid block passed to add_width_exceed_char_highlight.")
+            # log_debug("THM: Invalid block passed to add_width_exceed_char_highlight.")
             return
         selection = QTextEdit.ExtraSelection()
         selection.format.setBackground(color)
@@ -259,7 +261,7 @@ class TextHighlightManager:
         char_cursor = QTextCursor(block)
         char_cursor.setPosition(block.position() + char_index_in_block)
         char_cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1) 
-        log_debug(f"THM: Cursor selection after move: Start={char_cursor.selectionStart()}, End={char_cursor.selectionEnd()}, HasSelection={char_cursor.hasSelection()}")
+        # log_debug(f"THM: Cursor selection after move: Start={char_cursor.selectionStart()}, End={char_cursor.selectionEnd()}, HasSelection={char_cursor.hasSelection()}")
         
         if char_cursor.hasSelection():
             selection.cursor = char_cursor
@@ -272,32 +274,66 @@ class TextHighlightManager:
                     break
             if not already_exists:
                 self._width_exceed_char_selections.append(selection)
-                log_debug(f"THM: Added width_exceed_char_highlight for block {block.blockNumber()}, char_index_in_block {char_index_in_block}. Total now: {len(self._width_exceed_char_selections)}")
-            else:
-                log_debug(f"THM: Width_exceed_char_highlight for block {block.blockNumber()}, char_index_in_block {char_index_in_block} already exists.")
-        else:
-            log_debug(f"THM: Could not create selection for width_exceed_char_highlight at block {block.blockNumber()}, char_idx_in_block {char_index_in_block}")
+                # log_debug(f"THM: Added width_exceed_char_highlight for block {block.blockNumber()}, char_index_in_block {char_index_in_block}. Total now: {len(self._width_exceed_char_selections)}")
+            # else:
+                # log_debug(f"THM: Width_exceed_char_highlight for block {block.blockNumber()}, char_index_in_block {char_index_in_block} already exists.")
+        # else:
+            # log_debug(f"THM: Could not create selection for width_exceed_char_highlight at block {block.blockNumber()}, char_idx_in_block {char_index_in_block}")
+        pass
 
 
     def clear_width_exceed_char_highlights(self):
-        # This method now ONLY clears the list. applyHighlights() is called by the painter.
         if self._width_exceed_char_selections:
-            log_debug(f"THM: Clearing {len(self._width_exceed_char_selections)} width_exceed_char_highlights from list.")
+            # log_debug(f"THM: Clearing {len(self._width_exceed_char_selections)} width_exceed_char_highlights from list.")
             self._width_exceed_char_selections = []
-            # DO NOT CALL applyHighlights() here. Let the paintEvent handle it.
-        else:
-            log_debug(f"THM: No width_exceed_char_highlights in list to clear.")
+        # else:
+            # log_debug(f"THM: No width_exceed_char_highlights in list to clear.")
+        pass
 
+    def addEmptyOddSublineHighlight(self, block_number: int):
+        doc = self.editor.document()
+        needs_update = False
+        if block_number >= 0 and block_number < doc.blockCount():
+            block = doc.findBlockByNumber(block_number)
+            if block.isValid():
+                is_already_added = any(s.cursor.blockNumber() == block_number for s in self._empty_odd_subline_selections)
+                if not is_already_added:
+                    selection = self._create_block_background_selection(block, self.editor.empty_odd_subline_color, use_full_width=False)
+                    if selection:
+                        self._empty_odd_subline_selections.append(selection)
+                        needs_update = True
+        if needs_update:
+            self.applyHighlights()
+
+    def removeEmptyOddSublineHighlight(self, block_number: int) -> bool:
+        removed = False
+        initial_len = len(self._empty_odd_subline_selections)
+        self._empty_odd_subline_selections = [s for s in self._empty_odd_subline_selections if s.cursor.blockNumber() != block_number]
+        if len(self._empty_odd_subline_selections) < initial_len:
+            removed = True
+            self.applyHighlights()
+        return removed
+
+    def clearEmptyOddSublineHighlights(self):
+        needs_update = bool(self._empty_odd_subline_selections)
+        self._empty_odd_subline_selections = []
+        if needs_update:
+            self.applyHighlights()
+
+    def hasEmptyOddSublineHighlight(self, block_number: Optional[int] = None) -> bool:
+        if block_number is not None:
+            return any(s.cursor.blockNumber() == block_number for s in self._empty_odd_subline_selections)
+        return bool(self._empty_odd_subline_selections)
 
     def clearAllProblemHighlights(self):
         needs_update = bool(self._critical_problem_selections) or \
-                       bool(self._warning_problem_selections) 
+                       bool(self._warning_problem_selections) or \
+                       bool(self._empty_odd_subline_selections)
         
         self._critical_problem_selections = []
         self._warning_problem_selections = []
+        self._empty_odd_subline_selections = []
         
-        # _width_exceed_char_selections are managed by paintEvent's cycle
-        # If this method is called for other reasons, ensure it's also cleared.
         if self._width_exceed_char_selections:
             self._width_exceed_char_selections = []
             needs_update = True
@@ -313,4 +349,5 @@ class TextHighlightManager:
         self._tag_interaction_selections = []
         self._search_match_selections = []
         self._width_exceed_char_selections = [] 
+        self._empty_odd_subline_selections = []
         self.applyHighlights()

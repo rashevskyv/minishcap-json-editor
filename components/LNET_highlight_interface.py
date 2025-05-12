@@ -64,6 +64,24 @@ class LNETHighlightInterface:
     def hasShortLineHighlight(self, line_number: Optional[int] = None) -> bool:
         return False
 
+    def addEmptyOddSublineHighlight(self, block_number: int):
+        if hasattr(self.editor.highlightManager, 'addEmptyOddSublineHighlight'):
+            self.editor.highlightManager.addEmptyOddSublineHighlight(block_number)
+
+    def removeEmptyOddSublineHighlight(self, block_number: int) -> bool:
+        if hasattr(self.editor.highlightManager, 'removeEmptyOddSublineHighlight'):
+            return self.editor.highlightManager.removeEmptyOddSublineHighlight(block_number)
+        return False
+
+    def clearEmptyOddSublineHighlights(self):
+        if hasattr(self.editor.highlightManager, 'clearEmptyOddSublineHighlights'):
+            self.editor.highlightManager.clearEmptyOddSublineHighlights()
+
+    def hasEmptyOddSublineHighlight(self, block_number: Optional[int] = None) -> bool:
+        if hasattr(self.editor.highlightManager, 'hasEmptyOddSublineHighlight'):
+            return self.editor.highlightManager.hasEmptyOddSublineHighlight(block_number)
+        return False
+
     def setPreviewSelectedLineHighlight(self, line_number: int):
         self.editor.highlightManager.setPreviewSelectedLineHighlight(line_number)
 
