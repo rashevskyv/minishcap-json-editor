@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (QPlainTextEdit, QMainWindow, QMenu, QApplication, QAction, 
                              QWidget, QHBoxLayout, QPushButton, QWidgetAction) 
-from PyQt5.QtGui import (QPainter, QFont, QPaintEvent, QKeyEvent, QKeySequence, QMouseEvent, QIcon, QPixmap, QColor, QTextLine) 
+from PyQt5.QtGui import (QPainter, QFont, QPaintEvent, QKeyEvent, QKeySequence, QMouseEvent, QIcon, QPixmap, QColor, QTextLine, QTextCursor) # Added QTextCursor
 from PyQt5.QtCore import Qt, QRect, QSize, QRectF, pyqtSignal
 
 from .LineNumberArea import LineNumberArea
@@ -242,6 +242,53 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.viewport().update()
 
     def keyPressEvent(self, event: QKeyEvent):
+        if self.objectName() == "preview_text_edit":
+            current_cursor = self.textCursor()
+            current_block_number = current_cursor.blockNumber()
+            new_block_number = -1
+
+            if event.key() == Qt.Key_Up:
+                if current_block_number > 0:
+                    new_block_number = current_block_number - 1
+                event.accept()
+            elif event.key() == Qt.Key_Down:
+                if current_block_number < self.document().blockCount() - 1:
+                    new_block_number = current_block_number + 1
+                event.accept()
+            
+            if new_block_number != -1:
+                self.lineClicked.emit(new_block_number)
+                # Explicitly move the cursor to the start of the new block
+                # This happens after lineClicked.emit() has potentially updated the document content and selection
+                # We use QTimer.singleShot to ensure this happens after the event loop processes pending updates from emit
+                def move_cursor_to_new_line():
+                    if 0 <= new_block_number < self.document().blockCount(): # Re-check bounds as document might have changed
+                        block_to_move_to = self.document().findBlockByNumber(new_block_number)
+                        if block_to_move_to.isValid():
+                            new_cursor = QTextCursor(block_to_move_to)
+                            self.setTextCursor(new_cursor)
+                            self.ensureCursorVisible()
+                
+                # If lineClicked leads to immediate content change and cursor reset,
+                # this explicit move might be necessary.
+                # If lineClicked's slot already handles cursor position correctly, this might be redundant or cause a flicker.
+                # For now, let's try without QTimer and see.
+                # If issues persist, QTimer.singleShot(0, move_cursor_to_new_line) could be used.
+                
+                # Direct cursor move:
+                if 0 <= new_block_number < self.document().blockCount():
+                    block_to_move_to = self.document().findBlockByNumber(new_block_number)
+                    if block_to_move_to.isValid():
+                        new_cursor = QTextCursor(block_to_move_to)
+                        self.setTextCursor(new_cursor)
+                        self.ensureCursorVisible()
+                return # Key press handled for Up/Down
+
+            elif event.key() in [Qt.Key_Left, Qt.Key_Right, Qt.Key_PageUp, Qt.Key_PageDown, Qt.Key_Home, Qt.Key_End]:
+                super().keyPressEvent(event) # Allow base class to handle other navigation for scrolling
+                return 
+
+        # Default handling for other editors or unhandled keys in preview
         if not self.isReadOnly():
             if event.matches(QKeySequence.Undo):
                 if self.document().isUndoAvailable():
@@ -254,6 +301,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
                     event.accept()
                     return
         super().keyPressEvent(event)
+
 
     def setReadOnly(self, ro):
         super().setReadOnly(ro)

@@ -156,7 +156,25 @@ class LNETPaintHandlers:
 
             block = self.editor.firstVisibleBlock()
             viewport_offset = self.editor.contentOffset()
-            # qtextblock_visual_line_index_overall = 0 # This counter is not needed here
+            
+            # Accumulative visual line index across all QTextBlocks in the document
+            # Needed to correctly identify even/odd visual lines for drawing separators
+            # This must be reset for each paintEvent or handled carefully if cached.
+            # For simplicity, recalculate from first visible block.
+            
+            # To get the true "visual_line_index_overall", we need to iterate from document start
+            # or make an assumption based on blockNumber and lineCount within block.
+            # Let's iterate from first visible for now, knowing it might be off if firstVisible isn't doc start
+            
+            doc_visual_line_index = 0
+            # If firstVisibleBlock is not the first block of the document,
+            # we need to sum up lineCounts of preceding blocks.
+            temp_block = self.editor.document().firstBlock()
+            while temp_block.isValid() and temp_block != block:
+                if temp_block.layout():
+                    doc_visual_line_index += temp_block.layout().lineCount()
+                temp_block = temp_block.next()
+
 
             while block.isValid() and block.layout():
                 layout = block.layout()
@@ -167,8 +185,8 @@ class LNETPaintHandlers:
                     if not line.isValid():
                         continue
                     
-                    # Check if this line is the second (even index, 0-based) line within its block layout
-                    if (i + 1) % 2 == 0:
+                    # Check if this visual line (overall) is the second, fourth, etc. (even 1-based index)
+                    if (doc_visual_line_index + 1) % 2 == 0: 
                          line_bottom_y_in_viewport = block_rect.top() + line.rect().bottom()
                          
                          # Check if there is a next line within the layout OR if there is a next block
@@ -185,10 +203,11 @@ class LNETPaintHandlers:
                                     self.editor.viewport().width(), # До правого краю viewport
                                     int(line_bottom_y_in_viewport) -1
                                 )
-                # if block_rect.bottom() > self.editor.viewport().height():
-                #     break 
+                    doc_visual_line_index +=1 # Increment for each visual line processed
+
+                if block_rect.bottom() > self.editor.viewport().height(): # Optimization to stop if block is below viewport
+                     break 
                 block = block.next()
-            # painter_lines.end() # Не потрібно, якщо QPainter створюється зі вказанням widget
 
 
         # Оригінальне малювання тексту та іншого
@@ -367,6 +386,7 @@ class LNETPaintHandlers:
                         is_qtextblock_short_for_paint = False
                         if current_q_block.next().isValid(): # Check only if there's a next QTextBlock to potentially merge with
                              is_qtextblock_short_for_paint = self._is_qtextblock_potentially_short_for_paint(current_q_block, current_q_block.next())
+
 
                         if pixel_width_qtextblock > self.editor.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
                              bg_color_extra_info_area = width_exceeded_qtextblock_color # Priority 3 (overwrites blue if applicable)
