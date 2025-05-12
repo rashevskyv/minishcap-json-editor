@@ -4,6 +4,9 @@ from PyQt5.QtGui import QTextCursor
 from utils.utils import log_debug, calculate_string_width, remove_all_tags, ALL_TAGS_PATTERN, convert_spaces_to_dots_for_display
 from core.tag_utils import TAG_STATUS_OK, TAG_STATUS_CRITICAL, TAG_STATUS_MISMATCHED_CURLY, TAG_STATUS_UNRESOLVED_BRACKETS
 
+# Regex for sentence-ending punctuation followed optionally by a double quote, anchored to the end
+SENTENCE_END_PUNCTUATION_PATTERN = re.compile(r'([.,!?]["\']?)$')
+
 class TextAutofixLogic:
     def __init__(self, main_window, data_processor, ui_updater):
         self.mw = main_window
@@ -83,7 +86,7 @@ class TextAutofixLogic:
                 next_line = new_sub_lines[i+1]
 
                 current_line_no_tags_stripped = remove_all_tags(current_line).strip()
-                if not current_line_no_tags_stripped or current_line_no_tags_stripped.endswith(('.', '!', '?')):
+                if not current_line_no_tags_stripped or SENTENCE_END_PUNCTUATION_PATTERN.search(current_line_no_tags_stripped):
                     i -= 1
                     continue
 
@@ -196,6 +199,51 @@ class TextAutofixLogic:
             
         return text
 
+    def _fix_blue_sublines(self, text: str) -> str:
+        sub_lines = text.split('\n')
+        if len(sub_lines) < 2: # Rule requires a next line
+            return text
+
+        new_sub_lines = []
+        i = 0
+        changed_in_pass = False
+        while i < len(sub_lines):
+            current_line_text = sub_lines[i]
+            new_sub_lines.append(current_line_text)
+
+            is_odd_subline = (i + 1) % 2 != 0
+            if not is_odd_subline:
+                i += 1
+                continue
+
+            text_no_tags = remove_all_tags(current_line_text)
+            stripped_text_no_tags = text_no_tags.strip()
+
+            if not stripped_text_no_tags or not stripped_text_no_tags[0].islower():
+                i += 1
+                continue
+            
+            if not SENTENCE_END_PUNCTUATION_PATTERN.search(stripped_text_no_tags):
+                i += 1
+                continue
+
+            # Check next line
+            if i + 1 < len(sub_lines):
+                next_line_text = sub_lines[i+1]
+                next_line_no_tags = remove_all_tags(next_line_text)
+                stripped_next_line_no_tags = next_line_no_tags.strip()
+                
+                if stripped_next_line_no_tags: # Next line is NOT empty
+                    # This is a "blue" line, add an empty line after it
+                    new_sub_lines.append("")
+                    changed_in_pass = True
+            i += 1
+        
+        if changed_in_pass:
+            return "\n".join(new_sub_lines)
+        return text
+
+
     def auto_fix_current_string(self):
         log_debug(f"TextAutofixLogic.auto_fix_current_string: Called.")
         if self.mw.current_block_idx == -1 or self.mw.current_string_idx == -1:
@@ -210,13 +258,12 @@ class TextAutofixLogic:
         modified_text = str(current_text)
         max_iterations = 10 
         iterations = 0
-        made_change_in_pass = True
         changes_were_made_by_autofix = False
         
         edited_text_edit = self.mw.edited_text_edit
         
-        while made_change_in_pass and iterations < max_iterations:
-            made_change_in_pass = False
+        while iterations < max_iterations:
+            made_change_in_this_pass = False
             iterations += 1
             log_debug(f"Auto-fix: Iteration {iterations} for string {block_idx}-{string_idx}")
 
@@ -226,21 +273,30 @@ class TextAutofixLogic:
             if temp_text_after_empty_fix != modified_text:
                 log_debug(f"  Change after empty_odd_fix: '{modified_text[:50]}' -> '{temp_text_after_empty_fix[:50]}'")
                 modified_text = temp_text_after_empty_fix
+                made_change_in_this_pass = True
             
+            temp_text_after_blue_fix = self._fix_blue_sublines(modified_text)
+            if temp_text_after_blue_fix != modified_text:
+                log_debug(f"  Change after blue_sublines_fix: '{modified_text[:50]}' -> '{temp_text_after_blue_fix[:50]}'")
+                modified_text = temp_text_after_blue_fix
+                made_change_in_this_pass = True
+
             temp_text_after_short_fix = self._fix_short_lines(modified_text)
             if temp_text_after_short_fix != modified_text:
                 log_debug(f"  Change after short_fix: '{modified_text[:50]}' -> '{temp_text_after_short_fix[:50]}'")
                 modified_text = temp_text_after_short_fix
+                made_change_in_this_pass = True
             
             temp_text_after_width_fix = self._fix_width_exceeded(modified_text)
             if temp_text_after_width_fix != modified_text:
                 log_debug(f"  Change after width_fix: '{modified_text[:50]}' -> '{temp_text_after_width_fix[:50]}'")
                 modified_text = temp_text_after_width_fix
+                made_change_in_this_pass = True
             
-            if text_before_this_pass != modified_text:
-                made_change_in_pass = True
+            if not made_change_in_this_pass: # Якщо жоден з фіксів не змінив текст, виходимо
+                break
         
-        if iterations == max_iterations and made_change_in_pass:
+        if iterations == max_iterations and made_change_in_this_pass:
             log_debug("Auto-fix: Max iterations reached, potential complex case or loop.")
             QMessageBox.warning(self.mw, "Auto-fix", "Auto-fix reached maximum iterations. Result might be incomplete.")
 
@@ -249,37 +305,18 @@ class TextAutofixLogic:
         if final_text_to_apply != current_text:
             changes_were_made_by_autofix = True
             
-            # Оновлення тексту в edited_text_edit з підтримкою Undo/Redo
             if edited_text_edit:
-                # Важливо! is_programmatically_changing_text має бути False тут,
-                # щоб textChanged сигнал від edited_text_edit спрацював і оновив edited_data.
-                # Але для наступних оновлень UI (original, preview) він має бути True.
-                
                 text_for_display = convert_spaces_to_dots_for_display(final_text_to_apply, self.mw.show_multiple_spaces_as_dots)
-                
-                # Запам'ятовуємо поточну позицію курсора
-                # old_cursor_pos = edited_text_edit.textCursor().position()
-
                 cursor = edited_text_edit.textCursor()
                 cursor.beginEditBlock()
                 cursor.select(QTextCursor.Document)
                 cursor.insertText(text_for_display)
                 cursor.endEditBlock()
-                
-                # Відновлюємо позицію курсора (необов'язково, або можна встановити в кінець)
-                # cursor.setPosition(min(old_cursor_pos, len(text_for_display)))
-                # edited_text_edit.setTextCursor(cursor)
                 log_debug(f"Auto-fix: Text in edited_text_edit updated directly. Undo available: {edited_text_edit.document().isUndoAvailable()}")
 
-
-            # Оновлення edited_data відбувається через сигнал textChanged від edited_text_edit
-            # Тому тут не потрібно викликати update_edited_data напряму, якщо текст був змінений через курсор.
-            # Якщо ж текст не змінювався (changes_were_made_by_autofix == False), то і оновлювати edited_data не потрібно.
-
             if self.data_processor.update_edited_data(block_idx, string_idx, final_text_to_apply):
-                 self.ui_updater.update_title() # Оновлюємо заголовок, якщо статус unsaved_changes змінився
+                 self.ui_updater.update_title() 
 
-            # Подальші оновлення UI виконуємо з прапором is_programmatically_changing_text = True
             self.mw.is_programmatically_changing_text = True
             
             if self.mw.original_text_edit:
