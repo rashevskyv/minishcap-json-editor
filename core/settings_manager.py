@@ -94,8 +94,9 @@ class SettingsManager:
             "last_original_text_edit_scroll_value_v": 0,
             "last_original_text_edit_scroll_value_h": 0,
             "font_size": default_font_size,
-            "window_was_maximized": False, # New setting
-            "window_normal_geometry": None # New setting
+            "window_was_maximized": False, 
+            "window_normal_geometry": None,
+            "block_color_markers": {}
         }
 
         settings_data = {}
@@ -103,6 +104,7 @@ class SettingsManager:
         self.mw.warning_problem_lines_per_block = {}
         self.mw.width_exceeded_lines_per_block = {}
         self.mw.short_lines_per_block = {}
+        self.mw.block_color_markers = {}
         self.mw.search_history_to_save = []
 
         temp_original_file_path = None
@@ -117,8 +119,8 @@ class SettingsManager:
             log_debug(f"Settings file '{self.settings_file_path}' not found. Using default values already set.")
             setattr(self.mw, "original_file_path", None)
             setattr(self.mw, "edited_file_path", None)
-            self.mw.window_geometry_to_restore = None # For helper
-            self.mw.window_was_maximized_at_save = False # For helper
+            self.mw.window_geometry_to_restore = None 
+            self.mw.window_was_maximized_at_save = False 
         else:
             try:
                 with open(self.settings_file_path, 'r', encoding='utf-8') as f:
@@ -128,9 +130,8 @@ class SettingsManager:
                 temp_original_file_path = settings_data.get("original_file_path")
                 temp_edited_file_path = settings_data.get("edited_file_path")
                 
-                # Geometry is handled by helper after window is shown
-                self.mw.window_geometry_to_restore = settings_data.get("window_normal_geometry") # Store for helper
-                self.mw.window_was_maximized_at_save = settings_data.get("window_was_maximized", False) # Store for helper
+                self.mw.window_geometry_to_restore = settings_data.get("window_normal_geometry") 
+                self.mw.window_was_maximized_at_save = settings_data.get("window_was_maximized", False) 
 
                 try:
                     if self.mw.main_splitter and "main_splitter_state" in settings_data: self.mw.main_splitter.restoreState(QByteArray(base64.b64decode(settings_data["main_splitter_state"])))
@@ -142,7 +143,7 @@ class SettingsManager:
 
 
                 for key_from_defaults, _ in default_settings_values.items():
-                    if key_from_defaults in ["window_normal_geometry", "window_was_maximized"]: # Handled separately
+                    if key_from_defaults in ["window_normal_geometry", "window_was_maximized"]: 
                         continue
                     if key_from_defaults in settings_data:
                         value_from_file = settings_data[key_from_defaults]
@@ -153,6 +154,11 @@ class SettingsManager:
                                 log_debug(f"SettingsManager: Set self.mw.current_font_size to {self.mw.current_font_size} from file.")
                             else:
                                 log_debug(f"SettingsManager: Invalid 'font_size' in file ({value_from_file}), keeping default: {self.mw.current_font_size}")
+                        elif key_from_defaults == "block_color_markers":
+                            if isinstance(value_from_file, dict):
+                                self.mw.block_color_markers = {k: set(v) for k, v in value_from_file.items() if isinstance(v, list)}
+                            else:
+                                self.mw.block_color_markers = {}
                         else:
                             setattr(self.mw, key_from_defaults, value_from_file)
 
@@ -213,8 +219,8 @@ class SettingsManager:
 
         if not self.mw.initial_load_path and not self.mw.json_path:
             log_debug("SettingsManager: No initial_load_path from settings and no current json_path, ensuring UI is cleared.")
-            self.ui_updater.populate_blocks()
-            self.ui_updater.populate_strings_for_block(-1)
+            self.mw.ui_updater.populate_blocks() # Виправлено тут, раніше було self.ui_updater
+            self.mw.ui_updater.populate_strings_for_block(-1) # І тут
 
         log_debug("<-- SettingsManager: load_settings finished")
 
@@ -232,8 +238,7 @@ class SettingsManager:
             "last_edited_text_edit_scroll_value_v", "last_edited_text_edit_scroll_value_h",
             "last_preview_text_edit_scroll_value_v",
             "last_original_text_edit_scroll_value_v", "last_original_text_edit_scroll_value_h",
-            "font_size"
-            # "window_was_maximized" and "window_normal_geometry" are handled below
+            "font_size", "block_color_markers"
         ]
 
         for key in keys_to_save:
@@ -243,6 +248,9 @@ class SettingsManager:
             elif key == "font_size":
                  settings_data[key] = getattr(self.mw, 'current_font_size', QFont().pointSize() if QFont().pointSize() > 0 else 10)
                  log_debug(f"SettingsManager: Saving font_size: {settings_data[key]} (from self.mw.current_font_size: {self.mw.current_font_size})")
+            elif key == "block_color_markers":
+                if hasattr(self.mw, 'block_color_markers'):
+                     settings_data[key] = {k: list(v) for k, v in self.mw.block_color_markers.items()}
             elif hasattr(self.mw, key):
                 settings_data[key] = getattr(self.mw, key)
 
@@ -262,7 +270,7 @@ class SettingsManager:
         if self.mw.window_normal_geometry_on_close:
             geom = self.mw.window_normal_geometry_on_close
             settings_data["window_normal_geometry"] = {"x": geom.x(), "y": geom.y(), "width": geom.width(), "height": geom.height()}
-        else: # Should ideally not happen if was_maximized_on_close is true, but as a fallback
+        else: 
             geom = self.mw.geometry()
             settings_data["window_normal_geometry"] = {"x": geom.x(), "y": geom.y(), "width": geom.width(), "height": geom.height()}
 

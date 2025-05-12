@@ -100,6 +100,7 @@ class MainWindow(QMainWindow):
         self.width_exceeded_lines_per_block = {}
         self.short_lines_per_block = {}
         self.empty_odd_unisingle_subline_problem_strings = {} 
+        self.block_color_markers = {} 
 
         self.can_undo_paste = False
         self.before_paste_edited_data_snapshot = {}
@@ -197,6 +198,28 @@ class MainWindow(QMainWindow):
         self.helper.rebuild_unsaved_block_indices()
 
         log_debug("++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++")
+
+    def get_block_color_markers(self, block_idx: int) -> set:
+        return self.block_color_markers.get(str(block_idx), set())
+
+    def toggle_block_color_marker(self, block_idx: int, color_name: str):
+        block_key = str(block_idx)
+        if block_key not in self.block_color_markers:
+            self.block_color_markers[block_key] = set()
+
+        if color_name in self.block_color_markers[block_key]:
+            self.block_color_markers[block_key].remove(color_name)
+            if not self.block_color_markers[block_key]: # Якщо множина стала порожньою
+                del self.block_color_markers[block_key]
+        else:
+            self.block_color_markers[block_key].add(color_name)
+        
+        log_debug(f"Toggled marker '{color_name}' for block {block_idx}. Current markers: {self.block_color_markers.get(block_key)}")
+        
+        if hasattr(self, 'block_list_widget'):
+            item = self.block_list_widget.item(block_idx)
+            if item:
+                self.block_list_widget.update(self.block_list_widget.indexFromItem(item)) # Оновлення конкретного елемента
 
 
     def _rebuild_unsaved_block_indices(self):

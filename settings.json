@@ -188,8 +188,8 @@
         "link",
         "лінк"
     ],
-    "last_selected_block_index": 9,
-    "last_selected_string_index": 10,
+    "last_selected_block_index": 7,
+    "last_selected_string_index": -1,
     "last_cursor_position_in_edited": 0,
     "last_edited_text_edit_scroll_value_v": 0,
     "last_edited_text_edit_scroll_value_h": 0,
@@ -197,6 +197,7 @@
     "last_original_text_edit_scroll_value_v": 0,
     "last_original_text_edit_scroll_value_h": 0,
     "font_size": 11,
+    "block_color_markers": {},
     "original_file_path": "//192.168.50.168/tloz_tmc_ua/UKR_orig.json",
     "edited_file_path": "//192.168.50.168/tloz_tmc_ua/UKR.json",
     "window_was_maximized": false,
