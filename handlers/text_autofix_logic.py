@@ -4,7 +4,9 @@ from PyQt5.QtGui import QTextCursor
 from utils.utils import log_debug, calculate_string_width, remove_all_tags, ALL_TAGS_PATTERN, convert_spaces_to_dots_for_display
 from core.tag_utils import TAG_STATUS_OK, TAG_STATUS_CRITICAL, TAG_STATUS_MISMATCHED_CURLY, TAG_STATUS_UNRESOLVED_BRACKETS
 
-# Removed comma from sentence end punctuation
+# Regex for sentence-ending punctuation followed optionally by a double quote or apostrophe, anchored to the end
+SENTENCE_END_PUNCTUATION_STRICT_PATTERN = re.compile(r'[.!?](?:["\']|")?$')
+# We will use this simpler list for the function, and the regex can be used if needed elsewhere or for more complex cases
 SENTENCE_END_PUNCTUATION_CHARS = ['.', '!', '?']
 OPTIONAL_TRAILING_CHARS = ['"', "'"]
 
@@ -19,15 +21,17 @@ class TextAutofixLogic:
         if not text_no_tags_stripped:
             return False
         
-        last_char = text_no_tags_stripped[-1]
+        # Check for patterns like "text!", "text.", "text?"
+        # or "text!"", "text."", "text?""
+        # or "text!'", "text.'", "text?'"
         
-        if last_char in OPTIONAL_TRAILING_CHARS:
-            if len(text_no_tags_stripped) > 1:
-                char_before_last = text_no_tags_stripped[-2]
-                return char_before_last in SENTENCE_END_PUNCTUATION_CHARS
-            return False 
-        
-        return last_char in SENTENCE_END_PUNCTUATION_CHARS
+        s = text_no_tags_stripped
+        if len(s) >= 1 and s[-1] in SENTENCE_END_PUNCTUATION_CHARS:
+            return True
+        if len(s) >= 2 and s[-1] in OPTIONAL_TRAILING_CHARS and s[-2] in SENTENCE_END_PUNCTUATION_CHARS:
+            return True
+            
+        return False
 
 
     def _extract_first_word_with_tags(self, text: str) -> tuple[str, str]:
@@ -133,7 +137,7 @@ class TextAutofixLogic:
                     continue
                 
                 if self._ends_with_sentence_punctuation(current_line_no_tags_stripped):
-                    log_debug(f"      Skipping: current_line_no_tags_stripped ends with punctuation: '{current_line_no_tags_stripped}'")
+                    log_debug(f"      Skipping: current_line_no_tags_stripped ('{current_line_no_tags_stripped}') ends with punctuation based on _ends_with_sentence_punctuation.")
                     i -= 1
                     continue
 
@@ -364,70 +368,53 @@ class TextAutofixLogic:
         
         if final_text_to_apply != current_text:
             log_debug(f"Auto-fix: Applying changes. Original: '{current_text[:100]}...', Final: '{final_text_to_apply[:100]}...'")
+            
+            original_cursor_pos = 0
+            if edited_text_edit:
+                original_cursor_pos = edited_text_edit.textCursor().position()
+
+            data_changed_unsaved_status = self.data_processor.update_edited_data(block_idx, string_idx, final_text_to_apply)
+            if data_changed_unsaved_status:
+                 self.ui_updater.update_title() 
+
+            self.mw.is_programmatically_changing_text = True
             if edited_text_edit:
                 text_for_display = convert_spaces_to_dots_for_display(final_text_to_apply, self.mw.show_multiple_spaces_as_dots)
-                cursor = edited_text_edit.textCursor()
-                # Preserve original cursor position if possible, otherwise move to end
-                original_cursor_pos = cursor.position()
+                current_v_scroll = edited_text_edit.verticalScrollBar().value()
+                current_h_scroll = edited_text_edit.horizontalScrollBar().value()
+                edited_text_edit.setPlainText(text_for_display) 
+                edited_text_edit.verticalScrollBar().setValue(current_v_scroll)
+                edited_text_edit.horizontalScrollBar().setValue(current_h_scroll)
                 
-                cursor.beginEditBlock()
-                cursor.select(QTextCursor.Document)
-                cursor.insertText(text_for_display)
-                cursor.endEditBlock()
-                
-                # Try to restore cursor position
-                new_doc_len = edited_text_edit.document().characterCount() - 1
+                new_doc_len = edited_text_edit.document().characterCount() -1 
                 final_cursor_pos = min(original_cursor_pos, new_doc_len if new_doc_len >=0 else 0)
                 restored_cursor = edited_text_edit.textCursor()
                 restored_cursor.setPosition(final_cursor_pos)
                 edited_text_edit.setTextCursor(restored_cursor)
+                log_debug(f"Auto-fix: Text in edited_text_edit updated programmatically.")
+            
+            if self.mw.original_text_edit:
+                original_text_raw = self.data_processor._get_string_from_source(block_idx, string_idx, self.mw.data, "original_data_for_autofix_view")
+                original_text_for_display = convert_spaces_to_dots_for_display(str(original_text_raw), self.mw.show_multiple_spaces_as_dots)
+                if self.mw.original_text_edit.toPlainText() != original_text_for_display:
+                    self.mw.original_text_edit.setPlainText(original_text_for_display)
 
-                log_debug(f"Auto-fix: Text in edited_text_edit updated directly. Undo available: {edited_text_edit.document().isUndoAvailable()}")
+            self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False)
+            self.ui_updater.populate_strings_for_block(block_idx) 
+            
+            self.ui_updater.update_status_bar()
+            self.ui_updater.synchronize_original_cursor()
+            
+            if hasattr(self.mw, 'preview_text_edit') and self.mw.preview_text_edit and hasattr(self.mw.preview_text_edit, 'lineNumberArea'):
+                self.mw.preview_text_edit.lineNumberArea.update()
+            if edited_text_edit and hasattr(edited_text_edit, 'lineNumberArea'):
+                edited_text_edit.lineNumberArea.update()
 
-            # update_edited_data will be called by the textChanged signal from edited_text_edit
-            # So, we don't need to call it explicitly here if the text was set via cursor.insertText
-            # However, to ensure data consistency immediately for subsequent scans, we can call it.
-            # Let's ensure that the textChanged signal does its job.
-            # If not, we might need to explicitly call:
-            # if self.data_processor.update_edited_data(block_idx, string_idx, final_text_to_apply):
-            #      self.ui_updater.update_title() 
-            # For now, assuming the signal works as expected.
-            # If the text was programmatically set in edited_text_edit without cursor interaction,
-            # then an explicit call to update_edited_data would be needed here.
 
-            # Issue scan and UI updates should happen after the text is fully processed by the editor.
-            # We can ensure this by making these calls after the editor's textChanged signal has likely fired.
-            # Using a singleShot QTimer with 0ms delay can help defer these operations slightly.
-
-            def deferred_updates():
-                self.mw.is_programmatically_changing_text = True # Protect subsequent UI updates
-                
-                # It's crucial that edited_data is up-to-date before scanning
-                # If the textChanged signal from setText is asynchronous or takes time,
-                # edited_data might not be updated yet.
-                # Forcing an update here might be safer if direct setText was used.
-                if self.data_processor.update_edited_data(block_idx, string_idx, final_text_to_apply):
-                     self.ui_updater.update_title()
-
-                if self.mw.original_text_edit:
-                    original_text_raw = self.data_processor._get_string_from_source(block_idx, string_idx, self.mw.data, "original_data_for_autofix_view")
-                    original_text_for_display = convert_spaces_to_dots_for_display(str(original_text_raw), self.mw.show_multiple_spaces_as_dots)
-                    if self.mw.original_text_edit.toPlainText() != original_text_for_display:
-                        self.mw.original_text_edit.setPlainText(original_text_for_display)
-
-                self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False)
-                self.ui_updater.populate_strings_for_block(block_idx) 
-                self.ui_updater.update_status_bar()
-                self.ui_updater.synchronize_original_cursor()
-                
-                self.mw.is_programmatically_changing_text = False
-                
-                if hasattr(self.mw, 'statusBar'):
-                    self.mw.statusBar.showMessage("Auto-fix applied to current string.", 2000)
-
-            # Call updates directly for now. If timing issues occur, consider QTimer.singleShot(0, deferred_updates)
-            deferred_updates()
-
+            self.mw.is_programmatically_changing_text = False
+            
+            if hasattr(self.mw, 'statusBar'):
+                self.mw.statusBar.showMessage("Auto-fix applied to current string.", 2000)
         else:
             log_debug("Auto-fix: No changes made to the text.")
             if hasattr(self.mw, 'statusBar'):

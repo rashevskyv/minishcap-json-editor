@@ -121,31 +121,33 @@ class ListSelectionHandler(BaseHandler):
         log_debug("<-- ListSelectionHandler: rename_block finished.")
 
     def _data_string_has_any_problem(self, block_idx: int, string_idx: int) -> bool:
+        log_debug(f"  Checking problems for string B{block_idx}-S{string_idx}")
         block_key = str(block_idx)
         
-        if string_idx in self.mw.critical_problem_lines_per_block.get(block_key, set()): return True
-        if string_idx in self.mw.warning_problem_lines_per_block.get(block_key, set()): return True
-        if string_idx in self.mw.width_exceeded_lines_per_block.get(block_key, set()): return True
-        if string_idx in self.mw.short_lines_per_block.get(block_key, set()): return True
+        has_crit = string_idx in self.mw.critical_problem_lines_per_block.get(block_key, set())
+        if has_crit: log_debug(f"    Found critical problem"); return True
+        has_warn = string_idx in self.mw.warning_problem_lines_per_block.get(block_key, set())
+        if has_warn: log_debug(f"    Found warning problem"); return True
+        has_width = string_idx in self.mw.width_exceeded_lines_per_block.get(block_key, set())
+        if has_width: log_debug(f"    Found width exceeded problem"); return True
+        has_short = string_idx in self.mw.short_lines_per_block.get(block_key, set())
+        if has_short: log_debug(f"    Found short line problem"); return True
         
-        # Updated check for empty_odd_unisingle_subline_problem_strings
-        # This check now relies on the AppActionHandler's method which already considers tags
-        if hasattr(self.mw, 'app_action_handler') and \
-           hasattr(self.mw.app_action_handler, '_check_data_string_for_empty_odd_unisingle_subline'):
-            data_string_text_for_empty_check, _ = self.data_processor.get_current_string_text(block_idx, string_idx)
-            if self.mw.app_action_handler._check_data_string_for_empty_odd_unisingle_subline(str(data_string_text_for_empty_check)):
-                return True
+        data_string_text_for_empty_check, _ = self.data_processor.get_current_string_text(block_idx, string_idx)
+        has_empty_odd = self.mw.app_action_handler._check_data_string_for_empty_odd_unisingle_subline(str(data_string_text_for_empty_check))
+        if has_empty_odd: log_debug(f"    Found empty odd unisingle problem"); return True
         
-        data_string_text, _ = self.data_processor.get_current_string_text(block_idx, string_idx)
-        if data_string_text:
+        data_string_text_for_blue_check, _ = self.data_processor.get_current_string_text(block_idx, string_idx)
+        if data_string_text_for_blue_check:
             temp_doc_holder = QTextEdit() 
-            temp_doc_holder.setPlainText(str(data_string_text))
+            temp_doc_holder.setPlainText(str(data_string_text_for_blue_check))
             doc = temp_doc_holder.document()
             current_block_in_temp_doc = doc.firstBlock()
             paint_handler_to_use = self._paint_handler_for_blue_rule
             if hasattr(self.mw, 'preview_text_edit') and hasattr(self.mw.preview_text_edit, 'paint_handler'): 
                  paint_handler_to_use = self.mw.preview_text_edit.paint_handler
 
+            blue_rule_found = False
             while current_block_in_temp_doc.isValid():
                 next_block_in_temp_doc = current_block_in_temp_doc.next()
                 if hasattr(paint_handler_to_use, '_check_new_blue_rule'):
@@ -155,13 +157,17 @@ class ListSelectionHandler(BaseHandler):
                          paint_handler_to_use.editor.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS if hasattr(self.mw, 'LINE_WIDTH_WARNING_THRESHOLD_PIXELS') else 208
                     
                     if paint_handler_to_use._check_new_blue_rule(current_block_in_temp_doc, next_block_in_temp_doc):
-                        del temp_doc_holder
-                        return True
+                        blue_rule_found = True
+                        break
                 current_block_in_temp_doc = next_block_in_temp_doc
             del temp_doc_holder
+            if blue_rule_found: log_debug(f"    Found blue rule problem"); return True
+        
+        log_debug(f"    No problems found for B{block_idx}-S{string_idx}")
         return False
 
     def navigate_to_problem_string(self, direction_down: bool):
+        log_debug(f"Navigate to problem: direction_down={direction_down}")
         if self.mw.current_block_idx == -1 or not self.mw.data or \
            not (0 <= self.mw.current_block_idx < len(self.mw.data)):
             log_debug("Navigate problem: No block selected or data missing.")
@@ -173,31 +179,43 @@ class ListSelectionHandler(BaseHandler):
             return
 
         num_strings_in_block = len(current_block_data)
-        start_string_idx = self.mw.current_string_idx
+        start_scan_idx = self.mw.current_string_idx
         
-        if start_string_idx == -1: 
-            start_string_idx = 0 if direction_down else num_strings_in_block -1
-        else: 
-             start_string_idx = (start_string_idx + 1) if direction_down else (start_string_idx - 1)
+        if start_scan_idx == -1: # If no string is selected, determine start based on direction
+            start_scan_idx = 0 if direction_down else num_strings_in_block - 1
+            current_check_idx = start_scan_idx
+        else: # Start from next/prev of current selection
+             current_check_idx = (start_scan_idx + 1) if direction_down else (start_scan_idx - 1)
 
+        log_debug(f"  Start scan_idx={start_scan_idx}, current_check_idx={current_check_idx}, num_strings={num_strings_in_block}")
 
+        # Iterate once through the list in the specified direction
         if direction_down:
-            for s_idx in range(start_string_idx, num_strings_in_block):
+            for s_idx in range(current_check_idx, num_strings_in_block):
                 if self._data_string_has_any_problem(self.mw.current_block_idx, s_idx):
+                    log_debug(f"  Found problem (down) at S{s_idx}")
                     self.string_selected_from_preview(s_idx)
                     return
-            for s_idx in range(0, min(start_string_idx, num_strings_in_block)): 
-                if self._data_string_has_any_problem(self.mw.current_block_idx, s_idx):
+            # If not found till end, try from beginning up to original start_scan_idx (if any was selected)
+            # or up to where current_check_idx started if nothing was selected
+            limit = start_scan_idx if self.mw.current_string_idx != -1 else current_check_idx
+            for s_idx in range(0, limit):
+                 if self._data_string_has_any_problem(self.mw.current_block_idx, s_idx):
+                    log_debug(f"  Found problem (down, wrapped) at S{s_idx}")
                     self.string_selected_from_preview(s_idx)
                     return
         else: # Direction Up
-            for s_idx in range(start_string_idx, -1, -1):
+            for s_idx in range(current_check_idx, -1, -1):
                 if self._data_string_has_any_problem(self.mw.current_block_idx, s_idx):
+                    log_debug(f"  Found problem (up) at S{s_idx}")
                     self.string_selected_from_preview(s_idx)
                     return
-            for s_idx in range(num_strings_in_block - 1, max(start_string_idx, -1), -1): 
+            # If not found till beginning, try from end down to original start_scan_idx
+            limit = start_scan_idx if self.mw.current_string_idx != -1 else current_check_idx
+            for s_idx in range(num_strings_in_block - 1, limit, -1): 
                 if self._data_string_has_any_problem(self.mw.current_block_idx, s_idx):
+                    log_debug(f"  Found problem (up, wrapped) at S{s_idx}")
                     self.string_selected_from_preview(s_idx)
                     return
         
-        log_debug(f"Navigate problem: No problematic string found in block {self.mw.current_block_idx} in the given direction.")
+        log_debug(f"Navigate problem: No OTHER problematic string found in block {self.mw.current_block_idx} in the given direction.")

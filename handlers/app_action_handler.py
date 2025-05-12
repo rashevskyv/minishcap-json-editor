@@ -19,7 +19,7 @@ class AppActionHandler(BaseHandler):
             self.mw.width_exceeded_lines_per_block = {}
         if not hasattr(self.mw, 'short_lines_per_block'):
             self.mw.short_lines_per_block = {}
-        if not hasattr(self.mw, 'empty_odd_unisingle_subline_problem_strings'): # Додано
+        if not hasattr(self.mw, 'empty_odd_unisingle_subline_problem_strings'): 
             self.mw.empty_odd_unisingle_subline_problem_strings = {}
 
 
@@ -32,25 +32,30 @@ class AppActionHandler(BaseHandler):
 
     def _check_data_string_for_empty_odd_unisingle_subline(self, data_string_text: str) -> bool:
         sub_lines = str(data_string_text).split('\n')
-        if len(sub_lines) <= 1: # Не може бути проблемою, якщо підрядок єдиний
+        if len(sub_lines) <= 1: 
             return False
         
         for i, sub_line_text in enumerate(sub_lines):
             is_odd_subline = (i + 1) % 2 != 0
             if is_odd_subline:
-                # Check for tags first. If tags exist, it's not an "empty" problem for this rule.
                 if ALL_TAGS_PATTERN.search(sub_line_text):
                     continue
 
-                text_no_tags = remove_all_tags(sub_line_text) # Should be redundant if tags already checked
+                text_no_tags = remove_all_tags(sub_line_text) 
                 stripped_text_no_tags = text_no_tags.strip()
                 is_empty_or_zero = not stripped_text_no_tags or stripped_text_no_tags == "0"
                 if is_empty_or_zero:
-                    return True # Знайдено проблему
+                    return True 
         return False
 
     def _perform_issues_scan_for_block(self, block_idx: int, is_single_block_scan: bool = False, use_default_mappings_in_scan: bool = False) -> tuple[int, int, int, int, int, bool]:
+        # Conditional logging for specific block/string
+        is_target_block_for_log = (block_idx == 12) 
+        if is_target_block_for_log:
+            log_debug(f"--- SCANNING BLOCK {block_idx} (Target for detailed log) ---")
+        
         if not (0 <= block_idx < len(self.mw.data)):
+            if is_target_block_for_log: log_debug(f"  Block {block_idx} out of bounds.")
             return 0, 0, 0, 0, 0, False
 
         block_key = str(block_idx)
@@ -67,8 +72,14 @@ class AppActionHandler(BaseHandler):
         max_width_for_short_check = self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
 
         for string_idx in range(num_strings_in_block):
+            is_target_string_for_log = is_target_block_for_log and (string_idx == 8) # string_idx 8 for "Ні, ну звідки..." if it's the 9th string
+            if is_target_string_for_log:
+                log_debug(f"  Scanning string_idx {string_idx} in block {block_idx} (TARGET STRING FOR LOG)")
+            
             text_before_processing, source = self.data_processor.get_current_string_text(block_idx, string_idx)
             text_to_analyze = text_before_processing
+            if is_target_string_for_log:
+                log_debug(f"    Text to analyze (source: {source}): '{str(text_to_analyze)[:200]}...'")
             
             if use_default_mappings_in_scan:
                 normalized_text, was_normalized = apply_default_mappings_only(
@@ -76,18 +87,21 @@ class AppActionHandler(BaseHandler):
                     self.mw.default_tag_mappings
                 )
                 if was_normalized:
+                    if is_target_string_for_log: log_debug(f"    Text normalized by default mappings: '{normalized_text[:200]}...'")
                     if self.data_processor.update_edited_data(block_idx, string_idx, normalized_text):
                         self.ui_updater.update_title()
                     changes_made_to_edited_data_in_this_block = True
                     text_to_analyze = normalized_text
             
             original_text_for_comparison = self.mw.data[block_idx][string_idx]
-            tag_status, _ = analyze_tags_for_issues(text_to_analyze, original_text_for_comparison, self.mw.EDITOR_PLAYER_TAG)
+            tag_status, tag_msg = analyze_tags_for_issues(text_to_analyze, original_text_for_comparison, self.mw.EDITOR_PLAYER_TAG)
+            if is_target_string_for_log: log_debug(f"    Tag status: {tag_status}, Msg: {tag_msg}")
             if tag_status == TAG_STATUS_UNRESOLVED_BRACKETS: current_block_critical_indices.add(string_idx)
             elif tag_status == TAG_STATUS_MISMATCHED_CURLY: current_block_warning_indices.add(string_idx)
             
-            # Перевірка на порожні непарні НЕєдині підрядки (оновлена логіка)
-            if self._check_data_string_for_empty_odd_unisingle_subline(text_to_analyze):
+            is_empty_odd = self._check_data_string_for_empty_odd_unisingle_subline(text_to_analyze)
+            if is_target_string_for_log: log_debug(f"    Is empty odd unisingle: {is_empty_odd}")
+            if is_empty_odd:
                 current_block_empty_odd_unisingle_indices.add(string_idx)
 
             sub_lines = str(text_to_analyze).split('\n')
@@ -101,8 +115,9 @@ class AppActionHandler(BaseHandler):
                     
                     if pixel_width_current_sub > self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
                         line_exceeds_width_flag = True
+                        if is_target_string_for_log: log_debug(f"      Sub-line {sub_line_idx} exceeds width: {pixel_width_current_sub}px")
 
-                    if sub_line_idx < len(sub_lines) - 1:
+                    if sub_line_idx < len(sub_lines) - 1: 
                         current_sub_line_clean_stripped = remove_all_tags(sub_line_text).strip() 
                         if not current_sub_line_clean_stripped:
                             continue 
@@ -123,18 +138,23 @@ class AppActionHandler(BaseHandler):
                             remaining_width = max_width_for_short_check - pixel_width_current_sub 
                             if remaining_width >= (first_word_next_width + space_width):
                                 data_string_is_short_flag = True
+                                if is_target_string_for_log: log_debug(f"      Data string determined short at sub-line {sub_line_idx}")
                                 break 
             else: 
-                if sub_lines:
+                if sub_lines: 
                     sub_line_text_no_tags_rstripped = remove_all_tags(sub_lines[0]).rstrip()
                     pixel_width_current_sub = calculate_string_width(sub_line_text_no_tags_rstripped, self.mw.font_map)
                     if pixel_width_current_sub > self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
                         line_exceeds_width_flag = True
+                        if is_target_string_for_log: log_debug(f"      Single sub-line exceeds width: {pixel_width_current_sub}px")
             
             if line_exceeds_width_flag:
                 current_block_width_exceeded_indices.add(string_idx)
             if data_string_is_short_flag:
                 current_block_short_line_indices.add(string_idx)
+            if is_target_string_for_log:
+                 log_debug(f"    Final for string_idx {string_idx}: Crit: {string_idx in current_block_critical_indices}, Warn: {string_idx in current_block_warning_indices}, WidthEx: {line_exceeds_width_flag}, Short: {data_string_is_short_flag}, EmptyOdd: {is_empty_odd}")
+
 
         if current_block_critical_indices: self.mw.critical_problem_lines_per_block[block_key] = current_block_critical_indices
         elif block_key in self.mw.critical_problem_lines_per_block: del self.mw.critical_problem_lines_per_block[block_key]
@@ -157,9 +177,10 @@ class AppActionHandler(BaseHandler):
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         if is_single_block_scan and self.mw.current_block_idx == block_idx:
             if preview_edit and hasattr(preview_edit, 'lineNumberArea'):
-                self.ui_updater.populate_strings_for_block(block_idx) # Це оновлює індикатори в preview
+                self.ui_updater.populate_strings_for_block(block_idx) 
                 preview_edit.lineNumberArea.update()
-        
+        if is_target_block_for_log:
+            log_debug(f"--- FINISHED SCANNING BLOCK {block_idx} --- Crit: {len(current_block_critical_indices)}, Warn: {len(current_block_warning_indices)}, Width: {len(current_block_width_exceeded_indices)}, Short: {len(current_block_short_line_indices)}, EmptyOdd: {len(current_block_empty_odd_unisingle_indices)}")
         return len(current_block_critical_indices), len(current_block_warning_indices), len(current_block_width_exceeded_indices), len(current_block_short_line_indices), len(current_block_empty_odd_unisingle_indices), changes_made_to_edited_data_in_this_block
 
     def _perform_initial_silent_scan_all_issues(self):
@@ -174,7 +195,7 @@ class AppActionHandler(BaseHandler):
         self.mw.warning_problem_lines_per_block.clear()
         self.mw.width_exceeded_lines_per_block.clear()
         self.mw.short_lines_per_block.clear()
-        self.mw.empty_odd_unisingle_subline_problem_strings.clear() # Очищення нового типу проблем
+        self.mw.empty_odd_unisingle_subline_problem_strings.clear() 
         
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         if preview_edit and hasattr(preview_edit, 'clearAllProblemTypeHighlights'):
@@ -483,7 +504,7 @@ class AppActionHandler(BaseHandler):
         max_width_for_short_check_report = self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
         editor_warning_threshold = self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
         space_width = calculate_string_width(" ", self.mw.font_map)
-        sentence_end_chars = ('.', '!', '?')
+        sentence_end_chars_tuple = ('.', '!', '?') 
         
         for i in range(num_strings): 
             progress.setValue(i)
@@ -513,7 +534,7 @@ class AppActionHandler(BaseHandler):
                 
                 if len(current_data_string_sub_lines) > 1 and j < len(current_data_string_sub_lines) - 1:
                     current_sub_line_clean_stripped_rpt = remove_all_tags(sub_line).strip() 
-                    if current_sub_line_clean_stripped_rpt and not current_sub_line_clean_stripped_rpt.endswith(sentence_end_chars):
+                    if current_sub_line_clean_stripped_rpt and not current_sub_line_clean_stripped_rpt.endswith(sentence_end_chars_tuple):
                         next_sub_line_text_rpt = current_data_string_sub_lines[j+1]
                         next_sub_line_clean_stripped_rpt = remove_all_tags(next_sub_line_text_rpt).strip()
                         if next_sub_line_clean_stripped_rpt:
@@ -525,10 +546,10 @@ class AppActionHandler(BaseHandler):
                                     if remaining_width_rpt >= (first_word_next_line_width_calc + space_width):
                                         short_status = f"SHORT (can fit {first_word_next_line_width_calc+space_width}px into {max_width_for_short_check_report}px, has {remaining_width_rpt}px left)"
                 
-                # For empty odd check in report:
                 is_odd_subline_report = (j + 1) % 2 != 0
                 contains_tags_report = bool(ALL_TAGS_PATTERN.search(sub_line))
-                is_empty_or_zero_report = (not sub_line_no_tags_rstripped.strip() or sub_line_no_tags_rstripped.strip() == "0") and not contains_tags_report
+                text_for_empty_check_report = remove_all_tags(sub_line)
+                is_empty_or_zero_report = (not text_for_empty_check_report.strip() or text_for_empty_check_report.strip() == "0") and not contains_tags_report
 
                 empty_odd_report_status = ""
                 if is_empty_or_zero_report and is_odd_subline_report and len(current_data_string_sub_lines) > 1:
@@ -555,7 +576,7 @@ class AppActionHandler(BaseHandler):
 
                 if len(original_data_string_sub_lines) > 1 and j < len(original_data_string_sub_lines) -1:
                     original_sub_line_clean_stripped_rpt = remove_all_tags(sub_line).strip()
-                    if original_sub_line_clean_stripped_rpt and not original_sub_line_clean_stripped_rpt.endswith(sentence_end_chars):
+                    if original_sub_line_clean_stripped_rpt and not original_sub_line_clean_stripped_rpt.endswith(sentence_end_chars_tuple):
                         next_original_sub_line_text_rpt = original_data_string_sub_lines[j+1]
                         next_original_sub_line_clean_stripped_rpt = remove_all_tags(next_original_sub_line_text_rpt).strip()
                         if next_original_sub_line_clean_stripped_rpt:
@@ -569,7 +590,8 @@ class AppActionHandler(BaseHandler):
                 
                 is_odd_subline_report_orig = (j + 1) % 2 != 0
                 contains_tags_report_orig = bool(ALL_TAGS_PATTERN.search(sub_line))
-                is_empty_or_zero_report_orig = (not sub_line_no_tags_rstripped.strip() or sub_line_no_tags_rstripped.strip() == "0") and not contains_tags_report_orig
+                text_for_empty_check_report_orig = remove_all_tags(sub_line)
+                is_empty_or_zero_report_orig = (not text_for_empty_check_report_orig.strip() or text_for_empty_check_report_orig.strip() == "0") and not contains_tags_report_orig
                 empty_odd_report_status_orig = ""
                 if is_empty_or_zero_report_orig and is_odd_subline_report_orig and len(original_data_string_sub_lines) > 1:
                     empty_odd_report_status_orig = "EMPTY ODD NON-SINGLE"

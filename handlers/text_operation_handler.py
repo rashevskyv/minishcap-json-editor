@@ -9,7 +9,7 @@ from core.tag_utils import apply_default_mappings_only, analyze_tags_for_issues,
                       TAG_STATUS_OK, TAG_STATUS_CRITICAL, \
                       TAG_STATUS_MISMATCHED_CURLY, TAG_STATUS_UNRESOLVED_BRACKETS, \
                       TAG_STATUS_WARNING
-from .text_autofix_logic import TextAutofixLogic # Імпортуємо новий клас
+from .text_autofix_logic import TextAutofixLogic 
 
 PREVIEW_UPDATE_DELAY = 250
 
@@ -19,7 +19,7 @@ class TextOperationHandler(BaseHandler):
         self.preview_update_timer = QTimer()
         self.preview_update_timer.setSingleShot(True)
         self.preview_update_timer.timeout.connect(self._update_preview_content)
-        self.autofix_logic = TextAutofixLogic(main_window, data_processor, ui_updater) # Створюємо екземпляр
+        self.autofix_logic = TextAutofixLogic(main_window, data_processor, ui_updater) 
 
     def _update_preview_content(self):
         log_debug("Timer timeout: Updating preview content.")
@@ -70,44 +70,72 @@ class TextOperationHandler(BaseHandler):
                 del self.mw.width_exceeded_lines_per_block[block_key]
         return state_changed
 
-    def _determine_if_data_string_is_short(self, data_string_text: str) -> bool:
+    def _determine_if_data_string_is_short(self, data_string_text: str, block_idx_for_log: int = -1, string_idx_for_log: int = -1) -> bool:
+        is_target_for_log = (block_idx_for_log == 12 and string_idx_for_log == 8)
+        if is_target_for_log:
+            log_debug(f"  --- _determine_if_data_string_is_short (B{block_idx_for_log}-S{string_idx_for_log}) --- Text: '{str(data_string_text)[:200]}...'")
+
         sub_lines = str(data_string_text).split('\n')
         if len(sub_lines) <= 1:
+            if is_target_for_log: log_debug("    Not short: <= 1 sub_lines.")
             return False 
 
-        sentence_end_chars = ('.', '!', '?')
+        sentence_end_chars_tuple = ('.', '!', '?') 
         space_width = calculate_string_width(" ", self.mw.font_map)
+        max_width_for_short_check = self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
 
         for sub_line_idx, current_sub_line_text in enumerate(sub_lines):
             if sub_line_idx == len(sub_lines) - 1: 
+                if is_target_for_log: log_debug(f"    Sub-line {sub_line_idx}: Last sub-line, check ends.")
                 break
 
             current_sub_line_clean_stripped = remove_all_tags(current_sub_line_text).strip()
             if not current_sub_line_clean_stripped:
+                if is_target_for_log: log_debug(f"    Sub-line {sub_line_idx}: Clean stripped is empty, continue.")
                 continue
-            if current_sub_line_clean_stripped.endswith(sentence_end_chars):
+            
+            ends_with_punct = False
+            if hasattr(self.autofix_logic, '_ends_with_sentence_punctuation'):
+                ends_with_punct = self.autofix_logic._ends_with_sentence_punctuation(current_sub_line_clean_stripped)
+            
+            if ends_with_punct:
+                if is_target_for_log: log_debug(f"    Sub-line {sub_line_idx} ('{current_sub_line_clean_stripped[:30]}...'): Ends with punctuation, continue.")
                 continue
 
             next_sub_line_text = sub_lines[sub_line_idx + 1]
             next_sub_line_clean_stripped = remove_all_tags(next_sub_line_text).strip()
             if not next_sub_line_clean_stripped:
+                if is_target_for_log: log_debug(f"    Sub-line {sub_line_idx}: Next sub-line is empty, continue.")
                 continue
 
             first_word_next_sub_line = next_sub_line_clean_stripped.split(maxsplit=1)[0] if next_sub_line_clean_stripped else ""
             if not first_word_next_sub_line:
+                if is_target_for_log: log_debug(f"    Sub-line {sub_line_idx}: No first word in next sub-line, continue.")
                 continue
             
             first_word_next_width = calculate_string_width(first_word_next_sub_line, self.mw.font_map)
             if first_word_next_width > 0:
-                current_sub_line_pixel_width = calculate_string_width(remove_all_tags(current_sub_line_text), self.mw.font_map)
-                remaining_width = self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS - current_sub_line_pixel_width
+                current_sub_line_pixel_width = calculate_string_width(remove_all_tags(current_sub_line_text.rstrip()), self.mw.font_map)
+                remaining_width = max_width_for_short_check - current_sub_line_pixel_width
+                
+                if is_target_for_log:
+                    log_debug(f"    Sub-line {sub_line_idx}: current_width={current_sub_line_pixel_width}, next_word='{first_word_next_sub_line}' (width={first_word_next_width}), remaining_width={remaining_width}, space_width={space_width}")
+
                 if remaining_width >= (first_word_next_width + space_width):
-                    return True 
+                    if is_target_for_log: log_debug(f"    Sub-line {sub_line_idx}: Determined SHORT. Returning True.")
+                    return True
+        if is_target_for_log: log_debug("    Not short: Loop finished without returning True.")
         return False
 
     def _check_and_update_short_line_status_for_data_string(self, block_idx: int, string_idx: int, data_string_text: str) -> bool:
+        is_target_for_log = (block_idx == 12 and string_idx == 8)
+        if is_target_for_log:
+            log_debug(f"  _check_and_update_short_line_status (B{block_idx}-S{string_idx}) --- START ---")
+
         block_key = str(block_idx)
-        is_short = self._determine_if_data_string_is_short(data_string_text)
+        is_short = self._determine_if_data_string_is_short(data_string_text, block_idx, string_idx) 
+        if is_target_for_log:
+            log_debug(f"    _determine_if_data_string_is_short returned: {is_short}")
         
         short_lines_set = self.mw.short_lines_per_block.get(block_key, set()).copy()
         state_changed = False
@@ -116,16 +144,25 @@ class TextOperationHandler(BaseHandler):
             if string_idx not in short_lines_set:
                 short_lines_set.add(string_idx)
                 state_changed = True
+                if is_target_for_log: log_debug(f"    Added S{string_idx} to short_lines_set.")
+            elif is_target_for_log: log_debug(f"    S{string_idx} was already in short_lines_set.")
         else:
             if string_idx in short_lines_set:
                 short_lines_set.discard(string_idx)
                 state_changed = True
+                if is_target_for_log: log_debug(f"    Removed S{string_idx} from short_lines_set.")
+            elif is_target_for_log: log_debug(f"    S{string_idx} was not in short_lines_set (and is_short is False).")
         
         if state_changed:
             if short_lines_set:
                 self.mw.short_lines_per_block[block_key] = short_lines_set
             elif block_key in self.mw.short_lines_per_block:
                 del self.mw.short_lines_per_block[block_key]
+            if is_target_for_log: log_debug(f"    State changed. New short_lines_per_block[{block_key}]: {self.mw.short_lines_per_block.get(block_key)}")
+        elif is_target_for_log:
+            log_debug(f"    State NOT changed for short lines.")
+        if is_target_for_log:
+            log_debug(f"  _check_and_update_short_line_status (B{block_idx}-S{string_idx}) --- END --- Returning {state_changed}")
         return state_changed
 
     def _check_and_update_empty_odd_unisingle_subline_status(self, block_idx: int, string_idx: int, data_string_text: str) -> bool:
@@ -137,11 +174,10 @@ class TextOperationHandler(BaseHandler):
             for i, sub_line_text in enumerate(sub_lines):
                 is_odd_subline = (i + 1) % 2 != 0
                 if is_odd_subline:
-                    # Check for tags first. If tags exist, it's not an "empty" problem for this rule.
                     if ALL_TAGS_PATTERN.search(sub_line_text):
                         continue 
                     
-                    text_no_tags = remove_all_tags(sub_line_text) # Should be redundant if tags already checked
+                    text_no_tags = remove_all_tags(sub_line_text) 
                     stripped_text_no_tags = text_no_tags.strip()
                     is_empty_or_zero = not stripped_text_no_tags or stripped_text_no_tags == "0"
                     if is_empty_or_zero:
@@ -432,7 +468,7 @@ class TextOperationHandler(BaseHandler):
         max_allowed_width = self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS
         warning_threshold = self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
         space_width = calculate_string_width(" ", self.mw.font_map)
-        sentence_end_chars = ('.', '!', '?')
+        sentence_end_chars_tuple = ('.', '!', '?')
         
         info_parts = [f"Data Line {data_line_idx + 1} (Block {self.mw.current_block_idx}):\nMax Allowed Width (Game Dialog): {max_allowed_width}px\nWidth Warning Threshold (Editor): {warning_threshold}px\n"]
 
@@ -441,15 +477,15 @@ class TextOperationHandler(BaseHandler):
         total_width_current = calculate_string_width(remove_all_tags(str(current_text_data_line).replace('\n','')), self.mw.font_map)
         info_parts.append(f"Total (game-like, no newlines): {total_width_current}px")
         for i, sub_line in enumerate(sub_lines_current):
-            sub_line_no_tags = remove_all_tags(sub_line)
-            width_px = calculate_string_width(sub_line_no_tags, self.mw.font_map)
+            sub_line_no_tags_rstripped = remove_all_tags(sub_line).rstrip()
+            width_px = calculate_string_width(sub_line_no_tags_rstripped, self.mw.font_map)
             status = "OK"
             short_status = ""
             if width_px > warning_threshold: status = "EXCEEDED (Editor)"
 
             if i < len(sub_lines_current) - 1 : 
                 current_sub_line_no_tags_stripped_calc = remove_all_tags(sub_line).strip()
-                if current_sub_line_no_tags_stripped_calc and not current_sub_line_no_tags_stripped_calc.endswith(sentence_end_chars):
+                if current_sub_line_no_tags_stripped_calc and not current_sub_line_no_tags_stripped_calc.endswith(sentence_end_chars_tuple):
                     next_sub_line_text_calc = sub_lines_current[i+1]
                     next_sub_line_clean_stripped_calc = remove_all_tags(next_sub_line_text_calc).strip()
                     if next_sub_line_clean_stripped_calc:
@@ -462,51 +498,77 @@ class TextOperationHandler(BaseHandler):
                                     short_status = f"SHORT (can fit {first_word_next_line_width_calc + space_width}px into {warning_threshold}px, has {remaining_width_calc}px left)"
             
             is_odd_subline_report = (i + 1) % 2 != 0
-            # Check for tags. If tags exist, it's not an "empty" problem for this rule.
             contains_tags_report = bool(ALL_TAGS_PATTERN.search(sub_line))
-            is_empty_or_zero_report = (not sub_line_no_tags.strip() or sub_line_no_tags.strip() == "0") and not contains_tags_report
+            text_for_empty_check_report = remove_all_tags(sub_line)
+            is_empty_or_zero_report = (not text_for_empty_check_report.strip() or text_for_empty_check_report.strip() == "0") and not contains_tags_report
 
             empty_odd_report_status = ""
             if is_empty_or_zero_report and is_odd_subline_report and len(sub_lines_current) > 1:
                 empty_odd_report_status = "EMPTY ODD NON-SINGLE"
 
-            info_parts.append(f"  Sub-line {i+1}: {width_px}px (Status: {status}) {short_status} {empty_odd_report_status} '{sub_line_no_tags[:40]}...'")
+            info_parts.append(f"  Sub-line {i+1} (rstripped): {width_px}px (Status: {status}) {short_status} {empty_odd_report_status} '{sub_line_no_tags_rstripped[:30]}...'")
         
         info_parts.append(f"\n--- Original Text ---")
         sub_lines_original = str(original_text_data_line).split('\n')
         original_total_game_width = calculate_string_width(remove_all_tags(str(original_text_data_line).replace('\n','')), self.mw.font_map)
         info_parts.append(f"Total (game-like, no newlines): {original_total_game_width}px")
         for i, sub_line in enumerate(sub_lines_original):
-            sub_line_no_tags = remove_all_tags(sub_line)
-            width_px = calculate_string_width(sub_line_no_tags, self.mw.font_map)
+            sub_line_no_tags_rstripped = remove_all_tags(sub_line).rstrip()
+            width_px = calculate_string_width(sub_line_no_tags_rstripped, self.mw.font_map)
             status = "OK"
             short_status_orig = ""
             if width_px > warning_threshold: status = "EXCEEDED (Editor)"
 
             if i < len(sub_lines_original) -1:
                 original_sub_line_no_tags_stripped_calc = remove_all_tags(sub_line).strip()
-                if original_sub_line_no_tags_stripped_calc and not original_sub_line_no_tags_stripped_calc.endswith(sentence_end_chars):
+                if original_sub_line_no_tags_stripped_calc and not original_sub_line_no_tags_stripped_calc.endswith(sentence_end_chars_tuple):
                     next_original_sub_line_text_calc = sub_lines_original[i+1]
-                    next_original_sub_line_clean_stripped_calc = remove_all_tags(next_original_sub_line_text_calc).strip()
+                    next_original_sub_line_clean_stripped_calc = remove_all_tags(next_original_sub_line_text_calc).strip() # Corrected variable name
                     if next_original_sub_line_clean_stripped_calc:
-                        first_word_next_original_sub_line_calc = next_original_sub_line_clean_stripped_calc.split(maxsplit=1)[0] if next_original_sub_line_clean_stripped_calc else ""
-                        if first_word_next_original_sub_line_calc:
-                            first_word_next_original_line_width_calc = calculate_string_width(first_word_next_original_sub_line_calc, self.mw.font_map)
-                            if first_word_next_original_line_width_calc > 0:
-                                remaining_width_orig_calc = warning_threshold - width_px 
-                                if remaining_width_orig_calc >= (first_word_next_original_line_width_calc + space_width):
-                                    short_status_orig = f"SHORT (can fit {first_word_next_original_line_width_calc+space_width}px into {warning_threshold}px, has {remaining_width_orig_calc}px left)"
+                        first_word_next_original_sub_line_rpt = next_original_sub_line_clean_stripped_calc.split(maxsplit=1)[0] if next_original_sub_line_clean_stripped_calc else ""
+                        if first_word_next_original_sub_line_rpt:
+                            first_word_next_original_width_rpt = calculate_string_width(first_word_next_original_sub_line_rpt, self.mw.font_map)
+                            if first_word_next_original_width_rpt > 0:
+                                remaining_width_orig_rpt = warning_threshold - width_px
+                                if remaining_width_orig_rpt >= (first_word_next_original_width_rpt + space_width):
+                                    short_status_orig = f"SHORT (can fit {first_word_next_original_width_rpt+space_width}px into {warning_threshold}px, has {remaining_width_orig_rpt}px left)"
+                
+                is_odd_subline_report_orig = (i + 1) % 2 != 0
+                contains_tags_report_orig = bool(ALL_TAGS_PATTERN.search(sub_line))
+                text_for_empty_check_report_orig = remove_all_tags(sub_line)
+                is_empty_or_zero_report_orig = (not text_for_empty_check_report_orig.strip() or text_for_empty_check_report_orig.strip() == "0") and not contains_tags_report_orig
+                empty_odd_report_status_orig = ""
+                if is_empty_or_zero_report_orig and is_odd_subline_report_orig and len(sub_lines_original) > 1:
+                    empty_odd_report_status_orig = "EMPTY ODD NON-SINGLE"
+
+                line_report_parts.append(f"    Sub {j+1} (rstripped): {width_px}px (Editor: {status}) {short_status_orig} {empty_odd_report_status_orig} '{sub_line_no_tags_rstripped[:30]}...'")
             
-            is_odd_subline_report_orig = (i + 1) % 2 != 0
-            contains_tags_report_orig = bool(ALL_TAGS_PATTERN.search(sub_line))
-            is_empty_or_zero_report_orig = (not sub_line_no_tags.strip() or sub_line_no_tags.strip() == "0") and not contains_tags_report_orig
-            empty_odd_report_status_orig = ""
-            if is_empty_or_zero_report_orig and is_odd_subline_report_orig and len(sub_lines_original) > 1:
-                empty_odd_report_status_orig = "EMPTY ODD NON-SINGLE"
+            results.append("\n".join(line_report_parts))
+        
+        progress.setValue(num_strings)
 
-            info_parts.append(f"  Sub-line {i+1}: {width_px}px (Status: {status}) {short_status_orig} {empty_odd_report_status_orig} '{sub_line_no_tags[:40]}...'")
+        if not results:
+            QMessageBox.information(self.mw, "Calculate Line Widths", f"Block {self.mw.block_names.get(str(block_idx),str(block_idx))} processed. No lines found or calculation error.")
+            return
+            
+        result_text_title = (f"Widths for Block {self.mw.block_names.get(str(block_idx), str(block_idx))}\n"
+                             f"(Max Width for Short Check/Editor Warning: {max_width_for_short_check_report}px)\n"
+                             f"(Game Dialog Max Width (for total only): {self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS}px)\n")
+        result_text = result_text_title + "\n" + "\n\n".join(results)
+        
+        result_dialog = QMessageBox(self.mw)
+        result_dialog.setWindowTitle("Line Widths Report")
+        result_dialog.setTextFormat(Qt.PlainText)
+        result_dialog.setText(result_text)
+        result_dialog.setIcon(QMessageBox.Information)
+        result_dialog.setStandardButtons(QMessageBox.Ok)
+        result_dialog.setTextInteractionFlags(Qt.TextSelectableByMouse | Qt.TextSelectableByKeyboard)
+        text_edit_for_size = result_dialog.findChild(QPlainTextEdit)
+        if text_edit_for_size:
+            text_edit_for_size.setMinimumWidth(700)
+            text_edit_for_size.setMinimumHeight(500)
+        result_dialog.exec_()
 
-        QMessageBox.information(self.mw, "Line Width Calculation", "\n".join(info_parts))
         log_debug(f"<-- TextOperationHandler: calculate_width_for_data_line_action finished.")
         
     def auto_fix_current_string(self):
