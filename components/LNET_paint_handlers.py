@@ -333,7 +333,7 @@ class LNETPaintHandlers:
 
                 if self.editor.objectName() != "preview_text_edit": # These checks are only for editors showing QTextBlocks split by \n
                     
-                    # 1. Empty odd non-single QTextBlock (Priority 1)
+                    # 1. Empty odd non-single QTextBlock (Priority 1 for number area)
                     q_block_text_raw_dots = current_q_block.text()
                     q_block_text_spaces = convert_dots_to_spaces_from_editor(q_block_text_raw_dots)
                     text_no_tags = remove_all_tags(q_block_text_spaces)
@@ -343,19 +343,20 @@ class LNETPaintHandlers:
                     is_single_qtextblock_in_doc = (self.editor.document().blockCount() == 1)
 
                     if is_pixel_width_zero and is_odd_qtextblock and not is_single_qtextblock_in_doc:
-                         # Applies to both number and extra info area
                          bg_color_number_area = empty_odd_qtextblock_problem_color
-                         bg_color_extra_info_area = empty_odd_qtextblock_problem_color
-                    else:
-                        # 2. New Blue Rule: Odd QTextBlock, starts lowercase, ends punctuation, next block non-empty (Priority 2 for Extra Area)
-                        next_q_block = current_q_block.next()
-                        if next_q_block.isValid(): 
-                            if self._check_new_blue_rule(current_q_block, next_q_block):
-                                # Apply blue to Extra Info Area, Number Area gets default or empty_odd
+                         # Extra area also gets this critical color if the number area has it
+                         bg_color_extra_info_area = empty_odd_qtextblock_problem_color 
+                    
+                    # 2. New Blue Rule (Priority 2 for Extra Area, only if not already critical red)
+                    if bg_color_extra_info_area != empty_odd_qtextblock_problem_color:
+                        next_q_block_for_blue_check = current_q_block.next()
+                        if next_q_block_for_blue_check.isValid(): 
+                            if self._check_new_blue_rule(current_q_block, next_q_block_for_blue_check):
                                 bg_color_extra_info_area = new_blue_subline_color
-
+                    
                     # --- Check for Width/Short QTextBlock problems and apply background color to Extra Info Area ---
-                    # These checks apply *only* to the Extra Info Area (width/short indicators) and have higher priority than the blue rule within Extra Area
+                    # These checks apply *only* to the Extra Info Area (width/short indicators)
+                    # and have higher priority than the blue rule within Extra Area if they apply
                     if self.editor.objectName() != "preview_text_edit": 
                         q_block_text_raw_dots_paint_text = current_q_block.text()
                         q_block_text_spaces_paint_text = convert_dots_to_spaces_from_editor(q_block_text_raw_dots_paint_text)
@@ -367,12 +368,15 @@ class LNETPaintHandlers:
                         if current_q_block.next().isValid(): # Check only if there's a next QTextBlock to potentially merge with
                              is_qtextblock_short_for_paint = self._is_qtextblock_potentially_short_for_paint(current_q_block, current_q_block.next())
 
-
                         if pixel_width_qtextblock > self.editor.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
-                             bg_color_extra_info_area = width_exceeded_qtextblock_color # Priority 3
+                             bg_color_extra_info_area = width_exceeded_qtextblock_color # Priority 3 (overwrites blue if applicable)
                         elif is_qtextblock_short_for_paint:
-                             bg_color_extra_info_area = short_qtextblock_color # Priority 4
-                        # Otherwise, bg_color_extra_info_area remains the same as bg_color_number_area or a higher priority color applied earlier
+                             # Apply short only if not already width exceeded or blue (and not critical red)
+                             if bg_color_extra_info_area != width_exceeded_qtextblock_color and \
+                                bg_color_extra_info_area != new_blue_subline_color and \
+                                bg_color_extra_info_area != empty_odd_qtextblock_problem_color:
+                                 bg_color_extra_info_area = short_qtextblock_color # Priority 4
+
 
                 # Fill the backgrounds
                 painter.fillRect(number_part_rect, bg_color_number_area)
@@ -424,6 +428,29 @@ class LNETPaintHandlers:
                             if preview_empty_odd_color.alpha() < 100: preview_empty_odd_color = preview_empty_odd_color.lighter(120)
                             if len(indicators_to_draw_preview) < 3 and preview_empty_odd_color not in indicators_to_draw_preview:
                                 indicators_to_draw_preview.append(preview_empty_odd_color)
+
+                        # New Blue Rule Indicator for Preview
+                        data_string_for_blue_check, _ = main_window_ref.data_processor.get_current_string_text(current_block_idx_data, data_line_index_preview)
+                        sub_lines_for_blue_check = str(data_string_for_blue_check).split('\n')
+                        temp_doc_for_blue_check = QTextEdit() # Temporary document for block analysis
+                        temp_doc_for_blue_check.setPlainText(data_string_for_blue_check)
+                        
+                        data_string_has_blue_rule = False
+                        current_block_in_temp_doc = temp_doc_for_blue_check.document().firstBlock()
+                        while current_block_in_temp_doc.isValid():
+                            next_block_in_temp_doc = current_block_in_temp_doc.next()
+                            if self._check_new_blue_rule(current_block_in_temp_doc, next_block_in_temp_doc):
+                                data_string_has_blue_rule = True
+                                break
+                            current_block_in_temp_doc = next_block_in_temp_doc
+                        del temp_doc_for_blue_check # Clean up
+
+                        if data_string_has_blue_rule:
+                            preview_blue_color_temp = NEW_BLUE_SUBLINE_COLOR
+                            if preview_blue_color_temp.alpha() < 100: preview_blue_color_temp = preview_blue_color_temp.lighter(120)
+                            if len(indicators_to_draw_preview) < 3 and preview_blue_color_temp not in indicators_to_draw_preview:
+                                indicators_to_draw_preview.append(preview_blue_color_temp)
+
 
                         # Width Exceeded Indicator (based on Data String status)
                         if hasattr(main_window_ref, 'width_exceeded_lines_per_block') and \
