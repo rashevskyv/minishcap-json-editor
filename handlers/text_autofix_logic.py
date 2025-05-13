@@ -5,8 +5,13 @@ from utils.utils import log_debug, calculate_string_width, remove_all_tags, ALL_
 from core.tag_utils import TAG_STATUS_OK, TAG_STATUS_CRITICAL, TAG_STATUS_MISMATCHED_CURLY, TAG_STATUS_UNRESOLVED_BRACKETS
 
 SENTENCE_END_PUNCTUATION_CHARS = ['.', '!', '?']
-OPTIONAL_TRAILING_CHARS = ['"', "'"] # Додамо сюди лапки для перевірки
-PUNCTUATION_CHARS_AFTER_TAG = [',', '.', '!', '?']
+OPTIONAL_TRAILING_CHARS = ['"', "'"] 
+PUNCTUATION_CHARS_AFTER_TAG_LIST = [',', '.', '!', '?'] 
+PUNCTUATION_PATTERN = re.compile(r"^[,\.!?]$")
+QUOTES_PATTERN = re.compile(r"^[\"']$")
+WORD_CHAR_PATTERN = re.compile(r"^[a-zA-Zа-яА-ЯіїєґІЇЄҐ]$")
+ANY_TAG_RE_PATTERN = r"(\{[^}]*\}|\[[^\]]*\])"
+COLOR_WHITE_TAG_PATTERN = re.compile(r"\{Color:White\}", re.IGNORECASE)
 
 
 class TextAutofixLogic:
@@ -149,16 +154,27 @@ class TextAutofixLogic:
                     merged_line = current_line_for_width_calc
                     
                     if current_line_for_width_calc and first_word_next_raw:
+                        # Перевіряємо, чи потрібен пробіл
+                        needs_space = False
                         if not current_line_for_width_calc.endswith(" ") and not first_word_next_raw.startswith(" "):
-                            # Додаємо пробіл, якщо його немає між частинами, і це не два теги поспіль
-                            last_char_current = current_line_for_width_calc[-1] if current_line_for_width_calc else ''
-                            first_char_next = first_word_next_raw[0] if first_word_next_raw else ''
+                            last_char_current = current_line_for_width_calc[-1]
+                            first_char_next = first_word_next_raw[0]
                             
-                            is_current_ends_tag = last_char_current == '}' or last_char_current == ']'
-                            is_next_starts_tag = first_char_next == '{' or first_char_next == '['
+                            is_current_ends_tag = last_char_current in ['}', ']']
+                            is_next_starts_tag = first_char_next in ['{', '[']
+                            is_next_starts_word_char = WORD_CHAR_PATTERN.match(first_char_next) is not None
 
-                            if not (is_current_ends_tag and is_next_starts_tag):
-                                merged_line += " "
+                            if is_current_ends_tag and is_next_starts_word_char: # тег + слово
+                                needs_space = True
+                            elif not is_current_ends_tag and not is_next_starts_tag: # слово + слово
+                                needs_space = True
+                            elif not is_current_ends_tag and is_next_starts_tag: # слово + тег
+                                needs_space = True
+                            # Випадок тег + тег: пробіл не потрібен (needs_space = False)
+                        
+                        if needs_space:
+                            log_debug(f"Auto-fix (_fix_short_lines): Adding space when merging. Current ends: '{current_line_for_width_calc[-5:]}', Next starts: '{first_word_next_raw[:5]}'")
+                            merged_line += " "
                     
                     merged_line += first_word_next_raw
                     
@@ -301,24 +317,12 @@ class TextAutofixLogic:
         sub_lines = text.split('\n')
         fixed_sub_lines = []
         changed = False
-        for sub_line in sub_lines:
-            if sub_line.startswith(" ") and sub_line.strip() != "":
-                
-                leading_spaces_count = 0
-                for char_in_line in sub_line: 
-                    if char_in_line == " ":
-                        leading_spaces_count +=1
-                    else:
-                        break
-                
-                if leading_spaces_count == 1:
-                    stripped_line = sub_line.lstrip(" ")
-                    if stripped_line != sub_line:
-                        log_debug(f"Auto-fix (_fix_leading_spaces_in_sublines): Removed single leading space. Original: '{sub_line}', Fixed: '{stripped_line}'")
-                        changed = True
-                    fixed_sub_lines.append(stripped_line)
-                else:
-                     fixed_sub_lines.append(sub_line) 
+        for sub_line_idx, sub_line in enumerate(sub_lines):
+            if sub_line.startswith(" ") and not sub_line.startswith("  "):
+                stripped_line = sub_line[1:]
+                log_debug(f"Auto-fix (_fix_leading_spaces_in_sublines): Removed single leading space. Original sub_line: '{sub_line}', Fixed: '{stripped_line}'")
+                fixed_sub_lines.append(stripped_line)
+                changed = True
             else:
                 fixed_sub_lines.append(sub_line)
         
@@ -327,58 +331,62 @@ class TextAutofixLogic:
         return text
 
     def _cleanup_spaces_around_tags(self, text: str) -> str:
-        changed_text = text
         original_text = text
+        text_changed_this_function_call = False
         
-        # Правило 1: Тег на початку підрядка, а після нього одразу йде слово - пробіла після тега не має бути
-        # Це правило більше обробляється _fix_leading_spaces_in_sublines (якщо тег був на початку)
-        # та логікою злиття/розбиття. Тут ми радше перевіряємо, чи не лишився зайвий.
+        tag_pattern_str = ANY_TAG_RE_PATTERN
         
-        # Видалення пробілу: Тег + Пробіл + Слово  => Тег + Слово
-        # (\{\{[^}]*\}\}|\[[^\]]*\]) (\w)
-        # $1$2
-        def rule1_replacer(match):
-            tag = match.group(1)
-            word_char = match.group(2)
-            log_debug(f"Auto-fix (_cleanup_spaces_around_tags Rule 1): Removing space after tag at start of word. Tag: '{tag}', Word char: '{word_char}'")
-            return f"{tag}{word_char}"
-        changed_text = re.sub(r"(\{[^}]*\}|\[[^\]]*\]) ([a-zA-Zа-яА-ЯіїєґІЇЄҐ\{\[])", rule1_replacer, changed_text)
+        pattern = re.compile(f"(?P<tag>{tag_pattern_str})(?P<space> )(?P<after_space>.)?")
 
-
-        # Правило 2: Слово + Тег + Пробіл + Слово (з винятками)
-        # Поточні функції _fix_short_lines та _fix_width_exceeded вже намагаються розставити пробіли
-        # Тут ми можемо додати пробіл, якщо його точно немає і він потрібен.
+        current_pos = 0
+        result_parts = []
         
-        # Додавання пробілу: Слово + Тег + Слово => Слово + Тег + Пробіл + Слово
-        # (\w|\")(\{\{[^}]*\}\}|\[[^\]]*\])([a-zA-Zа-яА-ЯіїєґІЇЄҐ\{\[])
-        # $1$2 $3
-        # Це правило складне для простого regex через винятки.
-        # Давайте поки що зосередимося на видаленні зайвих пробілів.
-        # Якщо після інших фіксів пробіл потрібен, але його немає, це буде окрема проблема.
+        last_processed_end = 0
 
-        # Правило 3: Тег + Лапки => немає пробілу (видаляємо пробіл, якщо він є)
-        # (\{\{[^}]*\}\}|\[[^\]]*\]) ([\"'])
-        # $1$2
-        def rule3_replacer(match):
-            tag = match.group(1)
-            quote = match.group(2)
-            log_debug(f"Auto-fix (_cleanup_spaces_around_tags Rule 3): Removing space before quote after tag. Tag: '{tag}', Quote: '{quote}'")
-            return f"{tag}{quote}"
-        changed_text = re.sub(r"(\{[^}]*\}|\[[^\]]*\]) ([\"'])", rule3_replacer, changed_text)
+        while current_pos < len(text):
+            match = pattern.search(text, current_pos)
+            if not match:
+                result_parts.append(text[last_processed_end:])
+                break
 
-        # Додаткове правило: Видалити пробіл після будь-якого тегу, якщо далі йде розділовий знак
-        # (\{\{[^}]*\}\}|\[[^\]]*\]) ([,\.!?])
-        # $1$2
-        def rule_punct_replacer(match):
-            tag = match.group(1)
-            punct = match.group(2)
-            log_debug(f"Auto-fix (_cleanup_spaces_around_tags Punctuation): Removing space before punctuation after tag. Tag: '{tag}', Punct: '{punct}'")
-            return f"{tag}{punct}"
-        changed_text = re.sub(r"(\{[^}]*\}|\[[^\]]*\]) ([,\.!?])", rule_punct_replacer, changed_text)
+            tag_match_start_pos = match.start("tag")
+            
+            result_parts.append(text[last_processed_end:tag_match_start_pos])
+            
+            tag_content = match.group("tag")
+            space_content = match.group("space") 
+            char_after_space_content = match.group("after_space") if match.group("after_space") is not None else ""
 
-        if changed_text != original_text:
-            log_debug(f"Auto-fix (_cleanup_spaces_around_tags): Text changed. Original: '{original_text}', Fixed: '{changed_text}'")
-        return changed_text
+            result_parts.append(tag_content) 
+            
+            is_color_white = COLOR_WHITE_TAG_PATTERN.fullmatch(tag_content)
+            
+            should_remove_space = False
+            if is_color_white:
+                if char_after_space_content and PUNCTUATION_PATTERN.match(char_after_space_content):
+                    should_remove_space = True
+                    log_debug(f"Cleanup: Rule for {tag_content}: Removing space before punctuation '{char_after_space_content}'.")
+            else:
+                should_remove_space = True
+                log_debug(f"Cleanup: Rule for non-Color:White tag '{tag_content}': Removing space after it (before '{char_after_space_content}').")
+
+            if not should_remove_space:
+                result_parts.append(space_content) 
+            else:
+                if not text_changed_this_function_call: # Логуємо тільки першу зміну
+                    text_changed_this_function_call = True
+            
+            last_processed_end = match.start("after_space") if char_after_space_content else match.end("space")
+            current_pos = last_processed_end
+            # Символ char_after_space_content буде доданий на наступній ітерації як частина text[last_processed_end:...]
+            # або в кінці, якщо більше немає збігів.
+
+        final_text = "".join(result_parts)
+
+        if final_text != original_text : # Порівнюємо фінальний результат з оригіналом
+            log_debug(f"Auto-fix (_cleanup_spaces_around_tags): Text changed. Original: '{original_text}', Final: '{final_text}'")
+            return final_text
+        return original_text
 
 
     def auto_fix_current_string(self):
@@ -406,8 +414,8 @@ class TextAutofixLogic:
             modified_text = self._fix_blue_sublines(modified_text)
             modified_text = self._fix_short_lines(modified_text)
             modified_text = self._fix_width_exceeded(modified_text)
-            modified_text = self._fix_leading_spaces_in_sublines(modified_text)
-            modified_text = self._cleanup_spaces_around_tags(modified_text) # Замість _fix_space_after_any_curly_tag
+            modified_text = self._cleanup_spaces_around_tags(modified_text) 
+            modified_text = self._fix_leading_spaces_in_sublines(modified_text) 
             
             if modified_text == text_before_pass: 
                 break

@@ -49,7 +49,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.width_exceeded_line_color = WIDTH_EXCEEDED_LINE_COLOR 
         self.short_line_color = SHORT_LINE_COLOR 
         self.empty_odd_subline_color = EMPTY_ODD_SUBLINE_COLOR
-        self.new_blue_subline_color = NEW_BLUE_SUBLINE_COLOR # New color attribute
+        self.new_blue_subline_color = NEW_BLUE_SUBLINE_COLOR 
 
         self.highlightManager = TextHighlightManager(self)
         log_debug(f"LNET ({self.objectName()}): highlightManager created. Has 'clear_width_exceed_char_highlights': {hasattr(self.highlightManager, 'clear_width_exceed_char_highlights')}")
@@ -250,17 +250,10 @@ class LineNumberedTextEdit(QPlainTextEdit):
             current_block_number = current_cursor.blockNumber()
             new_block_number = -1
 
-            if is_ctrl_pressed and event.key() == Qt.Key_Up:
-                if hasattr(main_window, 'list_selection_handler'):
-                    main_window.list_selection_handler.navigate_to_problem_string(direction_down=False)
-                event.accept()
-                return
-            elif is_ctrl_pressed and event.key() == Qt.Key_Down:
-                if hasattr(main_window, 'list_selection_handler'):
-                    main_window.list_selection_handler.navigate_to_problem_string(direction_down=True)
-                event.accept()
-                return
-            elif not is_ctrl_pressed and event.key() == Qt.Key_Up:
+            # Ctrl+Up and Ctrl+Down are now handled globally by MainWindowEventFilter
+            # We only handle non-Ctrl Up/Down here for simple line navigation within preview
+
+            if not is_ctrl_pressed and event.key() == Qt.Key_Up:
                 if current_block_number > 0:
                     new_block_number = current_block_number - 1
                 event.accept()
@@ -282,8 +275,11 @@ class LineNumberedTextEdit(QPlainTextEdit):
             elif event.key() in [Qt.Key_Left, Qt.Key_Right, Qt.Key_PageUp, Qt.Key_PageDown, Qt.Key_Home, Qt.Key_End]:
                 super().keyPressEvent(event) 
                 return 
+            else: # For any other keys in preview, pass to super if not handled
+                super().keyPressEvent(event)
+                return
 
-        # Default handling for other editors or unhandled keys in preview
+
         if not self.isReadOnly():
             if event.matches(QKeySequence.Undo):
                 if self.document().isUndoAvailable():
