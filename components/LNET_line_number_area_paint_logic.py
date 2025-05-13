@@ -1,7 +1,7 @@
 from PyQt5.QtGui import QPainter, QColor
 from PyQt5.QtCore import Qt, QRect
 from PyQt5.QtWidgets import QMainWindow, QTextEdit
-from utils.utils import calculate_string_width, remove_all_tags, convert_dots_to_spaces_from_editor, ALL_TAGS_PATTERN, log_debug # Added log_debug
+from utils.utils import calculate_string_width, remove_all_tags, convert_dots_to_spaces_from_editor, ALL_TAGS_PATTERN, log_debug 
 from components.LNET_constants import (
     SHORT_LINE_COLOR, WIDTH_EXCEEDED_LINE_COLOR, EMPTY_ODD_SUBLINE_COLOR, NEW_BLUE_SUBLINE_COLOR
 )
@@ -43,12 +43,11 @@ class LNETLineNumberAreaPaintLogic:
         short_qtextblock_color = SHORT_LINE_COLOR 
 
         main_window_ref = self.editor.window()
-        current_block_idx_data = -1
-        active_data_line_idx = -1 
+        current_block_idx_data_mw = -1 # Renamed to avoid conflict with current_block_idx_data in preview loop
         
         if isinstance(main_window_ref, QMainWindow):
-             current_block_idx_data = main_window_ref.current_block_idx
-             active_data_line_idx = main_window_ref.current_string_idx
+             current_block_idx_data_mw = main_window_ref.current_block_idx
+             # active_data_line_idx is not used at this scope, only inside preview logic
 
         while current_q_block.isValid() and top <= event.rect().bottom():
             if current_q_block.isVisible() and bottom >= event.rect().top():
@@ -119,27 +118,27 @@ class LNETLineNumberAreaPaintLogic:
                         painter.setPen(text_color_for_extra_part)
                         painter.drawText(QRect(number_part_width, top, extra_part_width -3 , line_height), Qt.AlignRight | Qt.AlignVCenter, width_str_text)
                         
-                    elif self.editor.objectName() == "preview_text_edit" and isinstance(main_window_ref, QMainWindow) and current_block_idx_data != -1:
+                    elif self.editor.objectName() == "preview_text_edit" and isinstance(main_window_ref, QMainWindow) and current_block_idx_data_mw != -1:
                         indicator_x_start = number_part_width + 2
-                        block_key_str_for_preview = str(current_block_idx_data)
+                        block_key_str_for_preview = str(current_block_idx_data_mw)
                         data_line_index_preview = current_q_block_number 
                         indicators_to_draw_preview = []
                         
-                        is_target_for_log_preview = (current_block_idx_data == 12 and data_line_index_preview == 8)
+                        is_target_for_log_preview = (current_block_idx_data_mw == 12 and data_line_index_preview == 8)
                         if is_target_for_log_preview:
-                            log_debug(f"  PREVIEW PAINT for B{current_block_idx_data}-S{data_line_index_preview} (Data Line Index)")
+                            log_debug(f"  PREVIEW PAINT for B{current_block_idx_data_mw}-S{data_line_index_preview} (Data Line Index)")
 
                         has_crit = hasattr(main_window_ref, 'critical_problem_lines_per_block') and \
                                    data_line_index_preview in main_window_ref.critical_problem_lines_per_block.get(block_key_str_for_preview, set())
                         if has_crit: 
                             indicators_to_draw_preview.append(self.editor.lineNumberArea.preview_critical_indicator_color)
-                            if is_target_for_log_preview: log_debug(f"    Preview: Critical problem found.")
+                            if is_target_for_log_preview: log_debug(f"    Preview B12-S8: Critical problem found. Indicator added.")
                         else:
                             has_warn = hasattr(main_window_ref, 'warning_problem_lines_per_block') and \
                                        data_line_index_preview in main_window_ref.warning_problem_lines_per_block.get(block_key_str_for_preview, set())
                             if has_warn:
                                 indicators_to_draw_preview.append(self.editor.lineNumberArea.preview_warning_indicator_color)
-                                if is_target_for_log_preview: log_debug(f"    Preview: Warning problem found.")
+                                if is_target_for_log_preview: log_debug(f"    Preview B12-S8: Warning problem found. Indicator added.")
 
                         has_empty_odd = hasattr(main_window_ref, 'empty_odd_unisingle_subline_problem_strings') and \
                                         data_line_index_preview in main_window_ref.empty_odd_unisingle_subline_problem_strings.get(block_key_str_for_preview, set())
@@ -148,9 +147,9 @@ class LNETLineNumberAreaPaintLogic:
                             if preview_empty_odd_color.alpha() < 100: preview_empty_odd_color = preview_empty_odd_color.lighter(120)
                             if len(indicators_to_draw_preview) < 3 and preview_empty_odd_color not in indicators_to_draw_preview:
                                 indicators_to_draw_preview.append(preview_empty_odd_color)
-                            if is_target_for_log_preview: log_debug(f"    Preview: EmptyOdd problem found (indicator color: {preview_empty_odd_color.name()}).")
+                            if is_target_for_log_preview: log_debug(f"    Preview B12-S8: EmptyOdd problem found (indicator color: {preview_empty_odd_color.name()}). Indicator added if space.")
 
-                        data_string_for_blue_check, _ = main_window_ref.data_processor.get_current_string_text(current_block_idx_data, data_line_index_preview)
+                        data_string_for_blue_check, _ = main_window_ref.data_processor.get_current_string_text(current_block_idx_data_mw, data_line_index_preview)
                         temp_doc_for_blue_check = QTextEdit() 
                         temp_doc_for_blue_check.setPlainText(str(data_string_for_blue_check))
                         doc_for_blue_check = temp_doc_for_blue_check.document() 
@@ -178,7 +177,7 @@ class LNETLineNumberAreaPaintLogic:
                             if preview_blue_color_temp.alpha() < 100: preview_blue_color_temp = preview_blue_color_temp.lighter(120)
                             if len(indicators_to_draw_preview) < 3 and preview_blue_color_temp not in indicators_to_draw_preview:
                                 indicators_to_draw_preview.append(preview_blue_color_temp)
-                            if is_target_for_log_preview: log_debug(f"    Preview: Blue rule problem found (indicator color: {preview_blue_color_temp.name()}).")
+                            if is_target_for_log_preview: log_debug(f"    Preview B12-S8: Blue rule problem found (indicator color: {preview_blue_color_temp.name()}). Indicator added if space.")
 
 
                         has_width_exceeded = hasattr(main_window_ref, 'width_exceeded_lines_per_block') and \
@@ -188,24 +187,25 @@ class LNETLineNumberAreaPaintLogic:
                              if preview_width_color_temp.alpha() < 100: preview_width_color_temp = preview_width_color_temp.lighter(120) 
                              if len(indicators_to_draw_preview) < 3 and preview_width_color_temp not in indicators_to_draw_preview:
                                 indicators_to_draw_preview.append(preview_width_color_temp)
-                             if is_target_for_log_preview: log_debug(f"    Preview: Width exceeded problem found (indicator color: {preview_width_color_temp.name()}).")
+                             if is_target_for_log_preview: log_debug(f"    Preview B12-S8: Width exceeded problem found. Indicator added if space.")
                         
+                        # Check short_lines_per_block directly for preview
                         data_string_is_short_for_preview = False
-                        if hasattr(main_window_ref, 'short_lines_per_block') and \
-                           hasattr(main_window_ref, 'data_processor') and \
-                           data_line_index_preview in main_window_ref.short_lines_per_block.get(block_key_str_for_preview, set()):
-                            data_string_for_preview_short, _ = main_window_ref.data_processor.get_current_string_text(current_block_idx_data, data_line_index_preview)
-                            if main_window_ref.editor_operation_handler._determine_if_data_string_is_short(data_string_for_preview_short, current_block_idx_data, data_line_index_preview):
-                                 data_string_is_short_for_preview = True
+                        if hasattr(main_window_ref, 'short_lines_per_block'):
+                            if data_line_index_preview in main_window_ref.short_lines_per_block.get(block_key_str_for_preview, set()):
+                                data_string_is_short_for_preview = True
+                        
+                        if is_target_for_log_preview:
+                             log_debug(f"    Preview B12-S8: Check for short line: string_idx {data_line_index_preview} in short_lines_per_block[{block_key_str_for_preview}] ({main_window_ref.short_lines_per_block.get(block_key_str_for_preview, set())}) -> {data_string_is_short_for_preview}")
 
                         if data_string_is_short_for_preview:
                             preview_short_color_temp = SHORT_LINE_COLOR
                             if preview_short_color_temp.alpha() < 100: preview_short_color_temp = preview_short_color_temp.lighter(120)
                             if len(indicators_to_draw_preview) < 3 and preview_short_color_temp not in indicators_to_draw_preview:
                                 indicators_to_draw_preview.append(preview_short_color_temp)
-                            if is_target_for_log_preview: log_debug(f"    Preview: Short line problem found (indicator color: {preview_short_color_temp.name()}).")
+                            if is_target_for_log_preview: log_debug(f"    Preview B12-S8: Short line problem found. Indicator added if space.")
                         
-                        if is_target_for_log_preview: log_debug(f"    Preview: Final indicators for B{current_block_idx_data}-S{data_line_index_preview}: {[c.name() for c in indicators_to_draw_preview]}")
+                        if is_target_for_log_preview: log_debug(f"    Preview B12-S8: Final indicators: {[c.name() for c in indicators_to_draw_preview]}")
 
 
                         current_indicator_x_preview = indicator_x_start

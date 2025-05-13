@@ -73,44 +73,51 @@ class TextOperationHandler(BaseHandler):
     def _determine_if_data_string_is_short(self, data_string_text: str, block_idx_for_log: int = -1, string_idx_for_log: int = -1) -> bool:
         is_target_for_log = (block_idx_for_log == 12 and string_idx_for_log == 8)
         if is_target_for_log:
-            log_debug(f"  --- _determine_if_data_string_is_short (B{block_idx_for_log}-S{string_idx_for_log}) --- Text: '{str(data_string_text)[:200]}...'")
+            log_debug(f"  --- _determine_if_data_string_is_short (B{block_idx_for_log}-S{string_idx_for_log}) --- Input Text: '{str(data_string_text)}'")
 
         sub_lines = str(data_string_text).split('\n')
         if len(sub_lines) <= 1:
-            if is_target_for_log: log_debug("    Not short: <= 1 sub_lines.")
+            if is_target_for_log: log_debug(f"    Not short (B{block_idx_for_log}-S{string_idx_for_log}): <= 1 sub_lines.")
             return False 
 
-        sentence_end_chars_tuple = ('.', '!', '?') 
         space_width = calculate_string_width(" ", self.mw.font_map)
         max_width_for_short_check = self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
 
         for sub_line_idx, current_sub_line_text in enumerate(sub_lines):
+            if is_target_for_log:
+                log_debug(f"    Checking sub_line {sub_line_idx}: '{current_sub_line_text}'")
+
             if sub_line_idx == len(sub_lines) - 1: 
-                if is_target_for_log: log_debug(f"    Sub-line {sub_line_idx}: Last sub-line, check ends.")
-                break
+                if is_target_for_log: log_debug(f"      Sub-line {sub_line_idx}: Last sub-line, check ends for this sub_line.")
+                break 
 
             current_sub_line_clean_stripped = remove_all_tags(current_sub_line_text).strip()
+            if is_target_for_log:
+                log_debug(f"      current_sub_line_clean_stripped: '{current_sub_line_clean_stripped}'")
+
             if not current_sub_line_clean_stripped:
-                if is_target_for_log: log_debug(f"    Sub-line {sub_line_idx}: Clean stripped is empty, continue.")
+                if is_target_for_log: log_debug(f"      Sub-line {sub_line_idx}: Clean stripped is empty, continue to next sub_line.")
                 continue
             
             ends_with_punct = False
             if hasattr(self.autofix_logic, '_ends_with_sentence_punctuation'):
                 ends_with_punct = self.autofix_logic._ends_with_sentence_punctuation(current_sub_line_clean_stripped)
+            if is_target_for_log:
+                log_debug(f"      ends_with_punct for '{current_sub_line_clean_stripped}': {ends_with_punct}")
             
             if ends_with_punct:
-                if is_target_for_log: log_debug(f"    Sub-line {sub_line_idx} ('{current_sub_line_clean_stripped[:30]}...'): Ends with punctuation, continue.")
+                if is_target_for_log: log_debug(f"      Sub-line {sub_line_idx} ('{current_sub_line_clean_stripped[:30]}...'): Ends with punctuation, continue to next sub_line.")
                 continue
 
             next_sub_line_text = sub_lines[sub_line_idx + 1]
             next_sub_line_clean_stripped = remove_all_tags(next_sub_line_text).strip()
             if not next_sub_line_clean_stripped:
-                if is_target_for_log: log_debug(f"    Sub-line {sub_line_idx}: Next sub-line is empty, continue.")
+                if is_target_for_log: log_debug(f"      Sub-line {sub_line_idx}: Next sub-line is empty, continue to next sub_line.")
                 continue
 
             first_word_next_sub_line = next_sub_line_clean_stripped.split(maxsplit=1)[0] if next_sub_line_clean_stripped else ""
             if not first_word_next_sub_line:
-                if is_target_for_log: log_debug(f"    Sub-line {sub_line_idx}: No first word in next sub-line, continue.")
+                if is_target_for_log: log_debug(f"      Sub-line {sub_line_idx}: No first word in next sub-line, continue to next sub_line.")
                 continue
             
             first_word_next_width = calculate_string_width(first_word_next_sub_line, self.mw.font_map)
@@ -119,23 +126,23 @@ class TextOperationHandler(BaseHandler):
                 remaining_width = max_width_for_short_check - current_sub_line_pixel_width
                 
                 if is_target_for_log:
-                    log_debug(f"    Sub-line {sub_line_idx}: current_width={current_sub_line_pixel_width}, next_word='{first_word_next_sub_line}' (width={first_word_next_width}), remaining_width={remaining_width}, space_width={space_width}")
+                    log_debug(f"      Sub-line {sub_line_idx}: current_width_rstripped={current_sub_line_pixel_width}, next_word='{first_word_next_sub_line}' (width={first_word_next_width}), remaining_width={remaining_width}, space_width={space_width}, threshold={max_width_for_short_check}")
 
                 if remaining_width >= (first_word_next_width + space_width):
-                    if is_target_for_log: log_debug(f"    Sub-line {sub_line_idx}: Determined SHORT. Returning True.")
+                    if is_target_for_log: log_debug(f"      Sub-line {sub_line_idx}: Determined SHORT. Returning True.")
                     return True
-        if is_target_for_log: log_debug("    Not short: Loop finished without returning True.")
+        if is_target_for_log: log_debug(f"    Not short (B{block_idx_for_log}-S{string_idx_for_log}): Loop finished without returning True.")
         return False
 
     def _check_and_update_short_line_status_for_data_string(self, block_idx: int, string_idx: int, data_string_text: str) -> bool:
         is_target_for_log = (block_idx == 12 and string_idx == 8)
         if is_target_for_log:
-            log_debug(f"  _check_and_update_short_line_status (B{block_idx}-S{string_idx}) --- START ---")
+            log_debug(f"  --- _check_and_update_short_line_status (B{block_idx}-S{string_idx}) --- START --- Text: '{data_string_text[:100]}...'")
 
         block_key = str(block_idx)
         is_short = self._determine_if_data_string_is_short(data_string_text, block_idx, string_idx) 
         if is_target_for_log:
-            log_debug(f"    _determine_if_data_string_is_short returned: {is_short}")
+            log_debug(f"    _determine_if_data_string_is_short for B{block_idx}-S{string_idx} (text: '{data_string_text[:70]}...') returned: {is_short}")
         
         short_lines_set = self.mw.short_lines_per_block.get(block_key, set()).copy()
         state_changed = False
@@ -144,23 +151,24 @@ class TextOperationHandler(BaseHandler):
             if string_idx not in short_lines_set:
                 short_lines_set.add(string_idx)
                 state_changed = True
-                if is_target_for_log: log_debug(f"    Added S{string_idx} to short_lines_set.")
+                if is_target_for_log: log_debug(f"    Added S{string_idx} to short_lines_set. Current set: {short_lines_set}")
             elif is_target_for_log: log_debug(f"    S{string_idx} was already in short_lines_set.")
-        else:
+        else: # is_short is False
             if string_idx in short_lines_set:
                 short_lines_set.discard(string_idx)
                 state_changed = True
-                if is_target_for_log: log_debug(f"    Removed S{string_idx} from short_lines_set.")
+                if is_target_for_log: log_debug(f"    Removed S{string_idx} from short_lines_set. Current set: {short_lines_set}")
             elif is_target_for_log: log_debug(f"    S{string_idx} was not in short_lines_set (and is_short is False).")
         
         if state_changed:
             if short_lines_set:
                 self.mw.short_lines_per_block[block_key] = short_lines_set
             elif block_key in self.mw.short_lines_per_block:
+                if is_target_for_log: log_debug(f"    Deleting empty short_lines_per_block entry for block_key {block_key}")
                 del self.mw.short_lines_per_block[block_key]
             if is_target_for_log: log_debug(f"    State changed. New short_lines_per_block[{block_key}]: {self.mw.short_lines_per_block.get(block_key)}")
         elif is_target_for_log:
-            log_debug(f"    State NOT changed for short lines.")
+            log_debug(f"    State NOT changed for short lines. short_lines_set for block {block_key} is {self.mw.short_lines_per_block.get(block_key, 'Not present')}")
         if is_target_for_log:
             log_debug(f"  _check_and_update_short_line_status (B{block_idx}-S{string_idx}) --- END --- Returning {state_changed}")
         return state_changed
@@ -208,11 +216,11 @@ class TextOperationHandler(BaseHandler):
     def text_edited(self):
         log_debug(f"TextOperationHandler.text_edited: Start. Programmatic change? {self.mw.is_programmatically_changing_text}")
         if self.mw.is_programmatically_changing_text:
-            log_debug("TextOperationHandler.text_edited: Is programmatic, returning.")
+            # log_debug("TextOperationHandler.text_edited: Is programmatic, returning.") # Reduced verbosity
             return
         
         if self.mw.current_block_idx == -1 or self.mw.current_string_idx == -1:
-            log_debug("TextOperationHandler.text_edited: No block/string selected, returning.")
+            # log_debug("TextOperationHandler.text_edited: No block/string selected, returning.") # Reduced verbosity
             return
         
         block_idx = self.mw.current_block_idx
@@ -283,7 +291,7 @@ class TextOperationHandler(BaseHandler):
         edited_edit = getattr(self.mw, 'edited_text_edit', None)
         if edited_edit and hasattr(edited_edit, 'lineNumberArea'):
             edited_edit.lineNumberArea.update()
-        log_debug(f"TextOperationHandler.text_edited: End. Final undoAvailable = {self.mw.edited_text_edit.document().isUndoAvailable()}")
+        # log_debug(f"TextOperationHandler.text_edited: End. Final undoAvailable = {self.mw.edited_text_edit.document().isUndoAvailable()}") # Reduced verbosity
 
 
     def paste_block_text(self):
@@ -523,7 +531,7 @@ class TextOperationHandler(BaseHandler):
                 original_sub_line_no_tags_stripped_calc = remove_all_tags(sub_line).strip()
                 if original_sub_line_no_tags_stripped_calc and not original_sub_line_no_tags_stripped_calc.endswith(sentence_end_chars_tuple):
                     next_original_sub_line_text_calc = sub_lines_original[i+1]
-                    next_original_sub_line_clean_stripped_calc = remove_all_tags(next_original_sub_line_text_calc).strip() # Corrected variable name
+                    next_original_sub_line_clean_stripped_calc = remove_all_tags(next_original_sub_line_text_calc).strip() 
                     if next_original_sub_line_clean_stripped_calc:
                         first_word_next_original_sub_line_rpt = next_original_sub_line_clean_stripped_calc.split(maxsplit=1)[0] if next_original_sub_line_clean_stripped_calc else ""
                         if first_word_next_original_sub_line_rpt:
