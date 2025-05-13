@@ -57,7 +57,7 @@ def setup_main_window_ui(main_window):
     editable_text_header_layout.addItem(spacer)
     
     main_window.auto_fix_button = QPushButton("Auto-fix")
-    main_window.auto_fix_button.setToolTip("Automatically fix issues in the current string (Ctrl+Shift+F)") # Updated tooltip
+    main_window.auto_fix_button.setToolTip("Automatically fix issues in the current string (Ctrl+Shift+A)") 
     editable_text_header_layout.addWidget(main_window.auto_fix_button)
     
     bottom_right_layout.addLayout(editable_text_header_layout)
@@ -175,10 +175,9 @@ def setup_main_window_ui(main_window):
     edit_menu.addAction(main_window.find_action)
     edit_menu.addSeparator()
     
-    # Auto-fix action
     main_window.auto_fix_action = QAction(QIcon.fromTheme("document-edit"), "Auto-&fix Current String", main_window)
-    main_window.auto_fix_action.setShortcut(QKeySequence("Ctrl+Shift+F")) # Using Ctrl+Shift+F instead of A to avoid conflict with Select All
-    main_window.auto_fix_action.setToolTip("Automatically fix issues in the current string (Ctrl+Shift+F)")
+    main_window.auto_fix_action.setShortcut(QKeySequence("Ctrl+Shift+A")) 
+    main_window.auto_fix_action.setToolTip("Automatically fix issues in the current string (Ctrl+Shift+A)")
     edit_menu.addAction(main_window.auto_fix_action)
     edit_menu.addSeparator()
 
@@ -203,7 +202,7 @@ def setup_main_window_ui(main_window):
     toolbar.addSeparator()
     toolbar.addAction(main_window.find_action)
     toolbar.addAction(main_window.check_tags_action)
-    toolbar.addAction(main_window.auto_fix_action) # Added button to toolbar
+    toolbar.addAction(main_window.auto_fix_action) 
     toolbar.addSeparator()
 
     font_size_label = QLabel("Font Size: ")
