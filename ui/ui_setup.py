@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (
     QStyle, QSpinBox, QPushButton, QSpacerItem, QSizePolicy
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon, QFont, QFontMetrics, QKeySequence # QFontMetrics moved here
+from PyQt5.QtGui import QIcon, QFont, QFontMetrics, QKeySequence 
 from components.LineNumberedTextEdit import LineNumberedTextEdit
 from components.CustomListWidget import CustomListWidget
 from utils.utils import log_debug
@@ -57,7 +57,7 @@ def setup_main_window_ui(main_window):
     editable_text_header_layout.addItem(spacer)
     
     main_window.auto_fix_button = QPushButton("Auto-fix")
-    main_window.auto_fix_button.setToolTip("Automatically fix issues in the current string")
+    main_window.auto_fix_button.setToolTip("Automatically fix issues in the current string (Ctrl+Shift+F)") # Updated tooltip
     editable_text_header_layout.addWidget(main_window.auto_fix_button)
     
     bottom_right_layout.addLayout(editable_text_header_layout)
@@ -93,7 +93,7 @@ def setup_main_window_ui(main_window):
     if main_window.font() and main_window.font().family(): 
         font_for_metrics = main_window.font()
 
-    font_metrics = QFontMetrics(font_for_metrics) # QFontMetrics is from QtGui
+    font_metrics = QFontMetrics(font_for_metrics) 
     main_window.status_label_part1.setMinimumWidth(font_metrics.horizontalAdvance("Sel: 000/000") + 15) 
     main_window.status_label_part2.setMinimumWidth(font_metrics.horizontalAdvance("Line: 000/000") + 15) 
     main_window.status_label_part3.setMinimumWidth(font_metrics.horizontalAdvance("Width: 0000px") + 10)
@@ -174,6 +174,14 @@ def setup_main_window_ui(main_window):
     main_window.find_action.setShortcut('Ctrl+F')
     edit_menu.addAction(main_window.find_action)
     edit_menu.addSeparator()
+    
+    # Auto-fix action
+    main_window.auto_fix_action = QAction(QIcon.fromTheme("document-edit"), "Auto-&fix Current String", main_window)
+    main_window.auto_fix_action.setShortcut(QKeySequence("Ctrl+Shift+F")) # Using Ctrl+Shift+F instead of A to avoid conflict with Select All
+    main_window.auto_fix_action.setToolTip("Automatically fix issues in the current string (Ctrl+Shift+F)")
+    edit_menu.addAction(main_window.auto_fix_action)
+    edit_menu.addSeparator()
+
 
     main_window.rescan_all_tags_action = QAction(QIcon.fromTheme("system-search"), 'Rescan All Tags for Issues', main_window)
     edit_menu.addAction(main_window.rescan_all_tags_action)
@@ -195,6 +203,7 @@ def setup_main_window_ui(main_window):
     toolbar.addSeparator()
     toolbar.addAction(main_window.find_action)
     toolbar.addAction(main_window.check_tags_action)
+    toolbar.addAction(main_window.auto_fix_action) # Added button to toolbar
     toolbar.addSeparator()
 
     font_size_label = QLabel("Font Size: ")

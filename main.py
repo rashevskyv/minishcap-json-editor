@@ -127,9 +127,10 @@ class MainWindow(QMainWindow):
         self.rescan_all_tags_action = None
         self.find_action = None
         self.check_tags_action = None
+        self.auto_fix_action = None # For menu/toolbar action
         self.main_vertical_layout = None
         self.font_size_spinbox = None
-        self.auto_fix_button = None
+        self.auto_fix_button = None # This is the button next to "Editable Text"
         
         self.status_label_part1: QLabel = None
         self.status_label_part2: QLabel = None
@@ -209,7 +210,7 @@ class MainWindow(QMainWindow):
 
         if color_name in self.block_color_markers[block_key]:
             self.block_color_markers[block_key].remove(color_name)
-            if not self.block_color_markers[block_key]: # Якщо множина стала порожньою
+            if not self.block_color_markers[block_key]: 
                 del self.block_color_markers[block_key]
         else:
             self.block_color_markers[block_key].add(color_name)
@@ -219,7 +220,7 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'block_list_widget'):
             item = self.block_list_widget.item(block_idx)
             if item:
-                self.block_list_widget.update(self.block_list_widget.indexFromItem(item)) # Оновлення конкретного елемента
+                self.block_list_widget.update(self.block_list_widget.indexFromItem(item)) 
 
 
     def _rebuild_unsaved_block_indices(self):
@@ -384,8 +385,12 @@ class MainWindow(QMainWindow):
             self.font_size_spinbox.valueChanged.connect(self.change_font_size_action)
         if hasattr(self, 'check_tags_action') and self.check_tags_action:
             self.check_tags_action.triggered.connect(self.trigger_check_tags_action)
+        
+        # Connect Auto-fix button and new QAction
         if hasattr(self, 'auto_fix_button') and self.auto_fix_button:
             self.auto_fix_button.clicked.connect(self.editor_operation_handler.auto_fix_current_string)
+        if hasattr(self, 'auto_fix_action') and self.auto_fix_action: # New QAction for menu/shortcut
+            self.auto_fix_action.triggered.connect(self.editor_operation_handler.auto_fix_current_string)
 
 
         log_debug("--> MainWindow: connect_signals() finished")
