@@ -104,44 +104,36 @@ class TextAutofixLogic:
         return joined_text
 
     def _fix_short_lines(self, text: str) -> str:
-        # log_debug(f"--- _fix_short_lines START --- Input text: '{text[:100]}...'") 
         sub_lines = text.split('\n')
         if len(sub_lines) <= 1:
-            # log_debug("  _fix_short_lines: <= 1 sub_lines, returning original.")
             return text
 
         made_change_in_this_fix_pass = True 
         iteration_count = 0
         while made_change_in_this_fix_pass:
             iteration_count += 1
-            # log_debug(f"  _fix_short_lines: Iteration {iteration_count}")
             made_change_in_this_fix_pass = False
             new_sub_lines = list(sub_lines) 
             i = len(new_sub_lines) - 2 
             while i >= 0:
                 current_line = new_sub_lines[i]
                 next_line = new_sub_lines[i+1]
-                # log_debug(f"    Processing pair: current_line[{i}]='{current_line}', next_line[{i+1}]='{next_line}'")
 
                 current_line_no_tags = remove_all_tags(current_line)
                 current_line_no_tags_stripped = current_line_no_tags.strip()
 
                 if not current_line_no_tags_stripped:
-                    # log_debug(f"      Skipping: current_line_no_tags_stripped is empty.")
                     i -= 1
                     continue
                 
                 if self._ends_with_sentence_punctuation(current_line_no_tags_stripped):
-                    # log_debug(f"      Skipping: current_line_no_tags_stripped ends with punctuation: '{current_line_no_tags_stripped}'")
                     i -= 1
                     continue
 
                 first_word_next_raw, rest_of_next_line_raw = self._extract_first_word_with_tags(next_line)
                 first_word_next_no_tags = remove_all_tags(first_word_next_raw).strip()
-                # log_debug(f"      Extracted from next_line: first_word_next_raw='{first_word_next_raw}', rest_of_next_line_raw='{rest_of_next_line_raw}', first_word_next_no_tags='{first_word_next_no_tags}'")
 
                 if not first_word_next_no_tags:
-                    # log_debug(f"      Skipping: first_word_next_no_tags is empty.")
                     i -= 1
                     continue
                 
@@ -149,39 +141,54 @@ class TextAutofixLogic:
                 width_current_line_rstripped = calculate_string_width(remove_all_tags(current_line_for_width_calc), self.mw.font_map)
                 width_first_word_next = calculate_string_width(first_word_next_no_tags, self.mw.font_map)
                 space_width = calculate_string_width(" ", self.mw.font_map)
-                # log_debug(f"      Widths: current_rstripped={width_current_line_rstripped}, first_word_next={width_first_word_next}, space={space_width}, threshold={self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS}")
                 
                 can_merge = width_current_line_rstripped + space_width + width_first_word_next <= self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
-                # log_debug(f"      Can merge? {can_merge} (Expression: {width_current_line_rstripped + space_width + width_first_word_next} <= {self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS})")
 
                 if can_merge:
-                    new_current_line_parts = [current_line_for_width_calc] 
-                    if current_line and not current_line.endswith(" ") and first_word_next_raw: 
-                        new_current_line_parts.append(" ")
-                    new_current_line_parts.append(first_word_next_raw)
+                    merged_line = current_line_for_width_calc
                     
-                    merged_line = "".join(new_current_line_parts)
+                    ends_with_tag = False
+                    last_tag_match = list(ALL_TAGS_PATTERN.finditer(current_line_for_width_calc))
+                    if last_tag_match and last_tag_match[-1].end() == len(current_line_for_width_calc):
+                        ends_with_tag = True
+
+                    starts_with_tag_next = False
+                    first_tag_match_next = list(ALL_TAGS_PATTERN.finditer(first_word_next_raw))
+                    if first_tag_match_next and first_tag_match_next[0].start() == 0:
+                        starts_with_tag_next = True
+                    
+                    needs_a_space = False
+                    if current_line_for_width_calc and first_word_next_raw:
+                        if not current_line_for_width_calc.endswith(" ") and not first_word_next_raw.startswith(" "):
+                            if not ends_with_tag and not starts_with_tag_next: 
+                                needs_a_space = True
+                            elif ends_with_tag and not starts_with_tag_next:
+                                # Пробіл не потрібен одразу після тегу, якщо далі слово
+                                pass
+                            elif not ends_with_tag and starts_with_tag_next:
+                                needs_a_space = True # Пробіл потрібен, якщо слово закінчується, а далі тег
+                            # Якщо обидва теги, або один з них - пробіл, пробіл не потрібен
+
+                    if needs_a_space:
+                        merged_line += " "
+                    
+                    merged_line += first_word_next_raw
+                    
                     new_sub_lines[i] = merged_line
                     new_sub_lines[i+1] = rest_of_next_line_raw
-                    # log_debug(f"      Merged. new_sub_lines[{i}]='{new_sub_lines[i]}', new_sub_lines[{i+1}]='{new_sub_lines[i+1]}'")
-
 
                     if not new_sub_lines[i+1].strip() and len(new_sub_lines) > i + 1 : 
-                        # log_debug(f"      Next line became empty, deleting new_sub_lines[{i+1}]")
                         del new_sub_lines[i+1]
                     
                     made_change_in_this_fix_pass = True
                     sub_lines = list(new_sub_lines) 
-                    # log_debug(f"      Change made in pass. Breaking inner loop to re-evaluate from start of sub_lines.")
                     break 
                 i -= 1
             
             if not made_change_in_this_fix_pass:
-                # log_debug(f"  _fix_short_lines: No change made in iteration {iteration_count}. Exiting outer loop.")
                 break 
         
         final_text = "\n".join(sub_lines)
-        # log_debug(f"--- _fix_short_lines END --- Output text: '{final_text[:100]}...'")
         return final_text
 
     def _fix_width_exceeded(self, text: str) -> str:
@@ -262,7 +269,7 @@ class TextAutofixLogic:
 
     def _fix_blue_sublines(self, text: str) -> str:
         sub_lines = text.split('\n')
-        if len(sub_lines) < 2: # Rule requires a next line
+        if len(sub_lines) < 2: 
             return text
 
         new_sub_lines = []
@@ -288,14 +295,12 @@ class TextAutofixLogic:
                 i += 1
                 continue
 
-            # Check next line
             if i + 1 < len(sub_lines):
                 next_line_text = sub_lines[i+1]
                 next_line_no_tags = remove_all_tags(next_line_text)
                 stripped_next_line_no_tags = next_line_no_tags.strip()
                 
-                if stripped_next_line_no_tags: # Next line is NOT empty
-                    # This is a "blue" line, add an empty line after it
+                if stripped_next_line_no_tags: 
                     new_sub_lines.append("")
                     changed_in_pass = True
             i += 1
@@ -303,6 +308,55 @@ class TextAutofixLogic:
         if changed_in_pass:
             return "\n".join(new_sub_lines)
         return text
+
+    def _fix_leading_spaces_in_sublines(self, text: str) -> str:
+        sub_lines = text.split('\n')
+        fixed_sub_lines = []
+        changed = False
+        for sub_line in sub_lines:
+            if sub_line.startswith(" ") and sub_line.strip() != "":
+                
+                leading_spaces_count = 0
+                for char_in_line in sub_line: # Renamed char to char_in_line
+                    if char_in_line == " ":
+                        leading_spaces_count +=1
+                    else:
+                        break
+                
+                if leading_spaces_count == 1:
+                    stripped_line = sub_line.lstrip(" ")
+                    if stripped_line != sub_line:
+                        log_debug(f"Auto-fix: Removed single leading space from sub-line. Original: '{sub_line}', Fixed: '{stripped_line}'")
+                        changed = True
+                    fixed_sub_lines.append(stripped_line)
+                else:
+                     fixed_sub_lines.append(sub_line) 
+            else:
+                fixed_sub_lines.append(sub_line)
+        
+        if changed:
+            return "\n".join(fixed_sub_lines)
+        return text
+
+    def _fix_space_after_any_curly_tag(self, text: str) -> str:
+        any_curly_tag_pattern = r"(\{[^}]*\})" 
+        changed_text = text
+        
+        def replacer(match):
+            tag_content = match.group(1) 
+            text_after_tag_and_space = match.group(2) 
+            
+            if text_after_tag_and_space: 
+                first_char_after_space = text_after_tag_and_space[0]
+                
+                if first_char_after_space.isalpha() or first_char_after_space == "{" or first_char_after_space == "[":
+                    log_debug(f"Auto-fix: Removed space after curly tag '{tag_content}'. Before: '{match.group(0)}', After: '{tag_content}{text_after_tag_and_space}'")
+                    return f"{tag_content}{text_after_tag_and_space}"
+            return match.group(0) 
+
+        fixed_text = re.sub(any_curly_tag_pattern + r" (.*)", replacer, changed_text)
+        
+        return fixed_text
 
 
     def auto_fix_current_string(self):
@@ -323,34 +377,31 @@ class TextAutofixLogic:
         edited_text_edit = self.mw.edited_text_edit
         
         while iterations < max_iterations:
-            made_change_in_this_pass = False
+            text_before_pass = modified_text
             iterations += 1
-            # log_debug(f"Auto-fix: Iteration {iterations} for string {block_idx}-{string_idx}. Current text: '{modified_text[:100]}...'")
 
             temp_text_after_empty_fix = self._fix_empty_odd_sublines(modified_text)
-            if temp_text_after_empty_fix != modified_text:
-                modified_text = temp_text_after_empty_fix
-                made_change_in_this_pass = True
+            modified_text = temp_text_after_empty_fix
             
             temp_text_after_blue_fix = self._fix_blue_sublines(modified_text)
-            if temp_text_after_blue_fix != modified_text:
-                modified_text = temp_text_after_blue_fix
-                made_change_in_this_pass = True
+            modified_text = temp_text_after_blue_fix
 
             temp_text_after_short_fix = self._fix_short_lines(modified_text)
-            if temp_text_after_short_fix != modified_text:
-                modified_text = temp_text_after_short_fix
-                made_change_in_this_pass = True
+            modified_text = temp_text_after_short_fix
             
             temp_text_after_width_fix = self._fix_width_exceeded(modified_text)
-            if temp_text_after_width_fix != modified_text:
-                modified_text = temp_text_after_width_fix
-                made_change_in_this_pass = True
+            modified_text = temp_text_after_width_fix
+
+            temp_text_after_leading_space_fix = self._fix_leading_spaces_in_sublines(modified_text)
+            modified_text = temp_text_after_leading_space_fix
             
-            if not made_change_in_this_pass: 
+            temp_text_after_curly_tag_space_fix = self._fix_space_after_any_curly_tag(modified_text)
+            modified_text = temp_text_after_curly_tag_space_fix
+            
+            if modified_text == text_before_pass: 
                 break
         
-        if iterations == max_iterations and made_change_in_this_pass: 
+        if iterations == max_iterations and modified_text != text_before_pass: 
             log_debug("Auto-fix: Max iterations reached, potential complex case or loop.")
             QMessageBox.warning(self.mw, "Auto-fix", "Auto-fix reached maximum iterations. Result might be incomplete.")
 
@@ -368,51 +419,32 @@ class TextAutofixLogic:
                 current_v_scroll = edited_text_edit.verticalScrollBar().value()
                 current_h_scroll = edited_text_edit.horizontalScrollBar().value()
                 undo_available_before = edited_text_edit.document().isUndoAvailable()
-                log_debug(f"  Undo/Redo AutoFix: BEFORE text change. Undo available: {undo_available_before}")
-
-            # Ensure programmatic flag is False for the text change that should be undoable
-            # This flag should NOT affect the textChanged signal connection itself,
-            # but how the handler of that signal (TextOperationHandler.text_edited) behaves.
-            # TextOperationHandler.text_edited already checks this flag at its beginning.
             
-            # Store original state of the flag
             original_programmatic_state = self.mw.is_programmatically_changing_text
-            self.mw.is_programmatically_changing_text = False # Allow textChanged to operate normally for this change
+            self.mw.is_programmatically_changing_text = False 
 
             if edited_text_edit:
                 text_for_display = convert_spaces_to_dots_for_display(final_text_to_apply, self.mw.show_multiple_spaces_as_dots)
                 
-                # This approach should reliably create an undo step
                 cursor = edited_text_edit.textCursor()
                 cursor.beginEditBlock()
                 cursor.select(QTextCursor.Document)
-                cursor.insertText(text_for_display) # This insertText will trigger textChanged
+                cursor.insertText(text_for_display) 
                 cursor.endEditBlock()
                 
-                log_debug(f"  Undo/Redo AutoFix: AFTER cursor text change. Undo available: {edited_text_edit.document().isUndoAvailable()}")
-                
-                # Restore cursor position and scroll
                 new_doc_len = edited_text_edit.document().characterCount() -1 
                 final_cursor_pos = min(original_cursor_pos, new_doc_len if new_doc_len >=0 else 0)
-                # It's important to set the cursor *after* the text change is fully processed by the event loop
-                # if setPlainText was used. With cursor.insertText, it might be okay here.
-                restored_cursor = edited_text_edit.textCursor() # Get a new cursor as the document has changed
+                restored_cursor = edited_text_edit.textCursor() 
                 restored_cursor.setPosition(final_cursor_pos)
                 edited_text_edit.setTextCursor(restored_cursor)
                 
                 edited_text_edit.verticalScrollBar().setValue(current_v_scroll)
                 edited_text_edit.horizontalScrollBar().setValue(current_h_scroll)
 
-            # Restore the programmatic flag for subsequent UI updates
-            self.mw.is_programmatically_changing_text = True # original_programmatic_state (if we want to restore precisely)
+            self.mw.is_programmatically_changing_text = True 
             
-            # update_edited_data is now handled by the textChanged signal triggered by cursor.insertText()
-            # So, we only need to check if the title needs an update based on the *result* of that.
-            if self.mw.unsaved_changes != (bool(self.mw.edited_data) or final_text_to_apply != current_text) : # A bit redundant but covers edge cases
-                 log_debug(f"  Undo/Redo AutoFix: Unsaved changes state mismatch or change occurred. Forcing title update.")
+            if self.mw.unsaved_changes != (bool(self.mw.edited_data) or final_text_to_apply != current_text) : 
                  self.ui_updater.update_title()
-            else:
-                 log_debug(f"  Undo/Redo AutoFix: Unsaved changes state consistent after textChanged.")
             
             if self.mw.original_text_edit:
                 original_text_raw = self.data_processor._get_string_from_source(block_idx, string_idx, self.mw.data, "original_data_for_autofix_view")
@@ -431,7 +463,7 @@ class TextAutofixLogic:
             if edited_text_edit and hasattr(edited_text_edit, 'lineNumberArea'):
                 edited_text_edit.lineNumberArea.update()
 
-            self.mw.is_programmatically_changing_text = original_programmatic_state # Restore to original state
+            self.mw.is_programmatically_changing_text = original_programmatic_state 
             
             if hasattr(self.mw, 'statusBar'):
                 self.mw.statusBar.showMessage("Auto-fix applied to current string.", 2000)
@@ -439,6 +471,3 @@ class TextAutofixLogic:
             log_debug("Auto-fix: No changes made to the text.")
             if hasattr(self.mw, 'statusBar'):
                 self.mw.statusBar.showMessage("Auto-fix: No changes made.", 2000)
-
-        if edited_text_edit:
-            log_debug(f"TextAutofixLogic.auto_fix_current_string: Finished. Undo available on editor: {edited_text_edit.document().isUndoAvailable()}")

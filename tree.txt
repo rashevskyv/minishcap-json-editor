@@ -6,8 +6,12 @@
 │   ├── LineNumberedTextEdit.py
 │   ├── LNET_constants.py
 │   ├── LNET_highlight_interface.py
+│   ├── LNET_line_number_area_paint_logic.py
 │   ├── LNET_mouse_handlers.py
+│   ├── LNET_paint_event_logic.py
 │   ├── LNET_paint_handlers.py
+│   ├── LNET_paint_helpers
+│   ├── LNET_paint_helpers.py
 │   ├── search_panel.py
 │   └── TextHighlightManager.py
 ├── core
@@ -22,6 +26,8 @@
 │   ├── base_handler.py
 │   ├── list_selection_handler.py
 │   ├── search_handler.py
+│   ├── tag_checker_handler.py
+│   ├── text_autofix_logic.py
 │   └── text_operation_handler.py
 ├── ui
 │   ├── __init__.py
