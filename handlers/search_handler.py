@@ -248,7 +248,12 @@ class SearchHandler(BaseHandler):
                     text_in_widget_qtextblock = widget_block.text()
 
                     first_word_display = convert_raw_to_display_text(query_words_for_display_search[0], self.mw.show_multiple_spaces_as_dots, self.mw.newline_display_symbol if editor == self.mw.preview_text_edit else "")
-                    if editor == self.mw.original_text_edit: first_word_display = remove_curly_tags(first_word_display)
+                    # For original_text_edit, when search_in_original is true, we want to match against text with curly tags
+                    # If search_in_original is false, then we're matching against translated text potentially,
+                    # so the original view might need its curly tags removed for display comparison.
+                    # This logic needs to be very careful.
+                    if editor == self.mw.original_text_edit and not self.search_in_original:
+                         first_word_display = remove_curly_tags(first_word_display)
                     
                     current_search_offset_in_qblock = 0
                     while current_search_offset_in_qblock < len(text_in_widget_qtextblock):
@@ -268,7 +273,8 @@ class SearchHandler(BaseHandler):
                             for i in range(1, len(query_words_for_display_search)):
                                 next_word_orig = query_words_for_display_search[i]
                                 next_word_display = convert_raw_to_display_text(next_word_orig, self.mw.show_multiple_spaces_as_dots, self.mw.newline_display_symbol if editor == self.mw.preview_text_edit else "")
-                                if editor == self.mw.original_text_edit: next_word_display = remove_curly_tags(next_word_display)
+                                if editor == self.mw.original_text_edit and not self.search_in_original:
+                                     next_word_display = remove_curly_tags(next_word_display)
 
                                 found_current_next_word = False
                                 for j in range(temp_current_qblock_for_next_words, editor.document().blockCount()):
@@ -293,13 +299,13 @@ class SearchHandler(BaseHandler):
                         
                         if all_words_found_sequentially:
                             log_debug(f"TaglessSearch Highlight Range for {editor_name}: StartBlk:{highlight_start_qblock_idx} StartPos:{highlight_start_pos_in_qblock} EndBlk:{highlight_end_qblock_idx} EndPos:{highlight_end_pos_in_qblock_end_of_word}")
-                            for i in range(highlight_start_qblock_idx, highlight_end_qblock_idx + 1):
-                                start_char = highlight_start_pos_in_qblock if i == highlight_start_qblock_idx else 0
-                                current_block_for_highlight_text = editor.document().findBlockByNumber(i).text()
-                                end_char = highlight_end_pos_in_qblock_end_of_word if i == highlight_end_qblock_idx else len(current_block_for_highlight_text)
+                            for i_hl in range(highlight_start_qblock_idx, highlight_end_qblock_idx + 1):
+                                start_char = highlight_start_pos_in_qblock if i_hl == highlight_start_qblock_idx else 0
+                                current_block_for_highlight_text = editor.document().findBlockByNumber(i_hl).text()
+                                end_char = highlight_end_pos_in_qblock_end_of_word if i_hl == highlight_end_qblock_idx else len(current_block_for_highlight_text)
                                 length_to_highlight = end_char - start_char
                                 if length_to_highlight > 0 :
-                                    editor.highlightManager.add_search_match_highlight(i, start_char, length_to_highlight)
+                                    editor.highlightManager.add_search_match_highlight(i_hl, start_char, length_to_highlight)
                             
                             scroll_to_block_nav = editor.document().findBlockByNumber(highlight_start_qblock_idx)
                             cursor_nav = QTextCursor(scroll_to_block_nav)
@@ -310,55 +316,120 @@ class SearchHandler(BaseHandler):
                             current_search_offset_in_qblock = start_pos + 1
                     
                     if found_overall_match_in_editor: break
-        else:
+        else: # Precise search
             raw_full_string_data = self._get_text_for_search(block_idx_match_in_data, string_idx_match_in_data, self.search_in_original, False)
             target_qtextblock_idx_in_editor, char_pos_in_target_qtextblock_raw = \
                 self._calculate_qtextblock_and_pos_in_block(raw_full_string_data, char_pos_in_search_text)
             log_debug(f"PreciseSearch: Match is in QTextBlk(editor): {target_qtextblock_idx_in_editor}, RawCharInBlk: {char_pos_in_target_qtextblock_raw}")
+            
             raw_qtextblocks = raw_full_string_data.split('\n')
             if target_qtextblock_idx_in_editor >= len(raw_qtextblocks):
                 log_debug(f"ERROR: PreciseSearch: target_qtextblock_idx_in_editor out of bounds."); return
+            
             raw_text_of_target_qtextblock = raw_qtextblocks[target_qtextblock_idx_in_editor]
+            
+            # Determine occurrence count based on the type of text searched (raw or tagless)
+            # For precise search, effective_query is self.current_query
+            # text_for_search was raw_full_string_data split by \n, so raw_text_of_target_qtextblock
+            
             compare_raw_qtextblock_text = raw_text_of_target_qtextblock
-            compare_raw_query_for_occurrence_base = self.current_query
+            compare_raw_query_for_occurrence_base = self.current_query # Query is used as is for precise
+            
             if not self.is_case_sensitive:
                 compare_raw_qtextblock_text = raw_text_of_target_qtextblock.lower()
                 compare_raw_query_for_occurrence_base = self.current_query.lower()
-            occurrence_in_qtextblock_raw = 0; temp_pos_qblk = -1; search_offset_qblk = 0
-            
-            effective_query_for_occ_count = compare_raw_query_for_occurrence_base
-            text_for_occ_count = compare_raw_qtextblock_text
-            
-            if self.search_in_original and self.mw.original_text_edit.objectName() == "original_text_edit":
-                 effective_query_for_occ_count = remove_curly_tags(effective_query_for_occ_count)
-                 text_for_occ_count = remove_curly_tags(text_for_occ_count)
 
-            if effective_query_for_occ_count:
+            occurrence_in_qtextblock_raw = 0; temp_pos_qblk = -1; search_offset_qblk = 0
+            if compare_raw_query_for_occurrence_base:
                 while search_offset_qblk <= char_pos_in_target_qtextblock_raw:
-                    temp_pos_qblk = text_for_occ_count.find(effective_query_for_occ_count, search_offset_qblk)
+                    temp_pos_qblk = compare_raw_qtextblock_text.find(compare_raw_query_for_occurrence_base, search_offset_qblk)
                     if temp_pos_qblk == -1 or temp_pos_qblk > char_pos_in_target_qtextblock_raw: break
                     occurrence_in_qtextblock_raw += 1
                     if temp_pos_qblk == char_pos_in_target_qtextblock_raw: break
                     search_offset_qblk = temp_pos_qblk + 1
-            if occurrence_in_qtextblock_raw == 0 and effective_query_for_occ_count: occurrence_in_qtextblock_raw = 1
+            if occurrence_in_qtextblock_raw == 0 and compare_raw_query_for_occurrence_base : occurrence_in_qtextblock_raw = 1
             log_debug(f"PreciseSearch: Match is the {occurrence_in_qtextblock_raw}-th occ in its raw QTextBlock.")
-            editors_to_process_precise = [(self.mw.preview_text_edit, True, string_idx_match_in_data),(self.mw.original_text_edit, False, target_qtextblock_idx_in_editor),(self.mw.edited_text_edit, False, target_qtextblock_idx_in_editor)]
+
+            editors_to_process_precise = [
+                (self.mw.preview_text_edit, True, string_idx_match_in_data),
+                (self.mw.original_text_edit, False, target_qtextblock_idx_in_editor),
+                (self.mw.edited_text_edit, False, target_qtextblock_idx_in_editor)
+            ]
+
             for editor_precise, use_newline_symbol, widget_qtextblock_idx_to_use in editors_to_process_precise:
                 editor_name_precise = editor_precise.objectName();
                 if not editor_precise or not hasattr(editor_precise, 'highlightManager'): continue
-                if (editor_precise == self.mw.original_text_edit or editor_precise == self.mw.edited_text_edit) and string_idx_match_in_data != self.mw.current_string_idx: continue
+                if (editor_precise == self.mw.original_text_edit or editor_precise == self.mw.edited_text_edit) and \
+                   string_idx_match_in_data != self.mw.current_string_idx:
+                    log_debug(f"PreciseSearch: Skipping {editor_name_precise}, string mismatch for original/edited.")
+                    continue
+                
                 widget_block_precise = editor_precise.document().findBlockByNumber(widget_qtextblock_idx_to_use)
                 if not widget_block_precise.isValid(): continue
+                
                 text_in_widget_qtextblock_precise = widget_block_precise.text()
-                query_for_this_editor_raw_precise = self.current_query
-                if editor_precise == self.mw.original_text_edit: query_for_this_editor_raw_precise = remove_curly_tags(self.current_query)
-                display_query_for_widget_precise = convert_raw_to_display_text(query_for_this_editor_raw_precise, self.mw.show_multiple_spaces_as_dots, self.mw.newline_display_symbol if use_newline_symbol else "")
-                match_pos_in_widget_qtextblock_precise, match_len_in_widget_qtextblock_precise = self._find_nth_occurrence_in_display_text(text_in_widget_qtextblock_precise, display_query_for_widget_precise, occurrence_in_qtextblock_raw, self.is_case_sensitive)
+                query_for_this_editor_raw_precise = self.current_query # Start with the original query
+
+                # For original_text_edit, if we are searching IN original, the query should match the text in original_text_edit's document.
+                # original_text_edit's document contains text with "{Player}" etc. (raw from self.mw.data)
+                # and its JsonTagHighlighter handles visual replacement of {Player} but document still has {Player}
+                # So, if searching in original, query_for_this_editor_raw_precise should be self.current_query.
+                # If searching in EDITED text (self.search_in_original is False), and we are now highlighting in original_text_edit,
+                # then the query (which was matched against EDITED text) might need its curly tags removed
+                # if the original text has no curly tags for that part (e.g. Player tag diff).
+                # However, the current logic of _get_text_for_search provides raw text for original search.
+                # The main challenge is mapping occurrences.
+
+                if editor_precise == self.mw.original_text_edit:
+                    # If searching in original, the query should match the raw text in original_text_edit's document.
+                    # If search_in_original is True, self.current_query is what was found in self.mw.data.
+                    # original_text_edit.toPlainText() should be very close to self.mw.data.
+                    # So, no modification to query_for_this_editor_raw_precise needed here if search_in_original is True.
+                    if not self.search_in_original:
+                        # This case is complex: searched in edited, highlighting in original.
+                        # Query might contain editor-specific tags or lack original-specific tags.
+                        # Simplest approach: remove curly tags if original also has them removed for display or consistent counting.
+                        # But original_text_edit's display highlighter does not remove curly tags from document.
+                        # So, we need to count occurrences in a way that matches how search was done.
+                        # For now, let's assume the display text in original_text_edit for _find_nth_occurrence_in_display_text
+                        # will be the raw text.
+                        pass
+
+
+                display_query_for_widget_precise = convert_raw_to_display_text(
+                    query_for_this_editor_raw_precise, 
+                    self.mw.show_multiple_spaces_as_dots, 
+                    self.mw.newline_display_symbol if use_newline_symbol else ""
+                )
+                
+                # The text_in_widget_qtextblock_precise is what's actually in the editor's document line
+                # For original_text_edit, this should include curly tags like {Player}
+                # For edited_text_edit, this includes [ІМ'Я ГРАВЦЯ]
+                # For preview_text_edit, this includes {Player} and newline symbols
+
+                match_pos_in_widget_qtextblock_precise, match_len_in_widget_qtextblock_precise = \
+                    self._find_nth_occurrence_in_display_text(
+                        text_in_widget_qtextblock_precise, 
+                        display_query_for_widget_precise, 
+                        occurrence_in_qtextblock_raw, 
+                        self.is_case_sensitive
+                    )
+
                 if match_pos_in_widget_qtextblock_precise != -1:
-                    editor_precise.highlightManager.add_search_match_highlight(widget_qtextblock_idx_to_use, match_pos_in_widget_qtextblock_precise, match_len_in_widget_qtextblock_precise)
-                    log_debug(f"Precise Highlighting in {editor_name_precise}: QBlk(widget):{widget_qtextblock_idx_to_use}, DispPosInBlk:{match_pos_in_widget_qtextblock_precise}, DispLen:{match_len_in_widget_qtextblock_precise}")
-                    cursor_precise = QTextCursor(widget_block_precise); cursor_precise.setPosition(widget_block_precise.position() + match_pos_in_widget_qtextblock_precise + match_len_in_widget_qtextblock_precise); cursor_precise.clearSelection(); editor_precise.setTextCursor(cursor_precise); editor_precise.ensureCursorVisible()
-                else: log_debug(f"PreciseSearch: Could not find {occurrence_in_qtextblock_raw}-th occ of query '{display_query_for_widget_precise}' in {editor_name_precise} QTextBlock idx {widget_qtextblock_idx_to_use} (text: '{text_in_widget_qtextblock_precise[:50]}...')")
+                    editor_precise.highlightManager.add_search_match_highlight(
+                        widget_qtextblock_idx_to_use, 
+                        match_pos_in_widget_qtextblock_precise, 
+                        match_len_in_widget_qtextblock_precise
+                    )
+                    log_debug(f"Precise Highlighting in {editor_name_precise}: QBlk(widget):{widget_qtextblock_idx_to_use}, DispPosInBlk:{match_pos_in_widget_qtextblock_precise}, DispLen:{match_len_in_widget_qtextblock_precise}, QueryUsedForDisplay: '{display_query_for_widget_precise}'")
+                    
+                    cursor_precise = QTextCursor(widget_block_precise)
+                    cursor_precise.setPosition(widget_block_precise.position() + match_pos_in_widget_qtextblock_precise) # Corrected to move to start of match
+                    cursor_precise.clearSelection()
+                    editor_precise.setTextCursor(cursor_precise)
+                    editor_precise.ensureCursorVisible()
+                else: 
+                    log_debug(f"PreciseSearch: Could not find {occurrence_in_qtextblock_raw}-th occ of query '{display_query_for_widget_precise}' in {editor_name_precise} QTextBlock idx {widget_qtextblock_idx_to_use} (text: '{text_in_widget_qtextblock_precise[:50]}...')")
 
 
         self.mw.search_match_block_indices.add(block_idx_match_in_data)
