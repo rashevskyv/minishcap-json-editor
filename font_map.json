@@ -535,7 +535,7 @@
     "end_x": 103,
     "start_y": 0,
     "end_y": 16,
-    "width": 6,
+    "width": 7,
     "height": 16,
     "file": "CHR001.bmp"
   },
@@ -562,7 +562,7 @@
     "end_x": 103,
     "start_y": 48,
     "end_y": 64,
-    "width": 6,
+    "width": 7,
     "height": 16,
     "file": "CHR001.bmp"
   },
