@@ -1,2 +1,4 @@
 fonts
-/__pycache__
+# Python cache
+__pycache__/
+*.pyc
