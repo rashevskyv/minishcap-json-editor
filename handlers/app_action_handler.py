@@ -1,232 +1,135 @@
 import os
+from typing import Optional 
 from PyQt5.QtWidgets import QMessageBox, QFileDialog, QProgressDialog, QPlainTextEdit
 from PyQt5.QtCore import Qt
 from .base_handler import BaseHandler
-from utils.utils import log_debug, convert_dots_to_spaces_from_editor, calculate_string_width, remove_all_tags, ALL_TAGS_PATTERN
-from core.tag_utils import apply_default_mappings_only, analyze_tags_for_issues, \
-                      TAG_STATUS_OK, TAG_STATUS_UNRESOLVED_BRACKETS, TAG_STATUS_MISMATCHED_CURLY
+from utils.utils import log_debug, convert_dots_to_spaces_from_editor, calculate_string_width, remove_all_tags, ALL_TAGS_PATTERN, convert_spaces_to_dots_for_display
+from core.tag_utils import apply_default_mappings_only
 from core.data_manager import load_json_file
+from plugins.base_game_rules import BaseGameRules
 
 
 class AppActionHandler(BaseHandler):
-    def __init__(self, main_window, data_processor, ui_updater):
+    def __init__(self, main_window, data_processor, ui_updater, game_rules_plugin: Optional[BaseGameRules]): 
         super().__init__(main_window, data_processor, ui_updater)
-        if not hasattr(self.mw, 'critical_problem_lines_per_block'):
-            self.mw.critical_problem_lines_per_block = {}
-        if not hasattr(self.mw, 'warning_problem_lines_per_block'):
-            self.mw.warning_problem_lines_per_block = {}
-        if not hasattr(self.mw, 'width_exceeded_lines_per_block'):
-            self.mw.width_exceeded_lines_per_block = {}
-        if not hasattr(self.mw, 'short_lines_per_block'):
-            self.mw.short_lines_per_block = {}
-        if not hasattr(self.mw, 'empty_odd_unisingle_subline_problem_strings'):
-            self.mw.empty_odd_unisingle_subline_problem_strings = {}
+        self.game_rules_plugin = game_rules_plugin
+        if not hasattr(self.mw, 'problems_per_subline'):
+            self.mw.problems_per_subline = {}
 
 
-    def _get_first_word_width(self, text: str) -> int:
-        if not text:
+    def _get_first_word_width(self, text: str) -> int: 
+        if not text or not self.mw.font_map: 
             return 0
         stripped_text = remove_all_tags(text.lstrip())
         first_word = stripped_text.split(maxsplit=1)[0] if stripped_text else ""
         return calculate_string_width(first_word, self.mw.font_map)
 
-    def _check_data_string_for_empty_odd_unisingle_subline(self, data_string_text: str, block_idx_log:int = -1, string_idx_log:int = -1) -> bool:
-        is_target_log = (block_idx_log == 12 and string_idx_log == 8) # Приклад цільового логування
-        if is_target_log:
-            log_debug(f"AppActionHandler._check_data_string_for_empty_odd_unisingle_subline (B{block_idx_log}-S{string_idx_log}): Input='{str(data_string_text)[:70]}...'")
-
-        sub_lines = str(data_string_text).split('\n')
-        if len(sub_lines) <= 1:
-            if is_target_log: log_debug(f"  (B{block_idx_log}-S{string_idx_log}): Not empty_odd (<=1 sub_lines)")
-            return False
-
-        for i, sub_line_text in enumerate(sub_lines):
-            is_odd_subline = (i + 1) % 2 != 0
-            if is_target_log: log_debug(f"  (B{block_idx_log}-S{string_idx_log}) Sub-line {i}: '{sub_line_text}', IsOdd: {is_odd_subline}")
-            if is_odd_subline:
-                if ALL_TAGS_PATTERN.search(sub_line_text):
-                    if is_target_log: log_debug(f"    (B{block_idx_log}-S{string_idx_log}) Sub-line {i}: Contains tags, skipping empty check.")
-                    continue
-
-                text_no_tags = remove_all_tags(sub_line_text)
-                stripped_text_no_tags = text_no_tags.strip()
-                is_empty_or_zero = not stripped_text_no_tags or stripped_text_no_tags == "0"
-                if is_target_log: log_debug(f"    (B{block_idx_log}-S{string_idx_log}) Sub-line {i}: NoTagsStripped='{stripped_text_no_tags}', IsEmptyOrZero: {is_empty_or_zero}")
-                if is_empty_or_zero:
-                    if is_target_log: log_debug(f"    (B{block_idx_log}-S{string_idx_log}) Sub-line {i}: Is EmptyOddUnisingle. Returning True.")
-                    return True
-        if is_target_log: log_debug(f"  (B{block_idx_log}-S{string_idx_log}): Loop finished. Not empty_odd.")
-        return False
-
-    def _perform_issues_scan_for_block(self, block_idx: int, is_single_block_scan: bool = False, use_default_mappings_in_scan: bool = False) -> tuple[int, int, int, int, int, bool]:
-        is_target_block_for_log = (block_idx == 12)
-        if is_target_block_for_log:
-            log_debug(f"--- SCANNING BLOCK {block_idx} (Target for detailed log) ---")
+    def _perform_issues_scan_for_block(self, block_idx: int, is_single_block_scan: bool = False, use_default_mappings_in_scan: bool = False):
+        if not self.game_rules_plugin:
+            log_debug(f"AppActionHandler._perform_issues_scan_for_block: No game_rules_plugin loaded for block {block_idx}. Skipping scan.")
+            return
+        
+        log_debug(f"--- AppActionHandler: SCANNING BLOCK {block_idx} using plugin '{self.game_rules_plugin.__class__.__module__}' ---")
 
         if not (0 <= block_idx < len(self.mw.data)):
-            if is_target_block_for_log: log_debug(f"  Block {block_idx} out of bounds.")
-            return 0, 0, 0, 0, 0, False
+            log_debug(f"  Block {block_idx} out of bounds.")
+            return
 
-        block_key = str(block_idx)
-        current_block_critical_indices = set()
-        current_block_warning_indices = set()
-        current_block_width_exceeded_indices = set()
-        current_block_short_line_indices = set()
-        current_block_empty_odd_unisingle_indices = set()
         changes_made_to_edited_data_in_this_block = False
+        
+        keys_to_remove_from_problems = [
+            (b_idx, ds_idx, sl_idx) 
+            for b_idx, ds_idx, sl_idx in self.mw.problems_per_subline.keys() 
+            if b_idx == block_idx
+        ]
+        for key_to_remove in keys_to_remove_from_problems:
+            del self.mw.problems_per_subline[key_to_remove]
 
         num_strings_in_block = len(self.mw.data[block_idx])
-        space_width = calculate_string_width(" ", self.mw.font_map)
-        sentence_end_chars = ('.', '!', '?')
-        max_width_for_short_check = self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
+        if not isinstance(self.mw.data[block_idx], list):
+            log_debug(f"  Block {block_idx} data is not a list. Skipping.")
+            return
 
-        for string_idx in range(num_strings_in_block):
-            is_target_string_for_log = is_target_block_for_log and (string_idx == 8)
-            if is_target_string_for_log:
-                log_debug(f"  Scanning string_idx {string_idx} in block {block_idx} (TARGET STRING FOR LOG)")
-
-            text_before_processing, source = self.data_processor.get_current_string_text(block_idx, string_idx)
-            text_to_analyze = text_before_processing
-            if is_target_string_for_log:
-                log_debug(f"    Text to analyze (source: {source}): '{str(text_to_analyze)[:200]}...'")
+        for data_string_idx in range(num_strings_in_block):
+            current_data_string_text, source = self.data_processor.get_current_string_text(block_idx, data_string_idx)
+            current_data_string_text_with_spaces = convert_dots_to_spaces_from_editor(str(current_data_string_text))
 
             if use_default_mappings_in_scan:
                 normalized_text, was_normalized = apply_default_mappings_only(
-                    text_before_processing,
-                    self.mw.default_tag_mappings
+                    current_data_string_text_with_spaces,
+                    self.mw.default_tag_mappings 
                 )
                 if was_normalized:
-                    if is_target_string_for_log: log_debug(f"    Text normalized by default mappings: '{normalized_text[:200]}...'")
-                    if self.data_processor.update_edited_data(block_idx, string_idx, normalized_text):
+                    log_debug(f"    Block {block_idx}, DataString {data_string_idx}: Text normalized by default mappings.")
+                    if self.data_processor.update_edited_data(block_idx, data_string_idx, normalized_text):
                         self.ui_updater.update_title()
                     changes_made_to_edited_data_in_this_block = True
-                    text_to_analyze = normalized_text
-
-            original_text_for_comparison = self.mw.data[block_idx][string_idx]
-            tag_status, tag_msg = analyze_tags_for_issues(text_to_analyze, original_text_for_comparison, self.mw.EDITOR_PLAYER_TAG)
-            if is_target_string_for_log: log_debug(f"    Tag status: {tag_status}, Msg: {tag_msg}")
-            if tag_status == TAG_STATUS_UNRESOLVED_BRACKETS: current_block_critical_indices.add(string_idx)
-            elif tag_status == TAG_STATUS_MISMATCHED_CURLY: current_block_warning_indices.add(string_idx)
-
-            is_empty_odd = self._check_data_string_for_empty_odd_unisingle_subline(text_to_analyze, block_idx, string_idx)
-            if is_target_string_for_log: log_debug(f"    Is empty odd unisingle (from _perform_issues_scan_for_block): {is_empty_odd}")
-            if is_empty_odd:
-                current_block_empty_odd_unisingle_indices.add(string_idx)
-
-            sub_lines = str(text_to_analyze).split('\n')
-            line_exceeds_width_flag = False
-            data_string_is_short_flag = False
-
-            if len(sub_lines) > 1:
-                for sub_line_idx, sub_line_text in enumerate(sub_lines):
-                    sub_line_text_no_tags_rstripped = remove_all_tags(sub_line_text).rstrip()
-                    pixel_width_current_sub = calculate_string_width(sub_line_text_no_tags_rstripped, self.mw.font_map)
-
-                    if pixel_width_current_sub > self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
-                        line_exceeds_width_flag = True
-                        if is_target_string_for_log: log_debug(f"      Sub-line {sub_line_idx} exceeds width: {pixel_width_current_sub}px")
-
-                    if sub_line_idx < len(sub_lines) - 1:
-                        current_sub_line_clean_stripped = remove_all_tags(sub_line_text).strip()
-                        if not current_sub_line_clean_stripped:
-                            continue
-                        if current_sub_line_clean_stripped.endswith(sentence_end_chars):
-                            continue
-
-                        next_sub_line_text = sub_lines[sub_line_idx + 1]
-                        next_sub_line_clean_stripped = remove_all_tags(next_sub_line_text).strip()
-                        if not next_sub_line_clean_stripped:
-                            continue
-
-                        first_word_next_sub_line = next_sub_line_clean_stripped.split(maxsplit=1)[0] if next_sub_line_clean_stripped else ""
-                        if not first_word_next_sub_line:
-                            continue
-
-                        first_word_next_width = calculate_string_width(first_word_next_sub_line, self.mw.font_map)
-                        if first_word_next_width > 0:
-                            remaining_width = max_width_for_short_check - pixel_width_current_sub
-                            if remaining_width >= (first_word_next_width + space_width):
-                                data_string_is_short_flag = True
-                                if is_target_string_for_log: log_debug(f"      Data string determined short at sub-line {sub_line_idx}")
-                                break
-            else:
-                if sub_lines:
-                    sub_line_text_no_tags_rstripped = remove_all_tags(sub_lines[0]).rstrip()
-                    pixel_width_current_sub = calculate_string_width(sub_line_text_no_tags_rstripped, self.mw.font_map)
-                    if pixel_width_current_sub > self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
-                        line_exceeds_width_flag = True
-                        if is_target_string_for_log: log_debug(f"      Single sub-line exceeds width: {pixel_width_current_sub}px")
-
-            if line_exceeds_width_flag:
-                current_block_width_exceeded_indices.add(string_idx)
-            if data_string_is_short_flag:
-                current_block_short_line_indices.add(string_idx)
-            if is_target_string_for_log:
-                 log_debug(f"    Final for string_idx {string_idx}: Crit: {string_idx in current_block_critical_indices}, Warn: {string_idx in current_block_warning_indices}, WidthEx: {line_exceeds_width_flag}, Short: {data_string_is_short_flag}, EmptyOdd: {is_empty_odd}")
-
-
-        if current_block_critical_indices: self.mw.critical_problem_lines_per_block[block_key] = current_block_critical_indices
-        elif block_key in self.mw.critical_problem_lines_per_block: del self.mw.critical_problem_lines_per_block[block_key]
-
-        if current_block_warning_indices: self.mw.warning_problem_lines_per_block[block_key] = current_block_warning_indices
-        elif block_key in self.mw.warning_problem_lines_per_block: del self.mw.warning_problem_lines_per_block[block_key]
-
-        if current_block_width_exceeded_indices: self.mw.width_exceeded_lines_per_block[block_key] = current_block_width_exceeded_indices
-        elif block_key in self.mw.width_exceeded_lines_per_block: del self.mw.width_exceeded_lines_per_block[block_key]
-
-        if current_block_short_line_indices: self.mw.short_lines_per_block[block_key] = current_block_short_line_indices
-        elif block_key in self.mw.short_lines_per_block: del self.mw.short_lines_per_block[block_key]
-
-        if current_block_empty_odd_unisingle_indices: self.mw.empty_odd_unisingle_subline_problem_strings[block_key] = current_block_empty_odd_unisingle_indices
-        elif block_key in self.mw.empty_odd_unisingle_subline_problem_strings: del self.mw.empty_odd_unisingle_subline_problem_strings[block_key]
-
+                    current_data_string_text_with_spaces = normalized_text
+            
+            logical_sublines = current_data_string_text_with_spaces.split('\n')
+            
+            for subline_local_idx, logical_subline_text in enumerate(logical_sublines):
+                next_logical_subline_text = logical_sublines[subline_local_idx + 1] if subline_local_idx + 1 < len(logical_sublines) else None
+                
+                subline_problems = self.game_rules_plugin.analyze_subline(
+                    text=logical_subline_text, 
+                    next_text=next_logical_subline_text,
+                    subline_number_in_data_string=subline_local_idx, 
+                    qtextblock_number_in_editor=subline_local_idx, 
+                    is_last_subline_in_data_string=(subline_local_idx == len(logical_sublines) - 1),
+                    editor_font_map=self.mw.font_map,
+                    editor_line_width_threshold=self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
+                )
+                
+                problem_key = (block_idx, data_string_idx, subline_local_idx)
+                if subline_problems:
+                    self.mw.problems_per_subline[problem_key] = subline_problems
+                elif problem_key in self.mw.problems_per_subline:
+                    del self.mw.problems_per_subline[problem_key]
+        
         if is_single_block_scan and hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
             self.ui_updater.update_block_item_text_with_problem_count(block_idx)
-
+        
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         if is_single_block_scan and self.mw.current_block_idx == block_idx:
             if preview_edit and hasattr(preview_edit, 'lineNumberArea'):
-                self.ui_updater.populate_strings_for_block(block_idx)
+                self.ui_updater.populate_strings_for_block(block_idx) 
                 preview_edit.lineNumberArea.update()
-        if is_target_block_for_log:
-            log_debug(f"--- FINISHED SCANNING BLOCK {block_idx} --- Crit: {len(current_block_critical_indices)}, Warn: {len(current_block_warning_indices)}, Width: {len(current_block_width_exceeded_indices)}, Short: {len(current_block_short_line_indices)}, EmptyOdd: {len(current_block_empty_odd_unisingle_indices)}")
-        return len(current_block_critical_indices), len(current_block_warning_indices), len(current_block_width_exceeded_indices), len(current_block_short_line_indices), len(current_block_empty_odd_unisingle_indices), changes_made_to_edited_data_in_this_block
+        
+        log_debug(f"--- AppActionHandler: FINISHED SCANNING BLOCK {block_idx} --- Problem count for sublines: {len([k for k in self.mw.problems_per_subline if k[0] == block_idx])}")
+        return changes_made_to_edited_data_in_this_block
+
 
     def _perform_initial_silent_scan_all_issues(self):
         if not self.mw.data:
             log_debug("AppActionHandler._perform_initial_silent_scan_all_issues: No data to scan.")
             return
-
-        log_debug("AppActionHandler: Performing initial silent scan for ALL issues (tags, width, short lines, empty odd sublines)...")
+        
+        log_debug("AppActionHandler: Performing initial silent scan for ALL issues using plugin...")
         self.mw.is_programmatically_changing_text = True
-
-        self.mw.critical_problem_lines_per_block.clear()
-        self.mw.warning_problem_lines_per_block.clear()
-        self.mw.width_exceeded_lines_per_block.clear()
-        self.mw.short_lines_per_block.clear()
-        self.mw.empty_odd_unisingle_subline_problem_strings.clear()
-
+        
+        self.mw.problems_per_subline.clear() 
+        
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
-        if preview_edit and hasattr(preview_edit, 'clearAllProblemTypeHighlights'):
-            preview_edit.clearAllProblemTypeHighlights()
+        if preview_edit and hasattr(preview_edit, 'highlightManager'):
+            preview_edit.highlightManager.clearAllProblemHighlights()
 
         edited_edit = getattr(self.mw, 'edited_text_edit', None)
-        if edited_edit:
-            if hasattr(edited_edit, 'clearAllProblemTypeHighlights'):
-                edited_edit.clearAllProblemTypeHighlights()
-
+        if edited_edit and hasattr(edited_edit, 'highlightManager'): 
+            edited_edit.highlightManager.clearAllProblemHighlights()
+        
         if hasattr(self.ui_updater, 'clear_all_problem_block_highlights_and_text'):
-             self.ui_updater.clear_all_problem_block_highlights_and_text()
+             self.ui_updater.clear_all_problem_block_highlights_and_text() 
 
         any_changes_applied_globally = False
         for block_idx in range(len(self.mw.data)):
-            _num_crit, _num_warn, _num_width, _num_short, _num_empty_odd, block_changes_applied = self._perform_issues_scan_for_block(block_idx, is_single_block_scan=False, use_default_mappings_in_scan=False)
+            block_changes_applied = self._perform_issues_scan_for_block(block_idx, is_single_block_scan=False, use_default_mappings_in_scan=False)
             if block_changes_applied:
                 any_changes_applied_globally = True
-
+        
         if any_changes_applied_globally and not self.mw.unsaved_changes:
-            log_debug("AppActionHandler: Data was modified during initial silent scan (e.g., by default tag mappings). This should not happen if use_default_mappings_in_scan=False.")
-
+            log_debug("AppActionHandler: Data was modified during initial silent scan. This is unexpected if use_default_mappings_in_scan=False.")
+            
         self.mw.is_programmatically_changing_text = False
         log_debug("AppActionHandler: Initial silent scan for ALL issues complete.")
 
@@ -262,81 +165,103 @@ class AppActionHandler(BaseHandler):
             else: event.ignore()
         else: event.accept()
         log_debug("<-- AppActionHandler: handle_close_event finished.")
-
+    
     def rescan_issues_for_single_block(self, block_idx: int = -1, show_message_on_completion: bool = True, use_default_mappings: bool = True):
+        if not self.game_rules_plugin:
+             QMessageBox.warning(self.mw, "Rescan Error", "Game rules plugin not loaded. Cannot rescan.")
+             return
+
         if block_idx == -1: block_idx = self.mw.current_block_idx
         if block_idx < 0:
             if show_message_on_completion:
                 QMessageBox.information(self.mw, "Rescan Issues", "No block selected to rescan.")
             return
-
+            
         log_debug(f"<<<<<<<<<< ACTION: Rescan Issues for Block {block_idx} Triggered. use_default_mappings={use_default_mappings} >>>>>>>>>>")
         self.mw.is_programmatically_changing_text = True
-        num_critical, num_warnings, num_width_exceeded, num_short, num_empty_odd, changes_applied = self._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=use_default_mappings)
+        
+        self._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=use_default_mappings)
         self.mw.is_programmatically_changing_text = False
-
+            
         if show_message_on_completion:
             block_name_str = self.mw.block_names.get(str(block_idx), f"Block {block_idx}")
             message_parts = []
-            if num_critical > 0: message_parts.append(f"{num_critical} line(s) with critical tag issues.")
-            if num_warnings > 0: message_parts.append(f"{num_warnings} line(s) with tag warnings.")
-            if num_width_exceeded > 0: message_parts.append(f"{num_width_exceeded} line(s) exceed width limit ({self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS}px).")
-            if num_short > 0: message_parts.append(f"{num_short} line(s) are potentially too short.")
-            if num_empty_odd > 0: message_parts.append(f"{num_empty_odd} line(s) have empty odd non-single sub-lines.")
+            problem_definitions = self.game_rules_plugin.get_problem_definitions()
+            
+            block_problem_ids_summary = set()
+            problem_counts_for_report = {pid: 0 for pid in problem_definitions.keys()}
+
+            if block_idx >= 0 and block_idx < len(self.mw.data) and isinstance(self.mw.data[block_idx], list):
+                for data_string_idx_iter in range(len(self.mw.data[block_idx])):
+                    data_string_text, _ = self.data_processor.get_current_string_text(block_idx, data_string_idx_iter)
+                    logical_sublines_report = str(data_string_text).split('\n')
+                    for subline_local_idx_iter in range(len(logical_sublines_report)):
+                        problem_ids_for_subline = self.mw.problems_per_subline.get((block_idx, data_string_idx_iter, subline_local_idx_iter), set())
+                        for problem_id in problem_ids_for_subline:
+                            block_problem_ids_summary.add(problem_id)
+                            if problem_id in problem_counts_for_report:
+                                problem_counts_for_report[problem_id] +=1
+            
+            for problem_id in block_problem_ids_summary:
+                count = problem_counts_for_report.get(problem_id, 0)
+                if count > 0 and problem_id in problem_definitions:
+                    problem_name = problem_definitions[problem_id].get("name", problem_id)
+                    message_parts.append(f"{count} x {problem_name} (у {len([k for k in self.mw.problems_per_subline if k[0]==block_idx and problem_id in self.mw.problems_per_subline[k]])} підрядках)")
+
 
             if not message_parts:
                 message = f"No issues found in Block '{block_name_str}'."
-                if changes_applied: message += "\nKnown editor tags were standardized using default mappings."
                 QMessageBox.information(self.mw, "Rescan Complete", message)
             else:
                 title = "Rescan Complete with Issues/Warnings"
                 summary = f"Block '{block_name_str}':\n" + "\n".join(message_parts)
-                if changes_applied: summary += "\nKnown editor tags were standardized using default mappings where possible."
                 QMessageBox.warning(self.mw, title, summary)
 
-    def rescan_all_tags(self):
-        log_debug("<<<<<<<<<< ACTION: Rescan All Tags (and Widths/Shorts/EmptyOdd) Triggered >>>>>>>>>>")
+    def rescan_all_tags(self): 
+        if not self.game_rules_plugin:
+             QMessageBox.warning(self.mw, "Rescan Error", "Game rules plugin not loaded. Cannot rescan.")
+             return
+        log_debug("<<<<<<<<<< ACTION: Rescan All Issues Triggered >>>>>>>>>>") 
         if not self.mw.data:
             QMessageBox.information(self.mw, "Rescan All Issues", "No data loaded to rescan.")
             return
-
+        
         self._perform_initial_silent_scan_all_issues()
 
-        total_critical_lines = sum(len(s) for s in self.mw.critical_problem_lines_per_block.values())
-        total_warning_lines = sum(len(s) for s in self.mw.warning_problem_lines_per_block.values())
-        total_width_exceeded_lines = sum(len(s) for s in self.mw.width_exceeded_lines_per_block.values())
-        total_short_lines = sum(len(s) for s in self.mw.short_lines_per_block.values())
-        total_empty_odd_lines = sum(len(s) for s in self.mw.empty_odd_unisingle_subline_problem_strings.values())
+        problem_definitions = self.game_rules_plugin.get_problem_definitions()
+        
+        sublines_with_problem_counts = {problem_id: 0 for problem_id in problem_definitions.keys()}
+        blocks_with_problem_counts = {problem_id: set() for problem_id in problem_definitions.keys()}
 
-        total_blocks_with_critical = sum(1 for s in self.mw.critical_problem_lines_per_block.values() if s)
-        total_blocks_with_warning = sum(1 for s in self.mw.warning_problem_lines_per_block.values() if s)
-        total_blocks_with_width = sum(1 for s in self.mw.width_exceeded_lines_per_block.values() if s)
-        total_blocks_with_short = sum(1 for s in self.mw.short_lines_per_block.values() if s)
-        total_blocks_with_empty_odd = sum(1 for s in self.mw.empty_odd_unisingle_subline_problem_strings.values() if s)
-
+        for (block_idx_iter, ds_idx_iter, sl_idx_iter), problem_ids_set in self.mw.problems_per_subline.items():
+            for problem_id in problem_ids_set:
+                if problem_id in sublines_with_problem_counts:
+                    sublines_with_problem_counts[problem_id] +=1 
+                    blocks_with_problem_counts[problem_id].add(block_idx_iter)
+        
         message_parts = []
-        if total_blocks_with_critical > 0: message_parts.append(f"Found {total_critical_lines} critical tag issue(s) across {total_blocks_with_critical} block(s).")
-        if total_blocks_with_warning > 0: message_parts.append(f"Found {total_warning_lines} tag warning(s) across {total_blocks_with_warning} block(s).")
-        if total_blocks_with_width > 0: message_parts.append(f"Found {total_width_exceeded_lines} line(s) exceeding width limit across {total_blocks_with_width} block(s).")
-        if total_blocks_with_short > 0: message_parts.append(f"Found {total_short_lines} potentially short line(s) across {total_blocks_with_short} block(s).")
-        if total_blocks_with_empty_odd > 0: message_parts.append(f"Found {total_empty_odd_lines} line(s) with empty odd non-single sub-lines across {total_blocks_with_empty_odd} block(s).")
-
+        for problem_id, total_sublines_with_problem in sublines_with_problem_counts.items():
+            if total_sublines_with_problem > 0 and problem_id in problem_definitions:
+                problem_name = problem_definitions[problem_id].get("name", problem_id)
+                num_blocks_affected = len(blocks_with_problem_counts[problem_id])
+                message_parts.append(f"Found {total_sublines_with_problem} subline(s) with '{problem_name}' across {num_blocks_affected} block(s).")
+        
         if not message_parts:
-            message = "No issues (tags, width, short lines, empty odd sublines) found in any block based on current data state."
+            message = "No issues (defined by current game plugin) found in any block based on current data state."
             QMessageBox.information(self.mw, "Rescan Complete", message)
         else:
             title = "Rescan Complete with Issues/Warnings"
             summary = "\n".join(message_parts)
             QMessageBox.warning(self.mw, title, summary)
-
-        self.ui_updater.populate_blocks()
+        
+        self.ui_updater.populate_blocks() 
         if self.mw.current_block_idx != -1:
             self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
         else:
             self.ui_updater.populate_strings_for_block(-1)
 
 
-
+            
     def _derive_edited_path(self, original_path):
         if not original_path: return None
         dir_name = os.path.dirname(original_path)
@@ -365,17 +290,17 @@ class AppActionHandler(BaseHandler):
             if self.mw.unsaved_changes:
                  reply = QMessageBox.question(self.mw, 'Unsaved Changes', "Loading a new changes file will discard current unsaved edits. Proceed?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
                  if reply == QMessageBox.No: return
-
+            
             new_edited_data, error = load_json_file(path, parent_widget=self.mw, expected_type=list)
             if error: QMessageBox.critical(self.mw, "Load Error", f"Failed to load selected changes file:\n{path}\n\n{error}"); return
-
+            
             self.mw.edited_json_path = path
             self.mw.edited_file_data = new_edited_data
             self.mw.edited_data = {}
             self.mw.unsaved_changes = False
-
+            
             self._perform_initial_silent_scan_all_issues()
-
+            
             self.ui_updater.update_title()
             self.ui_updater.update_statusbar_paths()
             self.ui_updater.populate_blocks()
@@ -409,17 +334,13 @@ class AppActionHandler(BaseHandler):
     def load_all_data_for_path(self, original_file_path, manually_set_edited_path=None, is_initial_load_from_settings=False):
         log_debug(f"--> AppActionHandler: load_all_data_for_path START. Original: '{original_file_path}', Manual Edit Path: '{manually_set_edited_path}', InitialLoad: {is_initial_load_from_settings}")
         self.mw.is_programmatically_changing_text = True
-
+        
         data, error = load_json_file(original_file_path, parent_widget=self.mw, expected_type=list)
         if error:
             self.mw.json_path = None; self.mw.edited_json_path = None
             self.mw.data = []; self.mw.edited_data = {}; self.mw.edited_file_data = []
             self.mw.unsaved_changes = False
-            self.mw.critical_problem_lines_per_block.clear()
-            self.mw.warning_problem_lines_per_block.clear()
-            self.mw.width_exceeded_lines_per_block.clear()
-            self.mw.short_lines_per_block.clear()
-            self.mw.empty_odd_unisingle_subline_problem_strings.clear()
+            self.mw.problems_per_subline.clear()
             self.ui_updater.update_title(); self.ui_updater.update_statusbar_paths()
             self.ui_updater.populate_blocks(); self.ui_updater.populate_strings_for_block(-1)
             self.mw.is_programmatically_changing_text = False
@@ -429,7 +350,7 @@ class AppActionHandler(BaseHandler):
         self.mw.data = data
         self.mw.edited_data = {}
         self.mw.unsaved_changes = False
-
+        
         self.mw.edited_json_path = manually_set_edited_path if manually_set_edited_path else self._derive_edited_path(self.mw.json_path)
         self.mw.edited_file_data = []
         if self.mw.edited_json_path and os.path.exists(self.mw.edited_json_path):
@@ -438,45 +359,28 @@ class AppActionHandler(BaseHandler):
                 QMessageBox.warning(self.mw, "Edited Load Warning", f"Could not load changes file: {self.mw.edited_json_path}\n{edit_error}")
             else:
                 self.mw.edited_file_data = edited_data_from_file
-
+        
         self.mw.current_block_idx = -1; self.mw.current_string_idx = -1
-
+        
         if hasattr(self.mw, 'undo_paste_action'): self.mw.can_undo_paste = False; self.mw.undo_paste_action.setEnabled(False)
-
+        
         self.mw.block_list_widget.clear()
         if hasattr(self.mw, 'preview_text_edit'): self.mw.preview_text_edit.clear()
         if hasattr(self.mw, 'original_text_edit'): self.mw.original_text_edit.clear()
         if hasattr(self.mw, 'edited_text_edit'): self.mw.edited_text_edit.clear()
-
-        if is_initial_load_from_settings:
-            log_debug("Initial load from settings: Assuming problem data is from settings or will be calculated if missing.")
-            problem_keys_to_check_in_mw = ['width_exceeded_lines_per_block', 'short_lines_per_block',
-                                           'critical_problem_lines_per_block', 'warning_problem_lines_per_block',
-                                           'empty_odd_unisingle_subline_problem_strings']
-            needs_full_scan = False
-            for key in problem_keys_to_check_in_mw:
-                if not hasattr(self.mw, key) or not getattr(self.mw, key):
-                    log_debug(f"{key} data not found in settings or empty, performing full scan.")
-                    needs_full_scan = True
-                    break
-            if needs_full_scan:
-                self.mw.is_programmatically_changing_text = True
-                self._perform_initial_silent_scan_all_issues()
-                self.mw.is_programmatically_changing_text = False
-
-
-        else:
-            log_debug("Not initial load from settings: Performing full scan for all issues.")
-            self._perform_initial_silent_scan_all_issues()
-
+        
+        log_debug("Performing full scan for all issues after loading data (load_all_data_for_path).")
+        self._perform_initial_silent_scan_all_issues()
+        
         self.ui_updater.update_title(); self.ui_updater.update_statusbar_paths()
         self.ui_updater.populate_blocks()
 
         if self.mw.block_list_widget.count() > 0:
-            self.mw.block_list_widget.setCurrentRow(0)
+            if not is_initial_load_from_settings: 
+                 self.mw.block_list_widget.setCurrentRow(0)
         else:
             self.ui_updater.populate_strings_for_block(-1)
-
+            
         self.mw.is_programmatically_changing_text = False
         log_debug(f"<-- AppActionHandler: load_all_data_for_path FINISHED (Success)")
 
@@ -499,6 +403,10 @@ class AppActionHandler(BaseHandler):
         if not self.mw.font_map:
              QMessageBox.warning(self.mw, "Calculate Widths Error", "Font map is not loaded. Cannot calculate widths.")
              return
+        if not self.game_rules_plugin:
+            QMessageBox.warning(self.mw, "Calculate Widths Error", "Game rules plugin not loaded.")
+            return
+
 
         num_strings = len(self.mw.data[block_idx])
         if num_strings == 0:
@@ -510,116 +418,79 @@ class AppActionHandler(BaseHandler):
         progress.setMinimumDuration(0)
 
         results = []
-        max_width_for_short_check_report = self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
+        problem_definitions = self.game_rules_plugin.get_problem_definitions()
+        
         editor_warning_threshold = self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
-        space_width = calculate_string_width(" ", self.mw.font_map)
-        sentence_end_chars_tuple = ('.', '!', '?')
-
-        for i in range(num_strings):
-            progress.setValue(i)
+        
+        for data_str_idx in range(num_strings):
+            progress.setValue(data_str_idx)
             if progress.wasCanceled():
                 log_debug("Width calculation for block cancelled by user.")
                 return
 
-            current_text_data, source = self.data_processor.get_current_string_text(block_idx, i)
-            original_text_data = self.data_processor._get_string_from_source(block_idx, i, self.mw.data, "width_calc_block_original_data")
+            current_text_data_line, source = self.data_processor.get_current_string_text(block_idx, data_str_idx)
+            original_text_data_line = self.data_processor._get_string_from_source(block_idx, data_str_idx, self.mw.data, "width_calc_block_original_data")
+            
+            line_report_parts = [f"Data Line {data_str_idx + 1}:"]
+            
+            sources_to_check = [
+                ("Current", str(current_text_data_line), source),
+                ("Original", str(original_text_data_line), "original_data")
+            ]
 
-            line_report_parts = [f"Data Line {i+1}:"]
+            for title_prefix, text_to_analyze, text_source_info in sources_to_check:
+                line_report_parts.append(f"  {title_prefix} (src:{text_source_info}):")
+                logical_sublines = text_to_analyze.split('\n')
+                
+                game_like_text_no_newlines_rstripped = remove_all_tags(text_to_analyze.replace('\n','')).rstrip()
+                total_game_width = calculate_string_width(game_like_text_no_newlines_rstripped, self.mw.font_map)
+                game_status = "OK"
+                if total_game_width > self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS:
+                    game_status = f"EXCEEDS GAME DIALOG LIMIT ({total_game_width - self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS}px)"
+                line_report_parts.append(f"    Total (game dialog, rstripped): {total_game_width}px ({game_status})")
 
-            line_report_parts.append(f"  Current (src:{source}):")
-            current_data_string_sub_lines = str(current_text_data).split('\n')
-            current_total_game_width = calculate_string_width(remove_all_tags(str(current_text_data).replace('\n','')).rstrip(), self.mw.font_map)
-            game_status_current = "OK"
-            if current_total_game_width > self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS:
-                game_status_current = f"EXCEEDS GAME DIALOG LIMIT ({current_total_game_width - self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS}px)"
-            line_report_parts.append(f"    Total (game dialog, rstripped): {current_total_game_width}px ({game_status_current})")
+                for subline_idx, sub_line_text in enumerate(logical_sublines):
+                    sub_line_no_tags_rstripped = remove_all_tags(sub_line_text).rstrip()
+                    width_px = calculate_string_width(sub_line_no_tags_rstripped, self.mw.font_map)
+                    
+                    current_subline_problems = set()
+                    if title_prefix == "Current":
+                        current_subline_problems = self.mw.problems_per_subline.get((block_idx, data_str_idx, subline_idx), set())
+                    else: # For "Original", we need to analyze it on the fly
+                        next_original_subline = logical_sublines[subline_idx + 1] if subline_idx + 1 < len(logical_sublines) else None
+                        current_subline_problems = self.game_rules_plugin.analyze_subline(
+                            text=sub_line_text,
+                            next_text=next_original_subline,
+                            subline_number_in_data_string=subline_idx,
+                            qtextblock_number_in_editor=subline_idx, 
+                            is_last_subline_in_data_string=(subline_idx == len(logical_sublines) - 1),
+                            editor_font_map=self.mw.font_map,
+                            editor_line_width_threshold=editor_warning_threshold
+                        )
+                    
+                    statuses = []
+                    for prob_id in current_subline_problems:
+                        if prob_id in problem_definitions:
+                            statuses.append(problem_definitions[prob_id]['name'])
+                    
+                    status_str = ", ".join(statuses) if statuses else "OK"
+                    line_report_parts.append(f"    Sub {subline_idx+1} (rstripped): {width_px}px ({status_str}) '{sub_line_no_tags_rstripped[:30]}...'")
+                if title_prefix == "Current": line_report_parts.append("")
 
-            for j, sub_line in enumerate(current_data_string_sub_lines):
-                sub_line_no_tags_rstripped = remove_all_tags(sub_line).rstrip()
-                width_px = calculate_string_width(sub_line_no_tags_rstripped, self.mw.font_map)
-                editor_status = "OK"
-                short_status = ""
-                if width_px > editor_warning_threshold: editor_status = f"EXCEEDS EDITOR THRESHOLD ({width_px - editor_warning_threshold}px)"
-
-                if len(current_data_string_sub_lines) > 1 and j < len(current_data_string_sub_lines) - 1:
-                    current_sub_line_clean_stripped_rpt = remove_all_tags(sub_line).strip()
-                    if current_sub_line_clean_stripped_rpt and not current_sub_line_clean_stripped_rpt.endswith(sentence_end_chars_tuple):
-                        next_sub_line_text_rpt = current_data_string_sub_lines[j+1]
-                        next_sub_line_clean_stripped_rpt = remove_all_tags(next_sub_line_text_rpt).strip()
-                        if next_sub_line_clean_stripped_rpt:
-                            first_word_next_sub_line_rpt = next_sub_line_clean_stripped_rpt.split(maxsplit=1)[0] if next_sub_line_clean_stripped_rpt else ""
-                            if first_word_next_sub_line_rpt:
-                                first_word_next_line_width_calc = calculate_string_width(first_word_next_sub_line_rpt, self.mw.font_map)
-                                if first_word_next_line_width_calc > 0:
-                                    remaining_width_rpt = max_width_for_short_check_report - width_px
-                                    if remaining_width_rpt >= (first_word_next_line_width_calc + space_width):
-                                        short_status = f"SHORT (can fit {first_word_next_line_width_calc+space_width}px into {max_width_for_short_check_report}px, has {remaining_width_rpt}px left)"
-
-                is_odd_subline_report = (j + 1) % 2 != 0
-                contains_tags_report = bool(ALL_TAGS_PATTERN.search(sub_line))
-                text_for_empty_check_report = remove_all_tags(sub_line)
-                is_empty_or_zero_report = (not text_for_empty_check_report.strip() or text_for_empty_check_report.strip() == "0") and not contains_tags_report
-
-                empty_odd_report_status = ""
-                if is_empty_or_zero_report and is_odd_subline_report and len(current_data_string_sub_lines) > 1:
-                    empty_odd_report_status = "EMPTY ODD NON-SINGLE"
-
-
-                line_report_parts.append(f"    Sub {j+1} (rstripped): {width_px}px (Editor: {editor_status}) {short_status} {empty_odd_report_status} '{sub_line_no_tags_rstripped[:30]}...'")
-
-
-            line_report_parts.append(f"  Original:")
-            original_data_string_sub_lines = str(original_text_data).split('\n')
-            original_total_game_width = calculate_string_width(remove_all_tags(str(original_text_data).replace('\n','')).rstrip(), self.mw.font_map)
-            game_status_original = "OK"
-            if original_total_game_width > self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS:
-                game_status_original = f"EXCEEDS GAME DIALOG LIMIT ({original_total_game_width - self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS}px)"
-            line_report_parts.append(f"    Total (game dialog, rstripped): {original_total_game_width}px ({game_status_original})")
-
-            for j, sub_line in enumerate(original_data_string_sub_lines):
-                sub_line_no_tags_rstripped = remove_all_tags(sub_line).rstrip()
-                width_px = calculate_string_width(sub_line_no_tags_rstripped, self.mw.font_map)
-                editor_status = "OK"
-                short_status_orig = ""
-                if width_px > editor_warning_threshold: editor_status = f"EXCEEDS EDITOR THRESHOLD ({width_px - editor_warning_threshold}px)"
-
-                if len(original_data_string_sub_lines) > 1 and j < len(original_data_string_sub_lines) -1:
-                    original_sub_line_clean_stripped_rpt = remove_all_tags(sub_line).strip()
-                    if original_sub_line_clean_stripped_rpt and not original_sub_line_clean_stripped_rpt.endswith(sentence_end_chars_tuple):
-                        next_original_sub_line_text_rpt = original_data_string_sub_lines[j+1]
-                        next_original_sub_line_clean_stripped_rpt = remove_all_tags(next_original_sub_line_text_rpt).strip()
-                        if next_original_sub_line_clean_stripped_rpt:
-                            first_word_next_original_sub_line_rpt = next_original_sub_line_clean_stripped_rpt.split(maxsplit=1)[0] if next_original_sub_line_clean_stripped_rpt else ""
-                            if first_word_next_original_sub_line_rpt:
-                                first_word_next_original_width_rpt = calculate_string_width(first_word_next_original_sub_line_rpt, self.mw.font_map)
-                                if first_word_next_original_width_rpt > 0:
-                                    remaining_width_orig_rpt = max_width_for_short_check_report - width_px
-                                    if remaining_width_orig_rpt >= (first_word_next_original_width_rpt + space_width):
-                                        short_status_orig = f"SHORT (can fit {first_word_next_original_width_rpt+space_width}px into {max_width_for_short_check_report}px, has {remaining_width_orig_rpt}px left)"
-
-                is_odd_subline_report_orig = (j + 1) % 2 != 0
-                contains_tags_report_orig = bool(ALL_TAGS_PATTERN.search(sub_line))
-                text_for_empty_check_report_orig = remove_all_tags(sub_line)
-                is_empty_or_zero_report_orig = (not text_for_empty_check_report_orig.strip() or text_for_empty_check_report_orig.strip() == "0") and not contains_tags_report_orig
-                empty_odd_report_status_orig = ""
-                if is_empty_or_zero_report_orig and is_odd_subline_report_orig and len(original_data_string_sub_lines) > 1:
-                    empty_odd_report_status_orig = "EMPTY ODD NON-SINGLE"
-
-                line_report_parts.append(f"    Sub {j+1} (rstripped): {width_px}px (Editor: {editor_status}) {short_status_orig} {empty_odd_report_status_orig} '{sub_line_no_tags_rstripped[:30]}...'")
 
             results.append("\n".join(line_report_parts))
-
+        
         progress.setValue(num_strings)
 
         if not results:
             QMessageBox.information(self.mw, "Calculate Line Widths", f"Block {self.mw.block_names.get(str(block_idx),str(block_idx))} processed. No lines found or calculation error.")
             return
-
+            
         result_text_title = (f"Widths for Block {self.mw.block_names.get(str(block_idx), str(block_idx))}\n"
-                             f"(Max Width for Short Check/Editor Warning: {max_width_for_short_check_report}px)\n"
+                             f"(Editor Warning Threshold: {editor_warning_threshold}px)\n"
                              f"(Game Dialog Max Width (for total only): {self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS}px)\n")
         result_text = result_text_title + "\n" + "\n\n".join(results)
-
+        
         result_dialog = QMessageBox(self.mw)
         result_dialog.setWindowTitle("Line Widths Report")
         result_dialog.setTextFormat(Qt.PlainText)

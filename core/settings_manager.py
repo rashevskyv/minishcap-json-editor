@@ -100,12 +100,8 @@ class SettingsManager:
         }
 
         settings_data = {}
-        self.mw.critical_problem_lines_per_block = {}
-        self.mw.warning_problem_lines_per_block = {}
-        self.mw.width_exceeded_lines_per_block = {}
-        self.mw.short_lines_per_block = {}
-        self.mw.block_color_markers = {}
-        self.mw.search_history_to_save = []
+        self.mw.block_color_markers = {} # Initialize here before loop
+        self.mw.search_history_to_save = [] # Initialize here before loop
 
         temp_original_file_path = None
         temp_edited_file_path = None
@@ -180,18 +176,11 @@ class SettingsManager:
                     self.mw.search_history_to_save = loaded_search_history
                 else: self.mw.search_history_to_save = []
 
-                crit_problems = settings_data.get("critical_problem_lines_per_block")
-                if isinstance(crit_problems, dict):
-                    self.mw.critical_problem_lines_per_block = {k: set(v) for k, v in crit_problems.items() if isinstance(v, list)}
-                warn_problems = settings_data.get("warning_problem_lines_per_block")
-                if isinstance(warn_problems, dict):
-                    self.mw.warning_problem_lines_per_block = {k: set(v) for k, v in warn_problems.items() if isinstance(v, list)}
-                width_problems = settings_data.get("width_exceeded_lines_per_block")
-                if isinstance(width_problems, dict):
-                    self.mw.width_exceeded_lines_per_block = {k: set(v) for k, v in width_problems.items() if isinstance(v, list)}
-                short_problems = settings_data.get("short_lines_per_block")
-                if isinstance(short_problems, dict):
-                    self.mw.short_lines_per_block = {k: set(v) for k,v in short_problems.items() if isinstance(v, list)}
+                # Old problem dictionaries are no longer loaded
+                # self.mw.critical_problem_lines_per_block = {}
+                # self.mw.warning_problem_lines_per_block = {}
+                # self.mw.width_exceeded_lines_per_block = {}
+                # self.mw.short_lines_per_block = {}
 
 
             except json.JSONDecodeError as e:
@@ -219,8 +208,9 @@ class SettingsManager:
 
         if not self.mw.initial_load_path and not self.mw.json_path:
             log_debug("SettingsManager: No initial_load_path from settings and no current json_path, ensuring UI is cleared.")
-            self.mw.ui_updater.populate_blocks() # Виправлено тут, раніше було self.ui_updater
-            self.mw.ui_updater.populate_strings_for_block(-1) # І тут
+            if hasattr(self.mw, 'ui_updater'):
+                self.mw.ui_updater.populate_blocks() 
+                self.mw.ui_updater.populate_strings_for_block(-1)
 
         log_debug("<-- SettingsManager: load_settings finished")
 
@@ -281,13 +271,12 @@ class SettingsManager:
             if self.mw.bottom_right_splitter: settings_data["bottom_right_splitter_state"] = base64.b64encode(self.mw.bottom_right_splitter.saveState().data()).decode('ascii')
         except Exception as e: log_debug(f"WARN: Failed to save splitter state(s): {e}")
 
-        if not self.mw.unsaved_changes:
-            settings_data["critical_problem_lines_per_block"] = {k: list(v) for k, v in self.mw.critical_problem_lines_per_block.items() if v}
-            settings_data["warning_problem_lines_per_block"] = {k: list(v) for k, v in self.mw.warning_problem_lines_per_block.items() if v}
-            settings_data["width_exceeded_lines_per_block"] = {k: list(v) for k, v in self.mw.width_exceeded_lines_per_block.items() if v}
-            settings_data["short_lines_per_block"] = {k: list(v) for k, v in self.mw.short_lines_per_block.items() if v}
-        else:
-            log_debug("Not saving problem line data dictionaries because unsaved_changes is True.")
+        # Old problem dictionaries are no longer saved
+        # if not self.mw.unsaved_changes:
+        #     settings_data["critical_problem_lines_per_block"] = {k: list(v) for k, v in self.mw.critical_problem_lines_per_block.items() if v}
+        #     # ... and so on for other old problem dicts
+        # else:
+        #     log_debug("Not saving problem line data dictionaries because unsaved_changes is True.")
 
         try:
             with open(self.settings_file_path, 'w', encoding='utf-8') as f: json.dump(settings_data, f, indent=4, ensure_ascii=False)

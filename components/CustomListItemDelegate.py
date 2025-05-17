@@ -11,7 +11,7 @@ class CustomListItemDelegate(QStyledItemDelegate):
         
         self.problem_indicator_strip_width = 3 
         self.problem_indicator_strip_spacing = 2 
-        self.max_problem_indicators = 3 
+        self.max_problem_indicators = 5 # Збільшено, щоб точно вмістити всі типи
 
         self.color_marker_size = 8 
         self.color_marker_spacing = 3
@@ -25,7 +25,6 @@ class CustomListItemDelegate(QStyledItemDelegate):
         self.padding_after_problem_indicator_zone = 5 
         self.indicator_v_offset = 2 
 
-        # Кольори для маркерів (можна синхронізувати з CustomListWidget або передавати)
         self.marker_qcolors = {
             "red": QColor(Qt.red),
             "green": QColor(Qt.green),
@@ -107,44 +106,37 @@ class CustomListItemDelegate(QStyledItemDelegate):
              number_area_bg = palette.highlight().color().darker(110) 
              number_text_color = palette.highlightedText().color()
         
-        # Кольори для індикаторів проблем
-        unsaved_indicator_color = QColor(Qt.red).darker(120) # Зробимо трохи темнішим для контрасту з маркером
-        critical_tag_indicator_color = QColor(Qt.yellow).darker(125)
-        warning_tag_indicator_color = QColor(Qt.gray) # Змінено для кращого розрізнення
-        width_exceeded_indicator_color = QColor(255, 120, 120) 
-        short_line_indicator_color = QColor(0, 180, 0) 
-        empty_odd_indicator_color = EMPTY_ODD_SUBLINE_COLOR 
-
-        block_idx_data = index.data(Qt.UserRole)
-        
-        has_unsaved_changes_in_block = False
-        has_critical_tag_issues = False
-        has_warning_tag_issues = False
-        has_width_exceeded_issues = False
-        has_short_line_issues = False
-        has_empty_odd_unisingle_issues = False
+        unsaved_indicator_color = QColor(Qt.red).darker(120)
         active_color_markers_for_block = set()
-
+        
+        block_idx_data = index.data(Qt.UserRole)
         main_window = None
         if self.list_widget:
             main_window = self.list_widget.window()
 
+        problem_definitions = {}
+        block_aggregated_problem_ids = set()
+
         if main_window and block_idx_data is not None:
-            block_key = str(block_idx_data)
             if hasattr(main_window, 'unsaved_block_indices'):
                  has_unsaved_changes_in_block = block_idx_data in main_window.unsaved_block_indices
-            if hasattr(main_window, 'critical_problem_lines_per_block'):
-                has_critical_tag_issues = bool(main_window.critical_problem_lines_per_block.get(block_key))
-            if hasattr(main_window, 'warning_problem_lines_per_block'):
-                has_warning_tag_issues = bool(main_window.warning_problem_lines_per_block.get(block_key))
-            if hasattr(main_window, 'width_exceeded_lines_per_block'):
-                has_width_exceeded_issues = bool(main_window.width_exceeded_lines_per_block.get(block_key))
-            if hasattr(main_window, 'short_lines_per_block'):
-                has_short_line_issues = bool(main_window.short_lines_per_block.get(block_key))
-            if hasattr(main_window, 'empty_odd_unisingle_subline_problem_strings'): 
-                has_empty_odd_unisingle_issues = bool(main_window.empty_odd_unisingle_subline_problem_strings.get(block_key))
+            
             if hasattr(main_window, 'get_block_color_markers'):
                 active_color_markers_for_block = main_window.get_block_color_markers(block_idx_data)
+
+            if hasattr(main_window, 'current_game_rules') and main_window.current_game_rules:
+                problem_definitions = main_window.current_game_rules.get_problem_definitions()
+
+            if hasattr(main_window, 'problems_per_subline') and hasattr(main_window, 'data') and \
+               block_idx_data < len(main_window.data) and isinstance(main_window.data[block_idx_data], list):
+                for data_string_idx_iter in range(len(main_window.data[block_idx_data])):
+                    data_string_text_iter, _ = main_window.data_processor.get_current_string_text(block_idx_data, data_string_idx_iter)
+                    if data_string_text_iter is not None:
+                        logical_sublines_iter = str(data_string_text_iter).split('\n')
+                        for subline_local_idx_iter in range(len(logical_sublines_iter)):
+                            problem_key_iter = (block_idx_data, data_string_idx_iter, subline_local_idx_iter)
+                            subline_problems_iter = main_window.problems_per_subline.get(problem_key_iter, set())
+                            block_aggregated_problem_ids.update(subline_problems_iter)
 
 
         number_rect = QRect(item_rect.left(), item_rect.top(), current_number_area_width, item_rect.height())
@@ -155,12 +147,11 @@ class CustomListItemDelegate(QStyledItemDelegate):
         painter.setFont(current_font)
         painter.drawText(number_rect, Qt.AlignCenter | Qt.TextShowMnemonic, str(index.row() + 1))
 
-        # Малювання кольорових маркерів (кружечків)
         color_marker_zone_x_start = number_rect.right() + self.padding_after_number_area
         color_marker_zone_total_width = self._get_color_marker_zone_width()
         
         current_color_marker_x = color_marker_zone_x_start
-        sorted_active_markers = sorted(list(active_color_markers_for_block)) # Для стабільного порядку
+        sorted_active_markers = sorted(list(active_color_markers_for_block)) 
 
         for i, color_name in enumerate(sorted_active_markers):
             if i >= self.max_color_markers: break
@@ -172,29 +163,27 @@ class CustomListItemDelegate(QStyledItemDelegate):
                 painter.drawEllipse(current_color_marker_x, marker_y, self.color_marker_size, self.color_marker_size)
                 current_color_marker_x += self.color_marker_size + self.color_marker_spacing
         
-        # Малювання індикаторів проблем (смужок)
         problem_indicator_zone_x_start = color_marker_zone_x_start + color_marker_zone_total_width + \
                                          (self.padding_after_color_marker_zone if color_marker_zone_total_width > 0 else 0)
         
         problem_indicator_colors_to_draw = []
         if has_unsaved_changes_in_block: problem_indicator_colors_to_draw.append(unsaved_indicator_color)
         
-        if has_critical_tag_issues:
-            problem_indicator_colors_to_draw.append(critical_tag_indicator_color)
-        elif has_warning_tag_issues: 
-            problem_indicator_colors_to_draw.append(warning_tag_indicator_color)
-        
-        if has_empty_odd_unisingle_issues: 
-            if len(problem_indicator_colors_to_draw) < self.max_problem_indicators:
-                 problem_indicator_colors_to_draw.append(empty_odd_indicator_color)
+        if problem_definitions and block_aggregated_problem_ids:
+            sorted_block_problem_ids = sorted(
+                list(block_aggregated_problem_ids),
+                key=lambda pid: problem_definitions.get(pid, {}).get("priority", 99)
+            )
+            for problem_id in sorted_block_problem_ids:
+                if len(problem_indicator_colors_to_draw) >= self.max_problem_indicators: break
+                problem_def = problem_definitions.get(problem_id)
+                if problem_def and "color" in problem_def:
+                    indicator_color = QColor(problem_def["color"])
+                    if indicator_color.alpha() < 100:
+                         indicator_color = indicator_color.lighter(120)
+                    if indicator_color not in problem_indicator_colors_to_draw:
+                        problem_indicator_colors_to_draw.append(indicator_color)
 
-        if has_width_exceeded_issues:
-            if len(problem_indicator_colors_to_draw) < self.max_problem_indicators:
-                 problem_indicator_colors_to_draw.append(width_exceeded_indicator_color)
-        
-        if has_short_line_issues:
-            if len(problem_indicator_colors_to_draw) < self.max_problem_indicators:
-                 problem_indicator_colors_to_draw.append(short_line_indicator_color)
         
         current_problem_indicator_x = problem_indicator_zone_x_start
         problem_indicator_zone_total_width = self._get_problem_indicator_zone_width()

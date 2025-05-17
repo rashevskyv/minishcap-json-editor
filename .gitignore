@@ -2,3 +2,4 @@ fonts
 # Python cache
 __pycache__/
 *.pyc
+/app_debug.log

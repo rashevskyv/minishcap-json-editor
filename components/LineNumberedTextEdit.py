@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (QPlainTextEdit, QMainWindow, QMenu, QApplication, QAction, 
                              QWidget, QHBoxLayout, QPushButton, QWidgetAction) 
-from PyQt5.QtGui import (QPainter, QFont, QPaintEvent, QKeyEvent, QKeySequence, QMouseEvent, QIcon, QPixmap, QColor, QTextLine, QTextCursor) # Added QTextCursor
+from PyQt5.QtGui import (QPainter, QFont, QPaintEvent, QKeyEvent, QKeySequence, QMouseEvent, QIcon, QPixmap, QColor, QTextLine, QTextCursor) 
 from PyQt5.QtCore import Qt, QRect, QSize, QRectF, pyqtSignal
 
 from .LineNumberArea import LineNumberArea
@@ -52,7 +52,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.new_blue_subline_color = NEW_BLUE_SUBLINE_COLOR 
 
         self.highlightManager = TextHighlightManager(self)
-        log_debug(f"LNET ({self.objectName()}): highlightManager created. Has 'clear_width_exceed_char_highlights': {hasattr(self.highlightManager, 'clear_width_exceed_char_highlights')}")
         self.mouse_handler = LNETMouseHandlers(self) 
         self.highlight_interface = LNETHighlightInterface(self)
         self.paint_handler = LNETPaintHandlers(self)
@@ -229,7 +228,22 @@ class LineNumberedTextEdit(QPlainTextEdit):
     def _update_auxiliary_widths(self):
         current_font_metrics = self.fontMetrics()
         self.pixel_width_display_area_width = current_font_metrics.horizontalAdvance("999") + 6
-        self.preview_indicator_area_width = (self.lineNumberArea.preview_indicator_width + self.lineNumberArea.preview_indicator_spacing) * 3 + 2
+        
+        num_indicators_to_display = 0
+        main_window = self.window()
+        if isinstance(main_window, QMainWindow) and hasattr(main_window, 'current_game_rules') and main_window.current_game_rules:
+            problem_defs = main_window.current_game_rules.get_problem_definitions()
+            num_indicators_to_display = len(problem_defs) 
+        
+        max_preview_indicators = getattr(self.lineNumberArea, 'max_problem_indicators', 5) 
+        num_indicators_to_display = min(num_indicators_to_display, max_preview_indicators)
+
+        if num_indicators_to_display > 0:
+            self.preview_indicator_area_width = (self.lineNumberArea.preview_indicator_width * num_indicators_to_display) + \
+                                            (self.lineNumberArea.preview_indicator_spacing * (num_indicators_to_display - 1)) + 2
+        else:
+            self.preview_indicator_area_width = 2 
+
         self.updateLineNumberAreaWidth(0)
 
     def setFont(self, font: QFont):
@@ -246,38 +260,36 @@ class LineNumberedTextEdit(QPlainTextEdit):
         is_ctrl_pressed = event.modifiers() & Qt.ControlModifier
 
         if self.objectName() == "preview_text_edit":
-            current_cursor = self.textCursor()
-            current_block_number = current_cursor.blockNumber()
-            new_block_number = -1
-
-            # Ctrl+Up and Ctrl+Down are now handled globally by MainWindowEventFilter
-            # We only handle non-Ctrl Up/Down here for simple line navigation within preview
-
-            if not is_ctrl_pressed and event.key() == Qt.Key_Up:
-                if current_block_number > 0:
+            if is_ctrl_pressed and (event.key() == Qt.Key_Up or event.key() == Qt.Key_Down):
+                log_debug(f"LNET ({self.objectName()}): Ctrl+Up/Down detected. Initiating problem navigation.")
+                if hasattr(main_window, 'list_selection_handler'):
+                    is_down = (event.key() == Qt.Key_Down)
+                    main_window.list_selection_handler.navigate_to_problem_string(direction_down=is_down)
+                event.accept() # Consume the event to prevent default scrolling
+                return 
+            elif not is_ctrl_pressed and (event.key() == Qt.Key_Up or event.key() == Qt.Key_Down):
+                log_debug(f"LNET ({self.objectName()}): Simple Up/Down detected.")
+                current_cursor = self.textCursor()
+                current_block_number = current_cursor.blockNumber()
+                new_block_number = -1
+                if event.key() == Qt.Key_Up and current_block_number > 0:
                     new_block_number = current_block_number - 1
-                event.accept()
-            elif not is_ctrl_pressed and event.key() == Qt.Key_Down:
-                if current_block_number < self.document().blockCount() - 1:
+                elif event.key() == Qt.Key_Down and current_block_number < self.document().blockCount() - 1:
                     new_block_number = current_block_number + 1
+                
+                if new_block_number != -1:
+                    if hasattr(main_window, 'list_selection_handler'):
+                        main_window.list_selection_handler.string_selected_from_preview(new_block_number)
                 event.accept()
-            
-            if new_block_number != -1:
-                self.lineClicked.emit(new_block_number)
-                if 0 <= new_block_number < self.document().blockCount():
-                    block_to_move_to = self.document().findBlockByNumber(new_block_number)
-                    if block_to_move_to.isValid():
-                        new_cursor = QTextCursor(block_to_move_to)
-                        self.setTextCursor(new_cursor)
-                        self.ensureCursorVisible()
-                return 
-
-            elif event.key() in [Qt.Key_Left, Qt.Key_Right, Qt.Key_PageUp, Qt.Key_PageDown, Qt.Key_Home, Qt.Key_End]:
-                super().keyPressEvent(event) 
-                return 
-            else: # For any other keys in preview, pass to super if not handled
-                super().keyPressEvent(event)
                 return
+            # Allow other keys for default ReadOnly behavior (like selection, copy)
+            # but explicitly ignore if it's not a recognized navigation or selection key for ReadOnly
+            if not (event.key() in [Qt.Key_Left, Qt.Key_Right, Qt.Key_PageUp, Qt.Key_PageDown, Qt.Key_Home, Qt.Key_End] or \
+                    event.matches(QKeySequence.SelectAll) or event.matches(QKeySequence.Copy)):
+                event.ignore() # Ignore other keys to prevent any modification or unexpected behavior
+                return
+            super().keyPressEvent(event) # Pass allowed keys to base class
+            return
 
 
         if not self.isReadOnly():

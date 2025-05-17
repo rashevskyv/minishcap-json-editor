@@ -10,7 +10,6 @@
 │   ├── LNET_mouse_handlers.py
 │   ├── LNET_paint_event_logic.py
 │   ├── LNET_paint_handlers.py
-│   ├── LNET_paint_helpers
 │   ├── LNET_paint_helpers.py
 │   ├── search_panel.py
 │   └── TextHighlightManager.py
@@ -29,6 +28,12 @@
 │   ├── tag_checker_handler.py
 │   ├── text_autofix_logic.py
 │   └── text_operation_handler.py
+├── plugins
+│   ├── zelda_mc
+│   │   ├── config.py
+│   │   └── rules.py
+│   ├── __init__.py
+│   └── base_game_rules.py
 ├── ui
 │   ├── __init__.py
 │   ├── ui_event_filters.py

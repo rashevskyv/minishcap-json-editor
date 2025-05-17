@@ -21,31 +21,53 @@ class UIUpdater:
             log_debug("[UIUpdater] populate_blocks: No original data.")
             return
         
+        problem_definitions = {}
+        if self.mw.current_game_rules:
+            problem_definitions = self.mw.current_game_rules.get_problem_definitions()
+
         for i in range(len(self.mw.data)):
             base_display_name = self.mw.block_names.get(str(i), f"Block {i}")
             
-            num_critical = 0; num_warnings = 0; num_width_exceeded = 0; num_short = 0
-            num_empty_odd = 0 # Новий лічильник
-            block_key = str(i)
-
-            if hasattr(self.mw, 'critical_problem_lines_per_block'):
-                num_critical = len(self.mw.critical_problem_lines_per_block.get(block_key, set()))
-            if hasattr(self.mw, 'warning_problem_lines_per_block'):
-                num_warnings = len(self.mw.warning_problem_lines_per_block.get(block_key, set()))
-            if hasattr(self.mw, 'width_exceeded_lines_per_block'):
-                num_width_exceeded = len(self.mw.width_exceeded_lines_per_block.get(block_key, set()))
-            if hasattr(self.mw, 'short_lines_per_block'):
-                num_short = len(self.mw.short_lines_per_block.get(block_key, set()))
-            if hasattr(self.mw, 'empty_odd_unisingle_subline_problem_strings'): # Нова перевірка
-                num_empty_odd = len(self.mw.empty_odd_unisingle_subline_problem_strings.get(block_key, set()))
-
+            block_problem_counts = {pid: 0 for pid in problem_definitions.keys()}
+            
+            if isinstance(self.mw.data[i], list):
+                for data_string_idx in range(len(self.mw.data[i])):
+                    # Для підрахунку проблем для блоку, ми ітеруємо по всіх підрядках цього блоку
+                    data_string_text, _ = self.data_processor.get_current_string_text(i, data_string_idx) # Отримуємо актуальний текст
+                    if data_string_text is not None:
+                        logical_sublines = str(data_string_text).split('\n')
+                        for subline_local_idx in range(len(logical_sublines)):
+                            problem_key = (i, data_string_idx, subline_local_idx)
+                            subline_problems = self.mw.problems_per_subline.get(problem_key, set())
+                            for problem_id in subline_problems:
+                                if problem_id in block_problem_counts:
+                                    block_problem_counts[problem_id] += 1
+            
             display_name_with_issues = base_display_name
             issue_texts = []
-            if num_critical > 0: issue_texts.append(f"{num_critical} crit")
-            if num_warnings > 0: issue_texts.append(f"{num_warnings} warn")
-            if num_width_exceeded > 0: issue_texts.append(f"{num_width_exceeded} width")
-            if num_short > 0: issue_texts.append(f"{num_short} short")
-            if num_empty_odd > 0: issue_texts.append(f"{num_empty_odd} emptyOdd") # Новий текст проблеми
+            
+            sorted_problem_ids_for_display = sorted(
+                block_problem_counts.keys(),
+                key=lambda pid: problem_definitions.get(pid, {}).get("priority", 99)
+            )
+
+            for problem_id in sorted_problem_ids_for_display:
+                count = block_problem_counts[problem_id]
+                if count > 0:
+                    problem_name_from_def = problem_definitions.get(problem_id, {}).get("name", problem_id)
+                    # Спробуємо отримати перше слово з назви проблеми для короткого варіанту
+                    problem_name_short = problem_name_from_def.split(" ")[0].lower()
+                    # Спеціальні скорочення для кращої читабельності
+                    if "empty" in problem_name_short and "odd" in problem_name_short:
+                        problem_name_short = "emptyOdd"
+                    elif "width" in problem_name_short or "ширин" in problem_name_short : # Додамо перевірку на "ширин" для старих назв
+                        problem_name_short = "width"
+                    elif "short" in problem_name_short or "корот" in problem_name_short: # Додамо перевірку на "корот"
+                        problem_name_short = "short"
+                    else: # Якщо не знайшли специфічного, беремо перші 5 літер
+                        problem_name_short = problem_name_short[:5]
+
+                    issue_texts.append(f"{count} {problem_name_short}")
             
             if issue_texts:
                 display_name_with_issues = f"{base_display_name} ({', '.join(issue_texts)})"
@@ -56,8 +78,6 @@ class UIUpdater:
         if 0 <= current_selection_block_idx < self.mw.block_list_widget.count():
             self.mw.block_list_widget.setCurrentRow(current_selection_block_idx)
         self.mw.block_list_widget.viewport().update()
-
-
         log_debug(f"[UIUpdater] populate_blocks: Added {self.mw.block_list_widget.count()} items.")
 
     def update_block_item_text_with_problem_count(self, block_idx: int):
@@ -68,96 +88,57 @@ class UIUpdater:
         if not item: return
 
         base_display_name = self.mw.block_names.get(str(block_idx), f"Block {block_idx}")
-        num_critical = 0; num_warnings = 0; num_width_exceeded = 0; num_short = 0
-        num_empty_odd = 0 # Новий лічильник
-        block_key = str(block_idx)
+        
+        problem_definitions = {}
+        if self.mw.current_game_rules:
+            problem_definitions = self.mw.current_game_rules.get_problem_definitions()
+        
+        block_problem_counts = {pid: 0 for pid in problem_definitions.keys()}
 
-        if hasattr(self.mw, 'critical_problem_lines_per_block'):
-            num_critical = len(self.mw.critical_problem_lines_per_block.get(block_key, set()))
-        if hasattr(self.mw, 'warning_problem_lines_per_block'):
-            num_warnings = len(self.mw.warning_problem_lines_per_block.get(block_key, set()))
-        if hasattr(self.mw, 'width_exceeded_lines_per_block'):
-            num_width_exceeded = len(self.mw.width_exceeded_lines_per_block.get(block_key, set()))
-        if hasattr(self.mw, 'short_lines_per_block'):
-            num_short = len(self.mw.short_lines_per_block.get(block_key, set()))
-        if hasattr(self.mw, 'empty_odd_unisingle_subline_problem_strings'): # Нова перевірка
-            num_empty_odd = len(self.mw.empty_odd_unisingle_subline_problem_strings.get(block_key, set()))
-
-
+        if block_idx < len(self.mw.data) and isinstance(self.mw.data[block_idx], list):
+            for data_string_idx in range(len(self.mw.data[block_idx])):
+                data_string_text, _ = self.data_processor.get_current_string_text(block_idx, data_string_idx)
+                if data_string_text is not None:
+                    logical_sublines = str(data_string_text).split('\n')
+                    for subline_local_idx in range(len(logical_sublines)):
+                        problem_key = (block_idx, data_string_idx, subline_local_idx)
+                        subline_problems = self.mw.problems_per_subline.get(problem_key, set())
+                        for problem_id in subline_problems:
+                            if problem_id in block_problem_counts:
+                                block_problem_counts[problem_id] += 1
+        
         display_name_with_issues = base_display_name
         issue_texts = []
-        if num_critical > 0: issue_texts.append(f"{num_critical} crit")
-        if num_warnings > 0: issue_texts.append(f"{num_warnings} warn")
-        if num_width_exceeded > 0: issue_texts.append(f"{num_width_exceeded} width")
-        if num_short > 0: issue_texts.append(f"{num_short} short")
-        if num_empty_odd > 0: issue_texts.append(f"{num_empty_odd} emptyOdd") # Новий текст проблеми
 
+        sorted_problem_ids_for_display = sorted(
+            block_problem_counts.keys(),
+            key=lambda pid: problem_definitions.get(pid, {}).get("priority", 99)
+        )
+
+        for problem_id in sorted_problem_ids_for_display:
+            count = block_problem_counts[problem_id]
+            if count > 0:
+                problem_name_from_def = problem_definitions.get(problem_id, {}).get("name", problem_id)
+                problem_name_short = problem_name_from_def.split(" ")[0].lower()
+                if "empty" in problem_name_short and "odd" in problem_name_short:
+                    problem_name_short = "emptyOdd"
+                elif "width" in problem_name_short or "ширин" in problem_name_short:
+                    problem_name_short = "width"
+                elif "short" in problem_name_short or "корот" in problem_name_short:
+                    problem_name_short = "short"
+                else:
+                    problem_name_short = problem_name_short[:5]
+                issue_texts.append(f"{count} {problem_name_short}")
         
         if issue_texts:
             display_name_with_issues = f"{base_display_name} ({', '.join(issue_texts)})"
         
-        text_changed = False
         if item.text() != display_name_with_issues:
             item.setText(display_name_with_issues)
-            text_changed = True
         
         self.mw.block_list_widget.viewport().update()
 
     def _apply_empty_odd_subline_highlights_to_edited_text(self):
-        # Цей метод більше не потрібен для підсвічування LineNumberArea в edited_text_edit,
-        # оскільки це тепер робиться напряму в LNETPaintHandlers.lineNumberAreaPaintEvent
-        # на основі pixel_width та непарності QTextBlock.
-        # Залишаємо його порожнім або видаляємо, якщо він більше ніде не використовується.
-        # Поки що просто закоментуємо його вміст, щоб не викликати помилок, якщо десь залишився виклик.
-        # edited_edit = getattr(self.mw, 'edited_text_edit', None)
-        # if not edited_edit or not hasattr(edited_edit, 'document'):
-        #     log_debug("UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: No edited_edit or document.")
-        #     return
-
-        # log_debug("UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Applying highlights...")
-        # if hasattr(edited_edit, 'clearEmptyOddSublineHighlights'):
-        #     log_debug("  Clearing previous empty odd subline highlights.")
-        #     edited_edit.clearEmptyOddSublineHighlights()
-
-        # doc = edited_edit.document()
-        # block = doc.firstBlock()
-        # qtextblock_index = 0
-        # highlights_applied_this_run = False
-        # while block.isValid():
-        #     text = block.text()
-        #     text_with_spaces = convert_dots_to_spaces_from_editor(text) if self.mw.show_multiple_spaces_as_dots else text
-        #     text_no_tags = remove_all_tags(text_with_spaces)
-            
-        #     stripped_text_no_tags = text_no_tags.strip()
-        #     is_empty = not stripped_text_no_tags or stripped_text_no_tags == "0"
-            
-        #     is_odd_qtextblock = (qtextblock_index + 1) % 2 != 0
-
-        #     # log_debug(f"  QTextBlock {qtextblock_index}: Text='{text[:30]}...', NoTagsStripped='{stripped_text_no_tags}', IsEmpty={is_empty}, IsOdd={is_odd_qtextblock}")
-
-        #     if is_empty and is_odd_qtextblock:
-        #         if hasattr(edited_edit, 'addEmptyOddSublineHighlight'):
-        #             # log_debug(f"    Highlighting QTextBlock {qtextblock_index} (BlockNum: {block.blockNumber()}) as empty odd.")
-        #             edited_edit.addEmptyOddSublineHighlight(block.blockNumber())
-        #             highlights_applied_this_run = True
-            
-        #     block = block.next()
-        #     qtextblock_index += 1
-        
-        # if highlights_applied_this_run:
-        #     # log_debug("  At least one empty odd subline highlight was added.")
-        #     pass
-        # else:
-        #     # log_debug("  No empty odd subline highlights were added in this run.")
-        #     pass
-
-        # if hasattr(edited_edit, 'applyQueuedHighlights'):
-        #     # log_debug("  Calling applyQueuedHighlights on edited_edit.")
-        #     edited_edit.applyQueuedHighlights()
-        # elif hasattr(edited_edit, 'highlightManager') and hasattr(edited_edit.highlightManager, 'applyHighlights'):
-        #      # log_debug("  Calling highlightManager.applyHighlights on edited_edit.")
-        #      edited_edit.highlightManager.applyHighlights()
-        # log_debug("UIUpdater._apply_empty_odd_subline_highlights_to_edited_text: Finished.")
         pass
 
 
@@ -169,25 +150,13 @@ class UIUpdater:
         
         old_preview_scrollbar_value = preview_edit.verticalScrollBar().value() if preview_edit else 0
         
-        critical_lines_data = set()
-        warning_lines_data = set()
-        block_key_str = str(block_idx)
-
-        if block_idx >=0: 
-            if hasattr(self.mw, 'critical_problem_lines_per_block'):
-                critical_lines_data = self.mw.critical_problem_lines_per_block.get(block_key_str, set()).copy()
-            if hasattr(self.mw, 'warning_problem_lines_per_block'):
-                warning_lines_data = self.mw.warning_problem_lines_per_block.get(block_key_str, set()).copy()
-
         self.mw.is_programmatically_changing_text = True 
         
         editors_to_clear_and_update_LNA = [preview_edit, original_edit, edited_edit]
         for editor_widget_loop in editors_to_clear_and_update_LNA: 
             if editor_widget_loop:
-                if hasattr(editor_widget_loop, 'clearAllProblemTypeHighlights'):
-                    editor_widget_loop.clearAllProblemTypeHighlights()
-                if hasattr(editor_widget_loop, 'clearPreviewSelectedLineHighlight') and editor_widget_loop == preview_edit:
-                    editor_widget_loop.clearPreviewSelectedLineHighlight()
+                if hasattr(editor_widget_loop, 'highlightManager'): 
+                    editor_widget_loop.highlightManager.clearAllHighlights() 
 
 
         preview_lines = []
@@ -206,25 +175,17 @@ class UIUpdater:
             for i in range(len(self.mw.data[block_idx])):
                 text_for_preview_raw, _ = self.data_processor.get_current_string_text(block_idx, i)
                 text_with_converted_spaces = convert_spaces_to_dots_for_display(str(text_for_preview_raw), self.mw.show_multiple_spaces_as_dots)
-                preview_line = text_with_converted_spaces.replace('\n', getattr(self.mw, "newline_display_symbol", "↵"))
-                preview_lines.append(preview_line)
+                preview_line_text = text_with_converted_spaces.replace('\n', getattr(self.mw, "newline_display_symbol", "↵"))
+                preview_lines.append(preview_line_text)
             
             if preview_edit.toPlainText() != "\n".join(preview_lines):
                  preview_edit.setPlainText("\n".join(preview_lines))
             
-            for line_num in range(len(preview_lines)): 
-                if line_num in critical_lines_data:
-                    preview_edit.addCriticalProblemHighlight(line_num)
-                elif line_num in warning_lines_data: 
-                    preview_edit.addWarningLineHighlight(line_num)
-            
-            if hasattr(preview_edit, 'applyQueuedHighlights'): 
-                preview_edit.applyQueuedHighlights()
-            
             if self.mw.current_string_idx != -1 and \
                hasattr(preview_edit, 'setPreviewSelectedLineHighlight') and \
-               self.mw.current_string_idx < preview_edit.document().blockCount(): 
+               0 <= self.mw.current_string_idx < preview_edit.document().blockCount(): 
                 preview_edit.setPreviewSelectedLineHighlight(self.mw.current_string_idx)
+
             preview_edit.verticalScrollBar().setValue(old_preview_scrollbar_value)
         
         self.update_text_views() 
@@ -324,16 +285,16 @@ class UIUpdater:
         
         if self.mw.current_block_idx == -1 or self.mw.current_string_idx == -1 or \
            not self.mw.edited_text_edit.document().toPlainText(): 
-            if hasattr(self.mw.original_text_edit, 'setLinkedCursorPosition'):
-                self.mw.original_text_edit.setLinkedCursorPosition(-1, -1) 
+            if hasattr(self.mw.original_text_edit, 'highlightManager'):
+                self.mw.original_text_edit.highlightManager.setLinkedCursorPosition(-1, -1) 
             return
 
         edited_cursor = self.mw.edited_text_edit.textCursor()
         current_line_in_edited = edited_cursor.blockNumber()
         current_col_in_edited = edited_cursor.positionInBlock()
 
-        if hasattr(self.mw.original_text_edit, 'setLinkedCursorPosition'):
-            self.mw.original_text_edit.setLinkedCursorPosition(current_line_in_edited, current_col_in_edited)
+        if hasattr(self.mw.original_text_edit, 'highlightManager'):
+            self.mw.original_text_edit.highlightManager.setLinkedCursorPosition(current_line_in_edited, current_col_in_edited)
 
 
     def highlight_problem_block(self, block_idx: int, highlight: bool, is_critical: bool = True):

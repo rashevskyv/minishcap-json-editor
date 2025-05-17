@@ -10,9 +10,7 @@ class MainWindowEventFilter(QObject):
     def eventFilter(self, obj, event):
         if event.type() == QEvent.KeyPress:
             focused_widget = QApplication.focusWidget()
-            # Закоментуємо частину логування, щоб зменшити шум, але залишимо ключові моменти
-            # log_debug(f"EventFilter KeyPress: Key {event.key()}, Modifiers: {event.modifiers()}, Text: '{event.text()}', Focused widget: {focused_widget.objectName() if focused_widget else 'None'}")
-
+            
             is_ctrl_pressed = event.modifiers() & Qt.ControlModifier
 
             if event.key() == Qt.Key_F3:
@@ -25,16 +23,14 @@ class MainWindowEventFilter(QObject):
                     self.mw.execute_find_next_shortcut()
                     return True
             elif is_ctrl_pressed and event.key() == Qt.Key_Up:
-                log_debug("EventFilter: Ctrl+Up pressed - Navigate to previous problem string")
+                log_debug(f"EventFilter: Ctrl+Up pressed. Focused: {focused_widget.objectName() if focused_widget else 'None'}. Calling navigate_to_problem_string(direction_down=False)")
                 if hasattr(self.mw, 'list_selection_handler'):
                     self.mw.list_selection_handler.navigate_to_problem_string(direction_down=False)
-                return True # Перехоплюємо і обробляємо тільки Ctrl+Up
+                return True 
             elif is_ctrl_pressed and event.key() == Qt.Key_Down:
-                log_debug("EventFilter: Ctrl+Down pressed - Navigate to next problem string")
+                log_debug(f"EventFilter: Ctrl+Down pressed. Focused: {focused_widget.objectName() if focused_widget else 'None'}. Calling navigate_to_problem_string(direction_down=True)")
                 if hasattr(self.mw, 'list_selection_handler'):
                     self.mw.list_selection_handler.navigate_to_problem_string(direction_down=True)
-                return True # Перехоплюємо і обробляємо тільки Ctrl+Down
+                return True 
             
-        # Для всіх інших подій, включаючи KeyPress, які не були оброблені вище,
-        # передаємо їх далі по ланцюжку.
         return super().eventFilter(obj, event)

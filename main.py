@@ -3,9 +3,12 @@ import os
 import json
 import copy
 import re
+import importlib 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QPlainTextEdit, QVBoxLayout, QSpinBox, QWidget, QLabel
 from PyQt5.QtCore import Qt, QEvent, QRect
 from PyQt5.QtGui import QKeyEvent, QTextCursor, QKeySequence, QFont
+from typing import Optional, Dict, Set, Tuple
+
 
 from components.LineNumberArea import LineNumberArea
 from components.CustomListWidget import CustomListWidget
@@ -33,6 +36,7 @@ from constants import (
     DEFAULT_LINE_WIDTH_WARNING_THRESHOLD,
     GENERAL_APP_FONT_FAMILY, MONOSPACE_EDITOR_FONT_FAMILY, DEFAULT_APP_FONT_SIZE
 )
+from plugins.base_game_rules import BaseGameRules
 
 
 class MainWindow(QMainWindow):
@@ -95,21 +99,14 @@ class MainWindow(QMainWindow):
             "[unk10]": "{Symbol:10}",
             self.EDITOR_PLAYER_TAG: self.ORIGINAL_PLAYER_TAG
         }
-        self.critical_problem_lines_per_block = {}
-        self.warning_problem_lines_per_block = {}
-        self.width_exceeded_lines_per_block = {}
-        self.short_lines_per_block = {}
-        self.empty_odd_unisingle_subline_problem_strings = {} 
-        self.block_color_markers = {} 
+        
+        self.problems_per_subline: Dict[Tuple[int, int, int], Set[str]] = {}
+        self.block_color_markers = {}
 
         self.can_undo_paste = False
         self.before_paste_edited_data_snapshot = {}
         self.before_paste_block_idx_affected = -1
-        self.before_paste_critical_problems_snapshot = {}
-        self.before_paste_warning_problems_snapshot = {}
-        self.before_paste_width_exceeded_snapshot = {}
-        self.before_paste_short_lines_snapshot = {}
-        self.before_paste_empty_odd_problems_snapshot = {}
+        self.before_paste_problems_snapshot: Dict[Tuple[int, int, int], Set[str]] = {}
 
 
         self.search_match_block_indices = set()
@@ -127,14 +124,16 @@ class MainWindow(QMainWindow):
         self.rescan_all_tags_action = None
         self.find_action = None
         self.check_tags_action = None
-        self.auto_fix_action = None # For menu/toolbar action
+        self.auto_fix_action = None 
         self.main_vertical_layout = None
         self.font_size_spinbox = None
-        self.auto_fix_button = None # This is the button next to "Editable Text"
+        self.auto_fix_button = None 
         
         self.status_label_part1: QLabel = None
         self.status_label_part2: QLabel = None
         self.status_label_part3: QLabel = None
+
+        self.current_game_rules: Optional[BaseGameRules] = None 
 
 
         log_debug("MainWindow: Initializing Core Components...")
@@ -142,13 +141,15 @@ class MainWindow(QMainWindow):
         self.actions = MainWindowActions(self)
         self.data_processor = DataStateProcessor(self)
         self.ui_updater = UIUpdater(self, self.data_processor)
-        self.settings_manager = SettingsManager(self)
+        self.settings_manager = SettingsManager(self) 
 
+        log_debug("MainWindow: Loading game plugin...")
+        self.load_game_plugin() 
 
         log_debug("MainWindow: Initializing Handlers (Pre-UI setup)...")
         self.list_selection_handler = ListSelectionHandler(self, self.data_processor, self.ui_updater)
         self.editor_operation_handler = TextOperationHandler(self, self.data_processor, self.ui_updater)
-        self.app_action_handler = AppActionHandler(self, self.data_processor, self.ui_updater)
+        self.app_action_handler = AppActionHandler(self, self.data_processor, self.ui_updater, self.current_game_rules) 
         self.search_handler = SearchHandler(self, self.data_processor, self.ui_updater)
 
 
@@ -171,8 +172,10 @@ class MainWindow(QMainWindow):
 
 
         log_debug("MainWindow: Loading Editor Settings via SettingsManager...")
-        self.settings_manager.load_settings()
-        log_debug(f"MainWindow: After SettingsManager.load_settings(), self.current_font_size = {self.current_font_size}, general_family = {self.general_font_family}, editor_family = {self.editor_font_family}")
+        self.settings_manager.load_settings() 
+
+
+        log_debug(f"MainWindow: After SettingsManager.load_settings(), self.mw.current_font_size = {self.current_font_size}, general_family = {self.general_font_family}, editor_family = {self.editor_font_family}")
         if self.font_size_spinbox:
             self.font_size_spinbox.setValue(self.current_font_size)
 
@@ -188,10 +191,7 @@ class MainWindow(QMainWindow):
                 log_debug(f"MainWindow: Set {editor_widget.objectName()}.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to {editor_widget.LINE_WIDTH_WARNING_THRESHOLD_PIXELS}")
                 editor_widget.font_map = self.font_map
                 editor_widget.GAME_DIALOG_MAX_WIDTH_PIXELS = self.GAME_DIALOG_MAX_WIDTH_PIXELS
-                if hasattr(editor_widget, 'short_line_color'):
-                    from components.LNET_constants import SHORT_LINE_COLOR
-                    editor_widget.short_line_color = SHORT_LINE_COLOR
-
+                
                 if hasattr(editor_widget, 'updateLineNumberAreaWidth'):
                     editor_widget.updateLineNumberAreaWidth(0)
 
@@ -199,6 +199,56 @@ class MainWindow(QMainWindow):
         self.helper.rebuild_unsaved_block_indices()
 
         log_debug("++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++")
+
+    def load_game_plugin(self):
+        log_debug("--> MainWindow: load_game_plugin called.")
+        
+        plugin_name_to_load = "zelda_mc" 
+        if hasattr(self, 'settings_manager') and hasattr(self.settings_manager.mw, 'active_game_plugin'):
+            plugin_name_to_load = self.settings_manager.mw.active_game_plugin
+            log_debug(f"    Loading plugin based on settings: '{plugin_name_to_load}'")
+        else:
+            log_debug(f"    Using hardcoded plugin to load: '{plugin_name_to_load}' (settings not fully ready or 'active_game_plugin' not found)")
+
+
+        try:
+            module_path = f"plugins.{plugin_name_to_load}.rules"
+            log_debug(f"    Importing module: {module_path}")
+            if module_path in sys.modules:
+                del sys.modules[module_path]
+                if f"plugins.{plugin_name_to_load}.config" in sys.modules: 
+                    del sys.modules[f"plugins.{plugin_name_to_load}.config"]
+
+            game_rules_module = importlib.import_module(module_path)
+            
+            if hasattr(game_rules_module, 'GameRules') and issubclass(getattr(game_rules_module, 'GameRules'), BaseGameRules):
+                GameRulesClass = getattr(game_rules_module, 'GameRules')
+                self.current_game_rules = GameRulesClass(main_window_ref=self)
+                log_debug(f"    Successfully loaded and instantiated game rules: {GameRulesClass.__name__} from {module_path}")
+            else:
+                log_debug(f"    ERROR: Class 'GameRules' not found or not a subclass of BaseGameRules in module {module_path}")
+                self._load_fallback_rules()
+
+        except ImportError as e:
+            log_debug(f"    ERROR: Could not import game plugin module {module_path}: {e}")
+            self._load_fallback_rules()
+        except Exception as e:
+            log_debug(f"    ERROR: Unexpected error loading game plugin {module_path}: {e}")
+            self._load_fallback_rules()
+        log_debug("<-- MainWindow: load_game_plugin finished.")
+
+
+    def _load_fallback_rules(self):
+        log_debug("    --> MainWindow: _load_fallback_rules called.")
+        try:
+            from plugins.base_game_rules import BaseGameRules 
+            self.current_game_rules = BaseGameRules(main_window_ref=self)
+            log_debug("        Loaded fallback BaseGameRules.")
+        except Exception as e:
+            log_debug(f"        CRITICAL ERROR: Could not load fallback game rules: {e}")
+            self.current_game_rules = None 
+        log_debug("    <-- MainWindow: _load_fallback_rules finished.")
+
 
     def get_block_color_markers(self, block_idx: int) -> set:
         return self.block_color_markers.get(str(block_idx), set())
@@ -386,10 +436,9 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'check_tags_action') and self.check_tags_action:
             self.check_tags_action.triggered.connect(self.trigger_check_tags_action)
         
-        # Connect Auto-fix button and new QAction
         if hasattr(self, 'auto_fix_button') and self.auto_fix_button:
             self.auto_fix_button.clicked.connect(self.editor_operation_handler.auto_fix_current_string)
-        if hasattr(self, 'auto_fix_action') and self.auto_fix_action: # New QAction for menu/shortcut
+        if hasattr(self, 'auto_fix_action') and self.auto_fix_action: 
             self.auto_fix_action.triggered.connect(self.editor_operation_handler.auto_fix_current_string)
 
 
@@ -399,7 +448,7 @@ class MainWindow(QMainWindow):
         log_debug(f"MainWindow: change_font_size_action called with size {new_size}")
         if self.current_font_size != new_size:
             self.current_font_size = new_size
-            log_debug(f"MainWindow: self.current_font_size is now {self.current_font_size}")
+            log_debug(f"MainWindow: self.mw.current_font_size is now {self.current_font_size}")
             self.apply_font_size()
 
     def apply_font_size(self):
