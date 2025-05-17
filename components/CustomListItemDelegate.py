@@ -11,7 +11,7 @@ class CustomListItemDelegate(QStyledItemDelegate):
         
         self.problem_indicator_strip_width = 3 
         self.problem_indicator_strip_spacing = 2 
-        self.max_problem_indicators = 5 # Збільшено, щоб точно вмістити всі типи
+        self.max_problem_indicators = 5 
 
         self.color_marker_size = 8 
         self.color_marker_spacing = 3
@@ -116,6 +116,8 @@ class CustomListItemDelegate(QStyledItemDelegate):
 
         problem_definitions = {}
         block_aggregated_problem_ids = set()
+        has_unsaved_changes_in_block = False
+
 
         if main_window and block_idx_data is not None:
             if hasattr(main_window, 'unsaved_block_indices'):
@@ -127,16 +129,21 @@ class CustomListItemDelegate(QStyledItemDelegate):
             if hasattr(main_window, 'current_game_rules') and main_window.current_game_rules:
                 problem_definitions = main_window.current_game_rules.get_problem_definitions()
 
+            # Aggregate problems from problems_per_subline for the current block_idx_data
             if hasattr(main_window, 'problems_per_subline') and hasattr(main_window, 'data') and \
-               block_idx_data < len(main_window.data) and isinstance(main_window.data[block_idx_data], list):
-                for data_string_idx_iter in range(len(main_window.data[block_idx_data])):
-                    data_string_text_iter, _ = main_window.data_processor.get_current_string_text(block_idx_data, data_string_idx_iter)
-                    if data_string_text_iter is not None:
-                        logical_sublines_iter = str(data_string_text_iter).split('\n')
-                        for subline_local_idx_iter in range(len(logical_sublines_iter)):
+               0 <= block_idx_data < len(main_window.data) and isinstance(main_window.data[block_idx_data], list):
+                
+                num_data_strings_in_block = len(main_window.data[block_idx_data])
+                for data_string_idx_iter in range(num_data_strings_in_block):
+                    # We need to know the number of logical sublines for this data_string
+                    # This requires getting the current text of the data_string
+                    current_ds_text, _ = main_window.data_processor.get_current_string_text(block_idx_data, data_string_idx_iter)
+                    if current_ds_text is not None:
+                        logical_sublines_for_ds = str(current_ds_text).split('\n')
+                        for subline_local_idx_iter in range(len(logical_sublines_for_ds)):
                             problem_key_iter = (block_idx_data, data_string_idx_iter, subline_local_idx_iter)
-                            subline_problems_iter = main_window.problems_per_subline.get(problem_key_iter, set())
-                            block_aggregated_problem_ids.update(subline_problems_iter)
+                            if problem_key_iter in main_window.problems_per_subline:
+                                block_aggregated_problem_ids.update(main_window.problems_per_subline[problem_key_iter])
 
 
         number_rect = QRect(item_rect.left(), item_rect.top(), current_number_area_width, item_rect.height())

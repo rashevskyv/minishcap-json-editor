@@ -8,17 +8,23 @@ class UIUpdater:
     def __init__(self, main_window, data_processor):
         self.mw = main_window
         self.data_processor = data_processor
-        self.critical_block_color = QColor(Qt.yellow).lighter(150) 
-        self.warning_block_color = QColor(Qt.lightGray).lighter(110) 
-        self.width_exceeded_block_color = QColor(255, 192, 203)
-        self.short_line_block_color = QColor(173, 216, 230)
+
+    def _get_short_problem_name(self, problem_id: str, problem_definitions: dict) -> str:
+        name_from_def = problem_definitions.get(problem_id, {}).get("name", problem_id)
+        # Specific short names based on problem_id can be more reliable
+        if problem_id == "ZMC_WIDTH_EXCEEDED": return "Width"
+        if problem_id == "ZMC_SHORT_LINE": return "Short"
+        if problem_id == "ZMC_EMPTY_ODD_SUBLINE_LOGICAL": return "EmptyOddL"
+        if problem_id == "ZMC_EMPTY_ODD_SUBLINE_DISPLAY": return "EmptyOddD"
+        
+        # Fallback to first word if no specific mapping
+        return name_from_def.split(" ")[0]
+
 
     def populate_blocks(self):
-        log_debug("[UIUpdater] populate_blocks called.")
         current_selection_block_idx = self.mw.block_list_widget.currentRow()
         self.mw.block_list_widget.clear()
         if not self.mw.data: 
-            log_debug("[UIUpdater] populate_blocks: No original data.")
             return
         
         problem_definitions = {}
@@ -29,20 +35,26 @@ class UIUpdater:
             base_display_name = self.mw.block_names.get(str(i), f"Block {i}")
             
             block_problem_counts = {pid: 0 for pid in problem_definitions.keys()}
+            data_strings_with_problem_type = {pid: set() for pid in problem_definitions.keys()}
             
-            if isinstance(self.mw.data[i], list):
+            if 0 <= i < len(self.mw.data) and isinstance(self.mw.data[i], list):
                 for data_string_idx in range(len(self.mw.data[i])):
-                    # Для підрахунку проблем для блоку, ми ітеруємо по всіх підрядках цього блоку
-                    data_string_text, _ = self.data_processor.get_current_string_text(i, data_string_idx) # Отримуємо актуальний текст
-                    if data_string_text is not None:
-                        logical_sublines = str(data_string_text).split('\n')
-                        for subline_local_idx in range(len(logical_sublines)):
-                            problem_key = (i, data_string_idx, subline_local_idx)
-                            subline_problems = self.mw.problems_per_subline.get(problem_key, set())
+                    for subline_local_idx_check in range(1000): 
+                        problem_key = (i, data_string_idx, subline_local_idx_check)
+                        if problem_key in self.mw.problems_per_subline:
+                            subline_problems = self.mw.problems_per_subline[problem_key]
                             for problem_id in subline_problems:
                                 if problem_id in block_problem_counts:
                                     block_problem_counts[problem_id] += 1
-            
+                                    data_strings_with_problem_type[problem_id].add(data_string_idx)
+                        else:
+                            if subline_local_idx_check > 0 : 
+                                if (i, data_string_idx, subline_local_idx_check -1) not in self.mw.problems_per_subline:
+                                    break 
+                            elif subline_local_idx_check == 0: 
+                                pass
+                            break 
+
             display_name_with_issues = base_display_name
             issue_texts = []
             
@@ -52,22 +64,11 @@ class UIUpdater:
             )
 
             for problem_id in sorted_problem_ids_for_display:
-                count = block_problem_counts[problem_id]
-                if count > 0:
-                    problem_name_from_def = problem_definitions.get(problem_id, {}).get("name", problem_id)
-                    # Спробуємо отримати перше слово з назви проблеми для короткого варіанту
-                    problem_name_short = problem_name_from_def.split(" ")[0].lower()
-                    # Спеціальні скорочення для кращої читабельності
-                    if "empty" in problem_name_short and "odd" in problem_name_short:
-                        problem_name_short = "emptyOdd"
-                    elif "width" in problem_name_short or "ширин" in problem_name_short : # Додамо перевірку на "ширин" для старих назв
-                        problem_name_short = "width"
-                    elif "short" in problem_name_short or "корот" in problem_name_short: # Додамо перевірку на "корот"
-                        problem_name_short = "short"
-                    else: # Якщо не знайшли специфічного, беремо перші 5 літер
-                        problem_name_short = problem_name_short[:5]
-
-                    issue_texts.append(f"{count} {problem_name_short}")
+                count_sublines = block_problem_counts[problem_id]
+                if count_sublines > 0:
+                    short_name = self._get_short_problem_name(problem_id, problem_definitions)
+                    num_data_strings_affected = len(data_strings_with_problem_type[problem_id])
+                    issue_texts.append(f"{count_sublines} {short_name} ({num_data_strings_affected}DS)")
             
             if issue_texts:
                 display_name_with_issues = f"{base_display_name} ({', '.join(issue_texts)})"
@@ -78,7 +79,6 @@ class UIUpdater:
         if 0 <= current_selection_block_idx < self.mw.block_list_widget.count():
             self.mw.block_list_widget.setCurrentRow(current_selection_block_idx)
         self.mw.block_list_widget.viewport().update()
-        log_debug(f"[UIUpdater] populate_blocks: Added {self.mw.block_list_widget.count()} items.")
 
     def update_block_item_text_with_problem_count(self, block_idx: int):
         if not hasattr(self.mw, 'block_list_widget') or not (0 <= block_idx < self.mw.block_list_widget.count()):
@@ -94,18 +94,26 @@ class UIUpdater:
             problem_definitions = self.mw.current_game_rules.get_problem_definitions()
         
         block_problem_counts = {pid: 0 for pid in problem_definitions.keys()}
+        data_strings_with_problem_type = {pid: set() for pid in problem_definitions.keys()}
+
 
         if block_idx < len(self.mw.data) and isinstance(self.mw.data[block_idx], list):
             for data_string_idx in range(len(self.mw.data[block_idx])):
-                data_string_text, _ = self.data_processor.get_current_string_text(block_idx, data_string_idx)
-                if data_string_text is not None:
-                    logical_sublines = str(data_string_text).split('\n')
-                    for subline_local_idx in range(len(logical_sublines)):
-                        problem_key = (block_idx, data_string_idx, subline_local_idx)
-                        subline_problems = self.mw.problems_per_subline.get(problem_key, set())
+                for subline_local_idx_check in range(1000):
+                    problem_key = (block_idx, data_string_idx, subline_local_idx_check)
+                    if problem_key in self.mw.problems_per_subline:
+                        subline_problems = self.mw.problems_per_subline[problem_key]
                         for problem_id in subline_problems:
                             if problem_id in block_problem_counts:
                                 block_problem_counts[problem_id] += 1
+                                data_strings_with_problem_type[problem_id].add(data_string_idx)
+                    else:
+                        if subline_local_idx_check > 0 :
+                            if (block_idx, data_string_idx, subline_local_idx_check -1) not in self.mw.problems_per_subline:
+                                break
+                        elif subline_local_idx_check == 0:
+                            pass
+                        break
         
         display_name_with_issues = base_display_name
         issue_texts = []
@@ -116,20 +124,12 @@ class UIUpdater:
         )
 
         for problem_id in sorted_problem_ids_for_display:
-            count = block_problem_counts[problem_id]
-            if count > 0:
-                problem_name_from_def = problem_definitions.get(problem_id, {}).get("name", problem_id)
-                problem_name_short = problem_name_from_def.split(" ")[0].lower()
-                if "empty" in problem_name_short and "odd" in problem_name_short:
-                    problem_name_short = "emptyOdd"
-                elif "width" in problem_name_short or "ширин" in problem_name_short:
-                    problem_name_short = "width"
-                elif "short" in problem_name_short or "корот" in problem_name_short:
-                    problem_name_short = "short"
-                else:
-                    problem_name_short = problem_name_short[:5]
-                issue_texts.append(f"{count} {problem_name_short}")
-        
+            count_sublines = block_problem_counts[problem_id]
+            if count_sublines > 0:
+                short_name = self._get_short_problem_name(problem_id, problem_definitions)
+                num_data_strings_affected = len(data_strings_with_problem_type[problem_id])
+                issue_texts.append(f"{count_sublines} {short_name} ({num_data_strings_affected}DS)")
+
         if issue_texts:
             display_name_with_issues = f"{base_display_name} ({', '.join(issue_texts)})"
         
@@ -139,11 +139,10 @@ class UIUpdater:
         self.mw.block_list_widget.viewport().update()
 
     def _apply_empty_odd_subline_highlights_to_edited_text(self):
-        pass
+        pass 
 
 
     def populate_strings_for_block(self, block_idx):
-        log_debug(f"UIUpdater: populate_strings_for_block for block_idx: {block_idx}. Current string_idx: {self.mw.current_string_idx}")
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         original_edit = getattr(self.mw, 'original_text_edit', None)
         edited_edit = getattr(self.mw, 'edited_text_edit', None)
@@ -156,8 +155,7 @@ class UIUpdater:
         for editor_widget_loop in editors_to_clear_and_update_LNA: 
             if editor_widget_loop:
                 if hasattr(editor_widget_loop, 'highlightManager'): 
-                    editor_widget_loop.highlightManager.clearAllHighlights() 
-
+                    editor_widget_loop.highlightManager.clearAllProblemHighlights() 
 
         preview_lines = []
         if block_idx < 0 or not self.mw.data or block_idx >= len(self.mw.data) or not isinstance(self.mw.data[block_idx], list):
@@ -174,17 +172,22 @@ class UIUpdater:
         if preview_edit:
             for i in range(len(self.mw.data[block_idx])):
                 text_for_preview_raw, _ = self.data_processor.get_current_string_text(block_idx, i)
-                text_with_converted_spaces = convert_spaces_to_dots_for_display(str(text_for_preview_raw), self.mw.show_multiple_spaces_as_dots)
-                preview_line_text = text_with_converted_spaces.replace('\n', getattr(self.mw, "newline_display_symbol", "↵"))
-                preview_lines.append(preview_line_text)
+                
+                if self.mw.current_game_rules and hasattr(self.mw.current_game_rules, 'get_text_representation_for_preview'):
+                    text_for_preview_processed = self.mw.current_game_rules.get_text_representation_for_preview(str(text_for_preview_raw))
+                else: 
+                    text_for_preview_processed = str(text_for_preview_raw).replace('\n', getattr(self.mw, "newline_display_symbol", "↵"))
+
+                text_with_converted_spaces = convert_spaces_to_dots_for_display(text_for_preview_processed, self.mw.show_multiple_spaces_as_dots)
+                preview_lines.append(text_with_converted_spaces)
             
             if preview_edit.toPlainText() != "\n".join(preview_lines):
                  preview_edit.setPlainText("\n".join(preview_lines))
             
             if self.mw.current_string_idx != -1 and \
-               hasattr(preview_edit, 'setPreviewSelectedLineHighlight') and \
+               hasattr(preview_edit, 'highlightManager') and \
                0 <= self.mw.current_string_idx < preview_edit.document().blockCount(): 
-                preview_edit.setPreviewSelectedLineHighlight(self.mw.current_string_idx)
+                preview_edit.highlightManager.setPreviewSelectedLineHighlight(self.mw.current_string_idx)
 
             preview_edit.verticalScrollBar().setValue(old_preview_scrollbar_value)
         
@@ -195,7 +198,6 @@ class UIUpdater:
 
         self.synchronize_original_cursor() 
         self.mw.is_programmatically_changing_text = False 
-        log_debug("UIUpdater: populate_strings_for_block: Finished.")
 
 
     def update_status_bar(self):
@@ -308,10 +310,10 @@ class UIUpdater:
             if item:
                 base_display_name = self.mw.block_names.get(str(i), f"Block {i}")
                 if item.text() != base_display_name: 
-                    item.setText(base_display_name)
+                    item.setText(base_display_name) 
         if hasattr(self.mw, 'block_list_widget'):
             self.mw.block_list_widget.viewport().update()
-        log_debug("UIUpdater: Cleared all problem/warning/width/short block highlights and count texts.")
+        log_debug("UIUpdater: Cleared all problem block text. Highlights are managed by delegate.")
 
             
     def update_title(self):
@@ -338,7 +340,6 @@ class UIUpdater:
             
     def update_text_views(self): 
         is_programmatic_call_flag_original = self.mw.is_programmatically_changing_text
-        log_debug(f"UIUpdater.update_text_views: Called. Programmatic: {is_programmatic_call_flag_original}. Current block: {self.mw.current_block_idx}, string: {self.mw.current_string_idx}")
         
         self.mw.is_programmatically_changing_text = True
 
@@ -350,13 +351,18 @@ class UIUpdater:
                 "original_data_for_readonly_view" 
             )
             if original_text_raw is None: 
-                log_debug(f"  Original text for Read-Only view is None for ({self.mw.current_block_idx}, {self.mw.current_string_idx}). Setting to '[ORIGINAL DATA ERROR]' for display.")
                 original_text_raw = "[ORIGINAL DATA ERROR]"
             edited_text_raw, _ = self.data_processor.get_current_string_text(self.mw.current_block_idx, self.mw.current_string_idx)
-        else: log_debug("  No active block/string selected. Text views will be cleared.")
         
-        original_text_for_display = convert_spaces_to_dots_for_display(str(original_text_raw), self.mw.show_multiple_spaces_as_dots)
-        edited_text_for_display_converted = convert_spaces_to_dots_for_display(str(edited_text_raw), self.mw.show_multiple_spaces_as_dots)
+        if self.mw.current_game_rules and hasattr(self.mw.current_game_rules, 'get_text_representation_for_editor'):
+            original_text_for_display_processed = self.mw.current_game_rules.get_text_representation_for_editor(str(original_text_raw))
+            edited_text_for_display_processed = self.mw.current_game_rules.get_text_representation_for_editor(str(edited_text_raw))
+        else: 
+            original_text_for_display_processed = str(original_text_raw)
+            edited_text_for_display_processed = str(edited_text_raw)
+
+        original_text_for_display = convert_spaces_to_dots_for_display(original_text_for_display_processed, self.mw.show_multiple_spaces_as_dots)
+        edited_text_for_display_converted = convert_spaces_to_dots_for_display(edited_text_for_display_processed, self.mw.show_multiple_spaces_as_dots)
         
         orig_edit = self.mw.original_text_edit
         if orig_edit:
@@ -370,19 +376,15 @@ class UIUpdater:
                 if orig_has_selection: new_orig_cursor.setPosition(min(orig_text_edit_cursor_pos, len(original_text_for_display)), QTextCursor.KeepAnchor)
                 else: new_orig_cursor.setPosition(min(orig_text_edit_cursor_pos, len(original_text_for_display)))
                 orig_edit.setTextCursor(new_orig_cursor)
-            else:
-                log_debug(f"UIUpdater: update_text_views - Content for {orig_edit.objectName()} matches. No setPlainText needed.")
 
         edited_widget = self.mw.edited_text_edit
         if edited_widget:
             if edited_widget.toPlainText() != edited_text_for_display_converted:
-                log_debug(f"UIUpdater: update_text_views - Content mismatch for {edited_widget.objectName()}. Updating.")
                 saved_edited_cursor_pos = edited_widget.textCursor().position()
                 saved_edited_anchor_pos = edited_widget.textCursor().anchor()
                 saved_edited_has_selection = edited_widget.textCursor().hasSelection()
                 
                 edited_widget.setPlainText(edited_text_for_display_converted)
-                log_debug(f"  UIUpdater: setPlainText called on {edited_widget.objectName()}. Undo available after: {edited_widget.document().isUndoAvailable()}")
 
                 restored_cursor = edited_widget.textCursor()
                 new_edited_anchor_pos = min(saved_edited_anchor_pos, len(edited_text_for_display_converted))
@@ -391,8 +393,6 @@ class UIUpdater:
                 if saved_edited_has_selection: restored_cursor.setPosition(new_edited_cursor_pos, QTextCursor.KeepAnchor)
                 else: restored_cursor.setPosition(new_edited_cursor_pos)
                 edited_widget.setTextCursor(restored_cursor)
-            else:
-                 log_debug(f"UIUpdater: update_text_views - Content for {edited_widget.objectName()} matches. No setPlainText needed.")
             
         self.mw.is_programmatically_changing_text = is_programmatic_call_flag_original
 

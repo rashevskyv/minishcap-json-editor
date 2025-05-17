@@ -17,9 +17,8 @@ class MainWindowActions:
         log_debug("<<<<<<<<<< ACTION: Revert Changes File Triggered (via MainWindowActions) >>>>>>>>>>")
         if self.mw.data_processor.revert_edited_file_to_original():
             log_debug("Revert successful, UI updated by DataStateProcessor.")
-            if hasattr(self.mw, 'critical_problem_lines_per_block'): self.mw.critical_problem_lines_per_block.clear()
-            if hasattr(self.mw, 'warning_problem_lines_per_block'): self.mw.warning_problem_lines_per_block.clear()
-            if hasattr(self.mw, 'width_exceeded_lines_per_block'): self.mw.width_exceeded_lines_per_block.clear()
+            # problems_per_subline is cleared and recalculated via _perform_initial_silent_scan_all_issues
+            # which is called by revert_edited_file_to_original (indirectly via load_all_data_for_path)
             self.helper.rebuild_unsaved_block_indices()
             if hasattr(self.mw.ui_updater, 'clear_all_problem_block_highlights_and_text'):
                 self.mw.ui_updater.clear_all_problem_block_highlights_and_text()
@@ -34,30 +33,54 @@ class MainWindowActions:
 
         block_to_refresh_ui_for = self.mw.before_paste_block_idx_affected
 
-        self.mw.edited_data = dict(self.mw.before_paste_edited_data_snapshot)
-        self.mw.critical_problem_lines_per_block = copy.deepcopy(self.mw.before_paste_critical_problems_snapshot)
-        self.mw.warning_problem_lines_per_block = copy.deepcopy(self.mw.before_paste_warning_problems_snapshot)
-        self.mw.width_exceeded_lines_per_block = copy.deepcopy(self.mw.before_paste_width_exceeded_snapshot)
+        keys_to_remove_from_edited_data = [k for k in self.mw.edited_data.keys() if k[0] == block_to_refresh_ui_for]
+        for key_to_remove in keys_to_remove_from_edited_data:
+            del self.mw.edited_data[key_to_remove]
+        for key_snapshot, value_snapshot in self.mw.before_paste_edited_data_snapshot.items():
+            self.mw.edited_data[key_snapshot] = value_snapshot
+        
+        keys_to_remove_from_problems = [k for k in self.mw.problems_per_subline.keys() if k[0] == block_to_refresh_ui_for]
+        for key_to_remove in keys_to_remove_from_problems:
+            del self.mw.problems_per_subline[key_to_remove]
+        for key_snapshot, value_snapshot in self.mw.before_paste_problems_per_subline_snapshot.items():
+            self.mw.problems_per_subline[key_snapshot] = value_snapshot.copy() 
 
-        self.helper.rebuild_unsaved_block_indices()
-        self.mw.unsaved_changes = bool(self.mw.edited_data)
-        self.mw.ui_updater.update_title()
+        self.helper.rebuild_unsaved_block_indices() 
+        self.mw.unsaved_changes = bool(self.mw.edited_data) 
+        
+        if hasattr(self.mw, 'title_status_bar_updater'):
+            self.mw.title_status_bar_updater.update_title()
+        elif hasattr(self.mw.ui_updater, 'update_title'):
+             self.mw.ui_updater.update_title()
 
-        self.mw.is_programmatically_changing_text = True
+        self.mw.is_programmatically_changing_text = True 
+
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
-        if preview_edit and hasattr(preview_edit, 'clearAllProblemTypeHighlights'):
-            preview_edit.clearAllProblemTypeHighlights()
+        if preview_edit and hasattr(preview_edit, 'highlightManager'):
+            preview_edit.highlightManager.clearAllProblemHighlights() 
 
-        if hasattr(self.mw.ui_updater, 'update_block_item_text_with_problem_count'):
+        if hasattr(self.mw, 'block_list_updater'):
+            self.mw.block_list_updater.update_block_item_text_with_problem_count(block_to_refresh_ui_for)
+        elif hasattr(self.mw.ui_updater, 'update_block_item_text_with_problem_count'):
             self.mw.ui_updater.update_block_item_text_with_problem_count(block_to_refresh_ui_for)
 
-        self.mw.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
-
+        if hasattr(self.mw, 'preview_updater') and hasattr(self.mw.preview_updater, 'update_preview_for_block'):
+            self.mw.preview_updater.update_preview_for_block(self.mw.current_block_idx)
+        elif hasattr(self.mw.ui_updater, 'populate_strings_for_block'):
+            self.mw.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
+        
+        if hasattr(self.mw, 'editor_state_updater') and hasattr(self.mw.editor_state_updater, 'update_editor_content'):
+             self.mw.editor_state_updater.update_editor_content()
+        elif hasattr(self.mw.ui_updater, 'update_text_views'):
+            self.mw.ui_updater.update_text_views()
+        
         if self.mw.current_block_idx != block_to_refresh_ui_for:
-            if hasattr(self.mw.ui_updater, 'update_block_item_text_with_problem_count'):
+            if hasattr(self.mw, 'block_list_updater'):
+                self.mw.block_list_updater.update_block_item_text_with_problem_count(block_to_refresh_ui_for)
+            elif hasattr(self.mw.ui_updater, 'update_block_item_text_with_problem_count'):
                 self.mw.ui_updater.update_block_item_text_with_problem_count(block_to_refresh_ui_for)
 
-        self.mw.is_programmatically_changing_text = False
+        self.mw.is_programmatically_changing_text = False 
         self.mw.can_undo_paste = False
         if hasattr(self.mw, 'undo_paste_action'): self.mw.undo_paste_action.setEnabled(False)
         if hasattr(self.mw, 'statusBar'): self.mw.statusBar.showMessage("Last paste operation undone.", 2000)
@@ -68,15 +91,15 @@ class MainWindowActions:
             QMessageBox.information(self.mw, "Tag Mappings Reloaded", "Default tag mappings have been reloaded from settings.json.")
             if self.mw.current_block_idx != -1:
                 block_name = self.mw.block_names.get(str(self.mw.current_block_idx), f"Block {self.mw.current_block_idx}")
-                if QMessageBox.question(self.mw, "Rescan Tags",
-                                       f"Do you want to rescan tags in the current block ('{block_name}') with the new mappings now?",
+                if QMessageBox.question(self.mw, "Rescan Block",
+                                       f"Do you want to rescan the current block ('{block_name}') with the new mappings now?\n(This may re-evaluate all problems based on potentially normalized text)",
                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes) == QMessageBox.Yes:
                     self.mw.app_action_handler.rescan_issues_for_single_block(self.mw.current_block_idx, use_default_mappings=True)
             else:
-                 if QMessageBox.question(self.mw, "Rescan Tags",
-                                       "No block is currently selected. Do you want to rescan all tags in all blocks?",
+                 if QMessageBox.question(self.mw, "Rescan All",
+                                       "No block is currently selected. Do you want to rescan all blocks with the new mappings?\n(This may re-evaluate all problems based on potentially normalized text)",
                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.No) == QMessageBox.Yes:
-                    self.mw.app_action_handler.rescan_all_tags()
+                    self.mw.app_action_handler.rescan_all_tags() 
         else: QMessageBox.warning(self.mw, "Reload Error", "Could not reload tag mappings. Check settings.json or console logs.")
 
     def handle_add_tag_mapping_request(self, bracket_tag: str, curly_tag: str):
@@ -103,8 +126,8 @@ class MainWindowActions:
                                     "This change will be saved to settings.json when the application is closed.")
             if self.mw.current_block_idx != -1:
                 block_name = self.mw.block_names.get(str(self.mw.current_block_idx), f"Block {self.mw.current_block_idx}")
-                if QMessageBox.question(self.mw, "Rescan Tags",
-                                       f"Do you want to rescan tags in the current block ('{block_name}') with the new mapping now?",
+                if QMessageBox.question(self.mw, "Rescan Block",
+                                       f"Do you want to rescan the current block ('{block_name}') with the new mapping now?\n(This may re-evaluate all problems based on potentially normalized text)",
                                        QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes) == QMessageBox.Yes:
                     self.mw.app_action_handler.rescan_issues_for_single_block(self.mw.current_block_idx, use_default_mappings=True)
         else: log_debug("  User cancelled overwrite or no action taken.")

@@ -17,6 +17,20 @@ class AppActionHandler(BaseHandler):
         if not hasattr(self.mw, 'problems_per_subline'):
             self.mw.problems_per_subline = {}
 
+    def _get_short_problem_name_for_report(self, problem_id: str, problem_definitions: dict) -> str:
+        # This is a temporary helper, ideally this logic should be centralized
+        # or the plugin should provide these short names directly.
+        name_from_def = problem_definitions.get(problem_id, {}).get("name", problem_id)
+        if problem_id == "ZMC_WIDTH_EXCEEDED": return "Width"
+        if problem_id == "ZMC_SHORT_LINE": return "Short"
+        if problem_id == "ZMC_EMPTY_ODD_SUBLINE_LOGICAL": return "EmptyOddL"
+        if problem_id == "ZMC_EMPTY_ODD_SUBLINE_DISPLAY": return "EmptyOddD"
+        # Fallback to a generic shortening if needed, or use full name if preferred for reports
+        # For reports, perhaps full English name is better if short names are too cryptic.
+        # Let's use the configured name from plugin for now, assuming it's in English or desired language.
+        # If we want force English short names for reports:
+        # return name_from_def.split(" ")[0] 
+        return name_from_def # Current decision: use the name as defined in plugin's problem_definitions
 
     def _get_first_word_width(self, text: str) -> int: 
         if not text or not self.mw.font_map: 
@@ -47,14 +61,12 @@ class AppActionHandler(BaseHandler):
             return
 
         for data_string_idx in range(num_strings_in_block):
-            current_data_string_text, source = self.data_processor.get_current_string_text(block_idx, data_string_idx)
-            current_data_string_text_with_spaces = convert_dots_to_spaces_from_editor(str(current_data_string_text))
-            
-            # Determine if THIS data_string_idx is the one we are targeting for debug logging (the "next" string)
-            # AND if its current text is empty
             is_current_ds_target_for_debug = (target_string_idx_for_debug != -1 and 
                                               data_string_idx == target_string_idx_for_debug and 
-                                              current_data_string_text_with_spaces == "")
+                                              str(self.data_processor.get_current_string_text(block_idx, data_string_idx)[0]) == "")
+            
+            current_data_string_text, source = self.data_processor.get_current_string_text(block_idx, data_string_idx)
+            current_data_string_text_with_spaces = convert_dots_to_spaces_from_editor(str(current_data_string_text))
             
             if is_current_ds_target_for_debug:
                  log_debug(f"  ORANGE_BUG_DEBUG (Scan BEGIN): B:{block_idx}, S:{data_string_idx} (TARGET & EMPTY). Text for scan='{repr(current_data_string_text_with_spaces)}'")
@@ -84,7 +96,7 @@ class AppActionHandler(BaseHandler):
                     is_last_subline_in_data_string=(subline_local_idx == len(logical_sublines) - 1),
                     editor_font_map=self.mw.font_map,
                     editor_line_width_threshold=self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS,
-                    full_data_string_text_for_logical_check=current_data_string_text_with_spaces, # Pass full DS text
+                    full_data_string_text_for_logical_check=current_data_string_text_with_spaces, 
                     is_target_for_debug=is_current_ds_target_for_debug 
                 )
                 
@@ -194,36 +206,48 @@ class AppActionHandler(BaseHandler):
             
         if show_message_on_completion:
             block_name_str = self.mw.block_names.get(str(block_idx), f"Block {block_idx}")
-            message_parts = []
             problem_definitions = self.game_rules_plugin.get_problem_definitions()
             
-            block_problem_ids_summary = set()
             problem_counts_for_report = {pid: 0 for pid in problem_definitions.keys()}
+            data_strings_with_problem_counts = {pid: set() for pid in problem_definitions.keys()}
 
-            if block_idx >= 0 and block_idx < len(self.mw.data) and isinstance(self.mw.data[block_idx], list):
+            if 0 <= block_idx < len(self.mw.data) and isinstance(self.mw.data[block_idx], list):
                 for data_string_idx_iter in range(len(self.mw.data[block_idx])):
-                    data_string_text, _ = self.data_processor.get_current_string_text(block_idx, data_string_idx_iter)
-                    logical_sublines_report = str(data_string_text).split('\n')
-                    for subline_local_idx_iter in range(len(logical_sublines_report)):
-                        problem_ids_for_subline = self.mw.problems_per_subline.get((block_idx, data_string_idx_iter, subline_local_idx_iter), set())
-                        for problem_id in problem_ids_for_subline:
-                            block_problem_ids_summary.add(problem_id)
-                            if problem_id in problem_counts_for_report:
-                                problem_counts_for_report[problem_id] +=1
-            
-            for problem_id in block_problem_ids_summary:
-                count = problem_counts_for_report.get(problem_id, 0)
-                if count > 0 and problem_id in problem_definitions:
-                    problem_name = problem_definitions[problem_id].get("name", problem_id)
-                    message_parts.append(f"{count} x {problem_name} (у {len([k for k in self.mw.problems_per_subline if k[0]==block_idx and problem_id in self.mw.problems_per_subline[k]])} підрядках)")
+                    for subline_local_idx_iter_check in range(1000): 
+                        problem_key_iter = (block_idx, data_string_idx_iter, subline_local_idx_iter_check)
+                        if problem_key_iter in self.mw.problems_per_subline:
+                            subline_problems = self.mw.problems_per_subline[problem_key_iter]
+                            for problem_id in subline_problems:
+                                if problem_id in problem_counts_for_report:
+                                    problem_counts_for_report[problem_id] +=1
+                                    data_strings_with_problem_counts[problem_id].add(data_string_idx_iter)
+                        else:
+                            if subline_local_idx_iter_check > 0 : 
+                                 if (block_idx, data_string_idx_iter, subline_local_idx_iter_check -1) not in self.mw.problems_per_subline:
+                                     break 
+                            elif subline_local_idx_iter_check == 0: 
+                                 pass 
+                            break 
 
+            message_parts = []
+            sorted_problem_ids_for_display = sorted(
+                problem_counts_for_report.keys(),
+                key=lambda pid: problem_definitions.get(pid, {}).get("priority", 99)
+            )
+            for problem_id in sorted_problem_ids_for_display:
+                count_sublines = problem_counts_for_report.get(problem_id, 0)
+                if count_sublines > 0 and problem_id in problem_definitions:
+                    # Use the helper to get short English name
+                    short_name = self._get_short_problem_name_for_report(problem_id, problem_definitions)
+                    num_data_strings_affected = len(data_strings_with_problem_counts[problem_id])
+                    message_parts.append(f"{count_sublines} x '{short_name}' (in {num_data_strings_affected} data string(s))")
 
             if not message_parts:
-                message = f"No issues found in Block '{block_name_str}'."
+                message = f"No issues (defined by current game plugin) found in Block '{block_name_str}'."
                 QMessageBox.information(self.mw, "Rescan Complete", message)
             else:
-                title = "Rescan Complete with Issues/Warnings"
-                summary = f"Block '{block_name_str}':\n" + "\n".join(message_parts)
+                title = f"Rescan Complete for Block '{block_name_str}'"
+                summary = "Found issues:\n" + "\n".join(message_parts)
                 QMessageBox.warning(self.mw, title, summary)
 
     def rescan_all_tags(self): 
@@ -235,32 +259,42 @@ class AppActionHandler(BaseHandler):
             QMessageBox.information(self.mw, "Rescan All Issues", "No data loaded to rescan.")
             return
         
-        self._perform_initial_silent_scan_all_issues()
+        self._perform_initial_silent_scan_all_issues() 
 
         problem_definitions = self.game_rules_plugin.get_problem_definitions()
         
         sublines_with_problem_counts = {problem_id: 0 for problem_id in problem_definitions.keys()}
         blocks_with_problem_counts = {problem_id: set() for problem_id in problem_definitions.keys()}
+        data_strings_with_problem_counts = {problem_id: set() for problem_id in problem_definitions.keys()}
 
         for (block_idx_iter, ds_idx_iter, sl_idx_iter), problem_ids_set in self.mw.problems_per_subline.items():
             for problem_id in problem_ids_set:
                 if problem_id in sublines_with_problem_counts:
                     sublines_with_problem_counts[problem_id] +=1 
                     blocks_with_problem_counts[problem_id].add(block_idx_iter)
-        
+                    data_strings_with_problem_counts[problem_id].add((block_idx_iter, ds_idx_iter))
+
         message_parts = []
-        for problem_id, total_sublines_with_problem in sublines_with_problem_counts.items():
+        sorted_problem_ids_for_display = sorted(
+            sublines_with_problem_counts.keys(),
+            key=lambda pid: problem_definitions.get(pid, {}).get("priority", 99)
+        )
+
+        for problem_id in sorted_problem_ids_for_display:
+            total_sublines_with_problem = sublines_with_problem_counts.get(problem_id, 0)
             if total_sublines_with_problem > 0 and problem_id in problem_definitions:
-                problem_name = problem_definitions[problem_id].get("name", problem_id)
+                # Use the helper to get short English name
+                short_name = self._get_short_problem_name_for_report(problem_id, problem_definitions)
                 num_blocks_affected = len(blocks_with_problem_counts[problem_id])
-                message_parts.append(f"Found {total_sublines_with_problem} subline(s) with '{problem_name}' across {num_blocks_affected} block(s).")
+                num_data_strings_affected = len(data_strings_with_problem_counts[problem_id])
+                message_parts.append(f"Found {total_sublines_with_problem} subline(s) with '{short_name}' in {num_data_strings_affected} data string(s) across {num_blocks_affected} block(s).")
         
         if not message_parts:
             message = "No issues (defined by current game plugin) found in any block based on current data state."
             QMessageBox.information(self.mw, "Rescan Complete", message)
         else:
-            title = "Rescan Complete with Issues/Warnings"
-            summary = "\n".join(message_parts)
+            title = "Rescan All Blocks Complete"
+            summary = "Found issues:\n" + "\n".join(message_parts)
             QMessageBox.warning(self.mw, title, summary)
         
         self.ui_updater.populate_blocks() 
@@ -474,7 +508,7 @@ class AppActionHandler(BaseHandler):
                             is_last_subline_in_data_string=(subline_idx == len(logical_sublines) - 1),
                             editor_font_map=self.mw.font_map,
                             editor_line_width_threshold=editor_warning_threshold,
-                            full_data_string_text_for_logical_check=text_to_analyze # Pass the full text of current source
+                            full_data_string_text_for_logical_check=text_to_analyze 
                         )
                     
                     statuses = []

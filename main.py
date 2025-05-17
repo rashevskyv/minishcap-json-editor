@@ -104,9 +104,9 @@ class MainWindow(QMainWindow):
         self.block_color_markers = {}
 
         self.can_undo_paste = False
-        self.before_paste_edited_data_snapshot = {}
-        self.before_paste_block_idx_affected = -1
-        self.before_paste_problems_snapshot: Dict[Tuple[int, int, int], Set[str]] = {}
+        self.before_paste_edited_data_snapshot = {} # Snapshot of edited_data for the affected block
+        self.before_paste_block_idx_affected = -1   # Index of the block affected by paste
+        self.before_paste_problems_per_subline_snapshot: Dict[Tuple[int, int, int], Set[str]] = {} # Snapshot of problems_per_subline for the affected block
 
 
         self.search_match_block_indices = set()

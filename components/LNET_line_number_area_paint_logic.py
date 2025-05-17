@@ -67,36 +67,40 @@ class LNETLineNumberAreaPaintLogic:
                     bg_color_number_area = odd_bg_color_const
                 bg_color_extra_info_area = bg_color_number_area 
                 
-                problem_ids_for_this_subline = set()
+                problem_ids_for_this_qtextblock = set()
 
                 if self.editor.objectName() == "original_text_edit" or self.editor.objectName() == "edited_text_edit":
                     if game_rules and current_block_idx_data_mw != -1 and current_string_idx_data_mw != -1:
+                        # current_q_block_number_in_editor_doc is the local subline index for this data string
                         subline_local_idx_for_problems = current_q_block_number_in_editor_doc
                         problem_key = (current_block_idx_data_mw, current_string_idx_data_mw, subline_local_idx_for_problems)
-                        problem_ids_for_this_subline = main_window_ref.problems_per_subline.get(problem_key, set())
-                        if problem_ids_for_this_subline: # Log only if there are problems
-                            log_debug(f"  LNETPaintLogic ({self.editor.objectName()}): For QBlk {current_q_block_number_in_editor_doc} (Data B{current_block_idx_data_mw}S{current_string_idx_data_mw}L{subline_local_idx_for_problems}), problems_per_subline: {problem_ids_for_this_subline}")
+                        problem_ids_for_this_qtextblock = main_window_ref.problems_per_subline.get(problem_key, set())
                 
                 elif self.editor.objectName() == "preview_text_edit":
                     if game_rules and current_block_idx_data_mw != -1:
+                        # current_q_block_number_in_editor_doc is the data_string_idx for preview_text_edit
                         data_line_index_preview = current_q_block_number_in_editor_doc 
                         
                         aggregated_problems_for_data_line = set()
-                        data_string_text_preview, _ = main_window_ref.data_processor.get_current_string_text(current_block_idx_data_mw, data_line_index_preview)
-                        if data_string_text_preview is not None: 
-                            logical_sublines_count_preview = len(str(data_string_text_preview).split('\n'))
-                            for subline_local_idx_preview in range(logical_sublines_count_preview):
-                                problem_key_preview = (current_block_idx_data_mw, data_line_index_preview, subline_local_idx_preview)
-                                problems_for_logical_subline = main_window_ref.problems_per_subline.get(problem_key_preview, set())
-                                aggregated_problems_for_data_line.update(problems_for_logical_subline)
-                        problem_ids_for_this_subline = aggregated_problems_for_data_line
-                        if problem_ids_for_this_subline: # Log only if there are problems
-                             log_debug(f"  LNETPaintLogic (preview_text_edit): For DataLine {data_line_index_preview} (QBlk {current_q_block_number_in_editor_doc}), aggregated problems: {problem_ids_for_this_subline}")
+                        # Check if data_string_idx is valid for the current block
+                        if 0 <= current_block_idx_data_mw < len(main_window_ref.data) and \
+                           isinstance(main_window_ref.data[current_block_idx_data_mw], list) and \
+                           0 <= data_line_index_preview < len(main_window_ref.data[current_block_idx_data_mw]):
+                            
+                            # Get the current text of the data string to determine number of logical sublines
+                            data_string_text_preview, _ = main_window_ref.data_processor.get_current_string_text(current_block_idx_data_mw, data_line_index_preview)
+                            if data_string_text_preview is not None:
+                                logical_sublines_for_data_string = str(data_string_text_preview).split('\n')
+                                for subline_local_idx_preview in range(len(logical_sublines_for_data_string)):
+                                    problem_key_preview = (current_block_idx_data_mw, data_line_index_preview, subline_local_idx_preview)
+                                    if problem_key_preview in main_window_ref.problems_per_subline:
+                                        aggregated_problems_for_data_line.update(main_window_ref.problems_per_subline[problem_key_preview])
+                        problem_ids_for_this_qtextblock = aggregated_problems_for_data_line
                 
                 if self.editor.objectName() == "original_text_edit" or self.editor.objectName() == "edited_text_edit":
-                    if problem_ids_for_this_subline:
+                    if problem_ids_for_this_qtextblock:
                         sorted_subline_problem_ids = sorted(
-                            list(problem_ids_for_this_subline),
+                            list(problem_ids_for_this_qtextblock),
                             key=lambda pid: problem_definitions.get(pid, {}).get("priority", 99)
                         )
                         if sorted_subline_problem_ids:
@@ -105,9 +109,8 @@ class LNETLineNumberAreaPaintLogic:
                             if color_def and "color" in color_def:
                                 chosen_color = QColor(color_def["color"])
                                 bg_color_extra_info_area = chosen_color
-                                if highest_priority_pid == PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY:
+                                if highest_priority_pid == PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY: # Check by ID
                                     bg_color_number_area = chosen_color
-                                log_debug(f"    LNETPaintLogic ({self.editor.objectName()}): QBlk {current_q_block_number_in_editor_doc} - Highest priority PID: {highest_priority_pid}, ChosenColor: {chosen_color.name()}, Applied to: {'NumberArea & ExtraInfo' if highest_priority_pid == PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY else 'ExtraInfo'}")
 
 
                 painter.fillRect(number_part_rect, bg_color_number_area)
@@ -133,7 +136,7 @@ class LNETLineNumberAreaPaintLogic:
                         indicators_to_draw_preview = []
                         
                         sorted_problem_ids_for_preview_indicator = sorted(
-                            list(problem_ids_for_this_subline), 
+                            list(problem_ids_for_this_qtextblock), # Use the aggregated set for preview
                             key=lambda pid: problem_definitions.get(pid, {}).get("priority", 99)
                         )
 

@@ -15,16 +15,12 @@ class BaseGameRules:
                         qtextblock_number_in_editor: int,
                         is_last_subline_in_data_string: bool,
                         editor_font_map: dict, 
-                        editor_line_width_threshold: int) -> Set[str]:
+                        editor_line_width_threshold: int,
+                        full_data_string_text_for_logical_check: str, # New parameter
+                        is_target_for_debug: bool = False) -> Set[str]: # New parameter
         raise NotImplementedError("Subclasses must implement analyze_subline")
 
-    def analyze_data_string(self, 
-                            data_string: str,
-                            original_data_string_for_tags: str, # <--- Новий аргумент
-                            editor_player_tag_const: str,       # <--- Новий аргумент
-                            editor_font_map: dict, 
-                            editor_line_width_threshold: int) -> Set[str]:
-        raise NotImplementedError("Subclasses must implement analyze_data_string")
+    # analyze_data_string is removed as it's no longer used for primary problem detection
 
     def autofix_data_string(self, 
                             data_string: str, 

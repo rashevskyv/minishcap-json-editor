@@ -182,7 +182,7 @@ def setup_main_window_ui(main_window):
     edit_menu.addSeparator()
 
 
-    main_window.rescan_all_tags_action = QAction(QIcon.fromTheme("system-search"), 'Rescan All Tags for Issues', main_window)
+    main_window.rescan_all_tags_action = QAction(QIcon.fromTheme("system-search"), 'Rescan All Issues', main_window) # Text changed here
     edit_menu.addAction(main_window.rescan_all_tags_action)
     
     check_tags_icon = style.standardIcon(QStyle.SP_DialogApplyButton) 

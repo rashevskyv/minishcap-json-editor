@@ -1,558 +1,104 @@
-Log started at 2025-05-17 18:35:06.299
+Log started at 2025-05-17 21:19:34.934
 ==================================================
-[2025-05-17 18:35:06.318] DEBUG: ================= Application Start =================
-[2025-05-17 18:35:06.332] DEBUG: ++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++
-[2025-05-17 18:35:06.332] DEBUG: MainWindow: Initializing Core Components...
-[2025-05-17 18:35:06.332] DEBUG: MainWindow: Loading game plugin...
-[2025-05-17 18:35:06.332] DEBUG: --> MainWindow: load_game_plugin called.
-[2025-05-17 18:35:06.333] DEBUG:     Using hardcoded plugin to load: 'zelda_mc' (settings not fully ready or 'active_game_plugin' not found)
-[2025-05-17 18:35:06.333] DEBUG:     Importing module: plugins.zelda_mc.rules
-[2025-05-17 18:35:06.334] DEBUG:     Successfully loaded and instantiated game rules: GameRules from plugins.zelda_mc.rules
-[2025-05-17 18:35:06.334] DEBUG: <-- MainWindow: load_game_plugin finished.
-[2025-05-17 18:35:06.334] DEBUG: MainWindow: Initializing Handlers (Pre-UI setup)...
-2025-05-17 18:35:06,334 - DEBUG - logging_utils - log_debug - Handler 'ListSelectionHandler' initialized.
-2025-05-17 18:35:06,335 - DEBUG - logging_utils - log_debug - Handler 'TextOperationHandler' initialized.
-2025-05-17 18:35:06,335 - DEBUG - logging_utils - log_debug - Handler 'AppActionHandler' initialized.
-2025-05-17 18:35:06,335 - DEBUG - logging_utils - log_debug - Handler 'SearchHandler' initialized.
-[2025-05-17 18:35:06.335] DEBUG: MainWindow: Setting up UI...
-[2025-05-17 18:35:06.335] DEBUG: setup_main_window_ui: Starting UI setup.
-[2025-05-17 18:35:06.336] DEBUG: CustomListWidget INITIALIZED, parent: <__main__.MainWindow object at 0x0000016CA5FFD5E0>
-[2025-05-17 18:35:06.337] DEBUG: CustomListWidget: Item delegate set to <components.CustomListItemDelegate.CustomListItemDelegate object at 0x0000016CA8F145E0>
-[2025-05-17 18:35:06.345] DEBUG: JsonTagHighlighter initialized.
-[2025-05-17 18:35:06.345] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-[2025-05-17 18:35:06.346] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
-[2025-05-17 18:35:06.346] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-17 18:35:06.515] DEBUG: JsonTagHighlighter initialized.
-[2025-05-17 18:35:06.515] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-[2025-05-17 18:35:06.515] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
-[2025-05-17 18:35:06.515] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-17 18:35:06.517] DEBUG: JsonTagHighlighter initialized.
-[2025-05-17 18:35:06.517] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-[2025-05-17 18:35:06.517] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
-[2025-05-17 18:35:06.517] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-17 18:35:06.534] DEBUG: setup_main_window_ui: UI setup complete.
-[2025-05-17 18:35:06.534] DEBUG: MainWindow: Initializing Handlers (Post-UI setup)...
-[2025-05-17 18:35:06.535] DEBUG: MainWindow: Connecting Signals...
-[2025-05-17 18:35:06.535] DEBUG: --> MainWindow: connect_signals() started
-[2025-05-17 18:35:06.536] DEBUG: --> MainWindow: connect_signals() finished
-[2025-05-17 18:35:06.536] DEBUG: MainWindow: Loading Editor Settings via SettingsManager...
-[2025-05-17 18:35:06.536] DEBUG: --> SettingsManager: load_settings from settings.json
-[2025-05-17 18:35:06.536] DEBUG: --> SettingsManager: load_font_map from font_map.json
-[2025-05-17 18:35:06.537] DEBUG: Successfully loaded font_map. Count: 117
-[2025-05-17 18:35:06.537] DEBUG: SettingsManager: Initial default_font_size (from QFont or 10): 8
-[2025-05-17 18:35:06.537] DEBUG: SettingsManager: Applied all default values. self.mw.current_font_size is now 10 (from defaults)
-[2025-05-17 18:35:06.537] DEBUG: SettingsManager: Successfully parsed settings.json. Content keys: ['default_tag_mappings', 'block_names', 'newline_display_symbol', 'newline_css', 'tag_css', 'show_multiple_spaces_as_dots', 'space_dot_color_hex', 'preview_wrap_lines', 'editors_wrap_lines', 'bracket_tag_color_hex', 'game_dialog_max_width_pixels', 'line_width_warning_threshold_pixels', 'search_history', 'last_selected_block_index', 'last_selected_string_index', 'last_cursor_position_in_edited', 'last_edited_text_edit_scroll_value_v', 'last_edited_text_edit_scroll_value_h', 'last_preview_text_edit_scroll_value_v', 'last_original_text_edit_scroll_value_v', 'last_original_text_edit_scroll_value_h', 'font_size', 'block_color_markers', 'original_file_path', 'edited_file_path', 'window_was_maximized', 'window_normal_geometry', 'main_splitter_state', 'right_splitter_state', 'bottom_right_splitter_state']
-[2025-05-17 18:35:06.538] DEBUG: SettingsManager: Found 'font_size' in settings file: 11. Current self.mw.current_font_size: 10
-[2025-05-17 18:35:06.538] DEBUG: SettingsManager: Set self.mw.current_font_size to 11 from file.
-[2025-05-17 18:35:06.538] DEBUG: SettingsManager: Final MainWindow.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 208
-[2025-05-17 18:35:06.538] DEBUG: SettingsManager: After potential load from file, self.mw.current_font_size is 11
-[2025-05-17 18:35:06.538] DEBUG: MainWindow: Applying font. General: Family='Segoe UI', Editor: Family='Courier New', Size=11
-[2025-05-17 18:35:06.556] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: -1, string: -1
-[2025-05-17 18:35:06.556] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-17 18:35:06.556] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:06.557] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:06.557] DEBUG: [UIUpdater] populate_blocks called.
-[2025-05-17 18:35:06.557] DEBUG: [UIUpdater] populate_blocks: No original data.
-[2025-05-17 18:35:06.557] DEBUG: UIUpdater: populate_strings_for_block for block_idx: -1. Current string_idx: -1
-[2025-05-17 18:35:06.558] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: -1, string: -1
-[2025-05-17 18:35:06.558] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-17 18:35:06.558] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:06.558] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:06.558] DEBUG: Settings loaded. Last block: 6, string: 24
-[2025-05-17 18:35:06.558] DEBUG: Settings loaded. Original path from mw: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Edited path from mw: '//192.168.50.168/tloz_tmc_ua/UKR.json'
-2025-05-17 18:35:06,559 - DEBUG - logging_utils - log_debug - Applying text wrap settings: Preview wrap: False, Editors wrap: False
-2025-05-17 18:35:06,559 - DEBUG - logging_utils - log_debug - MainWindowHelper: Reconfiguring all highlighters...
-[2025-05-17 18:35:06.559] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
-[2025-05-17 18:35:06.559] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-17 18:35:06.560] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
-[2025-05-17 18:35:06.560] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-17 18:35:06.560] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
-[2025-05-17 18:35:06.560] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-2025-05-17 18:35:06,560 - DEBUG - logging_utils - log_debug - MainWindowHelper: Highlighter reconfiguration attempt complete.
-[2025-05-17 18:35:06.561] DEBUG: <-- SettingsManager: load_settings finished
-[2025-05-17 18:35:06.561] DEBUG: MainWindow: After SettingsManager.load_settings(), self.mw.current_font_size = 11, general_family = Segoe UI, editor_family = Courier New
-[2025-05-17 18:35:06.561] DEBUG: MainWindow: change_font_size_action called with size 11
-[2025-05-17 18:35:06.561] DEBUG: MainWindow: After load_settings, self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 208
-[2025-05-17 18:35:06.561] DEBUG: MainWindow: After load_settings, self.initial_load_path = //192.168.50.168/tloz_tmc_ua/UKR_orig.json
-[2025-05-17 18:35:06.561] DEBUG: MainWindow: After load_settings, self.initial_edited_load_path = //192.168.50.168/tloz_tmc_ua/UKR.json
-[2025-05-17 18:35:06.562] DEBUG: MainWindow: Set preview_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 208
-[2025-05-17 18:35:06.562] DEBUG: MainWindow: Set original_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 208
-[2025-05-17 18:35:06.562] DEBUG: MainWindow: Set edited_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 208
-2025-05-17 18:35:06,562 - DEBUG - logging_utils - log_debug - MainWindowHelper: restore_state_after_settings_load called.
-2025-05-17 18:35:06,563 - DEBUG - logging_utils - log_debug - Restored window geometry from settings: {'x': 157, 'y': 298, 'width': 2236, 'height': 943}
-2025-05-17 18:35:06,592 - DEBUG - logging_utils - log_debug - MainWindowHelper: Attempting to load initial file from settings: //192.168.50.168/tloz_tmc_ua/UKR_orig.json
-[2025-05-17 18:35:06.592] DEBUG: --> AppActionHandler: load_all_data_for_path START. Original: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Manual Edit Path: '//192.168.50.168/tloz_tmc_ua/UKR.json', InitialLoad: True
-[2025-05-17 18:35:06.593] DEBUG: load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', expected_type: list
-[2025-05-17 18:35:06.626] DEBUG: load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR_orig.json'.
-[2025-05-17 18:35:06.639] DEBUG: load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR.json', expected_type: list
-[2025-05-17 18:35:06.677] DEBUG: load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR.json'.
-[2025-05-17 18:35:06.677] DEBUG: UIUpdater: Cleared all problem/warning/width/short block highlights and count texts.
-[2025-05-17 18:35:07.026] DEBUG: [UIUpdater] populate_blocks called.
-[2025-05-17 18:35:07.038] DEBUG: [UIUpdater] populate_blocks: Added 80 items.
-[2025-05-17 18:35:07.039] DEBUG: <-- AppActionHandler: load_all_data_for_path FINISHED (Success)
-[2025-05-17 18:35:07.039] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: -1
-[2025-05-17 18:35:07.041] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: -1
-[2025-05-17 18:35:07.041] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-17 18:35:07.042] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:07.042] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:07.042] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 18:35:07.044] DEBUG: ListSelectionHandler: string_selected_from_preview. Data Line number: 24
-[2025-05-17 18:35:07.044] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 24
-[2025-05-17 18:35:07.060] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 24
-[2025-05-17 18:35:07.061] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:07.061] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:07.061] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 18:35:07.061] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 6, string: 24
-[2025-05-17 18:35:07.061] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:07.062] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:07.062] DEBUG: ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 24
-2025-05-17 18:35:07,063 - DEBUG - logging_utils - log_debug - MainWindowHelper: Restored selection to block 6, string 24, cursor 0
-2025-05-17 18:35:07,064 - DEBUG - logging_utils - log_debug - MainWindowHelper: Search history loaded into panel. Last query (if any) set in SearchHandler: ти хочеш п≥ти
-2025-05-17 18:35:07,064 - DEBUG - logging_utils - log_debug - Rebuilt unsaved_block_indices: set()
-[2025-05-17 18:35:07.065] DEBUG: ++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++
-[2025-05-17 18:35:07.268] DEBUG: Starting Qt event loop...
-[2025-05-17 18:35:07.350] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:07.352] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:07.353] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:07.354] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:07.355] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:07.357] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:07.357] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:07.357] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.162] DEBUG: DSP.update_edited_data: Key (6, 24) updated. New edited_data size: 1
-[2025-05-17 18:35:09.162] DEBUG: DSP.update_edited_data: Unsaved changes status changed to True
-[2025-05-17 18:35:09.165] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 24
-[2025-05-17 18:35:09.170] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 24
-[2025-05-17 18:35:09.170] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:09.170] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:09.170] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 18:35:09.185] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.185] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:09.186] DEBUG:   LNETPaintLogic (original_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.186] DEBUG:     LNETPaintLogic (original_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:09.188] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.188] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.189] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.189] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.189] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.189] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.190] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.190] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 24 (QBlk 24), aggregated problems: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.190] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.193] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.193] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:09.279] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.280] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:09.280] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.281] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:09.322] DEBUG: DSP.update_edited_data: Key (6, 24) updated. New edited_data size: 1
-[2025-05-17 18:35:09.325] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 24
-[2025-05-17 18:35:09.328] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 24
-[2025-05-17 18:35:09.329] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:09.329] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:09.329] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 18:35:09.346] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.346] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:09.346] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S24L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.346] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:09.347] DEBUG:   LNETPaintLogic (original_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.347] DEBUG:     LNETPaintLogic (original_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:09.350] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.350] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.351] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.351] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.351] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.351] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.352] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.352] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 24 (QBlk 24), aggregated problems: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.352] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.354] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.355] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:09.355] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S24L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.355] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:09.459] DEBUG: DSP.update_edited_data: Key (6, 24) updated. New edited_data size: 1
-[2025-05-17 18:35:09.462] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 24
-[2025-05-17 18:35:09.467] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 24
-[2025-05-17 18:35:09.467] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:09.467] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:09.467] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 18:35:09.479] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.479] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:09.480] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S24L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.480] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:09.481] DEBUG:   LNETPaintLogic (original_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.481] DEBUG:     LNETPaintLogic (original_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:09.484] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.484] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.485] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.485] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.485] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.486] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.486] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.486] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 24 (QBlk 24), aggregated problems: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.486] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.488] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.489] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:09.489] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S24L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.489] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:09.719] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 24
-[2025-05-17 18:35:09.720] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 24
-[2025-05-17 18:35:09.720] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:09.720] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:09.720] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 18:35:09.721] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.722] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:09.722] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S24L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.722] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:09.722] DEBUG:   LNETPaintLogic (original_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.722] DEBUG:     LNETPaintLogic (original_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:09.723] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.723] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.723] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.723] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.723] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.724] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.724] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.724] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 24 (QBlk 24), aggregated problems: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.725] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:09.812] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.812] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:09.813] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S24L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.813] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:09.813] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.813] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:09.814] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S24L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:09.814] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:10.003] DEBUG: DSP.update_edited_data: Key (6, 24) updated. New edited_data size: 1
-[2025-05-17 18:35:10.006] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 24
-[2025-05-17 18:35:10.009] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 24
-[2025-05-17 18:35:10.009] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:10.009] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:10.010] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 18:35:10.021] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:10.021] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:10.022] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S24L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:10.022] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:10.022] DEBUG:   LNETPaintLogic (original_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:10.022] DEBUG:     LNETPaintLogic (original_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:10.024] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.025] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.025] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.025] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.025] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.025] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.026] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.026] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 24 (QBlk 24), aggregated problems: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:10.026] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.028] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:10.028] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:10.028] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S24L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:10.029] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:10.154] DEBUG: DSP.update_edited_data: Key (6, 24) updated. New edited_data size: 1
-[2025-05-17 18:35:10.157] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 24
-[2025-05-17 18:35:10.161] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 24
-[2025-05-17 18:35:10.161] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:10.161] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:10.162] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 18:35:10.177] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:10.177] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:10.177] DEBUG:   LNETPaintLogic (original_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:10.178] DEBUG:     LNETPaintLogic (original_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:10.180] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.180] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.180] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.180] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.181] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.181] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.181] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.182] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 24 (QBlk 24), aggregated problems: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:10.182] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.184] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:10.184] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:10.298] DEBUG: DSP.update_edited_data: Key (6, 24) removed. New edited_data size: 0
-[2025-05-17 18:35:10.298] DEBUG: DSP.update_edited_data: Unsaved changes status changed to False
-[2025-05-17 18:35:10.301] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 24
-[2025-05-17 18:35:10.303] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 24
-[2025-05-17 18:35:10.304] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:10.304] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:10.304] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 18:35:10.319] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.320] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.320] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.320] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.320] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.321] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.321] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.321] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.546] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 24
-[2025-05-17 18:35:10.547] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 24
-[2025-05-17 18:35:10.547] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:10.547] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:10.547] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 18:35:10.550] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.550] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.550] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.551] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.551] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.551] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.551] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:10.552] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:11.320] DEBUG: ListSelectionHandler: string_selected_from_preview. Data Line number: 25
-[2025-05-17 18:35:11.321] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 25
-[2025-05-17 18:35:11.322] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 25
-[2025-05-17 18:35:11.322] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:11.322] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:11.322] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 18:35:11.322] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 6, string: 25
-[2025-05-17 18:35:11.322] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:11.323] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:11.323] DEBUG: ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 25
-[2025-05-17 18:35:11.337] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:11.337] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:11.337] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:11.337] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:11.338] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:11.338] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:11.338] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:11.339] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:11.376] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:11.377] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:11.377] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:11.377] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:11.378] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:11.378] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:11.378] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:11.379] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:11.848] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:11.848] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:11.849] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:11.849] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:11.849] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:11.850] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:11.850] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:11.850] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:12.548] DEBUG: DSP.update_edited_data: Key (6, 25) updated. New edited_data size: 1
-[2025-05-17 18:35:12.549] DEBUG: DSP.update_edited_data: Unsaved changes status changed to True
-[2025-05-17 18:35:12.553] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 25
-[2025-05-17 18:35:12.557] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 25
-[2025-05-17 18:35:12.557] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:12.558] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:12.558] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 18:35:12.579] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:12.579] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:12.580] DEBUG:   LNETPaintLogic (original_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:12.580] DEBUG:     LNETPaintLogic (original_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:12.583] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:12.584] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:12.584] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:12.584] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:12.585] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:12.585] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:12.585] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:12.585] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 25 (QBlk 25), aggregated problems: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:12.586] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:12.588] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:12.588] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:12.723] DEBUG: DSP.update_edited_data: Key (6, 25) updated. New edited_data size: 1
-[2025-05-17 18:35:12.727] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 25
-[2025-05-17 18:35:12.732] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 25
-[2025-05-17 18:35:12.732] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:12.732] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:12.733] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 18:35:12.755] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:12.755] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:12.756] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S25L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:12.756] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:12.756] DEBUG:   LNETPaintLogic (original_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:12.756] DEBUG:     LNETPaintLogic (original_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:12.759] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:12.760] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:12.760] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:12.760] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:12.761] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:12.761] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:12.761] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:12.762] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 25 (QBlk 25), aggregated problems: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:12.762] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:12.765] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:12.765] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:12.766] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S25L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:12.766] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:12.869] DEBUG: DSP.update_edited_data: Key (6, 25) updated. New edited_data size: 1
-[2025-05-17 18:35:12.873] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 25
-[2025-05-17 18:35:12.877] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 25
-[2025-05-17 18:35:12.878] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:12.878] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:12.878] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 18:35:12.897] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:12.897] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:12.897] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S25L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:12.898] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:12.898] DEBUG:   LNETPaintLogic (original_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:12.899] DEBUG:     LNETPaintLogic (original_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:12.902] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:12.902] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:12.903] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:12.903] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:12.903] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:12.904] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:12.904] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:12.904] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 25 (QBlk 25), aggregated problems: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:12.905] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:12.910] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:12.910] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:12.910] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S25L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:12.911] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:12.916] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:12.917] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:12.917] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S25L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:12.917] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:13.121] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 25
-[2025-05-17 18:35:13.121] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 25
-[2025-05-17 18:35:13.121] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:13.122] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:13.122] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 18:35:13.123] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:13.123] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:13.123] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S25L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:13.123] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:13.124] DEBUG:   LNETPaintLogic (original_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:13.124] DEBUG:     LNETPaintLogic (original_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:13.125] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.125] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.126] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.126] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.126] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.127] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.127] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.127] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 25 (QBlk 25), aggregated problems: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:13.127] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.130] DEBUG: DSP.update_edited_data: Key (6, 25) updated. New edited_data size: 1
-[2025-05-17 18:35:13.134] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 25
-[2025-05-17 18:35:13.137] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 25
-[2025-05-17 18:35:13.137] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:13.138] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:13.138] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 18:35:13.154] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:13.155] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:13.155] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S25L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:13.155] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:13.155] DEBUG:   LNETPaintLogic (original_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:13.156] DEBUG:     LNETPaintLogic (original_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:13.158] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.159] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.159] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.159] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.160] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.160] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.160] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.160] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 25 (QBlk 25), aggregated problems: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:13.161] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.163] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:13.164] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:13.164] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S25L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:13.164] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:13.283] DEBUG: DSP.update_edited_data: Key (6, 25) updated. New edited_data size: 1
-[2025-05-17 18:35:13.286] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 25
-[2025-05-17 18:35:13.290] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 25
-[2025-05-17 18:35:13.290] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:13.290] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:13.290] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 18:35:13.306] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:13.306] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:13.307] DEBUG:   LNETPaintLogic (original_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:13.307] DEBUG:     LNETPaintLogic (original_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:13.310] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.311] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.311] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.311] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.312] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.312] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.312] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.312] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 25 (QBlk 25), aggregated problems: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:13.313] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.316] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:13.316] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:13.433] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
-[2025-05-17 18:35:13.433] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
-[2025-05-17 18:35:13.434] DEBUG: DSP.update_edited_data: Key (6, 25) removed. New edited_data size: 0
-[2025-05-17 18:35:13.434] DEBUG: DSP.update_edited_data: Unsaved changes status changed to False
-[2025-05-17 18:35:13.437] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 25
-[2025-05-17 18:35:13.440] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 25
-[2025-05-17 18:35:13.440] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:13.441] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:13.441] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 18:35:13.458] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.458] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.458] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.459] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.459] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.459] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.459] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.460] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.682] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 25
-[2025-05-17 18:35:13.682] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 25
-[2025-05-17 18:35:13.682] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:13.683] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:13.683] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 18:35:13.684] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.685] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.685] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.685] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.686] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.686] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.686] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:13.686] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:20.997] DEBUG: <<<<<<<<<< ACTION: Rescan All Issues Triggered >>>>>>>>>>
-[2025-05-17 18:35:20.997] DEBUG: UIUpdater: Cleared all problem/warning/width/short block highlights and count texts.
-[2025-05-17 18:35:21.304] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:21.304] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:21.305] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:21.305] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:21.305] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:21.305] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:21.305] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:21.306] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:22.269] DEBUG: [UIUpdater] populate_blocks called.
-[2025-05-17 18:35:22.270] DEBUG: UIUpdater: populate_strings_for_block for block_idx: -1. Current string_idx: -1
-[2025-05-17 18:35:22.273] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: -1, string: -1
-[2025-05-17 18:35:22.274] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-17 18:35:22.274] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:22.274] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:22.293] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: -1
-[2025-05-17 18:35:22.297] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: -1
-[2025-05-17 18:35:22.298] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-17 18:35:22.298] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:22.298] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:22.298] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 18:35:22.299] DEBUG: [UIUpdater] populate_blocks: Added 80 items.
-[2025-05-17 18:35:22.299] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: -1
-[2025-05-17 18:35:22.299] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: -1
-[2025-05-17 18:35:22.299] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-17 18:35:22.300] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:22.300] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 18:35:22.300] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 18:35:22.329] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 2 (QBlk 2), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:22.329] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 3 (QBlk 3), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:22.330] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 7 (QBlk 7), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:22.330] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 9 (QBlk 9), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:22.330] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 11 (QBlk 11), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:22.331] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:22.331] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:22.331] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:22.332] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:22.332] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:22.333] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
-[2025-05-17 18:35:25.122] DEBUG: --> MainWindow: closeEvent received.
-2025-05-17 18:35:25,123 - DEBUG - logging_utils - log_debug - MainWindowHelper: prepare_to_close called.
-2025-05-17 18:35:25,123 - DEBUG - logging_utils - log_debug - MainWindowHelper: Updated search_history_to_save: 20 items
-[2025-05-17 18:35:25.123] DEBUG: --> AppActionHandler: handle_close_event called.
-[2025-05-17 18:35:25.123] DEBUG: <-- AppActionHandler: handle_close_event finished.
-[2025-05-17 18:35:25.123] DEBUG: Close accepted (no unsaved changes). Saving editor settings via SettingsManager.
-[2025-05-17 18:35:25.124] DEBUG: --> SettingsManager: save_settings to settings.json
-[2025-05-17 18:35:25.124] DEBUG: SettingsManager: Saving font_size: 11 (from self.mw.current_font_size: 11)
-[2025-05-17 18:35:25.124] DEBUG: Saving paths: original_file_path='//192.168.50.168/tloz_tmc_ua/UKR_orig.json', edited_file_path='//192.168.50.168/tloz_tmc_ua/UKR.json'
-[2025-05-17 18:35:25.125] DEBUG: <-- SettingsManager: save_settings finished
-[2025-05-17 18:35:25.125] DEBUG: <-- MainWindow: closeEvent finished.
-[2025-05-17 18:35:25.141] DEBUG: Qt event loop finished with exit code: 0
-[2025-05-17 18:35:25.141] DEBUG: ================= Application End =================
+[2025-05-17 21:19:34.961] DEBUG: ================= Application Start =================
+[2025-05-17 21:19:34.986] DEBUG: ++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++
+[2025-05-17 21:19:34.987] DEBUG: MainWindow: Initializing Core Components...
+[2025-05-17 21:19:34.987] DEBUG: MainWindow: Loading game plugin...
+[2025-05-17 21:19:34.987] DEBUG: --> MainWindow: load_game_plugin called.
+[2025-05-17 21:19:34.987] DEBUG:     Using hardcoded plugin to load: 'zelda_mc' (settings not fully ready or 'active_game_plugin' not found)
+[2025-05-17 21:19:34.988] DEBUG:     Importing module: plugins.zelda_mc.rules
+[2025-05-17 21:19:34.989] DEBUG:     Successfully loaded and instantiated game rules: GameRules from plugins.zelda_mc.rules
+[2025-05-17 21:19:34.989] DEBUG: <-- MainWindow: load_game_plugin finished.
+[2025-05-17 21:19:34.989] DEBUG: MainWindow: Initializing Handlers (Pre-UI setup)...
+2025-05-17 21:19:34,990 - DEBUG - logging_utils - log_debug - Handler 'ListSelectionHandler' initialized.
+2025-05-17 21:19:34,990 - DEBUG - logging_utils - log_debug - Handler 'TextOperationHandler' initialized.
+2025-05-17 21:19:34,991 - DEBUG - logging_utils - log_debug - Handler 'AppActionHandler' initialized.
+2025-05-17 21:19:34,991 - DEBUG - logging_utils - log_debug - Handler 'SearchHandler' initialized.
+[2025-05-17 21:19:34.991] DEBUG: MainWindow: Setting up UI...
+[2025-05-17 21:19:34.992] DEBUG: setup_main_window_ui: Starting UI setup.
+[2025-05-17 21:19:34.994] DEBUG: CustomListWidget INITIALIZED, parent: <__main__.MainWindow object at 0x000001DADAB6C160>
+[2025-05-17 21:19:34.994] DEBUG: CustomListWidget: Item delegate set to <components.CustomListItemDelegate.CustomListItemDelegate object at 0x000001DADAB53670>
+[2025-05-17 21:19:35.008] DEBUG: JsonTagHighlighter initialized.
+[2025-05-17 21:19:35.009] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+[2025-05-17 21:19:35.009] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
+[2025-05-17 21:19:35.009] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-17 21:19:35.400] DEBUG: JsonTagHighlighter initialized.
+[2025-05-17 21:19:35.400] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+[2025-05-17 21:19:35.400] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
+[2025-05-17 21:19:35.400] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-17 21:19:35.403] DEBUG: JsonTagHighlighter initialized.
+[2025-05-17 21:19:35.403] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+[2025-05-17 21:19:35.403] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
+[2025-05-17 21:19:35.404] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-17 21:19:35.422] DEBUG: setup_main_window_ui: UI setup complete.
+[2025-05-17 21:19:35.422] DEBUG: MainWindow: Initializing Handlers (Post-UI setup)...
+[2025-05-17 21:19:35.423] DEBUG: MainWindow: Connecting Signals...
+[2025-05-17 21:19:35.424] DEBUG: --> MainWindow: connect_signals() started
+[2025-05-17 21:19:35.424] DEBUG: --> MainWindow: connect_signals() finished
+[2025-05-17 21:19:35.424] DEBUG: MainWindow: Loading Editor Settings via SettingsManager...
+[2025-05-17 21:19:35.424] DEBUG: --> SettingsManager: load_settings from settings.json
+[2025-05-17 21:19:35.425] DEBUG: --> SettingsManager: load_font_map from font_map.json
+[2025-05-17 21:19:35.425] DEBUG: Successfully loaded font_map. Count: 117
+[2025-05-17 21:19:35.425] DEBUG: SettingsManager: Initial default_font_size (from QFont or 10): 8
+[2025-05-17 21:19:35.426] DEBUG: SettingsManager: Applied all default values. self.mw.current_font_size is now 10 (from defaults)
+[2025-05-17 21:19:35.427] DEBUG: SettingsManager: Successfully parsed settings.json. Content keys: ['default_tag_mappings', 'block_names', 'newline_display_symbol', 'newline_css', 'tag_css', 'show_multiple_spaces_as_dots', 'space_dot_color_hex', 'preview_wrap_lines', 'editors_wrap_lines', 'bracket_tag_color_hex', 'game_dialog_max_width_pixels', 'line_width_warning_threshold_pixels', 'search_history', 'last_selected_block_index', 'last_selected_string_index', 'last_cursor_position_in_edited', 'last_edited_text_edit_scroll_value_v', 'last_edited_text_edit_scroll_value_h', 'last_preview_text_edit_scroll_value_v', 'last_original_text_edit_scroll_value_v', 'last_original_text_edit_scroll_value_h', 'font_size', 'block_color_markers', 'original_file_path', 'edited_file_path', 'window_was_maximized', 'window_normal_geometry', 'main_splitter_state', 'right_splitter_state', 'bottom_right_splitter_state']
+[2025-05-17 21:19:35.427] DEBUG: SettingsManager: Found 'font_size' in settings file: 11. Current self.mw.current_font_size: 10
+[2025-05-17 21:19:35.427] DEBUG: SettingsManager: Set self.mw.current_font_size to 11 from file.
+[2025-05-17 21:19:35.427] DEBUG: SettingsManager: Final MainWindow.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 208
+[2025-05-17 21:19:35.427] DEBUG: SettingsManager: After potential load from file, self.mw.current_font_size is 11
+[2025-05-17 21:19:35.427] DEBUG: MainWindow: Applying font. General: Family='Segoe UI', Editor: Family='Courier New', Size=11
+[2025-05-17 21:19:35.435] DEBUG: UNDO_DEBUG (text_edited - User Input Start): Editor='edited_text_edit', UndoAvailable=False, RedoAvailable=False, Revision=2
+[2025-05-17 21:19:35.449] DEBUG: Settings loaded. Last block: 14, string: -1
+[2025-05-17 21:19:35.449] DEBUG: Settings loaded. Original path from mw: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Edited path from mw: '//192.168.50.168/tloz_tmc_ua/UKR.json'
+2025-05-17 21:19:35,450 - DEBUG - logging_utils - log_debug - Applying text wrap settings: Preview wrap: False, Editors wrap: False
+2025-05-17 21:19:35,450 - DEBUG - logging_utils - log_debug - MainWindowHelper: Reconfiguring all highlighters...
+[2025-05-17 21:19:35.450] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
+[2025-05-17 21:19:35.451] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-17 21:19:35.451] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
+[2025-05-17 21:19:35.451] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-17 21:19:35.451] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
+[2025-05-17 21:19:35.452] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-17 21:19:35.452] DEBUG: UNDO_DEBUG (text_edited - User Input Start): Editor='edited_text_edit', UndoAvailable=False, RedoAvailable=False, Revision=4
+[2025-05-17 21:19:35.452] DEBUG: UNDO_DEBUG (text_edited - User Input Start): Editor='edited_text_edit', UndoAvailable=False, RedoAvailable=False, Revision=5
+2025-05-17 21:19:35,452 - DEBUG - logging_utils - log_debug - MainWindowHelper: Highlighter reconfiguration attempt complete.
+[2025-05-17 21:19:35.453] DEBUG: <-- SettingsManager: load_settings finished
+[2025-05-17 21:19:35.453] DEBUG: MainWindow: After SettingsManager.load_settings(), self.mw.current_font_size = 11, general_family = Segoe UI, editor_family = Courier New
+[2025-05-17 21:19:35.453] DEBUG: MainWindow: change_font_size_action called with size 11
+[2025-05-17 21:19:35.453] DEBUG: MainWindow: After load_settings, self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 208
+[2025-05-17 21:19:35.453] DEBUG: MainWindow: After load_settings, self.initial_load_path = //192.168.50.168/tloz_tmc_ua/UKR_orig.json
+[2025-05-17 21:19:35.454] DEBUG: MainWindow: After load_settings, self.initial_edited_load_path = //192.168.50.168/tloz_tmc_ua/UKR.json
+[2025-05-17 21:19:35.454] DEBUG: MainWindow: Set preview_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 208
+[2025-05-17 21:19:35.454] DEBUG: MainWindow: Set original_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 208
+[2025-05-17 21:19:35.454] DEBUG: MainWindow: Set edited_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 208
+2025-05-17 21:19:35,454 - DEBUG - logging_utils - log_debug - MainWindowHelper: restore_state_after_settings_load called.
+2025-05-17 21:19:35,455 - DEBUG - logging_utils - log_debug - Restored window geometry from settings: {'x': 157, 'y': 298, 'width': 2236, 'height': 943}
+2025-05-17 21:19:35,469 - DEBUG - logging_utils - log_debug - MainWindowHelper: Attempting to load initial file from settings: //192.168.50.168/tloz_tmc_ua/UKR_orig.json
+[2025-05-17 21:19:35.470] DEBUG: --> AppActionHandler: load_all_data_for_path START. Original: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Manual Edit Path: '//192.168.50.168/tloz_tmc_ua/UKR.json', InitialLoad: True
+[2025-05-17 21:19:35.471] DEBUG: load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', expected_type: list
+[2025-05-17 21:19:35.552] DEBUG: load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR_orig.json'.
+[2025-05-17 21:19:35.570] DEBUG: load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR.json', expected_type: list
+[2025-05-17 21:19:35.619] DEBUG: load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR.json'.
+[2025-05-17 21:19:35.620] DEBUG: UIUpdater: Cleared all problem block text. Highlights are managed by delegate.
+[2025-05-17 21:19:35.949] DEBUG: <-- AppActionHandler: load_all_data_for_path FINISHED (Success)
+2025-05-17 21:19:35,958 - DEBUG - logging_utils - log_debug - MainWindowHelper: last_selected_string_index (-1) is out of bounds for block 14. Skipping string/cursor restore.
+2025-05-17 21:19:35,959 - DEBUG - logging_utils - log_debug - MainWindowHelper: Search history loaded into panel. Last query (if any) set in SearchHandler: ќбири
+2025-05-17 21:19:35,959 - DEBUG - logging_utils - log_debug - Rebuilt unsaved_block_indices: set()
+[2025-05-17 21:19:35.959] DEBUG: ++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++
+[2025-05-17 21:19:36.120] DEBUG: Starting Qt event loop...
+[2025-05-17 21:19:38.888] DEBUG: <<<<<<<<<< ACTION: Rescan Issues for Block 14 Triggered. use_default_mappings=True >>>>>>>>>>
+[2025-05-17 21:19:38.889] DEBUG: DSP.update_edited_data: Key (14, 10) updated. New edited_data size: 1
+[2025-05-17 21:19:38.889] DEBUG: DSP.update_edited_data: Unsaved changes status changed to True
+[2025-05-17 21:19:38.891] DEBUG: DSP.update_edited_data: Key (14, 23) updated. New edited_data size: 2
+[2025-05-17 21:19:41.838] DEBUG: <<<<<<<<<< ACTION: Rescan Issues for Block 15 Triggered. use_default_mappings=True >>>>>>>>>>
+[2025-05-17 21:19:41.838] DEBUG: DSP.update_edited_data: Key (15, 3) updated. New edited_data size: 3
+[2025-05-17 21:19:48.764] DEBUG: <<<<<<<<<< ACTION: Rescan All Issues Triggered >>>>>>>>>>
+[2025-05-17 21:19:48.764] DEBUG: UIUpdater: Cleared all problem block text. Highlights are managed by delegate.
+[2025-05-17 21:27:20.277] DEBUG: --> MainWindow: closeEvent received.
+2025-05-17 21:27:20,277 - DEBUG - logging_utils - log_debug - MainWindowHelper: prepare_to_close called.
+2025-05-17 21:27:20,278 - DEBUG - logging_utils - log_debug - MainWindowHelper: Updated search_history_to_save: 20 items
+[2025-05-17 21:27:20.278] DEBUG: --> AppActionHandler: handle_close_event called.
+[2025-05-17 21:27:21.679] DEBUG: <-- AppActionHandler: handle_close_event finished.
+[2025-05-17 21:27:21.679] DEBUG: Close accepted (unsaved changes were handled). Settings should have been saved by AppActionHandler or by user choice during handle_close_event.
+[2025-05-17 21:27:21.679] DEBUG: <-- MainWindow: closeEvent finished.
+[2025-05-17 21:27:21.696] DEBUG: Qt event loop finished with exit code: 0
+[2025-05-17 21:27:21.696] DEBUG: ================= Application End =================

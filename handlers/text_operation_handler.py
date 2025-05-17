@@ -17,6 +17,11 @@ class TextOperationHandler(BaseHandler):
         self.preview_update_timer.setSingleShot(True)
         self.preview_update_timer.timeout.connect(self._update_preview_content)
 
+    def _log_undo_state(self, editor, context_message):
+        if editor and hasattr(editor, 'document'):
+            doc = editor.document()
+            log_debug(f"UNDO_DEBUG ({context_message}): Editor='{editor.objectName()}', UndoAvailable={doc.isUndoAvailable()}, RedoAvailable={doc.isRedoAvailable()}, Revision={doc.revision()}")
+
     def _update_preview_content(self):
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         original_edit = getattr(self.mw, 'original_text_edit', None)
@@ -28,7 +33,11 @@ class TextOperationHandler(BaseHandler):
         was_programmatically_changing = main_window_ref.is_programmatically_changing_text
         main_window_ref.is_programmatically_changing_text = True
         
-        self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
+        if hasattr(self.mw, 'preview_updater') and hasattr(self.mw.preview_updater, 'update_preview_for_block'):
+            self.mw.preview_updater.update_preview_for_block(self.mw.current_block_idx)
+        elif hasattr(self.ui_updater, 'populate_strings_for_block'): 
+             self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
+
         
         if preview_edit: preview_edit.verticalScrollBar().setValue(old_scrollbar_value)
         if original_edit and hasattr(original_edit, 'lineNumberArea'): original_edit.lineNumberArea.update()
@@ -40,6 +49,8 @@ class TextOperationHandler(BaseHandler):
         if self.mw.is_programmatically_changing_text:
             return
         
+        self._log_undo_state(self.mw.edited_text_edit, "text_edited - User Input Start")
+
         if self.mw.current_block_idx == -1 or self.mw.current_string_idx == -1:
             return
         
@@ -50,23 +61,38 @@ class TextOperationHandler(BaseHandler):
         actual_text_with_spaces = convert_dots_to_spaces_from_editor(text_from_ui_with_dots) if self.mw.show_multiple_spaces_as_dots else text_from_ui_with_dots
         
         needs_title_update = self.data_processor.update_edited_data(block_idx, string_idx_in_block, actual_text_with_spaces)
-        if needs_title_update:
-            self.ui_updater.update_title()
-            
-        if hasattr(self.mw.app_action_handler, '_perform_issues_scan_for_block'):
-            self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False)
-            if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
-                 self.ui_updater.update_block_item_text_with_problem_count(block_idx)
-            if hasattr(self.mw, 'preview_text_edit') and hasattr(self.mw.preview_text_edit, 'lineNumberArea'):
-                self.mw.preview_text_edit.lineNumberArea.update()
+        
+        self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False)
+        
+        if needs_title_update: 
+            if hasattr(self.mw, 'title_status_bar_updater'):
+                self.mw.title_status_bar_updater.update_title()
+            elif hasattr(self.ui_updater, 'update_title'): 
+                self.ui_updater.update_title()
+
+        if hasattr(self.mw, 'block_list_updater'):
+            self.mw.block_list_updater.update_block_item_text_with_problem_count(block_idx)
+        elif hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'): 
+            self.ui_updater.update_block_item_text_with_problem_count(block_idx)
+
+        if hasattr(self.mw, 'preview_text_edit') and hasattr(self.mw.preview_text_edit, 'lineNumberArea'):
+            self.mw.preview_text_edit.lineNumberArea.update() 
         
         self.preview_update_timer.start(PREVIEW_UPDATE_DELAY) 
-        self.ui_updater.update_status_bar() 
-        self.ui_updater.synchronize_original_cursor()
+
+        if hasattr(self.mw, 'editor_state_updater'):
+            self.mw.editor_state_updater.update_status_bar()
+            self.mw.editor_state_updater.synchronize_original_cursor()
+        elif hasattr(self.ui_updater, 'update_status_bar'): 
+            self.ui_updater.update_status_bar()
+            self.ui_updater.synchronize_original_cursor()
         
         edited_edit = getattr(self.mw, 'edited_text_edit', None)
         if edited_edit and hasattr(edited_edit, 'lineNumberArea'):
             edited_edit.lineNumberArea.update() 
+        
+        self._log_undo_state(self.mw.edited_text_edit, "text_edited - User Input End")
+
 
     def paste_block_text(self):
         log_debug(f"--> TextOperationHandler: paste_block_text triggered.")
@@ -77,11 +103,13 @@ class TextOperationHandler(BaseHandler):
             
         block_idx = self.mw.current_block_idx
         
-        self.mw.before_paste_problems_snapshot = {
-            k: v.copy() for k, v in self.mw.problems_per_subline.items() if k[0] == block_idx
-        }
+        # Snapshot for edited_data (only for the affected block)
         self.mw.before_paste_edited_data_snapshot = {
             k: v for k,v in self.mw.edited_data.items() if k[0] == block_idx
+        }
+        # Snapshot for problems_per_subline (only for the affected block)
+        self.mw.before_paste_problems_per_subline_snapshot = {
+            k: v.copy() for k, v in self.mw.problems_per_subline.items() if k[0] == block_idx
         }
         self.mw.before_paste_block_idx_affected = block_idx
         
@@ -93,12 +121,16 @@ class TextOperationHandler(BaseHandler):
         if edited_edit and hasattr(edited_edit, 'highlightManager'):
             edited_edit.highlightManager.clearAllProblemHighlights()
 
-        keys_to_remove = [k for k in self.mw.problems_per_subline if k[0] == block_idx]
-        for key_to_remove in keys_to_remove:
+        # Clear current problems for the affected block before recalculating
+        keys_to_remove_from_problems = [k for k in self.mw.problems_per_subline if k[0] == block_idx]
+        for key_to_remove in keys_to_remove_from_problems:
             del self.mw.problems_per_subline[key_to_remove]
         
-        if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
+        if hasattr(self.mw, 'block_list_updater'):
+            self.mw.block_list_updater.update_block_item_text_with_problem_count(block_idx)
+        elif hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'): 
             self.ui_updater.update_block_item_text_with_problem_count(block_idx)
+
             
         start_string_idx = self.mw.current_string_idx if self.mw.current_string_idx != -1 else 0
         pasted_text_raw = QApplication.clipboard().text()
@@ -121,6 +153,10 @@ class TextOperationHandler(BaseHandler):
         successfully_processed_count = 0
         any_change_applied_to_data = False
         
+        active_editor_for_paste = self.mw.edited_text_edit
+        if active_editor_for_paste:
+            self._log_undo_state(active_editor_for_paste, "paste_block_text - Before paste loop")
+
         for i, segment_to_insert_raw in enumerate(parsed_strings):
             current_target_string_idx = start_string_idx + i
             if current_target_string_idx >= original_block_len:
@@ -136,15 +172,18 @@ class TextOperationHandler(BaseHandler):
             final_text_to_apply = processed_text.rstrip('\n')
             
             if self.data_processor.update_edited_data(block_idx, current_target_string_idx, final_text_to_apply):
-                 self.ui_updater.update_title()
+                if hasattr(self.mw, 'title_status_bar_updater'):
+                    self.mw.title_status_bar_updater.update_title()
+                elif hasattr(self.ui_updater, 'update_title'): 
+                    self.ui_updater.update_title()
             
             old_text_for_this_line = self.mw.before_paste_edited_data_snapshot.get((block_idx, current_target_string_idx), original_text_for_tags)
             if final_text_to_apply != old_text_for_this_line:
                  any_change_applied_to_data = True
             successfully_processed_count += 1
 
-        if successfully_processed_count > 0 and hasattr(self.mw.app_action_handler, '_perform_issues_scan_for_block'):
-             log_debug(f"Paste block finished. Triggering silent rescan for block {block_idx} due to paste.")
+        if successfully_processed_count > 0:
+             log_debug(f"Paste block finished processing data. Triggering scan for block {block_idx} due to paste.")
              self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False) 
         
         problem_summary_texts = []
@@ -152,9 +191,9 @@ class TextOperationHandler(BaseHandler):
             problem_definitions = self.mw.current_game_rules.get_problem_definitions()
             problem_counts = {pid: 0 for pid in problem_definitions.keys()}
             
-            for b_idx_iter, ds_idx_iter, sl_idx_iter in self.mw.problems_per_subline:
-                if b_idx_iter == block_idx:
-                    for problem_id in self.mw.problems_per_subline[(b_idx_iter, ds_idx_iter, sl_idx_iter)]:
+            for (b_iter, ds_iter, sl_iter), problem_ids_set in self.mw.problems_per_subline.items():
+                if b_iter == block_idx:
+                    for problem_id in problem_ids_set:
                         if problem_id in problem_counts:
                             problem_counts[problem_id] += 1
             
@@ -172,11 +211,27 @@ class TextOperationHandler(BaseHandler):
             QMessageBox.information(self.mw, "Paste", "Pasted text resulted in no changes to the data.")
         
         self.mw.is_programmatically_changing_text = True
-        self.ui_updater.populate_strings_for_block(self.mw.current_block_idx) 
-        self.ui_updater.update_block_item_text_with_problem_count(self.mw.current_block_idx)
+        if hasattr(self.mw, 'preview_updater') and hasattr(self.mw.preview_updater, 'update_preview_for_block'):
+            self.mw.preview_updater.update_preview_for_block(self.mw.current_block_idx)
+        elif hasattr(self.ui_updater, 'populate_strings_for_block'):
+            self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
+
+        if hasattr(self.mw, 'editor_state_updater') and hasattr(self.mw.editor_state_updater, 'update_editor_content'):
+             self.mw.editor_state_updater.update_editor_content() 
+        elif hasattr(self.ui_updater, 'update_text_views'):
+            self.ui_updater.update_text_views() 
+
+        if hasattr(self.mw, 'block_list_updater'):
+            self.mw.block_list_updater.update_block_item_text_with_problem_count(self.mw.current_block_idx)
+        elif hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
+            self.ui_updater.update_block_item_text_with_problem_count(self.mw.current_block_idx)
         self.mw.is_programmatically_changing_text = False
         
-        if any_change_applied_to_data or problem_summary_texts :
+        if active_editor_for_paste:
+            self._log_undo_state(active_editor_for_paste, "paste_block_text - After UI update")
+
+
+        if any_change_applied_to_data or problem_summary_texts : 
             self.mw.can_undo_paste = True
             if hasattr(self.mw, 'undo_paste_action'): self.mw.undo_paste_action.setEnabled(True)
         else:
@@ -184,6 +239,7 @@ class TextOperationHandler(BaseHandler):
             if hasattr(self.mw, 'undo_paste_action'): self.mw.undo_paste_action.setEnabled(False)
             
         log_debug("<-- TextOperationHandler: paste_block_text finished.")
+
 
     def revert_single_line(self, line_index: int):
         block_idx = self.mw.current_block_idx
@@ -205,20 +261,41 @@ class TextOperationHandler(BaseHandler):
         if current_text == original_text:
              log_debug(f"Revert single line: Data line {line_index} in block {block_idx} already matches original.")
              return
+        
+        active_editor_for_revert = self.mw.edited_text_edit
+        if active_editor_for_revert and self.mw.current_string_idx == line_index:
+            self._log_undo_state(active_editor_for_revert, f"revert_single_line S:{line_index} - Before data update")
 
         if self.data_processor.update_edited_data(block_idx, line_index, original_text):
-             self.ui_updater.update_title()
+            if hasattr(self.mw, 'title_status_bar_updater'):
+                self.mw.title_status_bar_updater.update_title()
+            elif hasattr(self.ui_updater, 'update_title'): 
+                self.ui_updater.update_title()
 
-        if hasattr(self.mw.app_action_handler, '_perform_issues_scan_for_block'):
-            self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False)
-        
-        if self.mw.current_string_idx == line_index: 
-             self.ui_updater.update_text_views() 
+        self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False)
         
         self.mw.is_programmatically_changing_text = True
-        self.ui_updater.populate_strings_for_block(block_idx) 
-        self.ui_updater.update_block_item_text_with_problem_count(block_idx) 
+        if self.mw.current_string_idx == line_index: 
+            if hasattr(self.mw, 'editor_state_updater') and hasattr(self.mw.editor_state_updater, 'update_editor_content'):
+                self.mw.editor_state_updater.update_editor_content() 
+            elif hasattr(self.ui_updater, 'update_text_views'): 
+                self.ui_updater.update_text_views() 
+        
+        if hasattr(self.mw, 'preview_updater') and hasattr(self.mw.preview_updater, 'update_preview_for_block'):
+            self.mw.preview_updater.update_preview_for_block(block_idx)
+        elif hasattr(self.ui_updater, 'populate_strings_for_block'): 
+            self.ui_updater.populate_strings_for_block(block_idx) 
+
+        if hasattr(self.mw, 'block_list_updater'):
+            self.mw.block_list_updater.update_block_item_text_with_problem_count(block_idx)
+        elif hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'): 
+            self.ui_updater.update_block_item_text_with_problem_count(block_idx) 
+        
         self.mw.is_programmatically_changing_text = False
+        
+        if active_editor_for_revert and self.mw.current_string_idx == line_index:
+            self._log_undo_state(active_editor_for_revert, f"revert_single_line S:{line_index} - After UI update")
+
 
         if hasattr(self.mw, 'statusBar'):
              self.mw.statusBar.showMessage(f"Data line {line_index + 1} reverted to original.", 2000)
@@ -289,7 +366,8 @@ class TextOperationHandler(BaseHandler):
                         qtextblock_number_in_editor=subline_idx, 
                         is_last_subline_in_data_string=(subline_idx == len(logical_sublines) - 1),
                         editor_font_map=self.mw.font_map,
-                        editor_line_width_threshold=warning_threshold
+                        editor_line_width_threshold=warning_threshold,
+                        full_data_string_text_for_logical_check=text_to_analyze 
                     )
                 
                 statuses = []
@@ -324,12 +402,13 @@ class TextOperationHandler(BaseHandler):
 
         block_idx = self.mw.current_block_idx
         active_string_idx = self.mw.current_string_idx
+        edited_text_edit = self.mw.edited_text_edit 
         
-        # Log current active string
         current_text_before_autofix, _ = self.data_processor.get_current_string_text(block_idx, active_string_idx)
         log_debug(f"ORANGE_BUG_DEBUG (auto_fix): ACTIVE string B:{block_idx}, S:{active_string_idx}. Text='{repr(current_text_before_autofix)}'")
+        if edited_text_edit: self._log_undo_state(edited_text_edit, f"auto_fix S:{active_string_idx} - Before plugin call")
 
-        # Log next string if it exists
+
         next_string_idx_for_debug = -1
         if active_string_idx + 1 < len(self.mw.data[block_idx]):
             next_string_idx_for_debug = active_string_idx + 1
@@ -348,7 +427,6 @@ class TextOperationHandler(BaseHandler):
         log_debug(f"ORANGE_BUG_DEBUG (auto_fix): Plugin autofix_data_string for ACTIVE S:{active_string_idx} returned: Changed={changed}. Text='{repr(final_text_to_apply)}'")
         
         if changed:
-            edited_text_edit = self.mw.edited_text_edit
             original_cursor_pos = 0
             current_v_scroll = 0
             current_h_scroll = 0
@@ -357,17 +435,21 @@ class TextOperationHandler(BaseHandler):
                 original_cursor_pos = edited_text_edit.textCursor().position()
                 current_v_scroll = edited_text_edit.verticalScrollBar().value()
                 current_h_scroll = edited_text_edit.horizontalScrollBar().value()
+                self._log_undo_state(edited_text_edit, f"auto_fix S:{active_string_idx} - Before programmatic change")
             
             self.mw.is_programmatically_changing_text = True 
 
             if self.data_processor.update_edited_data(block_idx, active_string_idx, final_text_to_apply):
-                 self.ui_updater.update_title()
+                if hasattr(self.mw, 'title_status_bar_updater'):
+                    self.mw.title_status_bar_updater.update_title()
+                elif hasattr(self.ui_updater, 'update_title'): 
+                    self.ui_updater.update_title()
             
             if edited_text_edit:
                 text_for_display = convert_spaces_to_dots_for_display(final_text_to_apply, self.mw.show_multiple_spaces_as_dots)
                 edited_text_edit.blockSignals(True)
                 cursor = edited_text_edit.textCursor()
-                cursor.beginEditBlock()
+                cursor.beginEditBlock() 
                 cursor.select(QTextCursor.Document)
                 cursor.insertText(text_for_display) 
                 cursor.endEditBlock()
@@ -381,11 +463,11 @@ class TextOperationHandler(BaseHandler):
                 
                 edited_text_edit.verticalScrollBar().setValue(current_v_scroll)
                 edited_text_edit.horizontalScrollBar().setValue(current_h_scroll)
+                self._log_undo_state(edited_text_edit, f"auto_fix S:{active_string_idx} - After programmatic change")
 
             self.mw.is_programmatically_changing_text = False 
 
-            if hasattr(self.mw.app_action_handler, '_perform_issues_scan_for_block'):
-                 self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False, target_string_idx_for_debug=next_string_idx_for_debug) 
+            self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False, target_string_idx_for_debug=next_string_idx_for_debug) 
             
             if next_string_idx_for_debug != -1:
                 problems_after_autofix_scan_for_next = set()
@@ -398,10 +480,27 @@ class TextOperationHandler(BaseHandler):
                             problems_after_autofix_scan_for_next.update(self.mw.problems_per_subline[problem_key])
                 log_debug(f"ORANGE_BUG_DEBUG (auto_fix): Problems AFTER rescan for NEXT string S:{next_string_idx_for_debug}: {problems_after_autofix_scan_for_next}")
 
-            self.ui_updater.populate_strings_for_block(block_idx) 
-            self.ui_updater.update_block_item_text_with_problem_count(block_idx) 
-            self.ui_updater.update_status_bar()
-            self.ui_updater.synchronize_original_cursor()
+            if hasattr(self.mw, 'preview_updater') and hasattr(self.mw.preview_updater, 'update_preview_for_block'):
+                self.mw.preview_updater.update_preview_for_block(block_idx)
+            elif hasattr(self.ui_updater, 'populate_strings_for_block'):
+                self.ui_updater.populate_strings_for_block(block_idx)
+
+            if hasattr(self.mw, 'editor_state_updater') and hasattr(self.mw.editor_state_updater, 'update_editor_content'):
+                self.mw.editor_state_updater.update_editor_content() 
+            elif hasattr(self.ui_updater, 'update_text_views'): 
+                self.ui_updater.update_text_views()
+
+            if hasattr(self.mw, 'block_list_updater'):
+                self.mw.block_list_updater.update_block_item_text_with_problem_count(block_idx)
+            elif hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
+                self.ui_updater.update_block_item_text_with_problem_count(block_idx)
+            
+            if hasattr(self.mw, 'editor_state_updater'):
+                self.mw.editor_state_updater.update_status_bar()
+                self.mw.editor_state_updater.synchronize_original_cursor()
+            elif hasattr(self.ui_updater, 'update_status_bar'):
+                self.ui_updater.update_status_bar()
+                self.ui_updater.synchronize_original_cursor()
             
             if hasattr(self.mw, 'preview_text_edit') and self.mw.preview_text_edit and hasattr(self.mw.preview_text_edit, 'lineNumberArea'):
                 self.mw.preview_text_edit.lineNumberArea.update()
@@ -409,10 +508,9 @@ class TextOperationHandler(BaseHandler):
                 edited_text_edit.lineNumberArea.update()
             if hasattr(self.mw, 'statusBar'):
                 self.mw.statusBar.showMessage("Auto-fix applied to current string.", 2000)
-        else:
+        else: 
             log_debug(f"ORANGE_BUG_DEBUG (auto_fix): Autofix plugin reported NO CHANGE for ACTIVE string S:{active_string_idx}. Text was '{repr(current_text_before_autofix)}'")
-            if hasattr(self.mw.app_action_handler, '_perform_issues_scan_for_block'): # Rescan even if no change, to check next line
-                self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False, target_string_idx_for_debug=next_string_idx_for_debug)
+            self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False, target_string_idx_for_debug=next_string_idx_for_debug)
             
             if next_string_idx_for_debug != -1:
                 problems_after_no_change_scan_for_next = set()
@@ -425,8 +523,16 @@ class TextOperationHandler(BaseHandler):
                             problems_after_no_change_scan_for_next.update(self.mw.problems_per_subline[problem_key])
                 log_debug(f"ORANGE_BUG_DEBUG (auto_fix): Problems AFTER rescan (NO CHANGE by autofix on ACTIVE) for NEXT string S:{next_string_idx_for_debug}: {problems_after_no_change_scan_for_next}")
             
-            self.ui_updater.populate_strings_for_block(block_idx) 
-            self.ui_updater.update_block_item_text_with_problem_count(block_idx) 
+            if hasattr(self.mw, 'preview_updater') and hasattr(self.mw.preview_updater, 'update_preview_for_block'):
+                self.mw.preview_updater.update_preview_for_block(block_idx)
+            elif hasattr(self.ui_updater, 'populate_strings_for_block'):
+                self.ui_updater.populate_strings_for_block(block_idx)
+            
+            if hasattr(self.mw, 'block_list_updater'):
+                 self.mw.block_list_updater.update_block_item_text_with_problem_count(block_idx)
+            elif hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'): 
+                 self.ui_updater.update_block_item_text_with_problem_count(block_idx)
 
             if hasattr(self.mw, 'statusBar'):
                 self.mw.statusBar.showMessage("Auto-fix: No changes made.", 2000)
+            if edited_text_edit: self._log_undo_state(edited_text_edit, f"auto_fix S:{active_string_idx} - No change by plugin, after rescan")

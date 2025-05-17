@@ -180,225 +180,212 @@
     "game_dialog_max_width_pixels": 208,
     "line_width_warning_threshold_pixels": 208,
     "search_history": [
-        "Але час на моєму",
-        "відвідати там своїх",
-        "ти розумієш мову",
-        "розуміти нас",
-        "велетень як ти",
-        "мудра порада",
-        "будівничий",
-        "і звільнити",
-        "Я не поспішаю",
-        "драгоцінної",
-        "дала тобі",
-        "подарувати тобі",
-        "Це найбільший",
-        "Мушель",
-        "Купиш",
-        "Купиш?",
-        "Навіть меньш",
-        "щоб наситити",
+        "Обири",
+        "безкоштовною торбою",
+        "свійш",
+        "зарпаз",
+        "ти хочеш піти",
         "- станеться",
-        "ти хочеш піти"
+        "щоб наситити",
+        "Навіть меньш",
+        "Купиш?",
+        "Купиш",
+        "Мушель",
+        "Це найбільший",
+        "подарувати тобі",
+        "дала тобі",
+        "драгоцінної",
+        "Я не поспішаю",
+        "і звільнити",
+        "будівничий",
+        "мудра порада",
+        "велетень як ти"
     ],
-    "last_selected_block_index": 6,
+    "last_selected_block_index": 14,
     "last_selected_string_index": -1,
     "last_cursor_position_in_edited": 0,
     "last_edited_text_edit_scroll_value_v": 0,
     "last_edited_text_edit_scroll_value_h": 0,
-    "last_preview_text_edit_scroll_value_v": 0,
+    "last_preview_text_edit_scroll_value_v": 5,
     "last_original_text_edit_scroll_value_v": 0,
     "last_original_text_edit_scroll_value_h": 0,
     "font_size": 11,
     "block_color_markers": {
         "0": [
-            "green",
-            "blue"
+            "green"
         ],
         "1": [
-            "green",
-            "blue"
+            "green"
         ],
         "2": [
             "green"
         ],
         "3": [
-            "green",
-            "blue"
+            "green"
         ],
         "5": [
-            "green",
-            "blue"
+            "green"
         ],
         "6": [
-            "green",
-            "blue"
+            "green"
         ],
         "7": [
-            "green",
-            "blue"
+            "green"
         ],
         "8": [
-            "green",
-            "blue"
+            "green"
         ],
         "9": [
-            "green",
-            "blue"
+            "green"
         ],
         "11": [
-            "green",
-            "blue"
+            "green"
         ],
         "12": [
-            "green",
-            "blue"
+            "green"
         ],
         "13": [
-            "green",
-            "blue"
+            "green"
         ],
         "14": [
-            "green",
-            "blue"
+            "green"
         ],
         "15": [
             "green"
         ],
         "16": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "17": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "18": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "19": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "20": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "21": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "22": [
             "green"
         ],
         "23": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "26": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "27": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "28": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "29": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "31": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "32": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "33": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "34": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "35": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "36": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "37": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "39": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "40": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "41": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "43": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "44": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "45": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "47": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "48": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "49": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "50": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "51": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "52": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "53": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "54": [
-            "green",
-            "blue"
+            "blue",
+            "green"
         ],
         "4": [
-            "green",
-            "blue"
+            "green"
         ],
         "46": [
             "blue"
