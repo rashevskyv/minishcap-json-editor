@@ -7,6 +7,7 @@ from utils.utils import log_debug, convert_dots_to_spaces_from_editor, calculate
 from core.tag_utils import apply_default_mappings_only
 from core.data_manager import load_json_file
 from plugins.base_game_rules import BaseGameRules
+from plugins.zelda_mc.config import PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY, PROBLEM_EMPTY_ODD_SUBLINE_LOGICAL
 
 
 class AppActionHandler(BaseHandler):
@@ -24,15 +25,11 @@ class AppActionHandler(BaseHandler):
         first_word = stripped_text.split(maxsplit=1)[0] if stripped_text else ""
         return calculate_string_width(first_word, self.mw.font_map)
 
-    def _perform_issues_scan_for_block(self, block_idx: int, is_single_block_scan: bool = False, use_default_mappings_in_scan: bool = False):
+    def _perform_issues_scan_for_block(self, block_idx: int, is_single_block_scan: bool = False, use_default_mappings_in_scan: bool = False, target_string_idx_for_debug: int = -1):
         if not self.game_rules_plugin:
-            log_debug(f"AppActionHandler._perform_issues_scan_for_block: No game_rules_plugin loaded for block {block_idx}. Skipping scan.")
             return
         
-        log_debug(f"--- AppActionHandler: SCANNING BLOCK {block_idx} using plugin '{self.game_rules_plugin.__class__.__module__}' ---")
-
         if not (0 <= block_idx < len(self.mw.data)):
-            log_debug(f"  Block {block_idx} out of bounds.")
             return
 
         changes_made_to_edited_data_in_this_block = False
@@ -47,12 +44,21 @@ class AppActionHandler(BaseHandler):
 
         num_strings_in_block = len(self.mw.data[block_idx])
         if not isinstance(self.mw.data[block_idx], list):
-            log_debug(f"  Block {block_idx} data is not a list. Skipping.")
             return
 
         for data_string_idx in range(num_strings_in_block):
             current_data_string_text, source = self.data_processor.get_current_string_text(block_idx, data_string_idx)
             current_data_string_text_with_spaces = convert_dots_to_spaces_from_editor(str(current_data_string_text))
+            
+            # Determine if THIS data_string_idx is the one we are targeting for debug logging (the "next" string)
+            # AND if its current text is empty
+            is_current_ds_target_for_debug = (target_string_idx_for_debug != -1 and 
+                                              data_string_idx == target_string_idx_for_debug and 
+                                              current_data_string_text_with_spaces == "")
+            
+            if is_current_ds_target_for_debug:
+                 log_debug(f"  ORANGE_BUG_DEBUG (Scan BEGIN): B:{block_idx}, S:{data_string_idx} (TARGET & EMPTY). Text for scan='{repr(current_data_string_text_with_spaces)}'")
+
 
             if use_default_mappings_in_scan:
                 normalized_text, was_normalized = apply_default_mappings_only(
@@ -60,7 +66,6 @@ class AppActionHandler(BaseHandler):
                     self.mw.default_tag_mappings 
                 )
                 if was_normalized:
-                    log_debug(f"    Block {block_idx}, DataString {data_string_idx}: Text normalized by default mappings.")
                     if self.data_processor.update_edited_data(block_idx, data_string_idx, normalized_text):
                         self.ui_updater.update_title()
                     changes_made_to_edited_data_in_this_block = True
@@ -78,7 +83,9 @@ class AppActionHandler(BaseHandler):
                     qtextblock_number_in_editor=subline_local_idx, 
                     is_last_subline_in_data_string=(subline_local_idx == len(logical_sublines) - 1),
                     editor_font_map=self.mw.font_map,
-                    editor_line_width_threshold=self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
+                    editor_line_width_threshold=self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS,
+                    full_data_string_text_for_logical_check=current_data_string_text_with_spaces, # Pass full DS text
+                    is_target_for_debug=is_current_ds_target_for_debug 
                 )
                 
                 problem_key = (block_idx, data_string_idx, subline_local_idx)
@@ -86,7 +93,13 @@ class AppActionHandler(BaseHandler):
                     self.mw.problems_per_subline[problem_key] = subline_problems
                 elif problem_key in self.mw.problems_per_subline:
                     del self.mw.problems_per_subline[problem_key]
-        
+                
+                if is_current_ds_target_for_debug:
+                    log_debug(f"    ORANGE_BUG_DEBUG (Scan Subline): B:{block_idx}, S:{data_string_idx}, SubL:{subline_local_idx}. Problems: {subline_problems}. Text='{repr(logical_subline_text)}'")
+            
+            if is_current_ds_target_for_debug:
+                log_debug(f"  ORANGE_BUG_DEBUG (Scan END): B:{block_idx}, S:{data_string_idx} (TARGET & EMPTY). Finished processing sublines.")
+
         if is_single_block_scan and hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
             self.ui_updater.update_block_item_text_with_problem_count(block_idx)
         
@@ -96,16 +109,13 @@ class AppActionHandler(BaseHandler):
                 self.ui_updater.populate_strings_for_block(block_idx) 
                 preview_edit.lineNumberArea.update()
         
-        log_debug(f"--- AppActionHandler: FINISHED SCANNING BLOCK {block_idx} --- Problem count for sublines: {len([k for k in self.mw.problems_per_subline if k[0] == block_idx])}")
         return changes_made_to_edited_data_in_this_block
 
 
     def _perform_initial_silent_scan_all_issues(self):
         if not self.mw.data:
-            log_debug("AppActionHandler._perform_initial_silent_scan_all_issues: No data to scan.")
             return
         
-        log_debug("AppActionHandler: Performing initial silent scan for ALL issues using plugin...")
         self.mw.is_programmatically_changing_text = True
         
         self.mw.problems_per_subline.clear() 
@@ -131,7 +141,6 @@ class AppActionHandler(BaseHandler):
             log_debug("AppActionHandler: Data was modified during initial silent scan. This is unexpected if use_default_mappings_in_scan=False.")
             
         self.mw.is_programmatically_changing_text = False
-        log_debug("AppActionHandler: Initial silent scan for ALL issues complete.")
 
 
     def save_data_action(self, ask_confirmation=True):
@@ -369,7 +378,6 @@ class AppActionHandler(BaseHandler):
         if hasattr(self.mw, 'original_text_edit'): self.mw.original_text_edit.clear()
         if hasattr(self.mw, 'edited_text_edit'): self.mw.edited_text_edit.clear()
         
-        log_debug("Performing full scan for all issues after loading data (load_all_data_for_path).")
         self._perform_initial_silent_scan_all_issues()
         
         self.ui_updater.update_title(); self.ui_updater.update_statusbar_paths()
@@ -456,7 +464,7 @@ class AppActionHandler(BaseHandler):
                     current_subline_problems = set()
                     if title_prefix == "Current":
                         current_subline_problems = self.mw.problems_per_subline.get((block_idx, data_str_idx, subline_idx), set())
-                    else: # For "Original", we need to analyze it on the fly
+                    else: 
                         next_original_subline = logical_sublines[subline_idx + 1] if subline_idx + 1 < len(logical_sublines) else None
                         current_subline_problems = self.game_rules_plugin.analyze_subline(
                             text=sub_line_text,
@@ -465,7 +473,8 @@ class AppActionHandler(BaseHandler):
                             qtextblock_number_in_editor=subline_idx, 
                             is_last_subline_in_data_string=(subline_idx == len(logical_sublines) - 1),
                             editor_font_map=self.mw.font_map,
-                            editor_line_width_threshold=editor_warning_threshold
+                            editor_line_width_threshold=editor_warning_threshold,
+                            full_data_string_text_for_logical_check=text_to_analyze # Pass the full text of current source
                         )
                     
                     statuses = []

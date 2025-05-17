@@ -5,6 +5,8 @@ from PyQt5.QtCore import QTimer
 from .base_handler import BaseHandler
 from utils.utils import log_debug, convert_dots_to_spaces_from_editor, convert_spaces_to_dots_for_display, calculate_string_width, remove_all_tags, SPACE_DOT_SYMBOL, ALL_TAGS_PATTERN
 from core.tag_utils import process_segment_tags_aggressively
+from plugins.zelda_mc.config import PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY, PROBLEM_EMPTY_ODD_SUBLINE_LOGICAL
+
 
 PREVIEW_UPDATE_DELAY = 250
 
@@ -16,7 +18,6 @@ class TextOperationHandler(BaseHandler):
         self.preview_update_timer.timeout.connect(self._update_preview_content)
 
     def _update_preview_content(self):
-        log_debug("Timer timeout: Updating preview content.")
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         original_edit = getattr(self.mw, 'original_text_edit', None)
         edited_edit = getattr(self.mw, 'edited_text_edit', None)
@@ -34,10 +35,8 @@ class TextOperationHandler(BaseHandler):
         if edited_edit and hasattr(edited_edit, 'lineNumberArea'): edited_edit.lineNumberArea.update()
 
         main_window_ref.is_programmatically_changing_text = was_programmatically_changing
-        log_debug("Preview content update finished.")
 
     def text_edited(self):
-        log_debug(f"TextOperationHandler.text_edited: Start. Programmatic change? {self.mw.is_programmatically_changing_text}")
         if self.mw.is_programmatically_changing_text:
             return
         
@@ -55,7 +54,6 @@ class TextOperationHandler(BaseHandler):
             self.ui_updater.update_title()
             
         if hasattr(self.mw.app_action_handler, '_perform_issues_scan_for_block'):
-            log_debug(f"TextOperationHandler.text_edited: Calling _perform_issues_scan_for_block for block {block_idx}")
             self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False)
             if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
                  self.ui_updater.update_block_item_text_with_problem_count(block_idx)
@@ -317,7 +315,6 @@ class TextOperationHandler(BaseHandler):
         log_debug(f"<-- TextOperationHandler: calculate_width_for_data_line_action finished.")
         
     def auto_fix_current_string(self):
-        log_debug(f"TextOperationHandler.auto_fix_current_string: Called.")
         if self.mw.current_block_idx == -1 or self.mw.current_string_idx == -1:
             QMessageBox.information(self.mw, "Auto-fix", "No string selected to fix.")
             return
@@ -326,19 +323,31 @@ class TextOperationHandler(BaseHandler):
             return
 
         block_idx = self.mw.current_block_idx
-        string_idx = self.mw.current_string_idx
+        active_string_idx = self.mw.current_string_idx
         
-        current_text, _ = self.data_processor.get_current_string_text(block_idx, string_idx)
-        
+        # Log current active string
+        current_text_before_autofix, _ = self.data_processor.get_current_string_text(block_idx, active_string_idx)
+        log_debug(f"ORANGE_BUG_DEBUG (auto_fix): ACTIVE string B:{block_idx}, S:{active_string_idx}. Text='{repr(current_text_before_autofix)}'")
+
+        # Log next string if it exists
+        next_string_idx_for_debug = -1
+        if active_string_idx + 1 < len(self.mw.data[block_idx]):
+            next_string_idx_for_debug = active_string_idx + 1
+            next_text_before_autofix, _ = self.data_processor.get_current_string_text(block_idx, next_string_idx_for_debug)
+            log_debug(f"ORANGE_BUG_DEBUG (auto_fix): NEXT string B:{block_idx}, S:{next_string_idx_for_debug} (TARGET FOR SCAN). Text='{repr(next_text_before_autofix)}'")
+        else:
+            log_debug(f"ORANGE_BUG_DEBUG (auto_fix): No NEXT string after S:{active_string_idx} in block B:{block_idx}.")
+
+
         final_text_to_apply, changed = self.mw.current_game_rules.autofix_data_string(
-            str(current_text), 
+            str(current_text_before_autofix), 
             self.mw.font_map, 
             self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
         )
         
+        log_debug(f"ORANGE_BUG_DEBUG (auto_fix): Plugin autofix_data_string for ACTIVE S:{active_string_idx} returned: Changed={changed}. Text='{repr(final_text_to_apply)}'")
+        
         if changed:
-            log_debug(f"Auto-fix: Applying changes. Original: '{str(current_text)[:100]}...', Final: '{final_text_to_apply[:100]}...'")
-            
             edited_text_edit = self.mw.edited_text_edit
             original_cursor_pos = 0
             current_v_scroll = 0
@@ -351,7 +360,7 @@ class TextOperationHandler(BaseHandler):
             
             self.mw.is_programmatically_changing_text = True 
 
-            if self.data_processor.update_edited_data(block_idx, string_idx, final_text_to_apply):
+            if self.data_processor.update_edited_data(block_idx, active_string_idx, final_text_to_apply):
                  self.ui_updater.update_title()
             
             if edited_text_edit:
@@ -376,11 +385,21 @@ class TextOperationHandler(BaseHandler):
             self.mw.is_programmatically_changing_text = False 
 
             if hasattr(self.mw.app_action_handler, '_perform_issues_scan_for_block'):
-                 self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False) 
+                 self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False, target_string_idx_for_debug=next_string_idx_for_debug) 
             
+            if next_string_idx_for_debug != -1:
+                problems_after_autofix_scan_for_next = set()
+                next_text_after_scan, _ = self.data_processor.get_current_string_text(block_idx, next_string_idx_for_debug)
+                if isinstance(next_text_after_scan, str): 
+                    sublines_after = next_text_after_scan.split('\n')
+                    for i in range(len(sublines_after)):
+                        problem_key = (block_idx, next_string_idx_for_debug, i)
+                        if problem_key in self.mw.problems_per_subline:
+                            problems_after_autofix_scan_for_next.update(self.mw.problems_per_subline[problem_key])
+                log_debug(f"ORANGE_BUG_DEBUG (auto_fix): Problems AFTER rescan for NEXT string S:{next_string_idx_for_debug}: {problems_after_autofix_scan_for_next}")
+
             self.ui_updater.populate_strings_for_block(block_idx) 
             self.ui_updater.update_block_item_text_with_problem_count(block_idx) 
-            
             self.ui_updater.update_status_bar()
             self.ui_updater.synchronize_original_cursor()
             
@@ -388,10 +407,26 @@ class TextOperationHandler(BaseHandler):
                 self.mw.preview_text_edit.lineNumberArea.update()
             if edited_text_edit and hasattr(edited_text_edit, 'lineNumberArea'):
                 edited_text_edit.lineNumberArea.update()
-            
             if hasattr(self.mw, 'statusBar'):
                 self.mw.statusBar.showMessage("Auto-fix applied to current string.", 2000)
         else:
-            log_debug("Auto-fix: No changes made to the text by plugin.")
+            log_debug(f"ORANGE_BUG_DEBUG (auto_fix): Autofix plugin reported NO CHANGE for ACTIVE string S:{active_string_idx}. Text was '{repr(current_text_before_autofix)}'")
+            if hasattr(self.mw.app_action_handler, '_perform_issues_scan_for_block'): # Rescan even if no change, to check next line
+                self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False, target_string_idx_for_debug=next_string_idx_for_debug)
+            
+            if next_string_idx_for_debug != -1:
+                problems_after_no_change_scan_for_next = set()
+                next_text_after_no_change_scan, _ = self.data_processor.get_current_string_text(block_idx, next_string_idx_for_debug)
+                if isinstance(next_text_after_no_change_scan, str): 
+                    sublines_after = next_text_after_no_change_scan.split('\n')
+                    for i in range(len(sublines_after)):
+                        problem_key = (block_idx, next_string_idx_for_debug, i)
+                        if problem_key in self.mw.problems_per_subline:
+                            problems_after_no_change_scan_for_next.update(self.mw.problems_per_subline[problem_key])
+                log_debug(f"ORANGE_BUG_DEBUG (auto_fix): Problems AFTER rescan (NO CHANGE by autofix on ACTIVE) for NEXT string S:{next_string_idx_for_debug}: {problems_after_no_change_scan_for_next}")
+            
+            self.ui_updater.populate_strings_for_block(block_idx) 
+            self.ui_updater.update_block_item_text_with_problem_count(block_idx) 
+
             if hasattr(self.mw, 'statusBar'):
                 self.mw.statusBar.showMessage("Auto-fix: No changes made.", 2000)

@@ -1,532 +1,558 @@
-Log started at 2025-05-17 16:36:54.928
+Log started at 2025-05-17 18:35:06.299
 ==================================================
-[2025-05-17 16:36:54.950] DEBUG: ================= Application Start =================
-[2025-05-17 16:36:54.963] DEBUG: ++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++
-[2025-05-17 16:36:54.964] DEBUG: MainWindow: Initializing Core Components...
-[2025-05-17 16:36:54.964] DEBUG: MainWindow: Loading game plugin...
-[2025-05-17 16:36:54.964] DEBUG: --> MainWindow: load_game_plugin called.
-[2025-05-17 16:36:54.964] DEBUG:     Using hardcoded plugin to load: 'zelda_mc' (settings not fully ready or 'active_game_plugin' not found)
-[2025-05-17 16:36:54.964] DEBUG:     Importing module: plugins.zelda_mc.rules
-[2025-05-17 16:36:54.966] DEBUG:     Successfully loaded and instantiated game rules: GameRules from plugins.zelda_mc.rules
-[2025-05-17 16:36:54.966] DEBUG: <-- MainWindow: load_game_plugin finished.
-[2025-05-17 16:36:54.966] DEBUG: MainWindow: Initializing Handlers (Pre-UI setup)...
-2025-05-17 16:36:54,966 - DEBUG - logging_utils - log_debug - Handler 'ListSelectionHandler' initialized.
-2025-05-17 16:36:54,967 - DEBUG - logging_utils - log_debug - Handler 'TextOperationHandler' initialized.
-2025-05-17 16:36:54,967 - DEBUG - logging_utils - log_debug - Handler 'AppActionHandler' initialized.
-2025-05-17 16:36:54,968 - DEBUG - logging_utils - log_debug - Handler 'SearchHandler' initialized.
-[2025-05-17 16:36:54.968] DEBUG: MainWindow: Setting up UI...
-[2025-05-17 16:36:54.968] DEBUG: setup_main_window_ui: Starting UI setup.
-[2025-05-17 16:36:54.969] DEBUG: CustomListWidget INITIALIZED, parent: <__main__.MainWindow object at 0x00000235CFBB3CA0>
-[2025-05-17 16:36:54.969] DEBUG: CustomListWidget: Item delegate set to <components.CustomListItemDelegate.CustomListItemDelegate object at 0x00000235CFBBCD30>
-[2025-05-17 16:36:54.977] DEBUG: JsonTagHighlighter initialized.
-[2025-05-17 16:36:54.977] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-[2025-05-17 16:36:54.978] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
-[2025-05-17 16:36:54.978] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-17 16:36:55.150] DEBUG: JsonTagHighlighter initialized.
-[2025-05-17 16:36:55.150] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-[2025-05-17 16:36:55.151] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
-[2025-05-17 16:36:55.151] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-17 16:36:55.153] DEBUG: JsonTagHighlighter initialized.
-[2025-05-17 16:36:55.154] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-[2025-05-17 16:36:55.154] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
-[2025-05-17 16:36:55.154] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-17 16:36:55.178] DEBUG: setup_main_window_ui: UI setup complete.
-[2025-05-17 16:36:55.178] DEBUG: MainWindow: Initializing Handlers (Post-UI setup)...
-[2025-05-17 16:36:55.180] DEBUG: MainWindow: Connecting Signals...
-[2025-05-17 16:36:55.180] DEBUG: --> MainWindow: connect_signals() started
-[2025-05-17 16:36:55.180] DEBUG: --> MainWindow: connect_signals() finished
-[2025-05-17 16:36:55.180] DEBUG: MainWindow: Loading Editor Settings via SettingsManager...
-[2025-05-17 16:36:55.181] DEBUG: --> SettingsManager: load_settings from settings.json
-[2025-05-17 16:36:55.181] DEBUG: --> SettingsManager: load_font_map from font_map.json
-[2025-05-17 16:36:55.182] DEBUG: Successfully loaded font_map. Count: 117
-[2025-05-17 16:36:55.182] DEBUG: SettingsManager: Initial default_font_size (from QFont or 10): 8
-[2025-05-17 16:36:55.182] DEBUG: SettingsManager: Applied all default values. self.mw.current_font_size is now 10 (from defaults)
-[2025-05-17 16:36:55.182] DEBUG: SettingsManager: Successfully parsed settings.json. Content keys: ['default_tag_mappings', 'block_names', 'newline_display_symbol', 'newline_css', 'tag_css', 'show_multiple_spaces_as_dots', 'space_dot_color_hex', 'preview_wrap_lines', 'editors_wrap_lines', 'bracket_tag_color_hex', 'game_dialog_max_width_pixels', 'line_width_warning_threshold_pixels', 'search_history', 'last_selected_block_index', 'last_selected_string_index', 'last_cursor_position_in_edited', 'last_edited_text_edit_scroll_value_v', 'last_edited_text_edit_scroll_value_h', 'last_preview_text_edit_scroll_value_v', 'last_original_text_edit_scroll_value_v', 'last_original_text_edit_scroll_value_h', 'font_size', 'block_color_markers', 'original_file_path', 'edited_file_path', 'window_was_maximized', 'window_normal_geometry', 'main_splitter_state', 'right_splitter_state', 'bottom_right_splitter_state']
-[2025-05-17 16:36:55.183] DEBUG: SettingsManager: Found 'font_size' in settings file: 11. Current self.mw.current_font_size: 10
-[2025-05-17 16:36:55.183] DEBUG: SettingsManager: Set self.mw.current_font_size to 11 from file.
-[2025-05-17 16:36:55.183] DEBUG: SettingsManager: Final MainWindow.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 208
-[2025-05-17 16:36:55.184] DEBUG: SettingsManager: After potential load from file, self.mw.current_font_size is 11
-[2025-05-17 16:36:55.184] DEBUG: MainWindow: Applying font. General: Family='Segoe UI', Editor: Family='Courier New', Size=11
-[2025-05-17 16:36:55.192] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-17 16:36:55.214] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: -1, string: -1
-[2025-05-17 16:36:55.214] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-17 16:36:55.215] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 16:36:55.215] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 16:36:55.215] DEBUG: [UIUpdater] populate_blocks called.
-[2025-05-17 16:36:55.215] DEBUG: [UIUpdater] populate_blocks: No original data.
-[2025-05-17 16:36:55.216] DEBUG: UIUpdater: populate_strings_for_block for block_idx: -1. Current string_idx: -1
-[2025-05-17 16:36:55.216] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-17 16:36:55.217] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: -1, string: -1
-[2025-05-17 16:36:55.217] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-17 16:36:55.217] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 16:36:55.217] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 16:36:55.217] DEBUG: Settings loaded. Last block: 5, string: 8
-[2025-05-17 16:36:55.217] DEBUG: Settings loaded. Original path from mw: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Edited path from mw: '//192.168.50.168/tloz_tmc_ua/UKR.json'
-2025-05-17 16:36:55,218 - DEBUG - logging_utils - log_debug - Applying text wrap settings: Preview wrap: False, Editors wrap: False
-2025-05-17 16:36:55,218 - DEBUG - logging_utils - log_debug - MainWindowHelper: Reconfiguring all highlighters...
-[2025-05-17 16:36:55.219] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
-[2025-05-17 16:36:55.219] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-17 16:36:55.219] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
-[2025-05-17 16:36:55.219] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-17 16:36:55.219] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
-[2025-05-17 16:36:55.220] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
-[2025-05-17 16:36:55.220] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-[2025-05-17 16:36:55.220] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? False
-2025-05-17 16:36:55,220 - DEBUG - logging_utils - log_debug - MainWindowHelper: Highlighter reconfiguration attempt complete.
-[2025-05-17 16:36:55.221] DEBUG: <-- SettingsManager: load_settings finished
-[2025-05-17 16:36:55.221] DEBUG: MainWindow: After SettingsManager.load_settings(), self.mw.current_font_size = 11, general_family = Segoe UI, editor_family = Courier New
-[2025-05-17 16:36:55.221] DEBUG: MainWindow: change_font_size_action called with size 11
-[2025-05-17 16:36:55.222] DEBUG: MainWindow: After load_settings, self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 208
-[2025-05-17 16:36:55.222] DEBUG: MainWindow: After load_settings, self.initial_load_path = //192.168.50.168/tloz_tmc_ua/UKR_orig.json
-[2025-05-17 16:36:55.222] DEBUG: MainWindow: After load_settings, self.initial_edited_load_path = //192.168.50.168/tloz_tmc_ua/UKR.json
-[2025-05-17 16:36:55.222] DEBUG: MainWindow: Set preview_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 208
-[2025-05-17 16:36:55.222] DEBUG: MainWindow: Set original_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 208
-[2025-05-17 16:36:55.223] DEBUG: MainWindow: Set edited_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 208
-2025-05-17 16:36:55,224 - DEBUG - logging_utils - log_debug - MainWindowHelper: restore_state_after_settings_load called.
-2025-05-17 16:36:55,224 - DEBUG - logging_utils - log_debug - Restored window geometry from settings: {'x': 157, 'y': 298, 'width': 2236, 'height': 943}
-2025-05-17 16:36:55,254 - DEBUG - logging_utils - log_debug - MainWindowHelper: Attempting to load initial file from settings: //192.168.50.168/tloz_tmc_ua/UKR_orig.json
-[2025-05-17 16:36:55.254] DEBUG: --> AppActionHandler: load_all_data_for_path START. Original: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Manual Edit Path: '//192.168.50.168/tloz_tmc_ua/UKR.json', InitialLoad: True
-[2025-05-17 16:36:55.255] DEBUG: load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', expected_type: list
-[2025-05-17 16:36:55.341] DEBUG: load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR_orig.json'.
-[2025-05-17 16:36:55.355] DEBUG: load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR.json', expected_type: list
-[2025-05-17 16:36:55.417] DEBUG: load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR.json'.
-[2025-05-17 16:36:55.418] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-17 16:36:55.418] DEBUG: Performing full scan for all issues after loading data (load_all_data_for_path).
-[2025-05-17 16:36:55.419] DEBUG: AppActionHandler: Performing initial silent scan for ALL issues using plugin...
-[2025-05-17 16:36:55.419] DEBUG: UIUpdater: Cleared all problem/warning/width/short block highlights and count texts.
-[2025-05-17 16:36:55.419] DEBUG: --- AppActionHandler: SCANNING BLOCK 0 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.421] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 0 --- Problem count for sublines: 17
-[2025-05-17 16:36:55.421] DEBUG: --- AppActionHandler: SCANNING BLOCK 1 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.426] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 1 --- Problem count for sublines: 81
-[2025-05-17 16:36:55.426] DEBUG: --- AppActionHandler: SCANNING BLOCK 2 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.430] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 2 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.430] DEBUG: --- AppActionHandler: SCANNING BLOCK 3 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.443] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 3 --- Problem count for sublines: 18
-[2025-05-17 16:36:55.444] DEBUG: --- AppActionHandler: SCANNING BLOCK 4 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.447] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 4 --- Problem count for sublines: 9
-[2025-05-17 16:36:55.448] DEBUG: --- AppActionHandler: SCANNING BLOCK 5 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.464] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 5 --- Problem count for sublines: 12
-[2025-05-17 16:36:55.464] DEBUG: --- AppActionHandler: SCANNING BLOCK 6 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.467] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 6 --- Problem count for sublines: 14
-[2025-05-17 16:36:55.467] DEBUG: --- AppActionHandler: SCANNING BLOCK 7 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.469] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 7 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.469] DEBUG: --- AppActionHandler: SCANNING BLOCK 8 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.472] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 8 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.472] DEBUG: --- AppActionHandler: SCANNING BLOCK 9 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.496] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 9 --- Problem count for sublines: 11
-[2025-05-17 16:36:55.496] DEBUG: --- AppActionHandler: SCANNING BLOCK 10 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.497] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 10 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.497] DEBUG: --- AppActionHandler: SCANNING BLOCK 11 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.516] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 11 --- Problem count for sublines: 10
-[2025-05-17 16:36:55.517] DEBUG: --- AppActionHandler: SCANNING BLOCK 12 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.552] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 12 --- Problem count for sublines: 15
-[2025-05-17 16:36:55.552] DEBUG: --- AppActionHandler: SCANNING BLOCK 13 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.569] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 13 --- Problem count for sublines: 4
-[2025-05-17 16:36:55.569] DEBUG: --- AppActionHandler: SCANNING BLOCK 14 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.573] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 14 --- Problem count for sublines: 4
-[2025-05-17 16:36:55.573] DEBUG: --- AppActionHandler: SCANNING BLOCK 15 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.574] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 15 --- Problem count for sublines: 9
-[2025-05-17 16:36:55.574] DEBUG: --- AppActionHandler: SCANNING BLOCK 16 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.587] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 16 --- Problem count for sublines: 4
-[2025-05-17 16:36:55.587] DEBUG: --- AppActionHandler: SCANNING BLOCK 17 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.595] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 17 --- Problem count for sublines: 4
-[2025-05-17 16:36:55.595] DEBUG: --- AppActionHandler: SCANNING BLOCK 18 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.604] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 18 --- Problem count for sublines: 4
-[2025-05-17 16:36:55.605] DEBUG: --- AppActionHandler: SCANNING BLOCK 19 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.616] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 19 --- Problem count for sublines: 8
-[2025-05-17 16:36:55.617] DEBUG: --- AppActionHandler: SCANNING BLOCK 20 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.618] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 20 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.618] DEBUG: --- AppActionHandler: SCANNING BLOCK 21 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.620] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 21 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.621] DEBUG: --- AppActionHandler: SCANNING BLOCK 22 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.631] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 22 --- Problem count for sublines: 2
-[2025-05-17 16:36:55.631] DEBUG: --- AppActionHandler: SCANNING BLOCK 23 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.632] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 23 --- Problem count for sublines: 1
-[2025-05-17 16:36:55.632] DEBUG: --- AppActionHandler: SCANNING BLOCK 24 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.633] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 24 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.633] DEBUG: --- AppActionHandler: SCANNING BLOCK 25 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.633] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 25 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.633] DEBUG: --- AppActionHandler: SCANNING BLOCK 26 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.635] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 26 --- Problem count for sublines: 1
-[2025-05-17 16:36:55.635] DEBUG: --- AppActionHandler: SCANNING BLOCK 27 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.638] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 27 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.639] DEBUG: --- AppActionHandler: SCANNING BLOCK 28 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.640] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 28 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.640] DEBUG: --- AppActionHandler: SCANNING BLOCK 29 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.645] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 29 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.645] DEBUG: --- AppActionHandler: SCANNING BLOCK 30 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.645] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 30 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.646] DEBUG: --- AppActionHandler: SCANNING BLOCK 31 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.652] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 31 --- Problem count for sublines: 2
-[2025-05-17 16:36:55.652] DEBUG: --- AppActionHandler: SCANNING BLOCK 32 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.655] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 32 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.655] DEBUG: --- AppActionHandler: SCANNING BLOCK 33 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.664] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 33 --- Problem count for sublines: 3
-[2025-05-17 16:36:55.664] DEBUG: --- AppActionHandler: SCANNING BLOCK 34 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.668] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 34 --- Problem count for sublines: 4
-[2025-05-17 16:36:55.668] DEBUG: --- AppActionHandler: SCANNING BLOCK 35 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.671] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 35 --- Problem count for sublines: 15
-[2025-05-17 16:36:55.672] DEBUG: --- AppActionHandler: SCANNING BLOCK 36 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.674] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 36 --- Problem count for sublines: 1
-[2025-05-17 16:36:55.674] DEBUG: --- AppActionHandler: SCANNING BLOCK 37 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.680] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 37 --- Problem count for sublines: 2
-[2025-05-17 16:36:55.681] DEBUG: --- AppActionHandler: SCANNING BLOCK 38 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.681] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 38 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.681] DEBUG: --- AppActionHandler: SCANNING BLOCK 39 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.682] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 39 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.682] DEBUG: --- AppActionHandler: SCANNING BLOCK 40 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.684] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 40 --- Problem count for sublines: 3
-[2025-05-17 16:36:55.684] DEBUG: --- AppActionHandler: SCANNING BLOCK 41 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.686] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 41 --- Problem count for sublines: 1
-[2025-05-17 16:36:55.687] DEBUG: --- AppActionHandler: SCANNING BLOCK 42 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.687] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 42 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.687] DEBUG: --- AppActionHandler: SCANNING BLOCK 43 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.689] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 43 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.689] DEBUG: --- AppActionHandler: SCANNING BLOCK 44 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.693] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 44 --- Problem count for sublines: 1
-[2025-05-17 16:36:55.693] DEBUG: --- AppActionHandler: SCANNING BLOCK 45 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.696] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 45 --- Problem count for sublines: 2
-[2025-05-17 16:36:55.696] DEBUG: --- AppActionHandler: SCANNING BLOCK 46 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.697] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 46 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.697] DEBUG: --- AppActionHandler: SCANNING BLOCK 47 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.703] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 47 --- Problem count for sublines: 3
-[2025-05-17 16:36:55.704] DEBUG: --- AppActionHandler: SCANNING BLOCK 48 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.706] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 48 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.706] DEBUG: --- AppActionHandler: SCANNING BLOCK 49 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.711] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 49 --- Problem count for sublines: 2
-[2025-05-17 16:36:55.711] DEBUG: --- AppActionHandler: SCANNING BLOCK 50 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.714] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 50 --- Problem count for sublines: 4
-[2025-05-17 16:36:55.715] DEBUG: --- AppActionHandler: SCANNING BLOCK 51 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.715] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 51 --- Problem count for sublines: 1
-[2025-05-17 16:36:55.715] DEBUG: --- AppActionHandler: SCANNING BLOCK 52 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.720] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 52 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.720] DEBUG: --- AppActionHandler: SCANNING BLOCK 53 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.725] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 53 --- Problem count for sublines: 3
-[2025-05-17 16:36:55.725] DEBUG: --- AppActionHandler: SCANNING BLOCK 54 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.731] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 54 --- Problem count for sublines: 3
-[2025-05-17 16:36:55.731] DEBUG: --- AppActionHandler: SCANNING BLOCK 55 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.736] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 55 --- Problem count for sublines: 3
-[2025-05-17 16:36:55.737] DEBUG: --- AppActionHandler: SCANNING BLOCK 56 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.741] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 56 --- Problem count for sublines: 4
-[2025-05-17 16:36:55.742] DEBUG: --- AppActionHandler: SCANNING BLOCK 57 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.746] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 57 --- Problem count for sublines: 2
-[2025-05-17 16:36:55.747] DEBUG: --- AppActionHandler: SCANNING BLOCK 58 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.749] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 58 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.749] DEBUG: --- AppActionHandler: SCANNING BLOCK 59 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.750] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 59 --- Problem count for sublines: 1
-[2025-05-17 16:36:55.750] DEBUG: --- AppActionHandler: SCANNING BLOCK 60 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.752] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 60 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.752] DEBUG: --- AppActionHandler: SCANNING BLOCK 61 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.754] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 61 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.755] DEBUG: --- AppActionHandler: SCANNING BLOCK 62 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.756] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 62 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.756] DEBUG: --- AppActionHandler: SCANNING BLOCK 63 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.764] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 63 --- Problem count for sublines: 3
-[2025-05-17 16:36:55.764] DEBUG: --- AppActionHandler: SCANNING BLOCK 64 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.765] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 64 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.766] DEBUG: --- AppActionHandler: SCANNING BLOCK 65 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.767] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 65 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.767] DEBUG: --- AppActionHandler: SCANNING BLOCK 66 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.770] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 66 --- Problem count for sublines: 5
-[2025-05-17 16:36:55.770] DEBUG: --- AppActionHandler: SCANNING BLOCK 67 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.773] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 67 --- Problem count for sublines: 2
-[2025-05-17 16:36:55.774] DEBUG: --- AppActionHandler: SCANNING BLOCK 68 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.778] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 68 --- Problem count for sublines: 1
-[2025-05-17 16:36:55.779] DEBUG: --- AppActionHandler: SCANNING BLOCK 69 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.783] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 69 --- Problem count for sublines: 3
-[2025-05-17 16:36:55.784] DEBUG: --- AppActionHandler: SCANNING BLOCK 70 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.797] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 70 --- Problem count for sublines: 2
-[2025-05-17 16:36:55.798] DEBUG: --- AppActionHandler: SCANNING BLOCK 71 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.801] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 71 --- Problem count for sublines: 2
-[2025-05-17 16:36:55.802] DEBUG: --- AppActionHandler: SCANNING BLOCK 72 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.803] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 72 --- Problem count for sublines: 0
-[2025-05-17 16:36:55.803] DEBUG: --- AppActionHandler: SCANNING BLOCK 73 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.805] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 73 --- Problem count for sublines: 2
-[2025-05-17 16:36:55.806] DEBUG: --- AppActionHandler: SCANNING BLOCK 74 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.809] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 74 --- Problem count for sublines: 5
-[2025-05-17 16:36:55.810] DEBUG: --- AppActionHandler: SCANNING BLOCK 75 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.812] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 75 --- Problem count for sublines: 2
-[2025-05-17 16:36:55.812] DEBUG: --- AppActionHandler: SCANNING BLOCK 76 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.815] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 76 --- Problem count for sublines: 1
-[2025-05-17 16:36:55.815] DEBUG: --- AppActionHandler: SCANNING BLOCK 77 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.818] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 77 --- Problem count for sublines: 3
-[2025-05-17 16:36:55.818] DEBUG: --- AppActionHandler: SCANNING BLOCK 78 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.822] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 78 --- Problem count for sublines: 3
-[2025-05-17 16:36:55.822] DEBUG: --- AppActionHandler: SCANNING BLOCK 79 using plugin 'plugins.zelda_mc.rules' ---
-[2025-05-17 16:36:55.829] DEBUG: --- AppActionHandler: FINISHED SCANNING BLOCK 79 --- Problem count for sublines: 4
-[2025-05-17 16:36:55.829] DEBUG: AppActionHandler: Initial silent scan for ALL issues complete.
-[2025-05-17 16:36:55.829] DEBUG: [UIUpdater] populate_blocks called.
-[2025-05-17 16:36:55.842] DEBUG: [UIUpdater] populate_blocks: Added 80 items.
-[2025-05-17 16:36:55.842] DEBUG: <-- AppActionHandler: load_all_data_for_path FINISHED (Success)
-[2025-05-17 16:36:55.842] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 5. Current string_idx: -1
-[2025-05-17 16:36:55.851] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 5, string: -1
-[2025-05-17 16:36:55.851] DEBUG:   No active block/string selected. Text views will be cleared.
-[2025-05-17 16:36:55.851] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 16:36:55.851] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 16:36:55.852] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 16:36:55.853] DEBUG: ListSelectionHandler: string_selected_from_preview. Data Line number: 8
-[2025-05-17 16:36:55.854] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 5. Current string_idx: 8
-[2025-05-17 16:36:55.869] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 5, string: 8
-[2025-05-17 16:36:55.871] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-17 16:36:55.872] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-17 16:36:55.872] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-17 16:36:55.872] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 16:36:55.872] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 5, string: 8
-[2025-05-17 16:36:55.873] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 16:36:55.873] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 16:36:55.873] DEBUG: ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 8
-2025-05-17 16:36:55,874 - DEBUG - logging_utils - log_debug - MainWindowHelper: Restored selection to block 5, string 8, cursor 103
-2025-05-17 16:36:55,876 - DEBUG - logging_utils - log_debug - MainWindowHelper: Search history loaded into panel. Last query (if any) set in SearchHandler: ти хочеш піти
-2025-05-17 16:36:55,876 - DEBUG - logging_utils - log_debug - Rebuilt unsaved_block_indices: set()
-[2025-05-17 16:36:55.876] DEBUG: ++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++
-[2025-05-17 16:36:56.030] DEBUG: Starting Qt event loop...
-[2025-05-17 16:36:57.314] DEBUG: MainWindow keyPressEvent: This should not be called if eventFilter is working.
-2025-05-17 16:36:57,454 - DEBUG - logging_utils - log_debug - EventFilter: Ctrl+Down pressed. Focused: edited_text_edit. Calling navigate_to_problem_string(direction_down=True)
-[2025-05-17 16:36:57.455] DEBUG: ListSelectionHandler: navigate_to_problem_string. Direction down: True
-[2025-05-17 16:36:57.455] DEBUG:   Found problem. Navigating to S19
-[2025-05-17 16:36:57.455] DEBUG: ListSelectionHandler: string_selected_from_preview. Data Line number: 19
-[2025-05-17 16:36:57.456] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 5. Current string_idx: 19
-[2025-05-17 16:36:57.458] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 5, string: 19
-[2025-05-17 16:36:57.459] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-17 16:36:57.460] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-17 16:36:57.461] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-17 16:36:57.461] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 16:36:57.461] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 5, string: 19
-[2025-05-17 16:36:57.462] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 16:36:57.462] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 16:36:57.462] DEBUG: ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 19
-2025-05-17 16:36:57,600 - DEBUG - logging_utils - log_debug - EventFilter: Ctrl+Down pressed. Focused: edited_text_edit. Calling navigate_to_problem_string(direction_down=True)
-[2025-05-17 16:36:57.601] DEBUG: ListSelectionHandler: navigate_to_problem_string. Direction down: True
-[2025-05-17 16:36:57.601] DEBUG:   Found problem. Navigating to S25
-[2025-05-17 16:36:57.601] DEBUG: ListSelectionHandler: string_selected_from_preview. Data Line number: 25
-[2025-05-17 16:36:57.602] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 5. Current string_idx: 25
-[2025-05-17 16:36:57.605] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 5, string: 25
-[2025-05-17 16:36:57.607] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-17 16:36:57.609] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-17 16:36:57.611] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-17 16:36:57.614] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 16:36:57.614] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 5, string: 25
-[2025-05-17 16:36:57.614] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 16:36:57.615] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 16:36:57.616] DEBUG: ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 25
-2025-05-17 16:36:57,814 - DEBUG - logging_utils - log_debug - EventFilter: Ctrl+Up pressed. Focused: edited_text_edit. Calling navigate_to_problem_string(direction_down=False)
-[2025-05-17 16:36:57.814] DEBUG: ListSelectionHandler: navigate_to_problem_string. Direction down: False
-[2025-05-17 16:36:57.815] DEBUG:   Found problem. Navigating to S19
-[2025-05-17 16:36:57.815] DEBUG: ListSelectionHandler: string_selected_from_preview. Data Line number: 19
-[2025-05-17 16:36:57.815] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 5. Current string_idx: 19
-[2025-05-17 16:36:57.817] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 5, string: 19
-[2025-05-17 16:36:57.818] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-17 16:36:57.818] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-17 16:36:57.819] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-17 16:36:57.820] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 16:36:57.820] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 5, string: 19
-[2025-05-17 16:36:57.820] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 16:36:57.820] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 16:36:57.821] DEBUG: ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 19
-2025-05-17 16:36:57,965 - DEBUG - logging_utils - log_debug - EventFilter: Ctrl+Up pressed. Focused: edited_text_edit. Calling navigate_to_problem_string(direction_down=False)
-[2025-05-17 16:36:57.965] DEBUG: ListSelectionHandler: navigate_to_problem_string. Direction down: False
-[2025-05-17 16:36:57.966] DEBUG:   Found problem. Navigating to S8
-[2025-05-17 16:36:57.966] DEBUG: ListSelectionHandler: string_selected_from_preview. Data Line number: 8
-[2025-05-17 16:36:57.967] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 5. Current string_idx: 8
-[2025-05-17 16:36:57.968] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 5, string: 8
-[2025-05-17 16:36:57.969] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-17 16:36:57.970] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-17 16:36:57.971] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-17 16:36:57.972] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 16:36:57.972] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 5, string: 8
-[2025-05-17 16:36:57.972] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 16:36:57.972] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 16:36:57.973] DEBUG: ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 8
-[2025-05-17 16:36:58.864] DEBUG: ListSelectionHandler: string_selected_from_preview. Data Line number: 22
-[2025-05-17 16:36:58.865] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 5. Current string_idx: 22
-[2025-05-17 16:36:58.866] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 5, string: 22
-[2025-05-17 16:36:58.867] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-17 16:36:58.868] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-17 16:36:58.868] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-17 16:36:58.868] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 16:36:58.869] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 5, string: 22
-[2025-05-17 16:36:58.869] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 16:36:58.869] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 16:36:58.869] DEBUG: ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 22
-[2025-05-17 16:36:59.114] DEBUG: MainWindow keyPressEvent: This should not be called if eventFilter is working.
-[2025-05-17 16:36:59.489] DEBUG: LNET (preview_text_edit): Ctrl+Up/Down detected. Initiating problem navigation.
-[2025-05-17 16:36:59.489] DEBUG: ListSelectionHandler: navigate_to_problem_string. Direction down: True
-[2025-05-17 16:36:59.489] DEBUG:   Found problem. Navigating to S25
-[2025-05-17 16:36:59.490] DEBUG: ListSelectionHandler: string_selected_from_preview. Data Line number: 25
-[2025-05-17 16:36:59.490] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 5. Current string_idx: 25
-[2025-05-17 16:36:59.492] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 5, string: 25
-[2025-05-17 16:36:59.493] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-17 16:36:59.494] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-17 16:36:59.494] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-17 16:36:59.495] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 16:36:59.495] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 5, string: 25
-[2025-05-17 16:36:59.495] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 16:36:59.495] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 16:36:59.496] DEBUG: ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 25
-[2025-05-17 16:36:59.631] DEBUG: LNET (preview_text_edit): Ctrl+Up/Down detected. Initiating problem navigation.
-[2025-05-17 16:36:59.632] DEBUG: ListSelectionHandler: navigate_to_problem_string. Direction down: True
-[2025-05-17 16:36:59.632] DEBUG:   Found problem. Navigating to S66
-[2025-05-17 16:36:59.632] DEBUG: ListSelectionHandler: string_selected_from_preview. Data Line number: 66
-[2025-05-17 16:36:59.633] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 5. Current string_idx: 66
-[2025-05-17 16:36:59.636] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 5, string: 66
-[2025-05-17 16:36:59.638] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-17 16:36:59.639] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-17 16:36:59.640] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-17 16:36:59.641] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 16:36:59.641] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 5, string: 66
-[2025-05-17 16:36:59.642] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 16:36:59.642] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 16:36:59.644] DEBUG: ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 66
-[2025-05-17 16:36:59.862] DEBUG: LNET (preview_text_edit): Ctrl+Up/Down detected. Initiating problem navigation.
-[2025-05-17 16:36:59.862] DEBUG: ListSelectionHandler: navigate_to_problem_string. Direction down: False
-[2025-05-17 16:36:59.862] DEBUG:   Found problem. Navigating to S25
-[2025-05-17 16:36:59.862] DEBUG: ListSelectionHandler: string_selected_from_preview. Data Line number: 25
-[2025-05-17 16:36:59.863] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 5. Current string_idx: 25
-[2025-05-17 16:36:59.864] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 5, string: 25
-[2025-05-17 16:36:59.865] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-17 16:36:59.865] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-17 16:36:59.866] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-17 16:36:59.867] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 16:36:59.867] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 5, string: 25
-[2025-05-17 16:36:59.867] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 16:36:59.867] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 16:36:59.868] DEBUG: ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 25
-[2025-05-17 16:37:00.019] DEBUG: LNET (preview_text_edit): Ctrl+Up/Down detected. Initiating problem navigation.
-[2025-05-17 16:37:00.019] DEBUG: ListSelectionHandler: navigate_to_problem_string. Direction down: False
-[2025-05-17 16:37:00.020] DEBUG:   Found problem. Navigating to S19
-[2025-05-17 16:37:00.020] DEBUG: ListSelectionHandler: string_selected_from_preview. Data Line number: 19
-[2025-05-17 16:37:00.020] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 5. Current string_idx: 19
-[2025-05-17 16:37:00.021] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 5, string: 19
-[2025-05-17 16:37:00.022] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-17 16:37:00.023] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-17 16:37:00.023] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-17 16:37:00.023] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 16:37:00.023] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 5, string: 19
-[2025-05-17 16:37:00.024] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 16:37:00.024] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 16:37:00.024] DEBUG: ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 19
-[2025-05-17 16:37:00.566] DEBUG: LNET (preview_text_edit): Ctrl+Up/Down detected. Initiating problem navigation.
-[2025-05-17 16:37:00.566] DEBUG: ListSelectionHandler: navigate_to_problem_string. Direction down: False
-[2025-05-17 16:37:00.566] DEBUG:   Found problem. Navigating to S8
-[2025-05-17 16:37:00.566] DEBUG: ListSelectionHandler: string_selected_from_preview. Data Line number: 8
-[2025-05-17 16:37:00.567] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 5. Current string_idx: 8
-[2025-05-17 16:37:00.568] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 5, string: 8
-[2025-05-17 16:37:00.569] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-17 16:37:00.569] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-17 16:37:00.569] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-17 16:37:00.570] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 16:37:00.570] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 5, string: 8
-[2025-05-17 16:37:00.570] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 16:37:00.570] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 16:37:00.572] DEBUG: ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 8
-[2025-05-17 16:37:00.980] DEBUG: LNET (preview_text_edit): Ctrl+Up/Down detected. Initiating problem navigation.
-[2025-05-17 16:37:00.980] DEBUG: ListSelectionHandler: navigate_to_problem_string. Direction down: True
-[2025-05-17 16:37:00.980] DEBUG:   Found problem. Navigating to S19
-[2025-05-17 16:37:00.981] DEBUG: ListSelectionHandler: string_selected_from_preview. Data Line number: 19
-[2025-05-17 16:37:00.981] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 5. Current string_idx: 19
-[2025-05-17 16:37:00.982] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 5, string: 19
-[2025-05-17 16:37:00.983] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-17 16:37:00.984] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-17 16:37:00.984] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-17 16:37:00.984] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 16:37:00.984] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 5, string: 19
-[2025-05-17 16:37:00.985] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 16:37:00.985] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 16:37:00.985] DEBUG: ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 19
-[2025-05-17 16:37:01.132] DEBUG: LNET (preview_text_edit): Ctrl+Up/Down detected. Initiating problem navigation.
-[2025-05-17 16:37:01.132] DEBUG: ListSelectionHandler: navigate_to_problem_string. Direction down: True
-[2025-05-17 16:37:01.133] DEBUG:   Found problem. Navigating to S25
-[2025-05-17 16:37:01.133] DEBUG: ListSelectionHandler: string_selected_from_preview. Data Line number: 25
-[2025-05-17 16:37:01.133] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 5. Current string_idx: 25
-[2025-05-17 16:37:01.135] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 5, string: 25
-[2025-05-17 16:37:01.137] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-17 16:37:01.138] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-17 16:37:01.138] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-17 16:37:01.139] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 16:37:01.139] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 5, string: 25
-[2025-05-17 16:37:01.139] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 16:37:01.140] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 16:37:01.140] DEBUG: ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 25
-[2025-05-17 16:37:01.283] DEBUG: LNET (preview_text_edit): Ctrl+Up/Down detected. Initiating problem navigation.
-[2025-05-17 16:37:01.283] DEBUG: ListSelectionHandler: navigate_to_problem_string. Direction down: True
-[2025-05-17 16:37:01.283] DEBUG:   Found problem. Navigating to S66
-[2025-05-17 16:37:01.283] DEBUG: ListSelectionHandler: string_selected_from_preview. Data Line number: 66
-[2025-05-17 16:37:01.284] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 5. Current string_idx: 66
-[2025-05-17 16:37:01.287] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 5, string: 66
-[2025-05-17 16:37:01.289] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-17 16:37:01.291] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-17 16:37:01.292] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-17 16:37:01.294] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 16:37:01.294] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 5, string: 66
-[2025-05-17 16:37:01.294] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 16:37:01.294] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 16:37:01.295] DEBUG: ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 66
-[2025-05-17 16:37:01.409] DEBUG: LNET (preview_text_edit): Ctrl+Up/Down detected. Initiating problem navigation.
-[2025-05-17 16:37:01.410] DEBUG: ListSelectionHandler: navigate_to_problem_string. Direction down: True
-[2025-05-17 16:37:01.410] DEBUG:   Found problem. Navigating to S69
-[2025-05-17 16:37:01.410] DEBUG: ListSelectionHandler: string_selected_from_preview. Data Line number: 69
-[2025-05-17 16:37:01.411] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 5. Current string_idx: 69
-[2025-05-17 16:37:01.413] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 5, string: 69
-[2025-05-17 16:37:01.415] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-17 16:37:01.416] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-17 16:37:01.417] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-17 16:37:01.418] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 16:37:01.418] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 5, string: 69
-[2025-05-17 16:37:01.419] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 16:37:01.419] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 16:37:01.420] DEBUG: ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 69
-[2025-05-17 16:37:01.534] DEBUG: LNET (preview_text_edit): Ctrl+Up/Down detected. Initiating problem navigation.
-[2025-05-17 16:37:01.534] DEBUG: ListSelectionHandler: navigate_to_problem_string. Direction down: True
-[2025-05-17 16:37:01.534] DEBUG:   Found problem. Navigating to S99
-[2025-05-17 16:37:01.534] DEBUG: ListSelectionHandler: string_selected_from_preview. Data Line number: 99
-[2025-05-17 16:37:01.535] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 5. Current string_idx: 99
-[2025-05-17 16:37:01.539] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 5, string: 99
-[2025-05-17 16:37:01.540] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-17 16:37:01.540] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-17 16:37:01.540] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-17 16:37:01.541] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 16:37:01.541] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 5, string: 99
-[2025-05-17 16:37:01.541] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 16:37:01.541] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 16:37:01.542] DEBUG: ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 99
-[2025-05-17 16:37:01.661] DEBUG: LNET (preview_text_edit): Ctrl+Up/Down detected. Initiating problem navigation.
-[2025-05-17 16:37:01.661] DEBUG: ListSelectionHandler: navigate_to_problem_string. Direction down: True
-[2025-05-17 16:37:01.662] DEBUG:   Found problem. Navigating to S123
-[2025-05-17 16:37:01.662] DEBUG: ListSelectionHandler: string_selected_from_preview. Data Line number: 123
-[2025-05-17 16:37:01.662] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 5. Current string_idx: 123
-[2025-05-17 16:37:01.665] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 5, string: 123
-[2025-05-17 16:37:01.665] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-17 16:37:01.666] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-17 16:37:01.666] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-17 16:37:01.667] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 16:37:01.667] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 5, string: 123
-[2025-05-17 16:37:01.667] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 16:37:01.667] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 16:37:01.668] DEBUG: ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 123
-[2025-05-17 16:37:01.782] DEBUG: LNET (preview_text_edit): Ctrl+Up/Down detected. Initiating problem navigation.
-[2025-05-17 16:37:01.782] DEBUG: ListSelectionHandler: navigate_to_problem_string. Direction down: True
-[2025-05-17 16:37:01.782] DEBUG:   Found problem. Navigating to S128
-[2025-05-17 16:37:01.782] DEBUG: ListSelectionHandler: string_selected_from_preview. Data Line number: 128
-[2025-05-17 16:37:01.783] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 5. Current string_idx: 128
-[2025-05-17 16:37:01.784] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 5, string: 128
-[2025-05-17 16:37:01.785] DEBUG: UIUpdater: update_text_views - Content mismatch for edited_text_edit. Updating.
-[2025-05-17 16:37:01.786] DEBUG: TextOperationHandler.text_edited: Start. Programmatic change? True
-[2025-05-17 16:37:01.786] DEBUG:   UIUpdater: setPlainText called on edited_text_edit. Undo available after: False
-[2025-05-17 16:37:01.787] DEBUG: UIUpdater: populate_strings_for_block: Finished.
-[2025-05-17 16:37:01.787] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 5, string: 128
-[2025-05-17 16:37:01.787] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
-[2025-05-17 16:37:01.787] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
-[2025-05-17 16:37:01.788] DEBUG: ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 128
-[2025-05-17 16:37:03.469] DEBUG: --> MainWindow: closeEvent received.
-2025-05-17 16:37:03,470 - DEBUG - logging_utils - log_debug - MainWindowHelper: prepare_to_close called.
-2025-05-17 16:37:03,470 - DEBUG - logging_utils - log_debug - MainWindowHelper: Updated search_history_to_save: 20 items
-[2025-05-17 16:37:03.470] DEBUG: --> AppActionHandler: handle_close_event called.
-[2025-05-17 16:37:03.471] DEBUG: <-- AppActionHandler: handle_close_event finished.
-[2025-05-17 16:37:03.471] DEBUG: Close accepted (no unsaved changes). Saving editor settings via SettingsManager.
-[2025-05-17 16:37:03.471] DEBUG: --> SettingsManager: save_settings to settings.json
-[2025-05-17 16:37:03.471] DEBUG: SettingsManager: Saving font_size: 11 (from self.mw.current_font_size: 11)
-[2025-05-17 16:37:03.471] DEBUG: Saving paths: original_file_path='//192.168.50.168/tloz_tmc_ua/UKR_orig.json', edited_file_path='//192.168.50.168/tloz_tmc_ua/UKR.json'
-[2025-05-17 16:37:03.472] DEBUG: <-- SettingsManager: save_settings finished
-[2025-05-17 16:37:03.472] DEBUG: <-- MainWindow: closeEvent finished.
-[2025-05-17 16:37:03.498] DEBUG: Qt event loop finished with exit code: 0
-[2025-05-17 16:37:03.498] DEBUG: ================= Application End =================
+[2025-05-17 18:35:06.318] DEBUG: ================= Application Start =================
+[2025-05-17 18:35:06.332] DEBUG: ++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++
+[2025-05-17 18:35:06.332] DEBUG: MainWindow: Initializing Core Components...
+[2025-05-17 18:35:06.332] DEBUG: MainWindow: Loading game plugin...
+[2025-05-17 18:35:06.332] DEBUG: --> MainWindow: load_game_plugin called.
+[2025-05-17 18:35:06.333] DEBUG:     Using hardcoded plugin to load: 'zelda_mc' (settings not fully ready or 'active_game_plugin' not found)
+[2025-05-17 18:35:06.333] DEBUG:     Importing module: plugins.zelda_mc.rules
+[2025-05-17 18:35:06.334] DEBUG:     Successfully loaded and instantiated game rules: GameRules from plugins.zelda_mc.rules
+[2025-05-17 18:35:06.334] DEBUG: <-- MainWindow: load_game_plugin finished.
+[2025-05-17 18:35:06.334] DEBUG: MainWindow: Initializing Handlers (Pre-UI setup)...
+2025-05-17 18:35:06,334 - DEBUG - logging_utils - log_debug - Handler 'ListSelectionHandler' initialized.
+2025-05-17 18:35:06,335 - DEBUG - logging_utils - log_debug - Handler 'TextOperationHandler' initialized.
+2025-05-17 18:35:06,335 - DEBUG - logging_utils - log_debug - Handler 'AppActionHandler' initialized.
+2025-05-17 18:35:06,335 - DEBUG - logging_utils - log_debug - Handler 'SearchHandler' initialized.
+[2025-05-17 18:35:06.335] DEBUG: MainWindow: Setting up UI...
+[2025-05-17 18:35:06.335] DEBUG: setup_main_window_ui: Starting UI setup.
+[2025-05-17 18:35:06.336] DEBUG: CustomListWidget INITIALIZED, parent: <__main__.MainWindow object at 0x0000016CA5FFD5E0>
+[2025-05-17 18:35:06.337] DEBUG: CustomListWidget: Item delegate set to <components.CustomListItemDelegate.CustomListItemDelegate object at 0x0000016CA8F145E0>
+[2025-05-17 18:35:06.345] DEBUG: JsonTagHighlighter initialized.
+[2025-05-17 18:35:06.345] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+[2025-05-17 18:35:06.346] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
+[2025-05-17 18:35:06.346] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-17 18:35:06.515] DEBUG: JsonTagHighlighter initialized.
+[2025-05-17 18:35:06.515] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+[2025-05-17 18:35:06.515] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
+[2025-05-17 18:35:06.515] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-17 18:35:06.517] DEBUG: JsonTagHighlighter initialized.
+[2025-05-17 18:35:06.517] DEBUG: JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+[2025-05-17 18:35:06.517] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FF8C00'
+[2025-05-17 18:35:06.517] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-17 18:35:06.534] DEBUG: setup_main_window_ui: UI setup complete.
+[2025-05-17 18:35:06.534] DEBUG: MainWindow: Initializing Handlers (Post-UI setup)...
+[2025-05-17 18:35:06.535] DEBUG: MainWindow: Connecting Signals...
+[2025-05-17 18:35:06.535] DEBUG: --> MainWindow: connect_signals() started
+[2025-05-17 18:35:06.536] DEBUG: --> MainWindow: connect_signals() finished
+[2025-05-17 18:35:06.536] DEBUG: MainWindow: Loading Editor Settings via SettingsManager...
+[2025-05-17 18:35:06.536] DEBUG: --> SettingsManager: load_settings from settings.json
+[2025-05-17 18:35:06.536] DEBUG: --> SettingsManager: load_font_map from font_map.json
+[2025-05-17 18:35:06.537] DEBUG: Successfully loaded font_map. Count: 117
+[2025-05-17 18:35:06.537] DEBUG: SettingsManager: Initial default_font_size (from QFont or 10): 8
+[2025-05-17 18:35:06.537] DEBUG: SettingsManager: Applied all default values. self.mw.current_font_size is now 10 (from defaults)
+[2025-05-17 18:35:06.537] DEBUG: SettingsManager: Successfully parsed settings.json. Content keys: ['default_tag_mappings', 'block_names', 'newline_display_symbol', 'newline_css', 'tag_css', 'show_multiple_spaces_as_dots', 'space_dot_color_hex', 'preview_wrap_lines', 'editors_wrap_lines', 'bracket_tag_color_hex', 'game_dialog_max_width_pixels', 'line_width_warning_threshold_pixels', 'search_history', 'last_selected_block_index', 'last_selected_string_index', 'last_cursor_position_in_edited', 'last_edited_text_edit_scroll_value_v', 'last_edited_text_edit_scroll_value_h', 'last_preview_text_edit_scroll_value_v', 'last_original_text_edit_scroll_value_v', 'last_original_text_edit_scroll_value_h', 'font_size', 'block_color_markers', 'original_file_path', 'edited_file_path', 'window_was_maximized', 'window_normal_geometry', 'main_splitter_state', 'right_splitter_state', 'bottom_right_splitter_state']
+[2025-05-17 18:35:06.538] DEBUG: SettingsManager: Found 'font_size' in settings file: 11. Current self.mw.current_font_size: 10
+[2025-05-17 18:35:06.538] DEBUG: SettingsManager: Set self.mw.current_font_size to 11 from file.
+[2025-05-17 18:35:06.538] DEBUG: SettingsManager: Final MainWindow.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 208
+[2025-05-17 18:35:06.538] DEBUG: SettingsManager: After potential load from file, self.mw.current_font_size is 11
+[2025-05-17 18:35:06.538] DEBUG: MainWindow: Applying font. General: Family='Segoe UI', Editor: Family='Courier New', Size=11
+[2025-05-17 18:35:06.556] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: -1, string: -1
+[2025-05-17 18:35:06.556] DEBUG:   No active block/string selected. Text views will be cleared.
+[2025-05-17 18:35:06.556] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:06.557] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:06.557] DEBUG: [UIUpdater] populate_blocks called.
+[2025-05-17 18:35:06.557] DEBUG: [UIUpdater] populate_blocks: No original data.
+[2025-05-17 18:35:06.557] DEBUG: UIUpdater: populate_strings_for_block for block_idx: -1. Current string_idx: -1
+[2025-05-17 18:35:06.558] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: -1, string: -1
+[2025-05-17 18:35:06.558] DEBUG:   No active block/string selected. Text views will be cleared.
+[2025-05-17 18:35:06.558] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:06.558] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:06.558] DEBUG: Settings loaded. Last block: 6, string: 24
+[2025-05-17 18:35:06.558] DEBUG: Settings loaded. Original path from mw: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Edited path from mw: '//192.168.50.168/tloz_tmc_ua/UKR.json'
+2025-05-17 18:35:06,559 - DEBUG - logging_utils - log_debug - Applying text wrap settings: Preview wrap: False, Editors wrap: False
+2025-05-17 18:35:06,559 - DEBUG - logging_utils - log_debug - MainWindowHelper: Reconfiguring all highlighters...
+[2025-05-17 18:35:06.559] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
+[2025-05-17 18:35:06.559] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-17 18:35:06.560] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
+[2025-05-17 18:35:06.560] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+[2025-05-17 18:35:06.560] DEBUG: JsonTagHighlighter reconfiguring styles: curly_tag_css='color: #808080; font-style: italic;', bracket_tag_color='#FFA500'
+[2025-05-17 18:35:06.560] DEBUG: Reconfigure: Could not get editor widget or palette, using default black text color.
+2025-05-17 18:35:06,560 - DEBUG - logging_utils - log_debug - MainWindowHelper: Highlighter reconfiguration attempt complete.
+[2025-05-17 18:35:06.561] DEBUG: <-- SettingsManager: load_settings finished
+[2025-05-17 18:35:06.561] DEBUG: MainWindow: After SettingsManager.load_settings(), self.mw.current_font_size = 11, general_family = Segoe UI, editor_family = Courier New
+[2025-05-17 18:35:06.561] DEBUG: MainWindow: change_font_size_action called with size 11
+[2025-05-17 18:35:06.561] DEBUG: MainWindow: After load_settings, self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 208
+[2025-05-17 18:35:06.561] DEBUG: MainWindow: After load_settings, self.initial_load_path = //192.168.50.168/tloz_tmc_ua/UKR_orig.json
+[2025-05-17 18:35:06.561] DEBUG: MainWindow: After load_settings, self.initial_edited_load_path = //192.168.50.168/tloz_tmc_ua/UKR.json
+[2025-05-17 18:35:06.562] DEBUG: MainWindow: Set preview_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 208
+[2025-05-17 18:35:06.562] DEBUG: MainWindow: Set original_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 208
+[2025-05-17 18:35:06.562] DEBUG: MainWindow: Set edited_text_edit.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to 208
+2025-05-17 18:35:06,562 - DEBUG - logging_utils - log_debug - MainWindowHelper: restore_state_after_settings_load called.
+2025-05-17 18:35:06,563 - DEBUG - logging_utils - log_debug - Restored window geometry from settings: {'x': 157, 'y': 298, 'width': 2236, 'height': 943}
+2025-05-17 18:35:06,592 - DEBUG - logging_utils - log_debug - MainWindowHelper: Attempting to load initial file from settings: //192.168.50.168/tloz_tmc_ua/UKR_orig.json
+[2025-05-17 18:35:06.592] DEBUG: --> AppActionHandler: load_all_data_for_path START. Original: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Manual Edit Path: '//192.168.50.168/tloz_tmc_ua/UKR.json', InitialLoad: True
+[2025-05-17 18:35:06.593] DEBUG: load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', expected_type: list
+[2025-05-17 18:35:06.626] DEBUG: load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR_orig.json'.
+[2025-05-17 18:35:06.639] DEBUG: load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR.json', expected_type: list
+[2025-05-17 18:35:06.677] DEBUG: load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR.json'.
+[2025-05-17 18:35:06.677] DEBUG: UIUpdater: Cleared all problem/warning/width/short block highlights and count texts.
+[2025-05-17 18:35:07.026] DEBUG: [UIUpdater] populate_blocks called.
+[2025-05-17 18:35:07.038] DEBUG: [UIUpdater] populate_blocks: Added 80 items.
+[2025-05-17 18:35:07.039] DEBUG: <-- AppActionHandler: load_all_data_for_path FINISHED (Success)
+[2025-05-17 18:35:07.039] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: -1
+[2025-05-17 18:35:07.041] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: -1
+[2025-05-17 18:35:07.041] DEBUG:   No active block/string selected. Text views will be cleared.
+[2025-05-17 18:35:07.042] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:07.042] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:07.042] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-17 18:35:07.044] DEBUG: ListSelectionHandler: string_selected_from_preview. Data Line number: 24
+[2025-05-17 18:35:07.044] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 24
+[2025-05-17 18:35:07.060] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 24
+[2025-05-17 18:35:07.061] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:07.061] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:07.061] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-17 18:35:07.061] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 6, string: 24
+[2025-05-17 18:35:07.061] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:07.062] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:07.062] DEBUG: ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 24
+2025-05-17 18:35:07,063 - DEBUG - logging_utils - log_debug - MainWindowHelper: Restored selection to block 6, string 24, cursor 0
+2025-05-17 18:35:07,064 - DEBUG - logging_utils - log_debug - MainWindowHelper: Search history loaded into panel. Last query (if any) set in SearchHandler: ти хочеш піти
+2025-05-17 18:35:07,064 - DEBUG - logging_utils - log_debug - Rebuilt unsaved_block_indices: set()
+[2025-05-17 18:35:07.065] DEBUG: ++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++
+[2025-05-17 18:35:07.268] DEBUG: Starting Qt event loop...
+[2025-05-17 18:35:07.350] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:07.352] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:07.353] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:07.354] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:07.355] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:07.357] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:07.357] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:07.357] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.162] DEBUG: DSP.update_edited_data: Key (6, 24) updated. New edited_data size: 1
+[2025-05-17 18:35:09.162] DEBUG: DSP.update_edited_data: Unsaved changes status changed to True
+[2025-05-17 18:35:09.165] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 24
+[2025-05-17 18:35:09.170] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 24
+[2025-05-17 18:35:09.170] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:09.170] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:09.170] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-17 18:35:09.185] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.185] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:09.186] DEBUG:   LNETPaintLogic (original_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.186] DEBUG:     LNETPaintLogic (original_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:09.188] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.188] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.189] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.189] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.189] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.189] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.190] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.190] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 24 (QBlk 24), aggregated problems: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.190] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.193] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.193] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:09.279] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.280] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:09.280] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.281] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:09.322] DEBUG: DSP.update_edited_data: Key (6, 24) updated. New edited_data size: 1
+[2025-05-17 18:35:09.325] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 24
+[2025-05-17 18:35:09.328] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 24
+[2025-05-17 18:35:09.329] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:09.329] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:09.329] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-17 18:35:09.346] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.346] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:09.346] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S24L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.346] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:09.347] DEBUG:   LNETPaintLogic (original_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.347] DEBUG:     LNETPaintLogic (original_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:09.350] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.350] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.351] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.351] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.351] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.351] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.352] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.352] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 24 (QBlk 24), aggregated problems: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.352] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.354] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.355] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:09.355] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S24L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.355] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:09.459] DEBUG: DSP.update_edited_data: Key (6, 24) updated. New edited_data size: 1
+[2025-05-17 18:35:09.462] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 24
+[2025-05-17 18:35:09.467] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 24
+[2025-05-17 18:35:09.467] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:09.467] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:09.467] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-17 18:35:09.479] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.479] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:09.480] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S24L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.480] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:09.481] DEBUG:   LNETPaintLogic (original_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.481] DEBUG:     LNETPaintLogic (original_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:09.484] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.484] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.485] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.485] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.485] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.486] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.486] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.486] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 24 (QBlk 24), aggregated problems: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.486] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.488] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.489] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:09.489] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S24L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.489] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:09.719] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 24
+[2025-05-17 18:35:09.720] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 24
+[2025-05-17 18:35:09.720] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:09.720] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:09.720] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-17 18:35:09.721] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.722] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:09.722] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S24L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.722] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:09.722] DEBUG:   LNETPaintLogic (original_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.722] DEBUG:     LNETPaintLogic (original_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:09.723] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.723] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.723] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.723] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.723] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.724] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.724] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.724] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 24 (QBlk 24), aggregated problems: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.725] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:09.812] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.812] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:09.813] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S24L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.813] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:09.813] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.813] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:09.814] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S24L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:09.814] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:10.003] DEBUG: DSP.update_edited_data: Key (6, 24) updated. New edited_data size: 1
+[2025-05-17 18:35:10.006] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 24
+[2025-05-17 18:35:10.009] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 24
+[2025-05-17 18:35:10.009] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:10.009] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:10.010] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-17 18:35:10.021] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:10.021] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:10.022] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S24L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:10.022] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:10.022] DEBUG:   LNETPaintLogic (original_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:10.022] DEBUG:     LNETPaintLogic (original_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:10.024] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.025] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.025] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.025] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.025] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.025] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.026] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.026] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 24 (QBlk 24), aggregated problems: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:10.026] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.028] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:10.028] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:10.028] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S24L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:10.029] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:10.154] DEBUG: DSP.update_edited_data: Key (6, 24) updated. New edited_data size: 1
+[2025-05-17 18:35:10.157] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 24
+[2025-05-17 18:35:10.161] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 24
+[2025-05-17 18:35:10.161] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:10.161] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:10.162] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-17 18:35:10.177] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:10.177] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:10.177] DEBUG:   LNETPaintLogic (original_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:10.178] DEBUG:     LNETPaintLogic (original_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:10.180] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.180] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.180] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.180] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.181] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.181] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.181] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.182] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 24 (QBlk 24), aggregated problems: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:10.182] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.184] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S24L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:10.184] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:10.298] DEBUG: DSP.update_edited_data: Key (6, 24) removed. New edited_data size: 0
+[2025-05-17 18:35:10.298] DEBUG: DSP.update_edited_data: Unsaved changes status changed to False
+[2025-05-17 18:35:10.301] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 24
+[2025-05-17 18:35:10.303] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 24
+[2025-05-17 18:35:10.304] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:10.304] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:10.304] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-17 18:35:10.319] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.320] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.320] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.320] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.320] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.321] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.321] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.321] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.546] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 24
+[2025-05-17 18:35:10.547] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 24
+[2025-05-17 18:35:10.547] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:10.547] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:10.547] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-17 18:35:10.550] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.550] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.550] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.551] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.551] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.551] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.551] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:10.552] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:11.320] DEBUG: ListSelectionHandler: string_selected_from_preview. Data Line number: 25
+[2025-05-17 18:35:11.321] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 25
+[2025-05-17 18:35:11.322] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 25
+[2025-05-17 18:35:11.322] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:11.322] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:11.322] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-17 18:35:11.322] DEBUG: UIUpdater.update_text_views: Called. Programmatic: False. Current block: 6, string: 25
+[2025-05-17 18:35:11.322] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:11.323] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:11.323] DEBUG: ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 25
+[2025-05-17 18:35:11.337] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:11.337] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:11.337] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:11.337] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:11.338] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:11.338] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:11.338] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:11.339] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:11.376] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:11.377] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:11.377] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:11.377] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:11.378] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:11.378] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:11.378] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:11.379] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:11.848] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:11.848] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:11.849] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:11.849] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:11.849] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:11.850] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:11.850] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:11.850] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:12.548] DEBUG: DSP.update_edited_data: Key (6, 25) updated. New edited_data size: 1
+[2025-05-17 18:35:12.549] DEBUG: DSP.update_edited_data: Unsaved changes status changed to True
+[2025-05-17 18:35:12.553] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 25
+[2025-05-17 18:35:12.557] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 25
+[2025-05-17 18:35:12.557] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:12.558] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:12.558] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-17 18:35:12.579] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:12.579] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:12.580] DEBUG:   LNETPaintLogic (original_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:12.580] DEBUG:     LNETPaintLogic (original_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:12.583] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:12.584] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:12.584] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:12.584] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:12.585] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:12.585] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:12.585] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:12.585] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 25 (QBlk 25), aggregated problems: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:12.586] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:12.588] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:12.588] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:12.723] DEBUG: DSP.update_edited_data: Key (6, 25) updated. New edited_data size: 1
+[2025-05-17 18:35:12.727] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 25
+[2025-05-17 18:35:12.732] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 25
+[2025-05-17 18:35:12.732] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:12.732] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:12.733] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-17 18:35:12.755] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:12.755] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:12.756] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S25L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:12.756] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:12.756] DEBUG:   LNETPaintLogic (original_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:12.756] DEBUG:     LNETPaintLogic (original_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:12.759] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:12.760] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:12.760] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:12.760] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:12.761] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:12.761] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:12.761] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:12.762] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 25 (QBlk 25), aggregated problems: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:12.762] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:12.765] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:12.765] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:12.766] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S25L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:12.766] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:12.869] DEBUG: DSP.update_edited_data: Key (6, 25) updated. New edited_data size: 1
+[2025-05-17 18:35:12.873] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 25
+[2025-05-17 18:35:12.877] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 25
+[2025-05-17 18:35:12.878] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:12.878] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:12.878] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-17 18:35:12.897] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:12.897] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:12.897] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S25L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:12.898] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:12.898] DEBUG:   LNETPaintLogic (original_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:12.899] DEBUG:     LNETPaintLogic (original_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:12.902] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:12.902] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:12.903] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:12.903] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:12.903] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:12.904] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:12.904] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:12.904] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 25 (QBlk 25), aggregated problems: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:12.905] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:12.910] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:12.910] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:12.910] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S25L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:12.911] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:12.916] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:12.917] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:12.917] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S25L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:12.917] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:13.121] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 25
+[2025-05-17 18:35:13.121] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 25
+[2025-05-17 18:35:13.121] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:13.122] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:13.122] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-17 18:35:13.123] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:13.123] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:13.123] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S25L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:13.123] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:13.124] DEBUG:   LNETPaintLogic (original_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:13.124] DEBUG:     LNETPaintLogic (original_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:13.125] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.125] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.126] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.126] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.126] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.127] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.127] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.127] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 25 (QBlk 25), aggregated problems: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:13.127] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.130] DEBUG: DSP.update_edited_data: Key (6, 25) updated. New edited_data size: 1
+[2025-05-17 18:35:13.134] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 25
+[2025-05-17 18:35:13.137] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 25
+[2025-05-17 18:35:13.137] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:13.138] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:13.138] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-17 18:35:13.154] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:13.155] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:13.155] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S25L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:13.155] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:13.155] DEBUG:   LNETPaintLogic (original_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:13.156] DEBUG:     LNETPaintLogic (original_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:13.158] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.159] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.159] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.159] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.160] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.160] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.160] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.160] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 25 (QBlk 25), aggregated problems: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:13.161] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.163] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:13.164] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:13.164] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 2 (Data B6S25L2), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:13.164] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 2 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:13.283] DEBUG: DSP.update_edited_data: Key (6, 25) updated. New edited_data size: 1
+[2025-05-17 18:35:13.286] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 25
+[2025-05-17 18:35:13.290] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 25
+[2025-05-17 18:35:13.290] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:13.290] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:13.290] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-17 18:35:13.306] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:13.306] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:13.307] DEBUG:   LNETPaintLogic (original_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:13.307] DEBUG:     LNETPaintLogic (original_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:13.310] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.311] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.311] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.311] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.312] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.312] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.312] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.312] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 25 (QBlk 25), aggregated problems: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:13.313] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.316] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:13.316] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:13.433] DEBUG:   LNETPaintLogic (edited_text_edit): For QBlk 0 (Data B6S25L0), problems_per_subline: {'ZMC_EMPTY_ODD_SUBLINE_LOGICAL', 'ZMC_EMPTY_ODD_SUBLINE_DISPLAY'}
+[2025-05-17 18:35:13.433] DEBUG:     LNETPaintLogic (edited_text_edit): QBlk 0 - Highest priority PID: ZMC_EMPTY_ODD_SUBLINE_LOGICAL, ChosenColor: #ffa500, Applied to: ExtraInfo
+[2025-05-17 18:35:13.434] DEBUG: DSP.update_edited_data: Key (6, 25) removed. New edited_data size: 0
+[2025-05-17 18:35:13.434] DEBUG: DSP.update_edited_data: Unsaved changes status changed to False
+[2025-05-17 18:35:13.437] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 25
+[2025-05-17 18:35:13.440] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 25
+[2025-05-17 18:35:13.440] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:13.441] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:13.441] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-17 18:35:13.458] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.458] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.458] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.459] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.459] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.459] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.459] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.460] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.682] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: 25
+[2025-05-17 18:35:13.682] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: 25
+[2025-05-17 18:35:13.682] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:13.683] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:13.683] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-17 18:35:13.684] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.685] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.685] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.685] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.686] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.686] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.686] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:13.686] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:20.997] DEBUG: <<<<<<<<<< ACTION: Rescan All Issues Triggered >>>>>>>>>>
+[2025-05-17 18:35:20.997] DEBUG: UIUpdater: Cleared all problem/warning/width/short block highlights and count texts.
+[2025-05-17 18:35:21.304] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:21.304] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:21.305] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:21.305] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:21.305] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:21.305] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:21.305] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 23 (QBlk 23), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:21.306] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 28 (QBlk 28), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:22.269] DEBUG: [UIUpdater] populate_blocks called.
+[2025-05-17 18:35:22.270] DEBUG: UIUpdater: populate_strings_for_block for block_idx: -1. Current string_idx: -1
+[2025-05-17 18:35:22.273] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: -1, string: -1
+[2025-05-17 18:35:22.274] DEBUG:   No active block/string selected. Text views will be cleared.
+[2025-05-17 18:35:22.274] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:22.274] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:22.293] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: -1
+[2025-05-17 18:35:22.297] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: -1
+[2025-05-17 18:35:22.298] DEBUG:   No active block/string selected. Text views will be cleared.
+[2025-05-17 18:35:22.298] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:22.298] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:22.298] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-17 18:35:22.299] DEBUG: [UIUpdater] populate_blocks: Added 80 items.
+[2025-05-17 18:35:22.299] DEBUG: UIUpdater: populate_strings_for_block for block_idx: 6. Current string_idx: -1
+[2025-05-17 18:35:22.299] DEBUG: UIUpdater.update_text_views: Called. Programmatic: True. Current block: 6, string: -1
+[2025-05-17 18:35:22.299] DEBUG:   No active block/string selected. Text views will be cleared.
+[2025-05-17 18:35:22.300] DEBUG: UIUpdater: update_text_views - Content for original_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:22.300] DEBUG: UIUpdater: update_text_views - Content for edited_text_edit matches. No setPlainText needed.
+[2025-05-17 18:35:22.300] DEBUG: UIUpdater: populate_strings_for_block: Finished.
+[2025-05-17 18:35:22.329] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 2 (QBlk 2), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:22.329] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 3 (QBlk 3), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:22.330] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 7 (QBlk 7), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:22.330] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 9 (QBlk 9), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:22.330] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 11 (QBlk 11), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:22.331] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 12 (QBlk 12), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:22.331] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 13 (QBlk 13), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:22.331] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 14 (QBlk 14), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:22.332] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 16 (QBlk 16), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:22.332] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 19 (QBlk 19), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:22.333] DEBUG:   LNETPaintLogic (preview_text_edit): For DataLine 22 (QBlk 22), aggregated problems: {'ZMC_SHORT_LINE'}
+[2025-05-17 18:35:25.122] DEBUG: --> MainWindow: closeEvent received.
+2025-05-17 18:35:25,123 - DEBUG - logging_utils - log_debug - MainWindowHelper: prepare_to_close called.
+2025-05-17 18:35:25,123 - DEBUG - logging_utils - log_debug - MainWindowHelper: Updated search_history_to_save: 20 items
+[2025-05-17 18:35:25.123] DEBUG: --> AppActionHandler: handle_close_event called.
+[2025-05-17 18:35:25.123] DEBUG: <-- AppActionHandler: handle_close_event finished.
+[2025-05-17 18:35:25.123] DEBUG: Close accepted (no unsaved changes). Saving editor settings via SettingsManager.
+[2025-05-17 18:35:25.124] DEBUG: --> SettingsManager: save_settings to settings.json
+[2025-05-17 18:35:25.124] DEBUG: SettingsManager: Saving font_size: 11 (from self.mw.current_font_size: 11)
+[2025-05-17 18:35:25.124] DEBUG: Saving paths: original_file_path='//192.168.50.168/tloz_tmc_ua/UKR_orig.json', edited_file_path='//192.168.50.168/tloz_tmc_ua/UKR.json'
+[2025-05-17 18:35:25.125] DEBUG: <-- SettingsManager: save_settings finished
+[2025-05-17 18:35:25.125] DEBUG: <-- MainWindow: closeEvent finished.
+[2025-05-17 18:35:25.141] DEBUG: Qt event loop finished with exit code: 0
+[2025-05-17 18:35:25.141] DEBUG: ================= Application End =================

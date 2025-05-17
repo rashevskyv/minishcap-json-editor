@@ -62,21 +62,37 @@ class GameRules(BaseGameRules):
 
         return (threshold - width_current_rstripped) >= (width_first_word_next + space_width)
 
-    def _check_empty_odd_subline_display_zmc(self, subline_text: str, subline_qtextblock_number_in_editor: int, is_single_subline_in_document: bool) -> bool:
-        if is_single_subline_in_document: # Do not flag if it's the only subline
+    def _check_empty_odd_subline_display_zmc(self, 
+                                             subline_text: str, 
+                                             subline_qtextblock_number_in_editor: int, 
+                                             is_single_subline_in_document: bool, 
+                                             is_logically_single_and_empty_data_string: bool,
+                                             is_target_for_debug: bool = False) -> bool:
+        if is_target_for_debug:
+            log_debug(f"    ORANGE_BUG_DEBUG (plugin): _check_empty_odd_subline_display_zmc: text='{repr(subline_text)}', qblk_num={subline_qtextblock_number_in_editor}, is_single_doc={is_single_subline_in_document}, is_logically_single_empty_ds={is_logically_single_and_empty_data_string}")
+        
+        if is_logically_single_and_empty_data_string:
+            if is_target_for_debug: log_debug(f"      ORANGE_BUG_DEBUG (_check_empty_odd_subline_display_zmc): Data string is logically single and empty. Returning False.")
+            return False
+
+        if is_single_subline_in_document: 
+            if is_target_for_debug: log_debug(f"      ORANGE_BUG_DEBUG (_check_empty_odd_subline_display_zmc): Is single subline in document. Returning False.")
             return False
             
         is_odd_qtextblock_editor = (subline_qtextblock_number_in_editor + 1) % 2 != 0
+        if is_target_for_debug: log_debug(f"      ORANGE_BUG_DEBUG (_check_empty_odd_subline_display_zmc): is_odd_qtextblock_editor: {is_odd_qtextblock_editor}")
         if not is_odd_qtextblock_editor:
             return False
         
         text_no_dots = convert_dots_to_spaces_from_editor(subline_text)
         if ALL_TAGS_PATTERN.search(text_no_dots):
+            if is_target_for_debug: log_debug(f"      ORANGE_BUG_DEBUG (_check_empty_odd_subline_display_zmc): Contains tags. Returning False.")
             return False
         
         text_no_tags_for_empty_check = remove_all_tags(text_no_dots)
         stripped_text_no_tags_for_empty_check = text_no_tags_for_empty_check.strip()
         is_content_empty_or_zero = not stripped_text_no_tags_for_empty_check or stripped_text_no_tags_for_empty_check == "0"
+        if is_target_for_debug: log_debug(f"      ORANGE_BUG_DEBUG (_check_empty_odd_subline_display_zmc): stripped_text_no_tags_for_empty_check='{repr(stripped_text_no_tags_for_empty_check)}', is_content_empty_or_zero={is_content_empty_or_zero}. Returning {is_content_empty_or_zero}")
         return is_content_empty_or_zero
 
 
@@ -87,7 +103,12 @@ class GameRules(BaseGameRules):
                         qtextblock_number_in_editor: int,
                         is_last_subline_in_data_string: bool,
                         editor_font_map: dict, 
-                        editor_line_width_threshold: int) -> Set[str]:
+                        editor_line_width_threshold: int,
+                        full_data_string_text_for_logical_check: str,
+                        is_target_for_debug: bool = False) -> Set[str]: 
+        
+        if is_target_for_debug:
+            log_debug(f"  ORANGE_BUG_DEBUG (plugin): analyze_subline: text='{repr(text)}', next_text='{repr(next_text)}', sub_num_data={subline_number_in_data_string}, qblk_num_edit={qtextblock_number_in_editor}, is_last_sub_data={is_last_subline_in_data_string}, full_ds_text='{repr(full_data_string_text_for_logical_check)}'")
         
         found_problems = set()
         text_with_spaces = convert_dots_to_spaces_from_editor(text)
@@ -99,15 +120,27 @@ class GameRules(BaseGameRules):
             found_problems.add(PROBLEM_WIDTH_EXCEEDED)
 
         is_single_doc_block_for_display_check = False
-        if self.mw:
-            active_editor = self.mw.edited_text_edit 
-            if hasattr(self.mw, 'original_text_edit') and self.mw.original_text_edit and self.mw.original_text_edit.hasFocus(): 
-                active_editor = self.mw.original_text_edit
+        if self.mw: 
+            active_editor = getattr(self.mw, 'edited_text_edit', None) 
+            original_text_edit = getattr(self.mw, 'original_text_edit', None)
+            if original_text_edit and original_text_edit.hasFocus(): 
+                active_editor = original_text_edit
             
             if active_editor and hasattr(active_editor, 'document') and active_editor.document():
-                 is_single_doc_block_for_display_check = (active_editor.document().blockCount() == 1) 
+                 is_single_doc_block_for_display_check = (active_editor.document().blockCount() == 1)
+            elif is_target_for_debug:
+                 log_debug(f"    ORANGE_BUG_DEBUG (plugin): analyze_subline: Could not determine is_single_doc_block_for_display_check. Active editor or document missing.")
         
-        if self._check_empty_odd_subline_display_zmc(text, qtextblock_number_in_editor, is_single_doc_block_for_display_check):
+        is_logically_single_and_empty_data_string_check = (full_data_string_text_for_logical_check == "" and subline_number_in_data_string == 0 and is_last_subline_in_data_string)
+        if is_target_for_debug:
+            log_debug(f"    ORANGE_BUG_DEBUG (plugin): analyze_subline: is_logically_single_and_empty_data_string_check={is_logically_single_and_empty_data_string_check}")
+
+
+        if self._check_empty_odd_subline_display_zmc(text, 
+                                                     qtextblock_number_in_editor, 
+                                                     is_single_doc_block_for_display_check, 
+                                                     is_logically_single_and_empty_data_string_check,
+                                                     is_target_for_debug):
              found_problems.add(PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY)
 
         if next_text_with_spaces is not None: 
@@ -116,20 +149,25 @@ class GameRules(BaseGameRules):
         
         is_odd_logical_subline = (subline_number_in_data_string + 1) % 2 != 0
         is_only_logical_subline = is_last_subline_in_data_string and subline_number_in_data_string == 0
+        if is_target_for_debug: log_debug(f"    ORANGE_BUG_DEBUG (plugin): analyze_subline: is_odd_logical_subline={is_odd_logical_subline}, is_only_logical_subline={is_only_logical_subline}")
 
         if is_odd_logical_subline and not is_only_logical_subline:
             if not ALL_TAGS_PATTERN.search(text_with_spaces):
                 text_no_tags_for_logical_empty_check = remove_all_tags(text_with_spaces)
                 stripped_text_no_tags_for_logical_empty_check = text_no_tags_for_logical_empty_check.strip()
                 is_content_empty_or_zero_logical = not stripped_text_no_tags_for_logical_empty_check or stripped_text_no_tags_for_logical_empty_check == "0"
+                if is_target_for_debug: log_debug(f"    ORANGE_BUG_DEBUG (plugin): analyze_subline: LOGICAL CHECK: stripped_text_no_tags_for_logical_empty_check='{repr(stripped_text_no_tags_for_logical_empty_check)}', is_content_empty_or_zero_logical={is_content_empty_or_zero_logical}")
                 if is_content_empty_or_zero_logical:
                     found_problems.add(PROBLEM_EMPTY_ODD_SUBLINE_LOGICAL)
-
+        
+        if is_target_for_debug: log_debug(f"  ORANGE_BUG_DEBUG (plugin): analyze_subline returning problems: {found_problems}")
         return found_problems
 
-    def _fix_empty_odd_sublines_zmc(self, text: str) -> Tuple[str, bool]:
+    def _fix_empty_odd_sublines_zmc(self, text: str, is_target_for_debug: bool = False) -> Tuple[str, bool]:
+        if is_target_for_debug: log_debug(f"    ORANGE_BUG_DEBUG (plugin): _fix_empty_odd_sublines_zmc: Input='{repr(text)}'")
         sub_lines = text.split('\n')
-        if len(sub_lines) <= 1: # No logical odd empty if only one subline
+        if len(sub_lines) <= 1: 
+            if is_target_for_debug: log_debug(f"      ORANGE_BUG_DEBUG (_fix_empty_odd_sublines_zmc): Only one or zero sublines. Returning as is.")
             return text, False
             
         new_sub_lines = []
@@ -143,31 +181,29 @@ class GameRules(BaseGameRules):
             stripped_text_no_tags = text_no_tags.strip()
             is_empty_or_zero = not stripped_text_no_tags or stripped_text_no_tags == "0"
             
-            # Only remove if it's an odd subline AND it's not the *only* subline in the entire data string
+            if is_target_for_debug: log_debug(f"      ORANGE_BUG_DEBUG (_fix_empty_odd_sublines_zmc): Subline {i+1} ('{repr(sub_line)}'): is_odd={is_odd_subline}, is_empty_or_zero={is_empty_or_zero}, has_tags={bool(ALL_TAGS_PATTERN.search(sub_line))}")
             if is_odd_subline and is_empty_or_zero:
+                if is_target_for_debug: log_debug(f"        ORANGE_BUG_DEBUG (_fix_empty_odd_sublines_zmc): Removing empty odd subline: '{repr(sub_line)}'")
                 made_change = True
                 continue 
             new_sub_lines.append(sub_line)
             
         if not made_change:
+            if is_target_for_debug: log_debug(f"    ORANGE_BUG_DEBUG (plugin): _fix_empty_odd_sublines_zmc: No changes made initially. Returning original text.")
             return text, False
             
-        if text and not new_sub_lines: # If all sublines were removed (e.g. "\n0\n")
-             return "", True # Return empty string, indicating a change
+        if text and not new_sub_lines: 
+             if is_target_for_debug: log_debug(f"    ORANGE_BUG_DEBUG (plugin): _fix_empty_odd_sublines_zmc: All sublines removed. Returning empty string.")
+             return "", True 
 
         final_text_list = []
-        # Remove consecutive empty lines that might result from deletion
         for i in range(len(new_sub_lines)):
             if i > 0 and not new_sub_lines[i].strip() and not new_sub_lines[i-1].strip():
                 continue
             final_text_list.append(new_sub_lines[i])
         
-        # If the result is a single empty subline, but original had content, it's a change
-        if len(final_text_list) == 1 and not final_text_list[0].strip() and text.strip():
-             joined_text = "\n".join(final_text_list) # Will be ""
-             return joined_text, True # It changed from non-empty to empty
-
         joined_text = "\n".join(final_text_list)
+        if is_target_for_debug: log_debug(f"    ORANGE_BUG_DEBUG (plugin): _fix_empty_odd_sublines_zmc: Final text after cleanup='{repr(joined_text)}'. Changed: {joined_text != text}")
         return joined_text, joined_text != text
         
     def _extract_first_word_with_tags_zmc(self, text: str) -> tuple[str, str]:
@@ -199,7 +235,7 @@ class GameRules(BaseGameRules):
         remaining_text = text[len(first_word_text):].lstrip()
         return first_word_text.rstrip(), remaining_text
 
-    def _fix_short_lines_zmc(self, text: str, font_map: dict, threshold: int) -> Tuple[str, bool]:
+    def _fix_short_lines_zmc(self, text: str, font_map: dict, threshold: int, is_target_for_debug: bool = False) -> Tuple[str, bool]:
         sub_lines = text.split('\n')
         if len(sub_lines) <= 1:
             return text, False
@@ -241,9 +277,11 @@ class GameRules(BaseGameRules):
             if not made_change_in_this_fix_pass:
                 break 
         final_text = "\n".join(sub_lines)
+        if is_target_for_debug and final_text != original_text: 
+            log_debug(f"    ORANGE_BUG_DEBUG (plugin): _fix_short_lines_zmc CHANGED. Before='{repr(original_text)}', After='{repr(final_text)}'")
         return final_text, final_text != original_text
 
-    def _fix_width_exceeded_zmc(self, text: str, font_map: dict, threshold: int) -> Tuple[str, bool]:
+    def _fix_width_exceeded_zmc(self, text: str, font_map: dict, threshold: int, is_target_for_debug: bool = False) -> Tuple[str, bool]:
         sub_lines = text.split('\n')
         made_change_overall = False
         new_full_text_lines = []
@@ -295,10 +333,12 @@ class GameRules(BaseGameRules):
             while new_full_text_lines and not new_full_text_lines[-1].strip() and len(new_full_text_lines) > 1:
                 new_full_text_lines.pop()
             final_text = "\n".join(new_full_text_lines)
+            if is_target_for_debug and final_text != text: 
+                log_debug(f"    ORANGE_BUG_DEBUG (plugin): _fix_width_exceeded_zmc CHANGED. Before='{repr(text)}', After='{repr(final_text)}'")
             return final_text, final_text != text
         return text, False
 
-    def _fix_leading_spaces_in_sublines_zmc(self, text: str) -> Tuple[str, bool]:
+    def _fix_leading_spaces_in_sublines_zmc(self, text: str, is_target_for_debug: bool = False) -> Tuple[str, bool]:
         sub_lines = text.split('\n')
         fixed_sub_lines = []
         changed = False
@@ -310,10 +350,12 @@ class GameRules(BaseGameRules):
                 fixed_sub_lines.append(sub_line)
         if changed:
             final_text = "\n".join(fixed_sub_lines)
+            if is_target_for_debug: 
+                log_debug(f"    ORANGE_BUG_DEBUG (plugin): _fix_leading_spaces_in_sublines_zmc CHANGED. Before='{repr(text)}', After='{repr(final_text)}'")
             return final_text, final_text != text
         return text, False
 
-    def _cleanup_spaces_around_tags_zmc(self, text: str) -> Tuple[str, bool]:
+    def _cleanup_spaces_around_tags_zmc(self, text: str, is_target_for_debug: bool = False) -> Tuple[str, bool]:
         original_text = text
         text_changed_this_function_call = False
         pattern = re.compile(f"(?P<tag>{ANY_TAG_RE_PATTERN_ZMC})(?P<space> )(?P<after_space>.)?")
@@ -342,13 +384,20 @@ class GameRules(BaseGameRules):
             last_processed_end = match.start("after_space") if char_after_space_content else match.end("space")
             current_pos = last_processed_end
         final_text = "".join(result_parts)
+        if is_target_for_debug and final_text != original_text: 
+            log_debug(f"    ORANGE_BUG_DEBUG (plugin): _cleanup_spaces_around_tags_zmc CHANGED. Before='{repr(original_text)}', After='{repr(final_text)}'")
         return final_text, final_text != original_text
 
     def autofix_data_string(self,
                             data_string: str,
                             editor_font_map: dict,
                             editor_line_width_threshold: int) -> Tuple[str, bool]:
-        log_debug(f"ZeldaMC Rules: autofix_data_string for: '{data_string[:70]}...'")
+        
+        is_target_for_debug_active_string_autofix = str(data_string) == "" 
+
+        if is_target_for_debug_active_string_autofix: # Log only if active string is empty
+            log_debug(f"  ORANGE_BUG_DEBUG (plugin): autofix_data_string (ENTRY). Initial active_data_string='{repr(data_string)}'")
+
         original_text = str(data_string)
         modified_text = original_text
         
@@ -361,19 +410,20 @@ class GameRules(BaseGameRules):
             iterations += 1
             made_change_in_this_full_pass = False
             
-            modified_text, changed = self._fix_empty_odd_sublines_zmc(modified_text)
+            # Pass the debug flag only if the *current operation* is on the initially empty active string
+            modified_text, changed = self._fix_empty_odd_sublines_zmc(modified_text, is_target_for_debug_active_string_autofix)
             if changed: made_change_in_this_full_pass = True
             
-            modified_text, changed = self._fix_short_lines_zmc(modified_text, editor_font_map, editor_line_width_threshold)
+            modified_text, changed = self._fix_short_lines_zmc(modified_text, editor_font_map, editor_line_width_threshold, is_target_for_debug_active_string_autofix)
             if changed: made_change_in_this_full_pass = True
             
-            modified_text, changed = self._fix_width_exceeded_zmc(modified_text, editor_font_map, editor_line_width_threshold)
+            modified_text, changed = self._fix_width_exceeded_zmc(modified_text, editor_font_map, editor_line_width_threshold, is_target_for_debug_active_string_autofix)
             if changed: made_change_in_this_full_pass = True
 
-            modified_text, changed = self._cleanup_spaces_around_tags_zmc(modified_text)
+            modified_text, changed = self._cleanup_spaces_around_tags_zmc(modified_text, is_target_for_debug_active_string_autofix)
             if changed: made_change_in_this_full_pass = True
 
-            modified_text, changed = self._fix_leading_spaces_in_sublines_zmc(modified_text)
+            modified_text, changed = self._fix_leading_spaces_in_sublines_zmc(modified_text, is_target_for_debug_active_string_autofix)
             if changed: made_change_in_this_full_pass = True
 
             if not made_change_in_this_full_pass: 
@@ -382,6 +432,6 @@ class GameRules(BaseGameRules):
             if made_change_in_this_full_pass: 
                  changed_overall_in_all_passes = True
 
-
-        log_debug(f"ZeldaMC Rules: autofix_data_string completed. Iterations: {iterations}, Changed: {changed_overall_in_all_passes}")
+        if is_target_for_debug_active_string_autofix: # Log only if active string was initially empty
+            log_debug(f"  ORANGE_BUG_DEBUG (plugin): autofix_data_string (EXIT for active string). Iterations: {iterations}, Changed Overall: {changed_overall_in_all_passes}, Final Text='{repr(modified_text)}'")
         return modified_text, changed_overall_in_all_passes
