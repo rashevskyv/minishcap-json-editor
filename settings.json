@@ -177,36 +177,36 @@
     "preview_wrap_lines": false,
     "editors_wrap_lines": false,
     "bracket_tag_color_hex": "#FFA500",
-    "game_dialog_max_width_pixels": 208,
-    "line_width_warning_threshold_pixels": 208,
+    "game_dialog_max_width_pixels": 214,
+    "line_width_warning_threshold_pixels": 214,
     "search_history": [
-        "Обири",
-        "безкоштовною торбою",
-        "свійш",
-        "зарпаз",
-        "ти хочеш піти",
-        "- станеться",
-        "щоб наситити",
-        "Навіть меньш",
-        "Купиш?",
-        "Купиш",
-        "Мушель",
-        "Це найбільший",
-        "подарувати тобі",
-        "дала тобі",
-        "драгоцінної",
-        "Я не поспішаю",
-        "і звільнити",
-        "будівничий",
-        "мудра порада",
-        "велетень як ти"
+        "у нас всі чотири",
+        "Рушили",
+        "Зрештою",
+        "нескінченна",
+        "страшенно боюся",
+        "І ти в курсі",
+        "що далі робити",
+        "Утримуй кнопку, щоб ",
+        "що не повернуся",
+        "теж жили на поверхні",
+        "малий хлопчина збирає",
+        "ми не можемо",
+        "виглядаєш міцним",
+        "Якийсь вир",
+        "вони мали на увазі",
+        "Чувак...",
+        "усміхнене обличчя",
+        "усміхнене обличче",
+        "розумієш про що я",
+        "бачив, що всередині"
     ],
-    "last_selected_block_index": 14,
-    "last_selected_string_index": -1,
-    "last_cursor_position_in_edited": 0,
+    "last_selected_block_index": 28,
+    "last_selected_string_index": 5,
+    "last_cursor_position_in_edited": 47,
     "last_edited_text_edit_scroll_value_v": 0,
     "last_edited_text_edit_scroll_value_h": 0,
-    "last_preview_text_edit_scroll_value_v": 5,
+    "last_preview_text_edit_scroll_value_v": 0,
     "last_original_text_edit_scroll_value_v": 0,
     "last_original_text_edit_scroll_value_h": 0,
     "font_size": 11,
@@ -254,228 +254,193 @@
             "green"
         ],
         "16": [
-            "blue",
             "green"
         ],
         "17": [
-            "blue",
             "green"
         ],
         "18": [
-            "blue",
             "green"
         ],
         "19": [
-            "blue",
             "green"
         ],
         "20": [
-            "blue",
             "green"
         ],
         "21": [
-            "blue",
             "green"
         ],
         "22": [
             "green"
         ],
         "23": [
-            "blue",
             "green"
         ],
         "26": [
-            "blue",
             "green"
         ],
         "27": [
-            "blue",
             "green"
         ],
         "28": [
-            "blue",
             "green"
         ],
         "29": [
-            "blue",
             "green"
         ],
         "31": [
-            "blue",
             "green"
         ],
         "32": [
-            "blue",
             "green"
         ],
         "33": [
-            "blue",
             "green"
         ],
         "34": [
-            "blue",
             "green"
         ],
         "35": [
-            "blue",
             "green"
         ],
         "36": [
-            "blue",
             "green"
         ],
         "37": [
-            "blue",
             "green"
         ],
         "39": [
-            "blue",
             "green"
         ],
         "40": [
-            "blue",
             "green"
         ],
         "41": [
-            "blue",
             "green"
         ],
         "43": [
-            "blue",
             "green"
         ],
         "44": [
-            "blue",
             "green"
         ],
         "45": [
-            "blue",
             "green"
         ],
         "47": [
-            "blue",
             "green"
         ],
         "48": [
-            "blue",
             "green"
         ],
         "49": [
-            "blue",
             "green"
         ],
         "50": [
-            "blue",
             "green"
         ],
         "51": [
-            "blue",
             "green"
         ],
         "52": [
-            "blue",
             "green"
         ],
         "53": [
-            "blue",
             "green"
         ],
         "54": [
-            "blue",
             "green"
         ],
         "4": [
             "green"
         ],
-        "46": [
-            "blue"
-        ],
-        "55": [
-            "blue"
-        ],
         "56": [
-            "blue"
-        ],
-        "57": [
-            "blue"
+            "green"
         ],
         "58": [
-            "blue"
+            "green"
         ],
         "59": [
-            "blue"
+            "green"
         ],
         "60": [
-            "blue"
-        ],
-        "61": [
-            "blue"
-        ],
-        "62": [
-            "blue"
+            "green"
         ],
         "63": [
-            "blue"
+            "green"
         ],
         "64": [
-            "blue"
+            "green"
         ],
         "65": [
-            "blue"
-        ],
-        "66": [
-            "blue"
+            "green"
         ],
         "70": [
-            "blue"
-        ],
-        "69": [
-            "blue"
+            "green"
         ],
         "68": [
-            "blue"
-        ],
-        "67": [
-            "blue"
+            "green"
         ],
         "71": [
-            "blue"
+            "green"
         ],
         "72": [
-            "blue"
+            "green"
         ],
         "75": [
-            "blue"
+            "green"
         ],
         "74": [
-            "blue"
+            "green"
         ],
         "73": [
-            "blue"
+            "green"
         ],
         "79": [
-            "blue"
+            "green"
         ],
         "78": [
-            "blue"
+            "green"
         ],
         "77": [
-            "blue"
+            "green"
         ],
         "76": [
-            "blue"
+            "green"
+        ],
+        "55": [
+            "green"
+        ],
+        "57": [
+            "green"
+        ],
+        "61": [
+            "green"
+        ],
+        "62": [
+            "green"
+        ],
+        "66": [
+            "green"
+        ],
+        "67": [
+            "green"
+        ],
+        "69": [
+            "green"
         ]
     },
-    "original_file_path": "//192.168.50.168/tloz_tmc_ua/UKR_orig.json",
-    "edited_file_path": "//192.168.50.168/tloz_tmc_ua/UKR.json",
-    "window_was_maximized": false,
+    "original_file_path": "D:/git/dev/zeldamc/tloz-tmc-ua/UKR_orig.json",
+    "edited_file_path": "D:/git/dev/zeldamc/tloz-tmc-ua/UKR.json",
+    "window_was_maximized": true,
     "window_normal_geometry": {
-        "x": 157,
-        "y": 298,
+        "x": 230,
+        "y": 32,
         "width": 2236,
-        "height": 943
+        "height": 1408
     },
-    "main_splitter_state": "AAAA/wAAAAEAAAACAAABvQAAA+4B/////wEAAAABAA==",
-    "right_splitter_state": "AAAA/wAAAAEAAAACAAABxwAAAXwB/////wEAAAACAA==",
-    "bottom_right_splitter_state": "AAAA/wAAAAEAAAACAAACYgAAA5cB/////wEAAAABAA=="
+    "main_splitter_state": "AAAA/wAAAAEAAAACAAABzQAABtgB/////wEAAAABAA==",
+    "right_splitter_state": "AAAA/wAAAAEAAAACAAACtQAAAl8B/////wEAAAACAA==",
+    "bottom_right_splitter_state": "AAAA/wAAAAEAAAACAAADBwAAA8wB/////wEAAAABAA=="
 }
