@@ -3,8 +3,8 @@ from PyQt5.QtWidgets import QMessageBox, QApplication
 from PyQt5.QtGui import QTextCursor, QTextBlock
 from PyQt5.QtCore import QTimer
 from .base_handler import BaseHandler
-from utils.utils import log_debug, convert_dots_to_spaces_from_editor, convert_spaces_to_dots_for_display, calculate_string_width, remove_all_tags, SPACE_DOT_SYMBOL, ALL_TAGS_PATTERN
-from core.tag_utils import process_segment_tags_aggressively
+from utils.logging_utils import log_debug
+from utils.utils import convert_dots_to_spaces_from_editor, convert_spaces_to_dots_for_display, calculate_string_width, remove_all_tags, SPACE_DOT_SYMBOL, ALL_TAGS_PATTERN
 from plugins.zelda_mc.config import PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY, PROBLEM_EMPTY_ODD_SUBLINE_LOGICAL
 
 
@@ -103,11 +103,9 @@ class TextOperationHandler(BaseHandler):
             
         block_idx = self.mw.current_block_idx
         
-        # Snapshot for edited_data (only for the affected block)
         self.mw.before_paste_edited_data_snapshot = {
             k: v for k,v in self.mw.edited_data.items() if k[0] == block_idx
         }
-        # Snapshot for problems_per_subline (only for the affected block)
         self.mw.before_paste_problems_per_subline_snapshot = {
             k: v.copy() for k, v in self.mw.problems_per_subline.items() if k[0] == block_idx
         }
@@ -121,7 +119,6 @@ class TextOperationHandler(BaseHandler):
         if edited_edit and hasattr(edited_edit, 'highlightManager'):
             edited_edit.highlightManager.clearAllProblemHighlights()
 
-        # Clear current problems for the affected block before recalculating
         keys_to_remove_from_problems = [k for k in self.mw.problems_per_subline if k[0] == block_idx]
         for key_to_remove in keys_to_remove_from_problems:
             del self.mw.problems_per_subline[key_to_remove]
@@ -166,8 +163,8 @@ class TextOperationHandler(BaseHandler):
             
             original_text_for_tags = self.mw.data[block_idx][current_target_string_idx]
             
-            processed_text, _, _ = process_segment_tags_aggressively(
-                segment_to_insert_raw, original_text_for_tags, self.mw.default_tag_mappings, self.mw.EDITOR_PLAYER_TAG
+            processed_text, _, _ = self.mw.current_game_rules.process_pasted_segment(
+                segment_to_insert_raw, original_text_for_tags, self.mw.EDITOR_PLAYER_TAG
             )
             final_text_to_apply = processed_text.rstrip('\n')
             

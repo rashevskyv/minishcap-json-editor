@@ -1,7 +1,8 @@
 import re
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QTextCursor
-from utils.utils import log_debug, calculate_string_width, remove_all_tags, ALL_TAGS_PATTERN, convert_spaces_to_dots_for_display
+from utils.logging_utils import log_debug
+from utils.utils import calculate_string_width, remove_all_tags, ALL_TAGS_PATTERN, convert_spaces_to_dots_for_display
 from core.tag_utils import TAG_STATUS_OK, TAG_STATUS_CRITICAL, TAG_STATUS_MISMATCHED_CURLY, TAG_STATUS_UNRESOLVED_BRACKETS
 
 SENTENCE_END_PUNCTUATION_CHARS = ['.', '!', '?']
@@ -12,7 +13,6 @@ QUOTES_PATTERN = re.compile(r"^[\"']$")
 WORD_CHAR_PATTERN = re.compile(r"^[a-zA-Zа-яА-ЯіїєґІЇЄҐ]$")
 ANY_TAG_RE_PATTERN = r"(\{[^}]*\}|\[[^\]]*\])"
 COLOR_WHITE_TAG_PATTERN = re.compile(r"\{Color:White\}", re.IGNORECASE)
-
 
 class TextAutofixLogic:
     def __init__(self, main_window, data_processor, ui_updater):

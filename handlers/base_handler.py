@@ -1,4 +1,4 @@
-from utils import log_debug # Changed from ..utils
+from utils.logging_utils import log_debug
 
 class BaseHandler:
     def __init__(self, main_window, data_processor, ui_updater):

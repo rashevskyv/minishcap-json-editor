@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QMenu, QAction
 from PyQt5.QtCore import Qt, QPoint, QSize
 from PyQt5.QtGui import QIcon, QPixmap, QPainter, QColor
-from utils.utils import log_debug
+from utils.logging_utils import log_debug
 from .CustomListItemDelegate import CustomListItemDelegate
 
 class CustomListWidget(QListWidget):

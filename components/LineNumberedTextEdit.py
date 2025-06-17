@@ -5,9 +5,9 @@ from PyQt5.QtCore import Qt, QRect, QSize, QRectF, pyqtSignal
 
 from .LineNumberArea import LineNumberArea
 from .TextHighlightManager import TextHighlightManager
-from utils.utils import log_debug
+from utils.logging_utils import log_debug
 from utils.syntax_highlighter import JsonTagHighlighter
-from constants import (
+from utils.constants import (
     EDITOR_PLAYER_TAG as EDITOR_PLAYER_TAG_CONST,
     ORIGINAL_PLAYER_TAG as ORIGINAL_PLAYER_TAG_CONST,
     DEFAULT_LINE_WIDTH_WARNING_THRESHOLD,
@@ -26,7 +26,6 @@ from .LNET_constants import (
 from .LNET_mouse_handlers import LNETMouseHandlers
 from .LNET_highlight_interface import LNETHighlightInterface
 from .LNET_paint_handlers import LNETPaintHandlers
-
 
 class LineNumberedTextEdit(QPlainTextEdit):
     lineClicked = pyqtSignal(int)

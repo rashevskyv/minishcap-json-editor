@@ -4,7 +4,7 @@ import json
 import copy
 import re
 import importlib 
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QPlainTextEdit, QVBoxLayout, QSpinBox, QWidget, QLabel
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QPlainTextEdit, QVBoxLayout, QSpinBox, QWidget, QLabel, QAction, QMenu
 from PyQt5.QtCore import Qt, QEvent, QRect
 from PyQt5.QtGui import QKeyEvent, QTextCursor, QKeySequence, QFont
 from typing import Optional, Dict, Set, Tuple
@@ -26,11 +26,11 @@ from handlers.list_selection_handler import ListSelectionHandler
 from handlers.text_operation_handler import TextOperationHandler
 from handlers.app_action_handler import AppActionHandler
 from handlers.search_handler import SearchHandler
-from handlers.tag_checker_handler import TagCheckerHandler
 
 
-from utils.utils import log_debug, DEFAULT_CHAR_WIDTH_FALLBACK, ALL_TAGS_PATTERN
-from constants import (
+from utils.logging_utils import log_debug
+from utils.utils import DEFAULT_CHAR_WIDTH_FALLBACK, ALL_TAGS_PATTERN
+from utils.constants import (
     EDITOR_PLAYER_TAG, ORIGINAL_PLAYER_TAG,
     DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS,
     DEFAULT_LINE_WIDTH_WARNING_THRESHOLD,
@@ -53,6 +53,7 @@ class MainWindow(QMainWindow):
         self.current_font_size = DEFAULT_APP_FONT_SIZE
         self.general_font_family = GENERAL_APP_FONT_FAMILY
         self.editor_font_family = MONOSPACE_EDITOR_FONT_FAMILY
+        self.active_game_plugin = "zelda_mc"
 
 
         self.is_programmatically_changing_text = False
@@ -91,22 +92,15 @@ class MainWindow(QMainWindow):
         self.search_history_to_save = []
 
 
-        self.default_tag_mappings = {
-            "[red]": "{Color:Red}",
-            "[blue]": "{Color:Blue}",
-            "[green]": "{Color:Green}",
-            "[/c]": "{Color:White}",
-            "[unk10]": "{Symbol:10}",
-            self.EDITOR_PLAYER_TAG: self.ORIGINAL_PLAYER_TAG
-        }
+        self.default_tag_mappings = {}
         
         self.problems_per_subline: Dict[Tuple[int, int, int], Set[str]] = {}
         self.block_color_markers = {}
 
         self.can_undo_paste = False
-        self.before_paste_edited_data_snapshot = {} # Snapshot of edited_data for the affected block
-        self.before_paste_block_idx_affected = -1   # Index of the block affected by paste
-        self.before_paste_problems_per_subline_snapshot: Dict[Tuple[int, int, int], Set[str]] = {} # Snapshot of problems_per_subline for the affected block
+        self.before_paste_edited_data_snapshot = {}
+        self.before_paste_block_idx_affected = -1
+        self.before_paste_problems_per_subline_snapshot: Dict[Tuple[int, int, int], Set[str]] = {}
 
 
         self.search_match_block_indices = set()
@@ -117,13 +111,12 @@ class MainWindow(QMainWindow):
         self.main_splitter = None; self.right_splitter = None; self.bottom_right_splitter = None
         self.open_action = None; self.open_changes_action = None; self.save_action = None;
         self.save_as_action = None; self.reload_action = None; self.revert_action = None;
-        self.reload_tag_mappings_action = None
+        self.reload_tag_mappings_action = None; self.open_settings_action = None
         self.exit_action = None; self.paste_block_action = None;
         self.undo_typing_action = None; self.redo_typing_action = None;
         self.undo_paste_action = None
         self.rescan_all_tags_action = None
         self.find_action = None
-        self.check_tags_action = None
         self.auto_fix_action = None 
         self.main_vertical_layout = None
         self.font_size_spinbox = None
@@ -132,8 +125,11 @@ class MainWindow(QMainWindow):
         self.status_label_part1: QLabel = None
         self.status_label_part2: QLabel = None
         self.status_label_part3: QLabel = None
+        self.plugin_status_label: QLabel = None
 
         self.current_game_rules: Optional[BaseGameRules] = None 
+        self.tag_checker_handler = None 
+        self.plugin_actions = {}
 
 
         log_debug("MainWindow: Initializing Core Components...")
@@ -143,8 +139,13 @@ class MainWindow(QMainWindow):
         self.ui_updater = UIUpdater(self, self.data_processor)
         self.settings_manager = SettingsManager(self) 
 
+        log_debug("MainWindow: Loading settings before plugin to get active plugin...")
+        self.settings_manager.load_settings()
+
         log_debug("MainWindow: Loading game plugin...")
         self.load_game_plugin() 
+        if self.current_game_rules:
+            self.default_tag_mappings = self.current_game_rules.get_default_tag_mappings()
 
         log_debug("MainWindow: Initializing Handlers (Pre-UI setup)...")
         self.list_selection_handler = ListSelectionHandler(self, self.data_processor, self.ui_updater)
@@ -156,8 +157,8 @@ class MainWindow(QMainWindow):
         log_debug("MainWindow: Setting up UI...")
         setup_main_window_ui(self)
 
-        log_debug("MainWindow: Initializing Handlers (Post-UI setup)...")
-        self.tag_checker_handler = TagCheckerHandler(self)
+        log_debug("MainWindow: Initializing Handlers and dynamic UI from plugin (Post-UI setup)...")
+        self.setup_plugin_ui()
 
         self.search_panel_widget = SearchPanelWidget(self)
         self.main_vertical_layout.insertWidget(0, self.search_panel_widget)
@@ -170,10 +171,7 @@ class MainWindow(QMainWindow):
         self.event_filter = MainWindowEventFilter(self)
         self.installEventFilter(self.event_filter)
 
-
-        log_debug("MainWindow: Loading Editor Settings via SettingsManager...")
-        self.settings_manager.load_settings() 
-
+        self.ui_updater.update_plugin_status_label()
 
         log_debug(f"MainWindow: After SettingsManager.load_settings(), self.mw.current_font_size = {self.current_font_size}, general_family = {self.general_font_family}, editor_family = {self.editor_font_family}")
         if self.font_size_spinbox:
@@ -200,15 +198,42 @@ class MainWindow(QMainWindow):
 
         log_debug("++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++")
 
+    def setup_plugin_ui(self):
+        if not self.current_game_rules:
+            return
+            
+        self.tag_checker_handler = self.current_game_rules.get_tag_checker_handler()
+        if self.tag_checker_handler:
+            log_debug(f"TagCheckerHandler of type {type(self.tag_checker_handler).__name__} was provided by the plugin.")
+
+        plugin_actions_data = self.current_game_rules.get_plugin_actions()
+        for action_data in plugin_actions_data:
+            action_name = action_data.get('name')
+            if not action_name: continue
+            
+            action = QAction(action_data.get('text', action_name), self)
+            if 'tooltip' in action_data: action.setToolTip(action_data['tooltip'])
+            if 'shortcut' in action_data: action.setShortcut(QKeySequence(action_data['shortcut']))
+            if 'handler' in action_data: action.triggered.connect(action_data['handler'])
+            
+            self.plugin_actions[action_name] = action
+
+            if action_data.get('menu'):
+                menu_name = action_data.get('menu')
+                target_menu = self.menuBar().findChild(QMenu, f"&{menu_name}")
+                if not target_menu:
+                    target_menu = self.menuBar().addMenu(f"&{menu_name}")
+                target_menu.addAction(action)
+
+            if action_data.get('toolbar'):
+                if hasattr(self, 'main_toolbar'):
+                    self.main_toolbar.addAction(action)
+
     def load_game_plugin(self):
         log_debug("--> MainWindow: load_game_plugin called.")
         
-        plugin_name_to_load = "zelda_mc" 
-        if hasattr(self, 'settings_manager') and hasattr(self.settings_manager.mw, 'active_game_plugin'):
-            plugin_name_to_load = self.settings_manager.mw.active_game_plugin
-            log_debug(f"    Loading plugin based on settings: '{plugin_name_to_load}'")
-        else:
-            log_debug(f"    Using hardcoded plugin to load: '{plugin_name_to_load}' (settings not fully ready or 'active_game_plugin' not found)")
+        plugin_name_to_load = self.active_game_plugin
+        log_debug(f"    Attempting to load plugin: '{plugin_name_to_load}'")
 
 
         try:
@@ -218,6 +243,8 @@ class MainWindow(QMainWindow):
                 del sys.modules[module_path]
                 if f"plugins.{plugin_name_to_load}.config" in sys.modules: 
                     del sys.modules[f"plugins.{plugin_name_to_load}.config"]
+                if f"plugins.{plugin_name_to_load}.tag_checker_handler" in sys.modules:
+                    del sys.modules[f"plugins.{plugin_name_to_load}.tag_checker_handler"]
 
             game_rules_module = importlib.import_module(module_path)
             
@@ -397,6 +424,7 @@ class MainWindow(QMainWindow):
 
     def connect_signals(self):
         log_debug("--> MainWindow: connect_signals() started")
+        if hasattr(self, 'open_settings_action'): self.open_settings_action.triggered.connect(self.actions.open_settings_dialog)
         if hasattr(self, 'block_list_widget'):
             self.block_list_widget.currentItemChanged.connect(self.list_selection_handler.block_selected)
             self.block_list_widget.itemDoubleClicked.connect(self.list_selection_handler.rename_block)
@@ -433,8 +461,6 @@ class MainWindow(QMainWindow):
             self.search_panel_widget.find_previous_requested.connect(self.helper.handle_panel_find_previous)
         if hasattr(self, 'font_size_spinbox') and self.font_size_spinbox:
             self.font_size_spinbox.valueChanged.connect(self.change_font_size_action)
-        if hasattr(self, 'check_tags_action') and self.check_tags_action:
-            self.check_tags_action.triggered.connect(self.trigger_check_tags_action)
         
         if hasattr(self, 'auto_fix_button') and self.auto_fix_button:
             self.auto_fix_button.clicked.connect(self.editor_operation_handler.auto_fix_current_string)

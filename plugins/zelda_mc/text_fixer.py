@@ -3,10 +3,7 @@ import re
 
 from utils.logging_utils import log_debug
 from utils.utils import calculate_string_width, remove_all_tags, convert_dots_to_spaces_from_editor, ALL_TAGS_PATTERN
-# Імпортуємо ProblemAnalyzer, якщо його методи потрібні для логіки виправлення
-# from .problem_analyzer import ProblemAnalyzer
 
-# Патерни, що використовуються в логіці виправлення
 WORD_CHAR_PATTERN_ZMC = re.compile(r"^[a-zA-Zа-яА-ЯіїєґІЇЄҐ]$")
 ANY_TAG_RE_PATTERN_ZMC = r"(\{[^}]*\}|\[[^\]]*\])"
 COLOR_WHITE_TAG_PATTERN_ZMC = re.compile(r"\{Color:White\}", re.IGNORECASE)
@@ -15,8 +12,8 @@ PUNCTUATION_PATTERN_ZMC = re.compile(r"^[,\.!?]$")
 class TextFixer:
     def __init__(self, main_window_ref, tag_manager_ref, problem_analyzer_ref):
         self.mw = main_window_ref
-        self.tag_manager = tag_manager_ref # Може знадобитися для роботи з тегами
-        self.problem_analyzer = problem_analyzer_ref # Для доступу до методів аналізу
+        self.tag_manager = tag_manager_ref 
+        self.problem_analyzer = problem_analyzer_ref
 
     def _fix_empty_odd_sublines_zmc(self, text: str, is_target_for_debug: bool = False) -> Tuple[str, bool]:
         if is_target_for_debug: log_debug(f"    ORANGE_BUG_DEBUG (TextFixer): _fix_empty_odd_sublines_zmc: Input='{repr(text)}'")
@@ -89,7 +86,6 @@ class TextFixer:
             while i >= 0:
                 current_line = new_sub_lines[i]
                 next_line = new_sub_lines[i+1]
-                # Використовуємо метод аналізу з ProblemAnalyzer
                 if self.problem_analyzer._check_short_line_zmc(current_line, next_line, font_map, threshold):
                     first_word_next_raw, rest_of_next_line_raw = self._extract_first_word_with_tags_zmc(next_line)
                     current_line_rstripped = current_line.rstrip()
@@ -177,6 +173,49 @@ class TextFixer:
             return final_text, final_text != text
         return text, False
 
+    def _fix_blue_sublines_zmc(self, text: str, is_target_for_debug: bool = False) -> Tuple[str, bool]:
+        sub_lines = text.split('\n')
+        if len(sub_lines) < 2: 
+            return text, False
+
+        new_sub_lines = []
+        i = 0
+        changed_in_pass = False
+        while i < len(sub_lines):
+            current_line_text = sub_lines[i]
+            new_sub_lines.append(current_line_text)
+
+            is_odd_subline = (i + 1) % 2 != 0
+            if not is_odd_subline:
+                i += 1
+                continue
+
+            text_no_tags = remove_all_tags(current_line_text)
+            stripped_text_no_tags = text_no_tags.strip()
+
+            if not stripped_text_no_tags or not stripped_text_no_tags[0].islower():
+                i += 1
+                continue
+            
+            if not self.problem_analyzer._ends_with_sentence_punctuation_zmc(stripped_text_no_tags):
+                i += 1
+                continue
+
+            if i + 1 < len(sub_lines):
+                next_line_text = sub_lines[i+1]
+                next_line_no_tags = remove_all_tags(next_line_text)
+                stripped_next_line_no_tags = next_line_no_tags.strip()
+                
+                if stripped_next_line_no_tags: 
+                    new_sub_lines.append("")
+                    changed_in_pass = True
+            i += 1
+        
+        if changed_in_pass:
+            final_text = "\n".join(new_sub_lines)
+            return final_text, final_text != text
+        return text, False
+
     def _fix_leading_spaces_in_sublines_zmc(self, text: str, is_target_for_debug: bool = False) -> Tuple[str, bool]:
         sub_lines = text.split('\n')
         fixed_sub_lines = []
@@ -249,6 +288,9 @@ class TextFixer:
             made_change_in_this_full_pass = False
 
             modified_text, changed = self._fix_empty_odd_sublines_zmc(modified_text, is_target_for_debug_active_string_autofix)
+            if changed: made_change_in_this_full_pass = True
+            
+            modified_text, changed = self._fix_blue_sublines_zmc(modified_text, is_target_for_debug_active_string_autofix)
             if changed: made_change_in_this_full_pass = True
 
             modified_text, changed = self._fix_short_lines_zmc(modified_text, editor_font_map, editor_line_width_threshold, is_target_for_debug_active_string_autofix)

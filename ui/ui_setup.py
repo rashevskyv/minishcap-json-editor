@@ -7,7 +7,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QFont, QFontMetrics, QKeySequence 
 from components.LineNumberedTextEdit import LineNumberedTextEdit
 from components.CustomListWidget import CustomListWidget
-from utils.utils import log_debug
+from utils.logging_utils import log_debug
 
 def setup_main_window_ui(main_window):
     log_debug("setup_main_window_ui: Starting UI setup.")
@@ -82,8 +82,10 @@ def setup_main_window_ui(main_window):
     main_window.setStatusBar(main_window.statusBar)
     main_window.original_path_label = QLabel("Original: [not specified]")
     main_window.edited_path_label = QLabel("Changes: [not specified]")
+    main_window.plugin_status_label = QLabel("Plugin: [None]")
     main_window.original_path_label.setToolTip("Path to the original text file")
     main_window.edited_path_label.setToolTip("Path to the file where changes are saved")
+    main_window.plugin_status_label.setToolTip("Currently active game plugin")
 
     main_window.status_label_part1 = QLabel("Pos: 000")
     main_window.status_label_part2 = QLabel("Line: 000/000")
@@ -101,6 +103,8 @@ def setup_main_window_ui(main_window):
     main_window.statusBar.addWidget(main_window.original_path_label)
     main_window.statusBar.addWidget(QLabel("|"))
     main_window.statusBar.addWidget(main_window.edited_path_label)
+    main_window.statusBar.addPermanentWidget(main_window.plugin_status_label)
+    main_window.statusBar.addPermanentWidget(QLabel("|"))
     main_window.statusBar.addPermanentWidget(main_window.status_label_part1)
     main_window.statusBar.addPermanentWidget(QLabel("|")) 
     main_window.statusBar.addPermanentWidget(main_window.status_label_part2)
@@ -112,8 +116,12 @@ def setup_main_window_ui(main_window):
     file_menu = menubar.addMenu('&File')
     style = main_window.style()
 
-
     open_icon = style.standardIcon(QStyle.SP_DialogOpenButton)
+    save_icon = style.standardIcon(QStyle.SP_DialogSaveButton)
+    reload_icon = style.standardIcon(QStyle.SP_BrowserReload)
+    exit_icon = style.standardIcon(QStyle.SP_DialogCloseButton)
+    settings_icon = style.standardIcon(QStyle.SP_ComputerIcon)
+
     main_window.open_action = QAction(open_icon, '&Open Original File...', main_window)
     file_menu.addAction(main_window.open_action)
 
@@ -121,7 +129,6 @@ def setup_main_window_ui(main_window):
     file_menu.addAction(main_window.open_changes_action)
     file_menu.addSeparator()
 
-    save_icon = style.standardIcon(QStyle.SP_DialogSaveButton)
     main_window.save_action = QAction(save_icon, '&Save Changes', main_window)
     main_window.save_action.setShortcut('Ctrl+S')
     file_menu.addAction(main_window.save_action)
@@ -130,7 +137,6 @@ def setup_main_window_ui(main_window):
     file_menu.addAction(main_window.save_as_action)
     file_menu.addSeparator()
 
-    reload_icon = style.standardIcon(QStyle.SP_BrowserReload)
     main_window.reload_action = QAction(reload_icon, 'Reload Original', main_window)
     file_menu.addAction(main_window.reload_action)
 
@@ -142,18 +148,24 @@ def setup_main_window_ui(main_window):
     file_menu.addAction(main_window.reload_tag_mappings_action)
     file_menu.addSeparator()
 
-    exit_icon = style.standardIcon(QStyle.SP_DialogCloseButton)
+    main_window.open_settings_action = QAction(settings_icon, '&Settings...', main_window)
+    main_window.open_settings_action.setShortcut('Ctrl+P')
+    file_menu.addAction(main_window.open_settings_action)
+    file_menu.addSeparator()
+
     main_window.exit_action = QAction(exit_icon, 'E&xit', main_window)
     main_window.exit_action.triggered.connect(main_window.close)
     file_menu.addAction(main_window.exit_action)
 
     edit_menu = menubar.addMenu('&Edit')
     undo_icon = style.standardIcon(QStyle.SP_ArrowBack)
+    redo_icon = style.standardIcon(QStyle.SP_ArrowForward)
+    find_icon = style.standardIcon(QStyle.SP_FileDialogContentsView)
+
     main_window.undo_typing_action = QAction(undo_icon, '&Undo Typing', main_window)
     main_window.undo_typing_action.setShortcut('Ctrl+Z')
     edit_menu.addAction(main_window.undo_typing_action)
 
-    redo_icon = style.standardIcon(QStyle.SP_ArrowForward)
     main_window.redo_typing_action = QAction(redo_icon, '&Redo Typing', main_window)
     main_window.redo_typing_action.setShortcuts([QKeySequence('Ctrl+Y'), QKeySequence('Ctrl+Shift+Z')])
     edit_menu.addAction(main_window.redo_typing_action)
@@ -169,7 +181,6 @@ def setup_main_window_ui(main_window):
     edit_menu.addAction(main_window.paste_block_action)
     edit_menu.addSeparator()
 
-    find_icon = style.standardIcon(QStyle.SP_FileDialogContentsView)
     main_window.find_action = QAction(find_icon, '&Find...', main_window)
     main_window.find_action.setShortcut('Ctrl+F')
     edit_menu.addAction(main_window.find_action)
@@ -181,39 +192,34 @@ def setup_main_window_ui(main_window):
     edit_menu.addAction(main_window.auto_fix_action)
     edit_menu.addSeparator()
 
-
-    main_window.rescan_all_tags_action = QAction(QIcon.fromTheme("system-search"), 'Rescan All Issues', main_window) # Text changed here
+    main_window.rescan_all_tags_action = QAction(QIcon.fromTheme("system-search"), 'Rescan All Issues', main_window)
     edit_menu.addAction(main_window.rescan_all_tags_action)
-    
-    check_tags_icon = style.standardIcon(QStyle.SP_DialogApplyButton) 
-    main_window.check_tags_action = QAction(check_tags_icon, 'Check &Tags Mismatch', main_window)
-    main_window.check_tags_action.setToolTip("Check for tags mismatch between original and translation")
-    edit_menu.addAction(main_window.check_tags_action)
 
 
-    toolbar = QToolBar("Main Toolbar")
-    main_window.addToolBar(toolbar)
+    main_window.main_toolbar = QToolBar("Main Toolbar")
+    main_window.addToolBar(main_window.main_toolbar)
 
-    toolbar.addAction(main_window.open_action)
-    toolbar.addAction(main_window.save_action)
-    toolbar.addSeparator()
-    toolbar.addAction(main_window.undo_typing_action)
-    toolbar.addAction(main_window.redo_typing_action)
-    toolbar.addSeparator()
-    toolbar.addAction(main_window.find_action)
-    toolbar.addAction(main_window.check_tags_action)
-    toolbar.addAction(main_window.auto_fix_action) 
-    toolbar.addSeparator()
+    main_window.main_toolbar.addAction(main_window.open_action)
+    main_window.main_toolbar.addAction(main_window.save_action)
+    main_window.main_toolbar.addSeparator()
+    main_window.main_toolbar.addAction(main_window.undo_typing_action)
+    main_window.main_toolbar.addAction(main_window.redo_typing_action)
+    main_window.main_toolbar.addSeparator()
+    main_window.main_toolbar.addAction(main_window.find_action)
+    main_window.main_toolbar.addAction(main_window.auto_fix_action) 
+    main_window.main_toolbar.addSeparator()
+    main_window.main_toolbar.addAction(main_window.open_settings_action)
+    main_window.main_toolbar.addSeparator()
 
     font_size_label = QLabel("Font Size: ")
-    toolbar.addWidget(font_size_label)
+    main_window.main_toolbar.addWidget(font_size_label)
     main_window.font_size_spinbox = QSpinBox(main_window)
     main_window.font_size_spinbox.setMinimum(6)
     main_window.font_size_spinbox.setMaximum(24)
     default_font_size_val = QFont().pointSize()
     if default_font_size_val <= 0 : default_font_size_val = 10
     main_window.font_size_spinbox.setValue(default_font_size_val)
-    toolbar.addWidget(main_window.font_size_spinbox)
+    main_window.main_toolbar.addWidget(main_window.font_size_spinbox)
 
 
     main_window.setToolButtonStyle(Qt.ToolButtonIconOnly)

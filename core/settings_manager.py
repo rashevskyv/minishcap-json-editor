@@ -4,8 +4,8 @@ import base64
 from PyQt5.QtCore import QByteArray, QRect
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QFont
-from utils.utils import log_debug
-from constants import (
+from utils.logging_utils import log_debug
+from utils.constants import (
     DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS,
     DEFAULT_LINE_WIDTH_WARNING_THRESHOLD
 )
@@ -96,12 +96,13 @@ class SettingsManager:
             "font_size": default_font_size,
             "window_was_maximized": False, 
             "window_normal_geometry": None,
-            "block_color_markers": {}
+            "block_color_markers": {},
+            "active_game_plugin": "zelda_mc"
         }
 
         settings_data = {}
-        self.mw.block_color_markers = {} # Initialize here before loop
-        self.mw.search_history_to_save = [] # Initialize here before loop
+        self.mw.block_color_markers = {}
+        self.mw.search_history_to_save = []
 
         temp_original_file_path = None
         temp_edited_file_path = None
@@ -176,13 +177,6 @@ class SettingsManager:
                     self.mw.search_history_to_save = loaded_search_history
                 else: self.mw.search_history_to_save = []
 
-                # Old problem dictionaries are no longer loaded
-                # self.mw.critical_problem_lines_per_block = {}
-                # self.mw.warning_problem_lines_per_block = {}
-                # self.mw.width_exceeded_lines_per_block = {}
-                # self.mw.short_lines_per_block = {}
-
-
             except json.JSONDecodeError as e:
                 log_debug(f"ERROR reading or parsing settings file '{self.settings_file_path}': {e}. Using ALL default values set initially.")
                 self.mw.window_geometry_to_restore = None
@@ -193,15 +187,8 @@ class SettingsManager:
                 self.mw.window_was_maximized_at_save = False
 
 
-        log_debug(f"SettingsManager: After potential load from file, self.mw.current_font_size is {self.mw.current_font_size}")
-        self.mw.apply_font_size()
-
-
         log_debug(f"Settings loaded. Last block: {getattr(self.mw, 'last_selected_block_index', -1)}, string: {getattr(self.mw, 'last_selected_string_index', -1)}")
         log_debug(f"Settings loaded. Original path from mw: '{getattr(self.mw, 'original_file_path', None)}', Edited path from mw: '{getattr(self.mw, 'edited_file_path', None)}'")
-
-        self.mw._apply_text_wrap_settings()
-        self.mw._reconfigure_all_highlighters()
 
         self.mw.initial_load_path = getattr(self.mw, 'original_file_path', None)
         self.mw.initial_edited_load_path = getattr(self.mw, 'edited_file_path', None)
@@ -228,7 +215,7 @@ class SettingsManager:
             "last_edited_text_edit_scroll_value_v", "last_edited_text_edit_scroll_value_h",
             "last_preview_text_edit_scroll_value_v",
             "last_original_text_edit_scroll_value_v", "last_original_text_edit_scroll_value_h",
-            "font_size", "block_color_markers"
+            "font_size", "block_color_markers", "active_game_plugin"
         ]
 
         for key in keys_to_save:
@@ -270,13 +257,6 @@ class SettingsManager:
             if self.mw.right_splitter: settings_data["right_splitter_state"] = base64.b64encode(self.mw.right_splitter.saveState().data()).decode('ascii')
             if self.mw.bottom_right_splitter: settings_data["bottom_right_splitter_state"] = base64.b64encode(self.mw.bottom_right_splitter.saveState().data()).decode('ascii')
         except Exception as e: log_debug(f"WARN: Failed to save splitter state(s): {e}")
-
-        # Old problem dictionaries are no longer saved
-        # if not self.mw.unsaved_changes:
-        #     settings_data["critical_problem_lines_per_block"] = {k: list(v) for k, v in self.mw.critical_problem_lines_per_block.items() if v}
-        #     # ... and so on for other old problem dicts
-        # else:
-        #     log_debug("Not saving problem line data dictionaries because unsaved_changes is True.")
 
         try:
             with open(self.settings_file_path, 'w', encoding='utf-8') as f: json.dump(settings_data, f, indent=4, ensure_ascii=False)

@@ -3,8 +3,8 @@ from typing import Optional, List, Tuple
 from PyQt5.QtWidgets import QMessageBox, QApplication
 from PyQt5.QtGui import QTextCursor
 
-from utils.utils import log_debug
-from constants import ORIGINAL_PLAYER_TAG
+from utils.logging_utils import log_debug
+from utils.constants import ORIGINAL_PLAYER_TAG
 
 PLAYER_REPLACEMENT_CURLY_PATTERN_STR = r"\{Color:Green\}Лінк\w*\{Color:White\}"
 PLAYER_REPLACEMENT_CURLY_PATTERN_COMPILED = re.compile(PLAYER_REPLACEMENT_CURLY_PATTERN_STR, re.IGNORECASE)
@@ -253,7 +253,6 @@ class TagCheckerHandler:
                 self.current_search_state['block_idx'] = (b_idx_current_iter + 1) % num_blocks
                 self.current_search_state['string_idx'] = 0
                 self.current_search_state['original_tag_idx_in_current_string'] = 0
-                # Reset span tracking as we are moving to a new block/string from error
                 self._used_translation_spans_for_current_s_idx = []
                 self._last_s_idx_processed_for_spans = -1 
                 self._last_b_idx_processed_for_spans = -1
@@ -268,9 +267,8 @@ class TagCheckerHandler:
             if not original_tags_with_pos_list or tag_orig_idx_current_iter >= len(original_tags_with_pos_list):
                 self.current_search_state['string_idx'] += 1
                 self.current_search_state['original_tag_idx_in_current_string'] = 0
-                # Reset span tracking as we are moving to a new string
                 self._used_translation_spans_for_current_s_idx = []
-                self._last_s_idx_processed_for_spans = -1 # Mark as needing reset on next actual string
+                self._last_s_idx_processed_for_spans = -1 
                 log_debug(f"TagChecker: No more tags in B{b_idx_current_iter},S{s_idx_current_iter} or all checked for this string. Moving to S{self.current_search_state['string_idx']}")
                 continue 
             
@@ -284,9 +282,8 @@ class TagCheckerHandler:
                     if not text_between_tags.strip(): 
                         empty_pair_in_original = current_orig_tag_text + text_between_tags + next_orig_tag_text
                         
-                        # Try to find this exact pair in translation, respecting already used spans for THIS s_idx
                         found_empty_pair_in_translation, pair_span = self._find_tag_in_translation(
-                            empty_pair_in_original, # We search for the whole pair as a single "tag"
+                            empty_pair_in_original, 
                             translation_row_text_data, 
                             self._used_translation_spans_for_current_s_idx
                         )
@@ -297,11 +294,9 @@ class TagCheckerHandler:
                             self.current_search_state['original_tag_idx_in_current_string'] += 2 
                             continue 
                         else:
-                            # The empty pair *was* found in translation. We should consume it.
                             log_debug(f"TagChecker: Empty color pair construct '{empty_pair_in_original}' found in translation. Matching both.")
                             if pair_span:
                                 self._used_translation_spans_for_current_s_idx.append(pair_span)
-                            # We still need to "consume" the two original tags
                             self.current_search_state['original_tag_idx_in_current_string'] += 2 
                             continue
 
@@ -324,4 +319,4 @@ class TagCheckerHandler:
                 
                 mismatch_found_in_this_run = True
                 self._highlight_mismatched_tag(b_idx_current_iter, s_idx_current_iter, current_orig_tag_text, current_orig_tag_start, current_orig_tag_end)
-                return 
+                return

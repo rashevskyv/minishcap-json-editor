@@ -1,5 +1,6 @@
 from .base_handler import BaseHandler
-from utils.utils import log_debug, convert_spaces_to_dots_for_display, remove_curly_tags, convert_raw_to_display_text, prepare_text_for_tagless_search
+from utils.logging_utils import log_debug
+from utils.utils import convert_spaces_to_dots_for_display, remove_curly_tags, convert_raw_to_display_text, prepare_text_for_tagless_search
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QTextCursor
 from PyQt5.QtWidgets import QApplication

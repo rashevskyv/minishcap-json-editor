@@ -2,24 +2,13 @@ import os
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QBrush, QTextCursor
 from PyQt5.QtWidgets import QApplication
-from utils.utils import log_debug, convert_spaces_to_dots_for_display, convert_dots_to_spaces_from_editor, remove_curly_tags, calculate_string_width, remove_all_tags
+from utils.logging_utils import log_debug
+from utils.utils import convert_spaces_to_dots_for_display, convert_dots_to_spaces_from_editor, remove_curly_tags, calculate_string_width, remove_all_tags
 
 class UIUpdater:
     def __init__(self, main_window, data_processor):
         self.mw = main_window
         self.data_processor = data_processor
-
-    def _get_short_problem_name(self, problem_id: str, problem_definitions: dict) -> str:
-        name_from_def = problem_definitions.get(problem_id, {}).get("name", problem_id)
-        # Specific short names based on problem_id can be more reliable
-        if problem_id == "ZMC_WIDTH_EXCEEDED": return "Width"
-        if problem_id == "ZMC_SHORT_LINE": return "Short"
-        if problem_id == "ZMC_EMPTY_ODD_SUBLINE_LOGICAL": return "EmptyOddL"
-        if problem_id == "ZMC_EMPTY_ODD_SUBLINE_DISPLAY": return "EmptyOddD"
-        
-        # Fallback to first word if no specific mapping
-        return name_from_def.split(" ")[0]
-
 
     def populate_blocks(self):
         current_selection_block_idx = self.mw.block_list_widget.currentRow()
@@ -35,7 +24,6 @@ class UIUpdater:
             base_display_name = self.mw.block_names.get(str(i), f"Block {i}")
             
             block_problem_counts = {pid: 0 for pid in problem_definitions.keys()}
-            data_strings_with_problem_type = {pid: set() for pid in problem_definitions.keys()}
             
             if 0 <= i < len(self.mw.data) and isinstance(self.mw.data[i], list):
                 for data_string_idx in range(len(self.mw.data[i])):
@@ -46,7 +34,6 @@ class UIUpdater:
                             for problem_id in subline_problems:
                                 if problem_id in block_problem_counts:
                                     block_problem_counts[problem_id] += 1
-                                    data_strings_with_problem_type[problem_id].add(data_string_idx)
                         else:
                             if subline_local_idx_check > 0 : 
                                 if (i, data_string_idx, subline_local_idx_check -1) not in self.mw.problems_per_subline:
@@ -66,9 +53,8 @@ class UIUpdater:
             for problem_id in sorted_problem_ids_for_display:
                 count_sublines = block_problem_counts[problem_id]
                 if count_sublines > 0:
-                    short_name = self._get_short_problem_name(problem_id, problem_definitions)
-                    num_data_strings_affected = len(data_strings_with_problem_type[problem_id])
-                    issue_texts.append(f"{count_sublines} {short_name} ({num_data_strings_affected}DS)")
+                    short_name = self.mw.current_game_rules.get_short_problem_name(problem_id)
+                    issue_texts.append(f"{count_sublines} {short_name}")
             
             if issue_texts:
                 display_name_with_issues = f"{base_display_name} ({', '.join(issue_texts)})"
@@ -94,8 +80,6 @@ class UIUpdater:
             problem_definitions = self.mw.current_game_rules.get_problem_definitions()
         
         block_problem_counts = {pid: 0 for pid in problem_definitions.keys()}
-        data_strings_with_problem_type = {pid: set() for pid in problem_definitions.keys()}
-
 
         if block_idx < len(self.mw.data) and isinstance(self.mw.data[block_idx], list):
             for data_string_idx in range(len(self.mw.data[block_idx])):
@@ -106,7 +90,6 @@ class UIUpdater:
                         for problem_id in subline_problems:
                             if problem_id in block_problem_counts:
                                 block_problem_counts[problem_id] += 1
-                                data_strings_with_problem_type[problem_id].add(data_string_idx)
                     else:
                         if subline_local_idx_check > 0 :
                             if (block_idx, data_string_idx, subline_local_idx_check -1) not in self.mw.problems_per_subline:
@@ -126,9 +109,8 @@ class UIUpdater:
         for problem_id in sorted_problem_ids_for_display:
             count_sublines = block_problem_counts[problem_id]
             if count_sublines > 0:
-                short_name = self._get_short_problem_name(problem_id, problem_definitions)
-                num_data_strings_affected = len(data_strings_with_problem_type[problem_id])
-                issue_texts.append(f"{count_sublines} {short_name} ({num_data_strings_affected}DS)")
+                short_name = self.mw.current_game_rules.get_short_problem_name(problem_id)
+                issue_texts.append(f"{count_sublines} {short_name}")
 
         if issue_texts:
             display_name_with_issues = f"{base_display_name} ({', '.join(issue_texts)})"
@@ -326,6 +308,13 @@ class UIUpdater:
             title += " *"
         self.mw.setWindowTitle(title)
 
+    def update_plugin_status_label(self):
+        if self.mw.plugin_status_label:
+            if self.mw.current_game_rules:
+                display_name = self.mw.current_game_rules.get_display_name()
+                self.mw.plugin_status_label.setText(f"Plugin: {display_name}")
+            else:
+                self.mw.plugin_status_label.setText("Plugin: [None]")
 
     def update_statusbar_paths(self):
         if hasattr(self.mw, 'original_path_label') and self.mw.original_path_label:

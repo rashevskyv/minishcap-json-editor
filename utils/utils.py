@@ -2,30 +2,6 @@ import datetime
 import re
 import os
 
-log_debug_enabled = True
-LOG_FILE_PATH = "app_debug.log"
-
-if log_debug_enabled:
-    try:
-        with open(LOG_FILE_PATH, 'w', encoding='utf-8') as f:
-            f.write(f"Log started at {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]}\n")
-            f.write("=" * 50 + "\n")
-    except Exception as e:
-        print(f"CRITICAL: Could not initialize log file {LOG_FILE_PATH}: {e}")
-        log_debug_enabled = False
-
-
-def log_debug(message):
-    if not log_debug_enabled:
-        return
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-    
-    try:
-        with open(LOG_FILE_PATH, 'a', encoding='utf-8') as f:
-            f.write(f"[{timestamp}] DEBUG: {message}\n")
-    except Exception as e:
-        print(f"ERROR writing to log file {LOG_FILE_PATH}: {e}. Message: {message}")
-
 SPACE_DOT_SYMBOL = "·"
 ALL_TAGS_PATTERN = re.compile(r'\[[^\]]*\]|\{[^}]*\}')
 DEFAULT_CHAR_WIDTH_FALLBACK = 6

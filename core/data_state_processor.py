@@ -2,7 +2,7 @@ import json
 import os
 from PyQt5.QtWidgets import QMessageBox
 from .data_manager import load_json_file, save_json_file
-from utils.utils import log_debug
+from utils.logging_utils import log_debug
 
 class DataStateProcessor:
     def __init__(self, main_window):

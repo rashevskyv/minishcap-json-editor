@@ -1,8 +1,8 @@
 from PyQt5.QtWidgets import QStyledItemDelegate, QStyle, QStyleOptionViewItem
 from PyQt5.QtGui import QPainter, QColor, QPalette, QBrush, QPen, QFontMetrics, QFont
 from PyQt5.QtCore import QRect, Qt, QPoint, QSize, QModelIndex
-from utils.utils import log_debug
-from components.LNET_constants import EMPTY_ODD_SUBLINE_COLOR 
+from utils.logging_utils import log_debug
+from components.LNET_constants import EMPTY_ODD_SUBLINE_COLOR
 
 class CustomListItemDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):

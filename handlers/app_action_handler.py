@@ -3,7 +3,8 @@ from typing import Optional
 from PyQt5.QtWidgets import QMessageBox, QFileDialog, QProgressDialog, QPlainTextEdit
 from PyQt5.QtCore import Qt
 from .base_handler import BaseHandler
-from utils.utils import log_debug, convert_dots_to_spaces_from_editor, calculate_string_width, remove_all_tags, ALL_TAGS_PATTERN, convert_spaces_to_dots_for_display
+from utils.logging_utils import log_debug
+from utils.utils import convert_dots_to_spaces_from_editor, calculate_string_width, remove_all_tags, ALL_TAGS_PATTERN, convert_spaces_to_dots_for_display
 from core.tag_utils import apply_default_mappings_only
 from core.data_manager import load_json_file
 from plugins.base_game_rules import BaseGameRules
@@ -16,21 +17,6 @@ class AppActionHandler(BaseHandler):
         self.game_rules_plugin = game_rules_plugin
         if not hasattr(self.mw, 'problems_per_subline'):
             self.mw.problems_per_subline = {}
-
-    def _get_short_problem_name_for_report(self, problem_id: str, problem_definitions: dict) -> str:
-        # This is a temporary helper, ideally this logic should be centralized
-        # or the plugin should provide these short names directly.
-        name_from_def = problem_definitions.get(problem_id, {}).get("name", problem_id)
-        if problem_id == "ZMC_WIDTH_EXCEEDED": return "Width"
-        if problem_id == "ZMC_SHORT_LINE": return "Short"
-        if problem_id == "ZMC_EMPTY_ODD_SUBLINE_LOGICAL": return "EmptyOddL"
-        if problem_id == "ZMC_EMPTY_ODD_SUBLINE_DISPLAY": return "EmptyOddD"
-        # Fallback to a generic shortening if needed, or use full name if preferred for reports
-        # For reports, perhaps full English name is better if short names are too cryptic.
-        # Let's use the configured name from plugin for now, assuming it's in English or desired language.
-        # If we want force English short names for reports:
-        # return name_from_def.split(" ")[0] 
-        return name_from_def # Current decision: use the name as defined in plugin's problem_definitions
 
     def _get_first_word_width(self, text: str) -> int: 
         if not text or not self.mw.font_map: 
@@ -237,8 +223,7 @@ class AppActionHandler(BaseHandler):
             for problem_id in sorted_problem_ids_for_display:
                 count_sublines = problem_counts_for_report.get(problem_id, 0)
                 if count_sublines > 0 and problem_id in problem_definitions:
-                    # Use the helper to get short English name
-                    short_name = self._get_short_problem_name_for_report(problem_id, problem_definitions)
+                    short_name = self.game_rules_plugin.get_short_problem_name(problem_id)
                     num_data_strings_affected = len(data_strings_with_problem_counts[problem_id])
                     message_parts.append(f"{count_sublines} x '{short_name}' (in {num_data_strings_affected} data string(s))")
 
@@ -283,8 +268,7 @@ class AppActionHandler(BaseHandler):
         for problem_id in sorted_problem_ids_for_display:
             total_sublines_with_problem = sublines_with_problem_counts.get(problem_id, 0)
             if total_sublines_with_problem > 0 and problem_id in problem_definitions:
-                # Use the helper to get short English name
-                short_name = self._get_short_problem_name_for_report(problem_id, problem_definitions)
+                short_name = self.game_rules_plugin.get_short_problem_name(problem_id)
                 num_blocks_affected = len(blocks_with_problem_counts[problem_id])
                 num_data_strings_affected = len(data_strings_with_problem_counts[problem_id])
                 message_parts.append(f"Found {total_sublines_with_problem} subline(s) with '{short_name}' in {num_data_strings_affected} data string(s) across {num_blocks_affected} block(s).")
@@ -409,8 +393,8 @@ class AppActionHandler(BaseHandler):
         
         self.mw.block_list_widget.clear()
         if hasattr(self.mw, 'preview_text_edit'): self.mw.preview_text_edit.clear()
-        if hasattr(self.mw, 'original_text_edit'): self.mw.original_text_edit.clear()
-        if hasattr(self.mw, 'edited_text_edit'): self.mw.edited_text_edit.clear()
+        if hasattr(self, 'mw.original_text_edit'): self.mw.original_text_edit.clear()
+        if hasattr(self, 'mw.edited_text_edit'): self.mw.edited_text_edit.clear()
         
         self._perform_initial_silent_scan_all_issues()
         

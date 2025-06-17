@@ -1,10 +1,9 @@
 from typing import List, Tuple, Dict, Optional
 import re
-# Імпортуємо статуси та базовий клас з plugins.import_plugins
 from ..base_import_rules import BaseImportRules, TAG_STATUS_OK, TAG_STATUS_CRITICAL, TAG_STATUS_MISMATCHED_CURLY, TAG_STATUS_UNRESOLVED_BRACKETS, TAG_STATUS_WARNING
 from plugins.base_game_rules import BaseGameRules 
 from utils.logging_utils import log_debug 
-from constants import ORIGINAL_PLAYER_TAG 
+from utils.constants import ORIGINAL_PLAYER_TAG 
 from utils.utils import ALL_TAGS_PATTERN 
 
 
@@ -74,7 +73,6 @@ class ImportRules(BaseImportRules):
         elif segment_had_slash00 and original_had_slash00: 
             return current_segment_state, TAG_STATUS_CRITICAL, "'/00' present in both original and pasted segment."
         
-        # 1. Застосувати default_tag_mappings через метод базового класу
         current_segment_state, _ = self.apply_mappings_to_text(current_segment_state, default_tag_mappings)
         
         remaining_brackets_after_default_map = [

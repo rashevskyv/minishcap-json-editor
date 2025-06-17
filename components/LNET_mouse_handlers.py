@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt, QPoint
 import re
 from typing import Optional, Tuple
 
-from utils.utils import log_debug
+from utils.logging_utils import log_debug
 
 class LNETMouseHandlers:
     def __init__(self, editor): # editor - це LineNumberedTextEdit

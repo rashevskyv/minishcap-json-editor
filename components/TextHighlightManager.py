@@ -3,7 +3,7 @@ from PyQt5.QtGui import QColor, QTextBlockFormat, QTextFormat, QTextCursor, QTex
 from PyQt5.QtCore import QTimer
 from typing import Optional, List, Tuple
 import re
-from utils.utils import log_debug
+from utils.logging_utils import log_debug
 
 class TextHighlightManager:
     def __init__(self, editor):
@@ -58,7 +58,6 @@ class TextHighlightManager:
         return None
 
     def applyHighlights(self):
-        # log_debug(f"THM ({self.editor.objectName()}): applyHighlights CALLED. Num _width_exceed_char_selections = {len(self._width_exceed_char_selections)}, Num _critical_problem_selections = {len(self._critical_problem_selections)}")
         all_selections = []
         if self._active_line_selections: all_selections.extend(list(self._active_line_selections)) 
         if self._linked_cursor_selections: 
@@ -251,9 +250,7 @@ class TextHighlightManager:
             self.applyHighlights()
             
     def add_width_exceed_char_highlight(self, block: QTextBlock, char_index_in_block: int, color: QColor):
-        # log_debug(f"THM: add_width_exceed_char_highlight CALLED for block {block.blockNumber()}, char_idx_in_block {char_index_in_block}")
         if not block.isValid():
-            # log_debug("THM: Invalid block passed to add_width_exceed_char_highlight.")
             return
         selection = QTextEdit.ExtraSelection()
         selection.format.setBackground(color)
@@ -261,7 +258,6 @@ class TextHighlightManager:
         char_cursor = QTextCursor(block)
         char_cursor.setPosition(block.position() + char_index_in_block)
         char_cursor.movePosition(QTextCursor.Right, QTextCursor.KeepAnchor, 1) 
-        # log_debug(f"THM: Cursor selection after move: Start={char_cursor.selectionStart()}, End={char_cursor.selectionEnd()}, HasSelection={char_cursor.hasSelection()}")
         
         if char_cursor.hasSelection():
             selection.cursor = char_cursor
@@ -274,20 +270,12 @@ class TextHighlightManager:
                     break
             if not already_exists:
                 self._width_exceed_char_selections.append(selection)
-                # log_debug(f"THM: Added width_exceed_char_highlight for block {block.blockNumber()}, char_index_in_block {char_index_in_block}. Total now: {len(self._width_exceed_char_selections)}")
-            # else:
-                # log_debug(f"THM: Width_exceed_char_highlight for block {block.blockNumber()}, char_index_in_block {char_index_in_block} already exists.")
-        # else:
-            # log_debug(f"THM: Could not create selection for width_exceed_char_highlight at block {block.blockNumber()}, char_idx_in_block {char_index_in_block}")
         pass
 
 
     def clear_width_exceed_char_highlights(self):
         if self._width_exceed_char_selections:
-            # log_debug(f"THM: Clearing {len(self._width_exceed_char_selections)} width_exceed_char_highlights from list.")
             self._width_exceed_char_selections = []
-        # else:
-            # log_debug(f"THM: No width_exceed_char_highlights in list to clear.")
         pass
 
     def addEmptyOddSublineHighlight(self, block_number: int):

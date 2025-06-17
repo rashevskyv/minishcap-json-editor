@@ -1,12 +1,49 @@
 from PyQt5.QtWidgets import QApplication, QMessageBox
-from utils import log_debug
+from utils.logging_utils import log_debug
 import copy
 import os
+from ui.settings_dialog import SettingsDialog
 
 class MainWindowActions:
     def __init__(self, main_window):
         self.mw = main_window
         self.helper = main_window.helper
+    
+    def open_settings_dialog(self):
+        log_debug("<<<<<<<<<< ACTION: Open Settings Dialog Triggered >>>>>>>>>>")
+        dialog = SettingsDialog(self.mw, self.mw)
+        if dialog.exec_():
+            new_settings = dialog.get_settings()
+            log_debug(f"Settings dialog accepted. New settings: {new_settings}")
+            
+            current_plugin = getattr(self.mw, 'active_game_plugin', '')
+            new_plugin = new_settings.get('active_game_plugin')
+            plugin_changed = new_plugin and new_plugin != current_plugin
+
+            for key, value in new_settings.items():
+                if hasattr(self.mw, key.upper()): # Для констант, як GAME_DIALOG_MAX_WIDTH_PIXELS
+                    setattr(self.mw, key.upper(), value)
+                else:
+                    setattr(self.mw, key, value)
+            
+            self.mw.settings_manager.save_settings()
+
+            self.mw.apply_font_size()
+            self.mw.helper.reconfigure_all_highlighters()
+            self.mw.helper.apply_text_wrap_settings()
+            self.mw.ui_updater.update_plugin_status_label()
+            
+            # Оновити константи в редакторах
+            for editor_widget in [self.mw.preview_text_edit, self.mw.original_text_edit, self.mw.edited_text_edit]:
+                if editor_widget:
+                    editor_widget.GAME_DIALOG_MAX_WIDTH_PIXELS = self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS
+                    editor_widget.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
+                    editor_widget.viewport().update()
+
+            if plugin_changed:
+                QMessageBox.information(self.mw, "Plugin Changed", 
+                                        "The active game plugin has been changed.\n"
+                                        "Please restart the application for the changes to take full effect.")
 
     def trigger_save_action(self):
         log_debug("<<<<<<<<<< ACTION: Save Triggered (via MainWindowActions) >>>>>>>>>>")
@@ -17,8 +54,6 @@ class MainWindowActions:
         log_debug("<<<<<<<<<< ACTION: Revert Changes File Triggered (via MainWindowActions) >>>>>>>>>>")
         if self.mw.data_processor.revert_edited_file_to_original():
             log_debug("Revert successful, UI updated by DataStateProcessor.")
-            # problems_per_subline is cleared and recalculated via _perform_initial_silent_scan_all_issues
-            # which is called by revert_edited_file_to_original (indirectly via load_all_data_for_path)
             self.helper.rebuild_unsaved_block_indices()
             if hasattr(self.mw.ui_updater, 'clear_all_problem_block_highlights_and_text'):
                 self.mw.ui_updater.clear_all_problem_block_highlights_and_text()

@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QMessageBox, QApplication
 from PyQt5.QtCore import QRect
-from utils import log_debug
+from utils.logging_utils import log_debug
 import copy
 import os
 
