@@ -7,10 +7,10 @@ import os
 
 from plugins.base_game_rules import BaseGameRules
 from utils.logging_utils import log_debug
+from utils.utils import convert_spaces_to_dots_for_display
 
 from .config import (
     PROBLEM_DEFINITIONS,
-    DEFAULT_TAG_MAPPINGS_ZMC,
     PROBLEM_WIDTH_EXCEEDED,
     PROBLEM_SHORT_LINE,
     PROBLEM_EMPTY_ODD_SUBLINE_LOGICAL,
@@ -42,14 +42,25 @@ class GameRules(BaseGameRules):
                                                 self.problem_definitions_cache, ProblemIDs)
         self.text_fixer = TextFixer(main_window_ref, self.tag_manager, self.problem_analyzer)
 
+    def load_data_from_json_obj(self, json_data: Any) -> Tuple[list, dict]:
+        if isinstance(json_data, list) and all(isinstance(sublist, list) for sublist in json_data):
+            return json_data, {}
+        log_debug(f"Zelda Plugin: Provided JSON data is not a list of lists. Type: {type(json_data)}")
+        return [], {}
+
+    def save_data_to_json_obj(self, data: list, block_names: dict) -> Any:
+        return data
+
     def get_display_name(self) -> str:
         return "The Legend of Zelda: The Minish Cap"
 
     def get_default_tag_mappings(self) -> Dict[str, str]:
-        mappings = dict(DEFAULT_TAG_MAPPINGS_ZMC)
-        if self.mw and hasattr(self.mw, 'EDITOR_PLAYER_TAG') and hasattr(self.mw, 'ORIGINAL_PLAYER_TAG'):
-            mappings[self.mw.EDITOR_PLAYER_TAG] = self.mw.ORIGINAL_PLAYER_TAG
-        return mappings
+        if self.mw and hasattr(self.mw, 'default_tag_mappings'):
+            mappings = dict(self.mw.default_tag_mappings)
+            if hasattr(self.mw, 'EDITOR_PLAYER_TAG') and hasattr(self.mw, 'ORIGINAL_PLAYER_TAG'):
+                mappings[self.mw.EDITOR_PLAYER_TAG] = self.mw.ORIGINAL_PLAYER_TAG
+            return mappings
+        return {}
 
     def get_tag_checker_handler(self) -> Optional[TagCheckerHandler]:
         return TagCheckerHandler(self.mw)
@@ -86,6 +97,14 @@ class GameRules(BaseGameRules):
                 'menu': 'Tools'
             }
         ]
+    
+    def get_text_representation_for_preview(self, data_string: str) -> str:
+        newline_symbol = getattr(self.mw, "newline_display_symbol", "↵")
+        processed_string = str(data_string).replace('\n', newline_symbol)
+        return convert_spaces_to_dots_for_display(processed_string, self.mw.show_multiple_spaces_as_dots)
+
+    def get_text_representation_for_editor(self, data_string_subline: str) -> str:
+        return str(data_string_subline).replace('\n', '\n')
 
     def analyze_subline(self,
                         text: str,

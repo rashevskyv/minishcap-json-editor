@@ -8,10 +8,9 @@ from .LNET_constants import PAIR_SEPARATOR_LINE_COLOR, PAIR_SEPARATOR_LINE_STYLE
 class LNETPaintEventLogic:
     def __init__(self, editor, helpers):
         self.editor = editor
-        self.helpers = helpers # Instance of LNETPaintHelpers
+        self.helpers = helpers
 
     def execute_paint_event(self, event: QPaintEvent):
-        # Draw pair separator lines BEFORE main content
         if self.editor.objectName() != "preview_text_edit":
             painter_lines = QPainter(self.editor.viewport()) 
             pen_lines = QPen(PAIR_SEPARATOR_LINE_COLOR)
@@ -59,19 +58,16 @@ class LNETPaintEventLogic:
                      break 
                 block = block.next()
 
-        # Clear width exceed character highlights before super().paintEvent
         if self.editor.objectName() == "edited_text_edit" and hasattr(self.editor, 'highlightManager'):
             if self.editor.highlightManager:
                 self.editor.highlightManager._width_exceed_char_selections = [] 
 
-        # Call the original paintEvent of the editor
         self.editor.super_paintEvent(event) 
         
         main_window = self.editor.window()
         if not isinstance(main_window, QMainWindow):
             return
         
-        # Post-paint logic, e.g., for width exceed character highlights
         if self.editor.objectName() == "edited_text_edit":
             block = self.editor.firstVisibleBlock()
             while block.isValid() and block.isVisible():
@@ -95,7 +91,7 @@ class LNETPaintEventLogic:
                         continue
 
                     visual_line_width_game_px = calculate_string_width(line_text_no_tags_for_width_calc, self.editor.font_map)
-                    current_threshold_game_px = self.editor.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
+                    current_threshold_game_px = self.editor.line_width_warning_threshold_pixels
                     
                     if visual_line_width_game_px > current_threshold_game_px:
                         words_in_no_tag_segment = []

@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import QApplication, QMessageBox
 from utils.logging_utils import log_debug
 import copy
 import os
+import json
 from ui.settings_dialog import SettingsDialog
 
 class MainWindowActions:
@@ -11,39 +12,44 @@ class MainWindowActions:
     
     def open_settings_dialog(self):
         log_debug("<<<<<<<<<< ACTION: Open Settings Dialog Triggered >>>>>>>>>>")
-        dialog = SettingsDialog(self.mw, self.mw)
+        dialog = SettingsDialog(self.mw)
+        
+        # Зберігаємо назву активного плагіна до відкриття діалогу
+        old_plugin_name = self.mw.active_game_plugin
+
         if dialog.exec_():
             new_settings = dialog.get_settings()
             log_debug(f"Settings dialog accepted. New settings: {new_settings}")
             
-            current_plugin = getattr(self.mw, 'active_game_plugin', '')
-            new_plugin = new_settings.get('active_game_plugin')
-            plugin_changed = new_plugin and new_plugin != current_plugin
+            plugin_changed = new_settings.get('active_game_plugin') != old_plugin_name
 
+            # Застосовуємо всі налаштування до об'єкта MainWindow
             for key, value in new_settings.items():
-                if hasattr(self.mw, key.upper()): # Для констант, як GAME_DIALOG_MAX_WIDTH_PIXELS
-                    setattr(self.mw, key.upper(), value)
-                else:
-                    setattr(self.mw, key, value)
+                if hasattr(self.mw, key):
+                     setattr(self.mw, key, value)
             
+            self.mw.current_font_size = new_settings.get('font_size')
+            self.mw.json_path = new_settings.get('original_file_path')
+            self.mw.edited_json_path = new_settings.get('edited_file_path')
+            
+            # Зберігаємо всі налаштування
             self.mw.settings_manager.save_settings()
 
-            self.mw.apply_font_size()
-            self.mw.helper.reconfigure_all_highlighters()
-            self.mw.helper.apply_text_wrap_settings()
-            self.mw.ui_updater.update_plugin_status_label()
-            
-            # Оновити константи в редакторах
-            for editor_widget in [self.mw.preview_text_edit, self.mw.original_text_edit, self.mw.edited_text_edit]:
-                if editor_widget:
-                    editor_widget.GAME_DIALOG_MAX_WIDTH_PIXELS = self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS
-                    editor_widget.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
-                    editor_widget.viewport().update()
-
+            # Якщо плагін змінився, ініціюємо перезапуск
             if plugin_changed:
-                QMessageBox.information(self.mw, "Plugin Changed", 
-                                        "The active game plugin has been changed.\n"
-                                        "Please restart the application for the changes to take full effect.")
+                reply = QMessageBox.information(self.mw, "Plugin Changed", 
+                                        "The active game plugin has been changed.\nThe application will now restart.",
+                                        QMessageBox.Ok)
+                if reply == QMessageBox.Ok:
+                    self.helper.restart_application()
+            else:
+                # Якщо плагін не змінився, просто застосовуємо візуальні налаштування
+                self.mw.apply_font_size()
+                self.mw.helper.reconfigure_all_highlighters()
+                self.mw.helper.apply_text_wrap_settings()
+                if new_settings.get('original_file_path') != self.mw.json_path or \
+                   new_settings.get('edited_file_path') != self.mw.edited_json_path:
+                    self.mw.load_all_data_for_path(self.mw.json_path, self.mw.edited_json_path)
 
     def trigger_save_action(self):
         log_debug("<<<<<<<<<< ACTION: Save Triggered (via MainWindowActions) >>>>>>>>>>")
@@ -122,25 +128,32 @@ class MainWindowActions:
 
     def trigger_reload_tag_mappings(self):
         log_debug("<<<<<<<<<< ACTION: Reload Tag Mappings Triggered (via MainWindowActions) >>>>>>>>>>")
-        if self.mw.settings_manager.reload_default_tag_mappings():
-            QMessageBox.information(self.mw, "Tag Mappings Reloaded", "Default tag mappings have been reloaded from settings.json.")
-            if self.mw.current_block_idx != -1:
-                block_name = self.mw.block_names.get(str(self.mw.current_block_idx), f"Block {self.mw.current_block_idx}")
-                if QMessageBox.question(self.mw, "Rescan Block",
-                                       f"Do you want to rescan the current block ('{block_name}') with the new mappings now?\n(This may re-evaluate all problems based on potentially normalized text)",
-                                       QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes) == QMessageBox.Yes:
-                    self.mw.app_action_handler.rescan_issues_for_single_block(self.mw.current_block_idx, use_default_mappings=True)
+        
+        if not self.mw.settings_manager: return
+        plugin_config_path = self.mw.settings_manager._get_plugin_config_path()
+        if not plugin_config_path or not os.path.exists(plugin_config_path):
+            QMessageBox.warning(self.mw, "Reload Error", "Plugin configuration file not found.")
+            return
+
+        try:
+            with open(plugin_config_path, 'r', encoding='utf-8') as f:
+                plugin_data = json.load(f)
+            
+            if "default_tag_mappings" in plugin_data:
+                self.mw.default_tag_mappings = plugin_data["default_tag_mappings"]
+                QMessageBox.information(self.mw, "Tag Mappings Reloaded", f"Default tag mappings reloaded from\n{os.path.basename(plugin_config_path)}.")
+                if self.mw.current_block_idx != -1:
+                    if QMessageBox.question(self.mw, "Rescan Block", "Rescan the current block with the new mappings?", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes) == QMessageBox.Yes:
+                        self.mw.app_action_handler.rescan_issues_for_single_block(self.mw.current_block_idx, use_default_mappings=True)
             else:
-                 if QMessageBox.question(self.mw, "Rescan All",
-                                       "No block is currently selected. Do you want to rescan all blocks with the new mappings?\n(This may re-evaluate all problems based on potentially normalized text)",
-                                       QMessageBox.Yes | QMessageBox.No, QMessageBox.No) == QMessageBox.Yes:
-                    self.mw.app_action_handler.rescan_all_tags() 
-        else: QMessageBox.warning(self.mw, "Reload Error", "Could not reload tag mappings. Check settings.json or console logs.")
+                QMessageBox.warning(self.mw, "Reload Error", "'default_tag_mappings' not found in plugin config.")
+
+        except Exception as e:
+            QMessageBox.critical(self.mw, "Reload Error", f"Failed to read plugin config:\n{e}")
 
     def handle_add_tag_mapping_request(self, bracket_tag: str, curly_tag: str):
         log_debug(f"MainWindowActions: Received request to map '{bracket_tag}' -> '{curly_tag}'")
         if not bracket_tag or not curly_tag:
-            log_debug("  Error: Empty bracket_tag or curly_tag.")
             QMessageBox.warning(self.mw, "Add Tag Mapping Error", "Both tags must be non-empty.")
             return
         if not hasattr(self.mw, 'default_tag_mappings'): self.mw.default_tag_mappings = {}
@@ -158,11 +171,8 @@ class MainWindowActions:
             log_debug(f"  Added/Updated mapping: {bracket_tag} -> {curly_tag}. Total mappings: {len(self.mw.default_tag_mappings)}")
             QMessageBox.information(self.mw, "Tag Mapping Added",
                                     f"Mapping '{bracket_tag}' -> '{curly_tag}' has been added/updated.\n"
-                                    "This change will be saved to settings.json when the application is closed.")
+                                    "This change will be saved to the plugin's config file when settings are saved.")
             if self.mw.current_block_idx != -1:
-                block_name = self.mw.block_names.get(str(self.mw.current_block_idx), f"Block {self.mw.current_block_idx}")
-                if QMessageBox.question(self.mw, "Rescan Block",
-                                       f"Do you want to rescan the current block ('{block_name}') with the new mapping now?\n(This may re-evaluate all problems based on potentially normalized text)",
-                                       QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes) == QMessageBox.Yes:
+                if QMessageBox.question(self.mw, "Rescan Block", "Rescan the current block with the new mapping now?", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes) == QMessageBox.Yes:
                     self.mw.app_action_handler.rescan_issues_for_single_block(self.mw.current_block_idx, use_default_mappings=True)
         else: log_debug("  User cancelled overwrite or no action taken.")

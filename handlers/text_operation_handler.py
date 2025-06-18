@@ -324,8 +324,8 @@ class TextOperationHandler(BaseHandler):
             QMessageBox.warning(self.mw, "Calculate Width Error", "Game rules plugin not loaded.")
             return
 
-        max_allowed_width = self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS
-        warning_threshold = self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
+        max_allowed_width = self.game_dialog_max_width_pixels
+        warning_threshold = self.mw.line_width_warning_threshold_pixels
         
         info_parts = [f"Data Line {data_line_idx + 1} (Block {self.mw.current_block_idx}):\nMax Allowed Width (Game Dialog): {max_allowed_width}px\nWidth Warning Threshold (Editor): {warning_threshold}px\n"]
         
@@ -342,8 +342,8 @@ class TextOperationHandler(BaseHandler):
             game_like_text_no_newlines_rstripped = remove_all_tags(text_to_analyze.replace('\n','')).rstrip()
             total_game_width = calculate_string_width(game_like_text_no_newlines_rstripped, self.mw.font_map)
             game_status = "OK"
-            if total_game_width > self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS:
-                game_status = f"EXCEEDS GAME DIALOG LIMIT ({total_game_width - self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS}px)"
+            if total_game_width > self.game_dialog_max_width_pixels:
+                game_status = f"EXCEEDS GAME DIALOG LIMIT ({total_game_width - self.game_dialog_max_width_pixels}px)"
             info_parts.append(f"Total (game-like, no newlines): {total_game_width}px ({game_status})")
 
             logical_sublines = text_to_analyze.split('\n')
@@ -418,7 +418,7 @@ class TextOperationHandler(BaseHandler):
         final_text_to_apply, changed = self.mw.current_game_rules.autofix_data_string(
             str(current_text_before_autofix), 
             self.mw.font_map, 
-            self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
+            self.mw.line_width_warning_threshold_pixels
         )
         
         log_debug(f"ORANGE_BUG_DEBUG (auto_fix): Plugin autofix_data_string for ACTIVE S:{active_string_idx} returned: Changed={changed}. Text='{repr(final_text_to_apply)}'")

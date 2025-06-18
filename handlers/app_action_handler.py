@@ -8,8 +8,6 @@ from utils.utils import convert_dots_to_spaces_from_editor, calculate_string_wid
 from core.tag_utils import apply_default_mappings_only
 from core.data_manager import load_json_file
 from plugins.base_game_rules import BaseGameRules
-from plugins.zelda_mc.config import PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY, PROBLEM_EMPTY_ODD_SUBLINE_LOGICAL
-
 
 class AppActionHandler(BaseHandler):
     def __init__(self, main_window, data_processor, ui_updater, game_rules_plugin: Optional[BaseGameRules]): 
@@ -81,7 +79,7 @@ class AppActionHandler(BaseHandler):
                     qtextblock_number_in_editor=subline_local_idx, 
                     is_last_subline_in_data_string=(subline_local_idx == len(logical_sublines) - 1),
                     editor_font_map=self.mw.font_map,
-                    editor_line_width_threshold=self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS,
+                    editor_line_width_threshold=self.mw.line_width_warning_threshold_pixels,
                     full_data_string_text_for_logical_check=current_data_string_text_with_spaces, 
                     is_target_for_debug=is_current_ds_target_for_debug 
                 )
@@ -166,8 +164,8 @@ class AppActionHandler(BaseHandler):
         if self.mw.unsaved_changes:
             reply = QMessageBox.question(self.mw, 'Unsaved Changes', "Save changes before exiting?", QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel, QMessageBox.Cancel)
             if reply == QMessageBox.Save:
-                if self.save_data_action(ask_confirmation=True): event.accept()
-                else: event.ignore()
+                if not self.save_data_action(ask_confirmation=True): event.ignore()
+                else: event.accept()
             elif reply == QMessageBox.Discard: event.accept()
             else: event.ignore()
         else: event.accept()
@@ -318,8 +316,13 @@ class AppActionHandler(BaseHandler):
                  reply = QMessageBox.question(self.mw, 'Unsaved Changes', "Loading a new changes file will discard current unsaved edits. Proceed?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
                  if reply == QMessageBox.No: return
             
-            new_edited_data, error = load_json_file(path, parent_widget=self.mw, expected_type=list)
+            json_obj, error = load_json_file(path, parent_widget=self.mw)
             if error: QMessageBox.critical(self.mw, "Load Error", f"Failed to load selected changes file:\n{path}\n\n{error}"); return
+            if not self.mw.current_game_rules:
+                QMessageBox.critical(self.mw, "Load Error", "No game plugin active to parse the file.")
+                return
+
+            new_edited_data, _ = self.mw.current_game_rules.load_data_from_json_obj(json_obj)
             
             self.mw.edited_json_path = path
             self.mw.edited_file_data = new_edited_data
@@ -362,7 +365,12 @@ class AppActionHandler(BaseHandler):
         log_debug(f"--> AppActionHandler: load_all_data_for_path START. Original: '{original_file_path}', Manual Edit Path: '{manually_set_edited_path}', InitialLoad: {is_initial_load_from_settings}")
         self.mw.is_programmatically_changing_text = True
         
-        data, error = load_json_file(original_file_path, parent_widget=self.mw, expected_type=list)
+        if not self.mw.current_game_rules:
+            QMessageBox.critical(self.mw, "Load Error", "Cannot load file: No game plugin is active.")
+            self.mw.is_programmatically_changing_text = False
+            return
+
+        json_obj, error = load_json_file(original_file_path, parent_widget=self.mw)
         if error:
             self.mw.json_path = None; self.mw.edited_json_path = None
             self.mw.data = []; self.mw.edited_data = {}; self.mw.edited_file_data = []
@@ -373,18 +381,30 @@ class AppActionHandler(BaseHandler):
             self.mw.is_programmatically_changing_text = False
             QMessageBox.critical(self.mw, "Load Error", f"Failed to load: {original_file_path}\n{error}"); return
 
+        data, block_names = self.mw.current_game_rules.load_data_from_json_obj(json_obj)
+        if not data and json_obj is not None:
+            QMessageBox.critical(self.mw, "Plugin Error", f"The active plugin '{self.mw.current_game_rules.get_display_name()}' could not parse the file:\n{original_file_path}")
+            self.mw.json_path = None
+            self.mw.data = []
+            self.ui_updater.populate_blocks()
+            self.ui_updater.populate_strings_for_block(-1)
+            self.mw.is_programmatically_changing_text = False
+            return
+
         self.mw.json_path = original_file_path
         self.mw.data = data
+        self.mw.block_names = block_names
         self.mw.edited_data = {}
         self.mw.unsaved_changes = False
         
         self.mw.edited_json_path = manually_set_edited_path if manually_set_edited_path else self._derive_edited_path(self.mw.json_path)
         self.mw.edited_file_data = []
         if self.mw.edited_json_path and os.path.exists(self.mw.edited_json_path):
-            edited_data_from_file, edit_error = load_json_file(self.mw.edited_json_path, parent_widget=self.mw, expected_type=list)
+            edited_json_obj, edit_error = load_json_file(self.mw.edited_json_path, parent_widget=self.mw)
             if edit_error:
                 QMessageBox.warning(self.mw, "Edited Load Warning", f"Could not load changes file: {self.mw.edited_json_path}\n{edit_error}")
             else:
+                edited_data_from_file, _ = self.mw.current_game_rules.load_data_from_json_obj(edited_json_obj)
                 self.mw.edited_file_data = edited_data_from_file
         
         self.mw.current_block_idx = -1; self.mw.current_string_idx = -1
@@ -446,7 +466,7 @@ class AppActionHandler(BaseHandler):
         results = []
         problem_definitions = self.game_rules_plugin.get_problem_definitions()
         
-        editor_warning_threshold = self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
+        editor_warning_threshold = self.mw.line_width_warning_threshold_pixels
         
         for data_str_idx in range(num_strings):
             progress.setValue(data_str_idx)
@@ -471,8 +491,8 @@ class AppActionHandler(BaseHandler):
                 game_like_text_no_newlines_rstripped = remove_all_tags(text_to_analyze.replace('\n','')).rstrip()
                 total_game_width = calculate_string_width(game_like_text_no_newlines_rstripped, self.mw.font_map)
                 game_status = "OK"
-                if total_game_width > self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS:
-                    game_status = f"EXCEEDS GAME DIALOG LIMIT ({total_game_width - self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS}px)"
+                if total_game_width > self.mw.game_dialog_max_width_pixels:
+                    game_status = f"EXCEEDS GAME DIALOG LIMIT ({total_game_width - self.mw.game_dialog_max_width_pixels}px)"
                 line_report_parts.append(f"    Total (game dialog, rstripped): {total_game_width}px ({game_status})")
 
                 for subline_idx, sub_line_text in enumerate(logical_sublines):
@@ -515,7 +535,7 @@ class AppActionHandler(BaseHandler):
             
         result_text_title = (f"Widths for Block {self.mw.block_names.get(str(block_idx), str(block_idx))}\n"
                              f"(Editor Warning Threshold: {editor_warning_threshold}px)\n"
-                             f"(Game Dialog Max Width (for total only): {self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS}px)\n")
+                             f"(Game Dialog Max Width (for total only): {self.mw.game_dialog_max_width_pixels}px)\n")
         result_text = result_text_title + "\n" + "\n\n".join(results)
         
         result_dialog = QMessageBox(self.mw)

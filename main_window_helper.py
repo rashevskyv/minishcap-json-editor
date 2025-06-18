@@ -1,12 +1,18 @@
 from PyQt5.QtWidgets import QMessageBox, QApplication
-from PyQt5.QtCore import QRect
+from PyQt5.QtCore import QRect, QProcess
 from utils.logging_utils import log_debug
 import copy
 import os
+import sys
 
 class MainWindowHelper:
     def __init__(self, main_window):
         self.mw = main_window
+
+    def restart_application(self):
+        log_debug("Restarting application...")
+        self.mw.close()
+        QProcess.startDetached(sys.executable, sys.argv)
 
     def rebuild_unsaved_block_indices(self):
         self.mw.unsaved_block_indices.clear()
@@ -93,9 +99,9 @@ class MainWindowHelper:
         self.rebuild_unsaved_block_indices()
         for editor_widget in [self.mw.preview_text_edit, self.mw.original_text_edit, self.mw.edited_text_edit]:
             if editor_widget:
-                editor_widget.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
+                editor_widget.line_width_warning_threshold_pixels = self.mw.line_width_warning_threshold_pixels
                 editor_widget.font_map = self.mw.font_map
-                editor_widget.GAME_DIALOG_MAX_WIDTH_PIXELS = self.mw.GAME_DIALOG_MAX_WIDTH_PIXELS
+                editor_widget.game_dialog_max_width_pixels = self.mw.game_dialog_max_width_pixels
                 if hasattr(editor_widget, 'updateLineNumberAreaWidth'):
                     editor_widget.updateLineNumberAreaWidth(0)
 
@@ -146,7 +152,7 @@ class MainWindowHelper:
         if self.mw.window_was_maximized_on_close:
             self.mw.window_normal_geometry_on_close = self.mw.normalGeometry()
         else:
-            self.mw.window_normal_geometry_on_close = self.mw.geometry() # Store current as normal if not maximized
+            self.mw.window_normal_geometry_on_close = self.mw.geometry()
 
 
     def restore_state_after_settings_load(self):

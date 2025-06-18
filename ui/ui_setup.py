@@ -209,18 +209,6 @@ def setup_main_window_ui(main_window):
     main_window.main_toolbar.addAction(main_window.auto_fix_action) 
     main_window.main_toolbar.addSeparator()
     main_window.main_toolbar.addAction(main_window.open_settings_action)
-    main_window.main_toolbar.addSeparator()
-
-    font_size_label = QLabel("Font Size: ")
-    main_window.main_toolbar.addWidget(font_size_label)
-    main_window.font_size_spinbox = QSpinBox(main_window)
-    main_window.font_size_spinbox.setMinimum(6)
-    main_window.font_size_spinbox.setMaximum(24)
-    default_font_size_val = QFont().pointSize()
-    if default_font_size_val <= 0 : default_font_size_val = 10
-    main_window.font_size_spinbox.setValue(default_font_size_val)
-    main_window.main_toolbar.addWidget(main_window.font_size_spinbox)
-
 
     main_window.setToolButtonStyle(Qt.ToolButtonIconOnly)
 

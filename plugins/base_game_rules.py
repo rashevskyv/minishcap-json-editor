@@ -1,15 +1,29 @@
 from typing import List, Tuple, Dict, Optional, Any, Set
 from PyQt5.QtGui import QTextCharFormat
+import json
 
 class BaseGameRules:
     def __init__(self, main_window_ref=None):
         self.mw = main_window_ref
 
+    def load_data_from_json_obj(self, json_data: Any) -> Tuple[list, dict]:
+        if isinstance(json_data, list):
+            return json_data, {}
+        return [], {}
+
+    def save_data_to_json_obj(self, data: list, block_names: dict) -> Any:
+        return data
+        
+    def get_newline_format_ranges(self, text: str) -> List[Tuple[int, int, QTextCharFormat]]:
+        return []
+
     def get_display_name(self) -> str:
+        if self.mw and hasattr(self.mw, 'display_name'):
+            return self.mw.display_name
         return "Base Game (No Plugin)"
 
     def get_problem_definitions(self) -> Dict[str, Dict[str, Any]]:
-        raise NotImplementedError("Subclasses must implement get_problem_definitions")
+        return {}
 
     def analyze_subline(self,
                         text: str,
@@ -21,19 +35,19 @@ class BaseGameRules:
                         editor_line_width_threshold: int,
                         full_data_string_text_for_logical_check: str,
                         is_target_for_debug: bool = False) -> Set[str]:
-        raise NotImplementedError("Subclasses must implement analyze_subline")
+        return set()
 
     def autofix_data_string(self,
                             data_string: str,
                             editor_font_map: dict,
                             editor_line_width_threshold: int) -> Tuple[str, bool]:
-        raise NotImplementedError("Subclasses must implement autofix_data_string")
+        return data_string, False
 
     def process_pasted_segment(self,
                                segment_to_insert: str,
                                original_text_for_tags: str,
                                editor_player_tag_const: str) -> Tuple[str, str, str]:
-        raise NotImplementedError("Subclasses must implement process_pasted_segment")
+        return segment_to_insert, "OK", ""
         
     def get_base_game_rules_class(self):
         return BaseGameRules

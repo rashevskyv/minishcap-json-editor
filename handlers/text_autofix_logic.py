@@ -148,7 +148,7 @@ class TextAutofixLogic:
                 width_first_word_next = calculate_string_width(first_word_next_no_tags, self.mw.font_map)
                 space_width = calculate_string_width(" ", self.mw.font_map)
                 
-                can_merge = width_current_line_rstripped + space_width + width_first_word_next <= self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
+                can_merge = width_current_line_rstripped + space_width + width_first_word_next <= self.mw.line_width_warning_threshold_pixels
 
                 if can_merge:
                     merged_line = current_line_for_width_calc
@@ -208,7 +208,7 @@ class TextAutofixLogic:
             while True: 
                 line_width_no_tags = calculate_string_width(remove_all_tags(current_processing_line), self.mw.font_map)
 
-                if line_width_no_tags <= self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
+                if line_width_no_tags <= self.mw.line_width_warning_threshold_pixels:
                     if current_processing_line or not temp_newly_created_lines_for_this_original_line or \
                        (not current_processing_line and line_idx < len(sub_lines) -1 ): 
                         temp_newly_created_lines_for_this_original_line.append(current_processing_line)
@@ -235,7 +235,7 @@ class TextAutofixLogic:
                         width_to_check += calculate_string_width(" ", self.mw.font_map)
                     width_to_check += part_width
 
-                    if width_to_check <= self.mw.LINE_WIDTH_WARNING_THRESHOLD_PIXELS:
+                    if width_to_check <= self.mw.line_width_warning_threshold_pixels:
                         if current_needs_space_before:
                             text_fits += " "
                         text_fits += part

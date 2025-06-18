@@ -5,7 +5,7 @@ import copy
 import re
 import importlib 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QPlainTextEdit, QVBoxLayout, QSpinBox, QWidget, QLabel, QAction, QMenu
-from PyQt5.QtCore import Qt, QEvent, QRect
+from PyQt5.QtCore import Qt, QEvent, QRect, QTimer
 from PyQt5.QtGui import QKeyEvent, QTextCursor, QKeySequence, QFont
 from typing import Optional, Dict, Set, Tuple
 
@@ -46,15 +46,15 @@ class MainWindow(QMainWindow):
 
         self.EDITOR_PLAYER_TAG = EDITOR_PLAYER_TAG
         self.ORIGINAL_PLAYER_TAG = ORIGINAL_PLAYER_TAG
-        self.GAME_DIALOG_MAX_WIDTH_PIXELS = DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS
-        self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = DEFAULT_LINE_WIDTH_WARNING_THRESHOLD
+        self.game_dialog_max_width_pixels = DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS
+        self.line_width_warning_threshold_pixels = DEFAULT_LINE_WIDTH_WARNING_THRESHOLD
         self.font_map = {}
 
         self.current_font_size = DEFAULT_APP_FONT_SIZE
         self.general_font_family = GENERAL_APP_FONT_FAMILY
         self.editor_font_family = MONOSPACE_EDITOR_FONT_FAMILY
         self.active_game_plugin = "zelda_mc"
-
+        self.display_name = ""
 
         self.is_programmatically_changing_text = False
         self.is_adjusting_cursor = False
@@ -80,7 +80,6 @@ class MainWindow(QMainWindow):
         self.window_was_maximized_on_close = False
         self.window_normal_geometry_on_close: QRect = None
 
-
         self.newline_display_symbol = "↵"
         self.newline_css = "color: #A020F0; font-weight: bold;"
         self.tag_css = "color: #808080; font-style: italic;"
@@ -90,7 +89,6 @@ class MainWindow(QMainWindow):
         self.editors_wrap_lines = False
         self.bracket_tag_color_hex = "#FF8C00"
         self.search_history_to_save = []
-
 
         self.default_tag_mappings = {}
         
@@ -119,7 +117,6 @@ class MainWindow(QMainWindow):
         self.find_action = None
         self.auto_fix_action = None 
         self.main_vertical_layout = None
-        self.font_size_spinbox = None
         self.auto_fix_button = None 
         
         self.status_label_part1: QLabel = None
@@ -133,14 +130,13 @@ class MainWindow(QMainWindow):
 
 
         log_debug("MainWindow: Initializing Core Components...")
+        self.settings_manager = SettingsManager(self)
+        self.settings_manager.load_settings()
+
         self.helper = MainWindowHelper(self)
         self.actions = MainWindowActions(self)
         self.data_processor = DataStateProcessor(self)
         self.ui_updater = UIUpdater(self, self.data_processor)
-        self.settings_manager = SettingsManager(self) 
-
-        log_debug("MainWindow: Loading settings before plugin to get active plugin...")
-        self.settings_manager.load_settings()
 
         log_debug("MainWindow: Loading game plugin...")
         self.load_game_plugin() 
@@ -173,30 +169,29 @@ class MainWindow(QMainWindow):
 
         self.ui_updater.update_plugin_status_label()
 
-        log_debug(f"MainWindow: After SettingsManager.load_settings(), self.mw.current_font_size = {self.current_font_size}, general_family = {self.general_font_family}, editor_family = {self.editor_font_family}")
-        if self.font_size_spinbox:
-            self.font_size_spinbox.setValue(self.current_font_size)
-
-
-        log_debug(f"MainWindow: After load_settings, self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = {self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS}")
-        log_debug(f"MainWindow: After load_settings, self.initial_load_path = {self.initial_load_path}")
-        log_debug(f"MainWindow: After load_settings, self.initial_edited_load_path = {self.initial_edited_load_path}")
-
-
         for editor_widget in [self.preview_text_edit, self.original_text_edit, self.edited_text_edit]:
             if editor_widget:
-                editor_widget.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS
-                log_debug(f"MainWindow: Set {editor_widget.objectName()}.LINE_WIDTH_WARNING_THRESHOLD_PIXELS to {editor_widget.LINE_WIDTH_WARNING_THRESHOLD_PIXELS}")
+                editor_widget.line_width_warning_threshold_pixels = self.line_width_warning_threshold_pixels
                 editor_widget.font_map = self.font_map
-                editor_widget.GAME_DIALOG_MAX_WIDTH_PIXELS = self.GAME_DIALOG_MAX_WIDTH_PIXELS
+                editor_widget.game_dialog_max_width_pixels = self.game_dialog_max_width_pixels
                 
                 if hasattr(editor_widget, 'updateLineNumberAreaWidth'):
                     editor_widget.updateLineNumberAreaWidth(0)
 
         self.helper.restore_state_after_settings_load()
+        self.apply_font_size()
+        self.helper.apply_text_wrap_settings()
+
         self.helper.rebuild_unsaved_block_indices()
 
+        QTimer.singleShot(100, self.force_focus)
+
         log_debug("++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++")
+    
+    def force_focus(self):
+        log_debug("Forcing window focus.")
+        self.activateWindow()
+        self.raise_()
 
     def setup_plugin_ui(self):
         if not self.current_game_rules:
@@ -459,8 +454,6 @@ class MainWindow(QMainWindow):
             self.search_panel_widget.close_requested.connect(self.helper.hide_search_panel)
             self.search_panel_widget.find_next_requested.connect(self.helper.handle_panel_find_next)
             self.search_panel_widget.find_previous_requested.connect(self.helper.handle_panel_find_previous)
-        if hasattr(self, 'font_size_spinbox') and self.font_size_spinbox:
-            self.font_size_spinbox.valueChanged.connect(self.change_font_size_action)
         
         if hasattr(self, 'auto_fix_button') and self.auto_fix_button:
             self.auto_fix_button.clicked.connect(self.editor_operation_handler.auto_fix_current_string)
@@ -469,13 +462,6 @@ class MainWindow(QMainWindow):
 
 
         log_debug("--> MainWindow: connect_signals() finished")
-
-    def change_font_size_action(self, new_size: int):
-        log_debug(f"MainWindow: change_font_size_action called with size {new_size}")
-        if self.current_font_size != new_size:
-            self.current_font_size = new_size
-            log_debug(f"MainWindow: self.mw.current_font_size is now {self.current_font_size}")
-            self.apply_font_size()
 
     def apply_font_size(self):
         log_debug(f"MainWindow: Applying font. General: Family='{self.general_font_family}', Editor: Family='{self.editor_font_family}', Size={self.current_font_size}")

@@ -3,7 +3,6 @@ from PyQt5.QtCore import Qt, QRect
 from PyQt5.QtWidgets import QMainWindow, QTextEdit
 from utils.logging_utils import log_debug
 from utils.utils import calculate_string_width, remove_all_tags, convert_dots_to_spaces_from_editor, ALL_TAGS_PATTERN
-# ВИДАЛЕНО ПРЯМИЙ ІМПОРТ КОНСТАНТ ПРОБЛЕМ З PLUGINS.ZELDA_MC.RULES (АБО CONFIG)
 
 class LNETLineNumberAreaPaintLogic:
 
@@ -19,7 +18,7 @@ class LNETLineNumberAreaPaintLogic:
         problem_definitions = {}
         if isinstance(main_window_ref, QMainWindow) and hasattr(main_window_ref, 'current_game_rules') and main_window_ref.current_game_rules:
             game_rules = main_window_ref.current_game_rules
-            problem_definitions = game_rules.get_problem_definitions() # Отримуємо визначення проблем тут
+            problem_definitions = game_rules.get_problem_definitions()
 
         default_bg_color_for_area = self.editor.palette().base().color()
         if self.editor.isReadOnly():
@@ -27,7 +26,7 @@ class LNETLineNumberAreaPaintLogic:
 
         total_area_width = self.editor.lineNumberAreaWidth()
         extra_part_width = 0
-        if self.editor.objectName() == "original_text_edit" or self.editor.objectName() == "edited_text_edit":
+        if self.editor.objectName() in ["original_text_edit", "edited_text_edit"] and self.editor.font_map:
             extra_part_width = self.editor.pixel_width_display_area_width
         elif self.editor.objectName() == "preview_text_edit":
             extra_part_width = self.editor.preview_indicator_area_width
@@ -67,7 +66,7 @@ class LNETLineNumberAreaPaintLogic:
 
                 problem_ids_for_this_qtextblock = set()
 
-                if self.editor.objectName() == "original_text_edit" or self.editor.objectName() == "edited_text_edit":
+                if self.editor.objectName() in ["original_text_edit", "edited_text_edit"]:
                     if game_rules and current_block_idx_data_mw != -1 and current_string_idx_data_mw != -1:
                         subline_local_idx_for_problems = current_q_block_number_in_editor_doc
                         problem_key = (current_block_idx_data_mw, current_string_idx_data_mw, subline_local_idx_for_problems)
@@ -89,7 +88,7 @@ class LNETLineNumberAreaPaintLogic:
                                         aggregated_problems_for_data_line.update(main_window_ref.problems_per_subline[problem_key_preview])
                         problem_ids_for_this_qtextblock = aggregated_problems_for_data_line
 
-                if self.editor.objectName() == "original_text_edit" or self.editor.objectName() == "edited_text_edit":
+                if self.editor.objectName() in ["original_text_edit", "edited_text_edit"]:
                     if problem_ids_for_this_qtextblock:
                         sorted_subline_problem_ids = sorted(
                             list(problem_ids_for_this_qtextblock),
@@ -97,22 +96,13 @@ class LNETLineNumberAreaPaintLogic:
                         )
                         if sorted_subline_problem_ids:
                             highest_priority_pid = sorted_subline_problem_ids[0]
-                            color_def = problem_definitions.get(highest_priority_pid) # Використовуємо problem_definitions
+                            color_def = problem_definitions.get(highest_priority_pid)
                             if color_def and "color" in color_def:
                                 chosen_color = QColor(color_def["color"])
                                 bg_color_extra_info_area = chosen_color
-                                # Приклад перевірки за ID, якщо потрібно спеціальне фарбування для певного типу помилки
-                                # Наприклад, якщо плагін визначає PROBLEM_ID_FOR_NUMBER_AREA_HIGHLIGHT
-                                # if highest_priority_pid == "PROBLEM_ID_FOR_NUMBER_AREA_HIGHLIGHT":
-                                #     bg_color_number_area = chosen_color
-                                # Або, якщо це порожній непарний рядок (приклад з вашого коду)
-                                # Потрібно отримати ID для "empty odd subline" з problem_definitions
                                 empty_odd_display_id = None
                                 for pid, pdef in problem_definitions.items():
-                                    # Шукаємо ID проблеми за назвою або іншим унікальним атрибутом, якщо потрібно
-                                    # Це лише приклад, можливо, краще передавати ID напряму
-                                    if "Порожній непарний відображуваний підрядок" in pdef.get("name", "") or \
-                                       "EmptyOddD" in pdef.get("name", ""): # Або за ключем, якщо він відомий
+                                    if "EmptyOddD" in pdef.get("name", ""):
                                         empty_odd_display_id = pid
                                         break
                                 if empty_odd_display_id and highest_priority_pid == empty_odd_display_id:
@@ -127,7 +117,7 @@ class LNETLineNumberAreaPaintLogic:
                 painter.drawText(QRect(0, top, number_part_width - 3, line_height), Qt.AlignRight | Qt.AlignVCenter, display_number_for_line_area)
 
                 if extra_part_width > 0:
-                    if self.editor.objectName() == "original_text_edit" or self.editor.objectName() == "edited_text_edit":
+                    if self.editor.objectName() in ["original_text_edit", "edited_text_edit"] and self.editor.font_map:
                         q_block_text_raw_dots_paint_text = current_q_block.text()
                         q_block_text_spaces_paint_text = convert_dots_to_spaces_from_editor(q_block_text_raw_dots_paint_text)
                         text_for_width_calc_rstripped_paint_text = remove_all_tags(q_block_text_spaces_paint_text).rstrip()
@@ -149,7 +139,7 @@ class LNETLineNumberAreaPaintLogic:
                         for problem_id in sorted_problem_ids_for_preview_indicator:
                             if len(indicators_to_draw_preview) >= 3:
                                 break
-                            problem_def_preview = problem_definitions.get(problem_id) # Використовуємо problem_definitions
+                            problem_def_preview = problem_definitions.get(problem_id)
                             if problem_def_preview:
                                 color = problem_def_preview.get("color")
                                 if color:

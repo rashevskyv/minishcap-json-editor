@@ -76,7 +76,8 @@ class LineNumberedTextEdit(QPlainTextEdit):
         initial_font.setPointSize(font_size_to_set)
         self.setFont(initial_font)
 
-        self.highlighter = JsonTagHighlighter(self.document())
+        main_window_ref = parent if isinstance(parent, QMainWindow) else (self.window() if isinstance(self.window(), QMainWindow) else None)
+        self.highlighter = JsonTagHighlighter(self.document(), main_window_ref=main_window_ref)
         self.ensurePolished()
 
         self.character_limit_line_position = CHARACTER_LIMIT_LINE_POSITION
@@ -92,15 +93,15 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.editor_player_tag = EDITOR_PLAYER_TAG_CONST
         self.original_player_tag = ORIGINAL_PLAYER_TAG_CONST
         self.font_map = {}
-        self.GAME_DIALOG_MAX_WIDTH_PIXELS = DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS
-        self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = DEFAULT_LINE_WIDTH_WARNING_THRESHOLD
+        self.game_dialog_max_width_pixels = DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS
+        self.line_width_warning_threshold_pixels = DEFAULT_LINE_WIDTH_WARNING_THRESHOLD
 
         if parent and isinstance(parent, QMainWindow):
             self.editor_player_tag = getattr(parent, 'EDITOR_PLAYER_TAG', EDITOR_PLAYER_TAG_CONST)
             self.original_player_tag = getattr(parent, 'ORIGINAL_PLAYER_TAG', ORIGINAL_PLAYER_TAG_CONST)
             self.font_map = getattr(parent, 'font_map', {})
-            self.GAME_DIALOG_MAX_WIDTH_PIXELS = getattr(parent, 'GAME_DIALOG_MAX_WIDTH_PIXELS', DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS)
-            self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = getattr(parent, 'LINE_WIDTH_WARNING_THRESHOLD_PIXELS', DEFAULT_LINE_WIDTH_WARNING_THRESHOLD)
+            self.game_dialog_max_width_pixels = getattr(parent, 'game_dialog_max_width_pixels', DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS)
+            self.line_width_warning_threshold_pixels = getattr(parent, 'line_width_warning_threshold_pixels', DEFAULT_LINE_WIDTH_WARNING_THRESHOLD)
             self.character_limit_line_position = getattr(parent, 'editor_char_limit_line_pos', CHARACTER_LIMIT_LINE_POSITION)
 
 
@@ -264,7 +265,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
                 if hasattr(main_window, 'list_selection_handler'):
                     is_down = (event.key() == Qt.Key_Down)
                     main_window.list_selection_handler.navigate_to_problem_string(direction_down=is_down)
-                event.accept() # Consume the event to prevent default scrolling
+                event.accept()
                 return 
             elif not is_ctrl_pressed and (event.key() == Qt.Key_Up or event.key() == Qt.Key_Down):
                 log_debug(f"LNET ({self.objectName()}): Simple Up/Down detected.")
@@ -281,13 +282,11 @@ class LineNumberedTextEdit(QPlainTextEdit):
                         main_window.list_selection_handler.string_selected_from_preview(new_block_number)
                 event.accept()
                 return
-            # Allow other keys for default ReadOnly behavior (like selection, copy)
-            # but explicitly ignore if it's not a recognized navigation or selection key for ReadOnly
             if not (event.key() in [Qt.Key_Left, Qt.Key_Right, Qt.Key_PageUp, Qt.Key_PageDown, Qt.Key_Home, Qt.Key_End] or \
                     event.matches(QKeySequence.SelectAll) or event.matches(QKeySequence.Copy)):
-                event.ignore() # Ignore other keys to prevent any modification or unexpected behavior
+                event.ignore()
                 return
-            super().keyPressEvent(event) # Pass allowed keys to base class
+            super().keyPressEvent(event)
             return
 
 
@@ -319,7 +318,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
         current_font_metrics = self.fontMetrics()
         base_width = current_font_metrics.horizontalAdvance('9') * (digits) + 10
         additional_width = 0
-        if self.objectName() == "original_text_edit" or self.objectName() == "edited_text_edit":
+        if self.objectName() in ["original_text_edit", "edited_text_edit"] and self.font_map:
             additional_width = self.pixel_width_display_area_width
         elif self.objectName() == "preview_text_edit":
             additional_width = self.preview_indicator_area_width

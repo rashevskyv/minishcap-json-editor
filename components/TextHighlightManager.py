@@ -154,6 +154,9 @@ class TextHighlightManager:
             self._preview_selected_line_selections = []
             self.applyHighlights()
 
+    def addProblemLineHighlight(self, line_number: int):
+        self.addCriticalProblemHighlight(line_number)
+
     def addCriticalProblemHighlight(self, line_number: int):
         doc = self.editor.document()
         needs_update = False

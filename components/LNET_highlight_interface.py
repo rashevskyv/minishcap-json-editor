@@ -97,8 +97,14 @@ class LNETHighlightInterface:
     def clearAllProblemTypeHighlights(self):
         self.editor.highlightManager.clearAllProblemHighlights()
 
-    def addProblemLineHighlight(self, line_number: int): self.addCriticalProblemHighlight(line_number)
-    def removeProblemLineHighlight(self, line_number: int) -> bool: return self.removeCriticalProblemHighlight(line_number)
-    def clearProblemLineHighlights(self): self.clearAllProblemTypeHighlights()
+    def addProblemLineHighlight(self, line_number: int):
+        self.addCriticalProblemHighlight(line_number)
+
+    def removeProblemLineHighlight(self, line_number: int) -> bool:
+        return self.removeCriticalProblemHighlight(line_number)
+
+    def clearProblemLineHighlights(self):
+        self.clearAllProblemTypeHighlights()
+        
     def hasProblemHighlight(self, line_number: Optional[int] = None) -> bool:
-        return self.editor.highlightManager.hasCriticalProblemHighlight(line_number)
+        return self.hasCriticalProblemHighlight(line_number)
