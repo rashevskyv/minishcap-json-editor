@@ -95,19 +95,9 @@ class AppActionHandler(BaseHandler):
             
             if is_current_ds_target_for_debug:
                 log_debug(f"  ORANGE_BUG_DEBUG (Scan END): B:{block_idx}, S:{data_string_idx} (TARGET & EMPTY). Finished processing sublines.")
-
-        if is_single_block_scan and hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
-            self.ui_updater.update_block_item_text_with_problem_count(block_idx)
-        
-        preview_edit = getattr(self.mw, 'preview_text_edit', None)
-        if is_single_block_scan and self.mw.current_block_idx == block_idx:
-            if preview_edit and hasattr(preview_edit, 'lineNumberArea'):
-                self.ui_updater.populate_strings_for_block(block_idx) 
-                preview_edit.lineNumberArea.update()
         
         return changes_made_to_edited_data_in_this_block
-
-
+        
     def _perform_initial_silent_scan_all_issues(self):
         if not self.mw.data:
             return

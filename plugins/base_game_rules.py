@@ -13,9 +13,15 @@ class BaseGameRules:
 
     def save_data_to_json_obj(self, data: list, block_names: dict) -> Any:
         return data
+    
+    def get_enter_char(self) -> str:
+        return '\n'
         
-    def get_newline_format_ranges(self, text: str) -> List[Tuple[int, int, QTextCharFormat]]:
-        return []
+    def get_shift_enter_char(self) -> str:
+        return '\n'
+
+    def get_ctrl_enter_char(self) -> str:
+        return '\n'
 
     def get_display_name(self) -> str:
         if self.mw and hasattr(self.mw, 'display_name'):

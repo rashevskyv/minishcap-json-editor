@@ -2,6 +2,8 @@ from PyQt5.QtGui import QColor
 
 P_NEWLINE_MARKER = "▶"
 L_NEWLINE_MARKER = "▷"
+P_VISUAL_EDITOR_MARKER = "▶" # PUA for Shift+Enter -> \p
+L_VISUAL_EDITOR_MARKER = "▷" # PUA for Ctrl+Enter -> \l
 
 PROBLEM_DEFINITIONS = {}
 

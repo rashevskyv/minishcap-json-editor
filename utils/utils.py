@@ -1,9 +1,11 @@
 import datetime
 import re
 import os
+from plugins.pokemon_fr.config import P_VISUAL_EDITOR_MARKER, L_VISUAL_EDITOR_MARKER
+
 
 SPACE_DOT_SYMBOL = "·"
-ALL_TAGS_PATTERN = re.compile(r'\[[^\]]*\]|\{[^}]*\}')
+ALL_TAGS_PATTERN = re.compile(r'\[[^\]]*\]|\{[^}]*\}|' + re.escape(P_VISUAL_EDITOR_MARKER) + r'|' + re.escape(L_VISUAL_EDITOR_MARKER))
 DEFAULT_CHAR_WIDTH_FALLBACK = 6
 
 def remove_all_tags(text: str) -> str:

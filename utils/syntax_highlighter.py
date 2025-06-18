@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import QWidget, QMainWindow
 
 from .logging_utils import log_debug
 from .utils import SPACE_DOT_SYMBOL
+from plugins.pokemon_fr.config import P_NEWLINE_MARKER, L_NEWLINE_MARKER, P_VISUAL_EDITOR_MARKER, L_VISUAL_EDITOR_MARKER
 
 class JsonTagHighlighter(QSyntaxHighlighter):
     STATE_DEFAULT = 0
@@ -37,6 +38,9 @@ class JsonTagHighlighter(QSyntaxHighlighter):
         self.newline_symbol_format = QTextCharFormat()
         self.literal_newline_format = QTextCharFormat()
         self.space_dot_format = QTextCharFormat()
+        self.p_marker_format = QTextCharFormat()
+        self.l_marker_format = QTextCharFormat()
+
 
         self.red_text_format = QTextCharFormat()
         self.green_text_format = QTextCharFormat()
@@ -107,6 +111,12 @@ class JsonTagHighlighter(QSyntaxHighlighter):
             self.bracket_tag_format.setFontWeight(QFont.Bold)
         self._apply_css_to_format(self.newline_symbol_format, newline_css_str)
         self._apply_css_to_format(self.literal_newline_format, "color: red; font-weight: bold;")
+        
+        self.p_marker_format.setForeground(QColor("green"))
+        self.p_marker_format.setFontWeight(QFont.Bold)
+        self.l_marker_format.setForeground(QColor("orange"))
+        self.l_marker_format.setFontWeight(QFont.Bold)
+
 
         try: self.space_dot_format.setForeground(QColor(space_dot_color_hex))
         except Exception: self.space_dot_format.setForeground(QColor(Qt.lightGray))
@@ -164,7 +174,11 @@ class JsonTagHighlighter(QSyntaxHighlighter):
             (r"(\[[^\]]*\])", self.bracket_tag_format),
             (r"(\\n)", self.literal_newline_format),
             (re.escape(self.newline_char), self.newline_symbol_format),
-            (re.escape(SPACE_DOT_SYMBOL), self.space_dot_format)
+            (re.escape(SPACE_DOT_SYMBOL), self.space_dot_format),
+            (re.escape(P_NEWLINE_MARKER), self.p_marker_format),
+            (re.escape(L_NEWLINE_MARKER), self.l_marker_format),
+            (re.escape(P_VISUAL_EDITOR_MARKER), self.p_marker_format),
+            (re.escape(L_VISUAL_EDITOR_MARKER), self.l_marker_format),
         ]
         
         for pattern_str, fmt in all_rules:

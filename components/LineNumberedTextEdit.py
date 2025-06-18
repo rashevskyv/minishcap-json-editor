@@ -257,50 +257,26 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
     def keyPressEvent(self, event: QKeyEvent):
         main_window = self.window()
-        is_ctrl_pressed = event.modifiers() & Qt.ControlModifier
+        if not self.isReadOnly() and isinstance(main_window, QMainWindow) and main_window.current_game_rules:
+            game_rules = main_window.current_game_rules
+            is_enter_key = event.key() in (Qt.Key_Return, Qt.Key_Enter)
 
-        if self.objectName() == "preview_text_edit":
-            if is_ctrl_pressed and (event.key() == Qt.Key_Up or event.key() == Qt.Key_Down):
-                log_debug(f"LNET ({self.objectName()}): Ctrl+Up/Down detected. Initiating problem navigation.")
-                if hasattr(main_window, 'list_selection_handler'):
-                    is_down = (event.key() == Qt.Key_Down)
-                    main_window.list_selection_handler.navigate_to_problem_string(direction_down=is_down)
-                event.accept()
-                return 
-            elif not is_ctrl_pressed and (event.key() == Qt.Key_Up or event.key() == Qt.Key_Down):
-                log_debug(f"LNET ({self.objectName()}): Simple Up/Down detected.")
-                current_cursor = self.textCursor()
-                current_block_number = current_cursor.blockNumber()
-                new_block_number = -1
-                if event.key() == Qt.Key_Up and current_block_number > 0:
-                    new_block_number = current_block_number - 1
-                elif event.key() == Qt.Key_Down and current_block_number < self.document().blockCount() - 1:
-                    new_block_number = current_block_number + 1
+            if is_enter_key:
+                char_to_insert = ''
+                modifiers = event.modifiers()
                 
-                if new_block_number != -1:
-                    if hasattr(main_window, 'list_selection_handler'):
-                        main_window.list_selection_handler.string_selected_from_preview(new_block_number)
-                event.accept()
-                return
-            if not (event.key() in [Qt.Key_Left, Qt.Key_Right, Qt.Key_PageUp, Qt.Key_PageDown, Qt.Key_Home, Qt.Key_End] or \
-                    event.matches(QKeySequence.SelectAll) or event.matches(QKeySequence.Copy)):
-                event.ignore()
-                return
-            super().keyPressEvent(event)
-            return
-
-
-        if not self.isReadOnly():
-            if event.matches(QKeySequence.Undo):
-                if self.document().isUndoAvailable():
-                    self.undo()
+                if modifiers & Qt.ShiftModifier:
+                    char_to_insert = game_rules.get_shift_enter_char()
+                elif modifiers & Qt.ControlModifier:
+                    char_to_insert = game_rules.get_ctrl_enter_char()
+                elif modifiers == Qt.NoModifier:
+                    char_to_insert = game_rules.get_enter_char()
+                
+                if char_to_insert:
+                    self.textCursor().insertText(char_to_insert)
                     event.accept()
                     return
-            elif event.matches(QKeySequence.Redo):
-                if self.document().isRedoAvailable():
-                    self.redo()
-                    event.accept()
-                    return
+
         super().keyPressEvent(event)
 
 
@@ -447,19 +423,19 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.highlight_interface.setLinkedCursorPosition(line_number, column_number)
 
     def applyQueuedHighlights(self):
-        self.highlight_interface.applyQueuedHighlights()
+        self.editor.highlightManager.applyHighlights()
 
     def clearAllProblemTypeHighlights(self):
-        self.highlight_interface.clearAllProblemTypeHighlights()
+        self.editor.highlightManager.clearAllProblemHighlights()
 
     def addProblemLineHighlight(self, line_number: int):
-        self.highlight_interface.addProblemLineHighlight(line_number)
+        self.addCriticalProblemHighlight(line_number)
 
     def removeProblemLineHighlight(self, line_number: int) -> bool:
-        return self.highlight_interface.removeProblemLineHighlight(line_number)
+        return self.removeCriticalProblemHighlight(line_number)
 
     def clearProblemLineHighlights(self):
-        self.highlight_interface.clearProblemLineHighlights()
-
+        self.clearAllProblemTypeHighlights()
+        
     def hasProblemHighlight(self, line_number = None) -> bool:
-        return self.highlight_interface.hasProblemHighlight(line_number)
+        return self.hasProblemHighlight(line_number)

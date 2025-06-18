@@ -1,6 +1,6 @@
 {
     "font_size": 13,
-    "active_game_plugin": "zelda_mc",
+    "active_game_plugin": "pokemon_fr",
     "window_was_maximized": false,
     "window_normal_geometry": {
         "x": 876,
@@ -8,7 +8,7 @@
         "width": 1288,
         "height": 1008
     },
-    "main_splitter_state": "AAAA/wAAAAEAAAACAAABSQAAA6gB/////wEAAAABAA==",
-    "right_splitter_state": "AAAA/wAAAAEAAAACAAAB2wAAAacB/////wEAAAACAA==",
+    "main_splitter_state": "AAAA/wAAAAEAAAACAAAAyAAAAyAB/////wEAAAABAA==",
+    "right_splitter_state": "AAAA/wAAAAEAAAACAAAAlgAAAcIB/////wEAAAACAA==",
     "bottom_right_splitter_state": "AAAA/wAAAAEAAAACAAABkAAAAZAB/////wEAAAABAA=="
 }

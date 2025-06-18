@@ -33,8 +33,16 @@
 │   │   ├── kruptar_format
 │   │   │   └── rules.py
 │   │   └── base_import_rules.py
-│   ├── zelda_mc
+│   ├── pokemon_fr
+│   │   ├── config.json
 │   │   ├── config.py
+│   │   ├── problem_analyzer.py
+│   │   ├── rules.py
+│   │   └── tag_manager.py
+│   ├── zelda_mc
+│   │   ├── config.json
+│   │   ├── config.py
+│   │   ├── font_map.json
 │   │   ├── problem_analyzer.py
 │   │   ├── rules.py
 │   │   ├── tag_checker_handler.py
@@ -62,7 +70,6 @@
 │   ├── syntax_highlighter.py
 │   └── utils.py
 ├── app_debug.log
-├── font_map.json
 ├── main.py
 ├── main_window_actions.py
 ├── main_window_helper.py

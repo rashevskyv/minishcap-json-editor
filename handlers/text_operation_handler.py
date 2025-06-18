@@ -5,8 +5,7 @@ from PyQt5.QtCore import QTimer
 from .base_handler import BaseHandler
 from utils.logging_utils import log_debug
 from utils.utils import convert_dots_to_spaces_from_editor, convert_spaces_to_dots_for_display, calculate_string_width, remove_all_tags, SPACE_DOT_SYMBOL, ALL_TAGS_PATTERN
-from plugins.zelda_mc.config import PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY, PROBLEM_EMPTY_ODD_SUBLINE_LOGICAL
-
+from plugins.pokemon_fr.config import P_VISUAL_EDITOR_MARKER, L_VISUAL_EDITOR_MARKER
 
 PREVIEW_UPDATE_DELAY = 250
 
@@ -24,41 +23,63 @@ class TextOperationHandler(BaseHandler):
 
     def _update_preview_content(self):
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
-        original_edit = getattr(self.mw, 'original_text_edit', None)
-        edited_edit = getattr(self.mw, 'edited_text_edit', None)
+        if not preview_edit or self.mw.current_block_idx == -1:
+            return
 
-        old_scrollbar_value = preview_edit.verticalScrollBar().value() if preview_edit else 0
+        block_idx = self.mw.current_block_idx
+        old_scrollbar_value = preview_edit.verticalScrollBar().value()
         
         main_window_ref = self.mw
         was_programmatically_changing = main_window_ref.is_programmatically_changing_text
         main_window_ref.is_programmatically_changing_text = True
         
-        if hasattr(self.mw, 'preview_updater') and hasattr(self.mw.preview_updater, 'update_preview_for_block'):
-            self.mw.preview_updater.update_preview_for_block(self.mw.current_block_idx)
-        elif hasattr(self.ui_updater, 'populate_strings_for_block'): 
-             self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
+        if self.mw.current_game_rules:
+            preview_lines = []
+            for i in range(len(self.mw.data[block_idx])):
+                text_for_preview_raw, _ = self.data_processor.get_current_string_text(block_idx, i)
+                preview_line_text = self.mw.current_game_rules.get_text_representation_for_preview(str(text_for_preview_raw))
+                preview_lines.append(preview_line_text)
 
+            preview_full_text = "\n".join(preview_lines)
+            
+            if preview_edit.toPlainText() != preview_full_text:
+                preview_edit.setPlainText(preview_full_text)
         
-        if preview_edit: preview_edit.verticalScrollBar().setValue(old_scrollbar_value)
-        if original_edit and hasattr(original_edit, 'lineNumberArea'): original_edit.lineNumberArea.update()
-        if edited_edit and hasattr(edited_edit, 'lineNumberArea'): edited_edit.lineNumberArea.update()
+        if hasattr(preview_edit, 'highlightManager'):
+            if self.mw.current_string_idx != -1 and 0 <= self.mw.current_string_idx < preview_edit.document().blockCount():
+                preview_edit.highlightManager.setPreviewSelectedLineHighlight(self.mw.current_string_idx)
+            else:
+                preview_edit.highlightManager.clearPreviewSelectedLineHighlight()
+
+        preview_edit.verticalScrollBar().setValue(old_scrollbar_value)
+        if hasattr(preview_edit, 'lineNumberArea'):
+            preview_edit.lineNumberArea.update()
 
         main_window_ref.is_programmatically_changing_text = was_programmatically_changing
+
 
     def text_edited(self):
         if self.mw.is_programmatically_changing_text:
             return
         
-        self._log_undo_state(self.mw.edited_text_edit, "text_edited - User Input Start")
-
         if self.mw.current_block_idx == -1 or self.mw.current_string_idx == -1:
             return
         
         block_idx = self.mw.current_block_idx
         string_idx_in_block = self.mw.current_string_idx
         
-        text_from_ui_with_dots = self.mw.edited_text_edit.toPlainText()
-        actual_text_with_spaces = convert_dots_to_spaces_from_editor(text_from_ui_with_dots) if self.mw.show_multiple_spaces_as_dots else text_from_ui_with_dots
+        edited_edit = self.mw.edited_text_edit
+        
+        if not edited_edit or not self.mw.current_game_rules:
+            return
+        
+        text_from_editor = edited_edit.toPlainText()
+        
+        actual_text = text_from_editor.replace(f"{P_VISUAL_EDITOR_MARKER}\n", '\\p')
+        actual_text = actual_text.replace(f"{L_VISUAL_EDITOR_MARKER}\n", '\\l')
+        actual_text = actual_text.replace('\n', '\\n')
+        
+        actual_text_with_spaces = convert_dots_to_spaces_from_editor(actual_text)
         
         needs_title_update = self.data_processor.update_edited_data(block_idx, string_idx_in_block, actual_text_with_spaces)
         
@@ -75,9 +96,6 @@ class TextOperationHandler(BaseHandler):
         elif hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'): 
             self.ui_updater.update_block_item_text_with_problem_count(block_idx)
 
-        if hasattr(self.mw, 'preview_text_edit') and hasattr(self.mw.preview_text_edit, 'lineNumberArea'):
-            self.mw.preview_text_edit.lineNumberArea.update() 
-        
         self.preview_update_timer.start(PREVIEW_UPDATE_DELAY) 
 
         if hasattr(self.mw, 'editor_state_updater'):
@@ -87,12 +105,8 @@ class TextOperationHandler(BaseHandler):
             self.ui_updater.update_status_bar()
             self.ui_updater.synchronize_original_cursor()
         
-        edited_edit = getattr(self.mw, 'edited_text_edit', None)
         if edited_edit and hasattr(edited_edit, 'lineNumberArea'):
-            edited_edit.lineNumberArea.update() 
-        
-        self._log_undo_state(self.mw.edited_text_edit, "text_edited - User Input End")
-
+            edited_edit.lineNumberArea.update()
 
     def paste_block_text(self):
         log_debug(f"--> TextOperationHandler: paste_block_text triggered.")
@@ -324,7 +338,7 @@ class TextOperationHandler(BaseHandler):
             QMessageBox.warning(self.mw, "Calculate Width Error", "Game rules plugin not loaded.")
             return
 
-        max_allowed_width = self.game_dialog_max_width_pixels
+        max_allowed_width = self.mw.game_dialog_max_width_pixels
         warning_threshold = self.mw.line_width_warning_threshold_pixels
         
         info_parts = [f"Data Line {data_line_idx + 1} (Block {self.mw.current_block_idx}):\nMax Allowed Width (Game Dialog): {max_allowed_width}px\nWidth Warning Threshold (Editor): {warning_threshold}px\n"]
@@ -342,8 +356,8 @@ class TextOperationHandler(BaseHandler):
             game_like_text_no_newlines_rstripped = remove_all_tags(text_to_analyze.replace('\n','')).rstrip()
             total_game_width = calculate_string_width(game_like_text_no_newlines_rstripped, self.mw.font_map)
             game_status = "OK"
-            if total_game_width > self.game_dialog_max_width_pixels:
-                game_status = f"EXCEEDS GAME DIALOG LIMIT ({total_game_width - self.game_dialog_max_width_pixels}px)"
+            if total_game_width > self.mw.game_dialog_max_width_pixels:
+                game_status = f"EXCEEDS GAME DIALOG LIMIT ({total_game_width - self.mw.game_dialog_max_width_pixels}px)"
             info_parts.append(f"Total (game-like, no newlines): {total_game_width}px ({game_status})")
 
             logical_sublines = text_to_analyze.split('\n')
@@ -402,26 +416,13 @@ class TextOperationHandler(BaseHandler):
         edited_text_edit = self.mw.edited_text_edit 
         
         current_text_before_autofix, _ = self.data_processor.get_current_string_text(block_idx, active_string_idx)
-        log_debug(f"ORANGE_BUG_DEBUG (auto_fix): ACTIVE string B:{block_idx}, S:{active_string_idx}. Text='{repr(current_text_before_autofix)}'")
         if edited_text_edit: self._log_undo_state(edited_text_edit, f"auto_fix S:{active_string_idx} - Before plugin call")
-
-
-        next_string_idx_for_debug = -1
-        if active_string_idx + 1 < len(self.mw.data[block_idx]):
-            next_string_idx_for_debug = active_string_idx + 1
-            next_text_before_autofix, _ = self.data_processor.get_current_string_text(block_idx, next_string_idx_for_debug)
-            log_debug(f"ORANGE_BUG_DEBUG (auto_fix): NEXT string B:{block_idx}, S:{next_string_idx_for_debug} (TARGET FOR SCAN). Text='{repr(next_text_before_autofix)}'")
-        else:
-            log_debug(f"ORANGE_BUG_DEBUG (auto_fix): No NEXT string after S:{active_string_idx} in block B:{block_idx}.")
-
 
         final_text_to_apply, changed = self.mw.current_game_rules.autofix_data_string(
             str(current_text_before_autofix), 
             self.mw.font_map, 
             self.mw.line_width_warning_threshold_pixels
         )
-        
-        log_debug(f"ORANGE_BUG_DEBUG (auto_fix): Plugin autofix_data_string for ACTIVE S:{active_string_idx} returned: Changed={changed}. Text='{repr(final_text_to_apply)}'")
         
         if changed:
             original_cursor_pos = 0
@@ -464,19 +465,8 @@ class TextOperationHandler(BaseHandler):
 
             self.mw.is_programmatically_changing_text = False 
 
-            self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False, target_string_idx_for_debug=next_string_idx_for_debug) 
+            self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False) 
             
-            if next_string_idx_for_debug != -1:
-                problems_after_autofix_scan_for_next = set()
-                next_text_after_scan, _ = self.data_processor.get_current_string_text(block_idx, next_string_idx_for_debug)
-                if isinstance(next_text_after_scan, str): 
-                    sublines_after = next_text_after_scan.split('\n')
-                    for i in range(len(sublines_after)):
-                        problem_key = (block_idx, next_string_idx_for_debug, i)
-                        if problem_key in self.mw.problems_per_subline:
-                            problems_after_autofix_scan_for_next.update(self.mw.problems_per_subline[problem_key])
-                log_debug(f"ORANGE_BUG_DEBUG (auto_fix): Problems AFTER rescan for NEXT string S:{next_string_idx_for_debug}: {problems_after_autofix_scan_for_next}")
-
             if hasattr(self.mw, 'preview_updater') and hasattr(self.mw.preview_updater, 'update_preview_for_block'):
                 self.mw.preview_updater.update_preview_for_block(block_idx)
             elif hasattr(self.ui_updater, 'populate_strings_for_block'):
@@ -506,19 +496,7 @@ class TextOperationHandler(BaseHandler):
             if hasattr(self.mw, 'statusBar'):
                 self.mw.statusBar.showMessage("Auto-fix applied to current string.", 2000)
         else: 
-            log_debug(f"ORANGE_BUG_DEBUG (auto_fix): Autofix plugin reported NO CHANGE for ACTIVE string S:{active_string_idx}. Text was '{repr(current_text_before_autofix)}'")
-            self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False, target_string_idx_for_debug=next_string_idx_for_debug)
-            
-            if next_string_idx_for_debug != -1:
-                problems_after_no_change_scan_for_next = set()
-                next_text_after_no_change_scan, _ = self.data_processor.get_current_string_text(block_idx, next_string_idx_for_debug)
-                if isinstance(next_text_after_no_change_scan, str): 
-                    sublines_after = next_text_after_no_change_scan.split('\n')
-                    for i in range(len(sublines_after)):
-                        problem_key = (block_idx, next_string_idx_for_debug, i)
-                        if problem_key in self.mw.problems_per_subline:
-                            problems_after_no_change_scan_for_next.update(self.mw.problems_per_subline[problem_key])
-                log_debug(f"ORANGE_BUG_DEBUG (auto_fix): Problems AFTER rescan (NO CHANGE by autofix on ACTIVE) for NEXT string S:{next_string_idx_for_debug}: {problems_after_no_change_scan_for_next}")
+            self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False)
             
             if hasattr(self.mw, 'preview_updater') and hasattr(self.mw.preview_updater, 'update_preview_for_block'):
                 self.mw.preview_updater.update_preview_for_block(block_idx)
