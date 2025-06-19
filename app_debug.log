@@ -1,89 +1,91 @@
-2025-06-19 22:42:57,854 - DEBUG - logging_utils - log_debug - ================= Application Start =================
-2025-06-19 22:42:57,869 - DEBUG - logging_utils - log_debug - ++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++
-2025-06-19 22:42:57,869 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Core Components...
-2025-06-19 22:42:57,869 - DEBUG - logging_utils - log_debug - --> SettingsManager: load_settings from settings.json
-2025-06-19 22:42:57,870 - DEBUG - logging_utils - log_debug - Global settings loaded.
-2025-06-19 22:42:57,870 - DEBUG - logging_utils - log_debug - Plugin settings loaded from 'plugins\pokemon_fr\config.json'.
-2025-06-19 22:42:57,871 - DEBUG - logging_utils - log_debug - --> SettingsManager: Attempting to load font_map from plugin path: plugins\pokemon_fr\font_map.json
-2025-06-19 22:42:57,872 - DEBUG - logging_utils - log_debug - Successfully loaded font_map. Count: 117
-2025-06-19 22:42:57,872 - DEBUG - logging_utils - log_debug - <-- SettingsManager: load_settings finished
-2025-06-19 22:42:57,872 - DEBUG - logging_utils - log_debug - MainWindow: Loading game plugin...
-2025-06-19 22:42:57,872 - DEBUG - logging_utils - log_debug - --> MainWindow: load_game_plugin called.
-2025-06-19 22:42:57,873 - DEBUG - logging_utils - log_debug -     Attempting to load plugin: 'pokemon_fr'
-2025-06-19 22:42:57,873 - DEBUG - logging_utils - log_debug -     Importing module: plugins.pokemon_fr.rules
-2025-06-19 22:42:57,875 - DEBUG - logging_utils - log_debug -     Successfully loaded and instantiated game rules: GameRules from plugins.pokemon_fr.rules
-2025-06-19 22:42:57,876 - DEBUG - logging_utils - log_debug - <-- MainWindow: load_game_plugin finished.
-2025-06-19 22:42:57,876 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Handlers (Pre-UI setup)...
-2025-06-19 22:42:57,876 - DEBUG - logging_utils - log_debug - Handler 'ListSelectionHandler' initialized.
-2025-06-19 22:42:57,876 - DEBUG - logging_utils - log_debug - Handler 'TextOperationHandler' initialized.
-2025-06-19 22:42:57,877 - DEBUG - logging_utils - log_debug - Handler 'AppActionHandler' initialized.
-2025-06-19 22:42:57,877 - DEBUG - logging_utils - log_debug - Handler 'SearchHandler' initialized.
-2025-06-19 22:42:57,877 - DEBUG - logging_utils - log_debug - MainWindow: Setting up UI...
-2025-06-19 22:42:57,877 - DEBUG - logging_utils - log_debug - setup_main_window_ui: Starting UI setup.
-2025-06-19 22:42:57,879 - DEBUG - logging_utils - log_debug - CustomListWidget INITIALIZED, parent: <__main__.MainWindow object at 0x000001D41B589EE0>
-2025-06-19 22:42:57,879 - DEBUG - logging_utils - log_debug - CustomListWidget: Item delegate set to <components.CustomListItemDelegate.CustomListItemDelegate object at 0x000001D41B5B3EE0>
-2025-06-19 22:42:57,886 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
-2025-06-19 22:42:57,887 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-2025-06-19 22:42:57,887 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
-2025-06-19 22:42:58,093 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
-2025-06-19 22:42:58,094 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-2025-06-19 22:42:58,094 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
-2025-06-19 22:42:58,096 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
-2025-06-19 22:42:58,096 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-2025-06-19 22:42:58,096 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
-2025-06-19 22:42:58,116 - DEBUG - logging_utils - log_debug - setup_main_window_ui: UI setup complete.
-2025-06-19 22:42:58,117 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Handlers and dynamic UI from plugin (Post-UI setup)...
-2025-06-19 22:42:58,118 - DEBUG - logging_utils - log_debug - MainWindow: Connecting Signals...
-2025-06-19 22:42:58,119 - DEBUG - logging_utils - log_debug - --> MainWindow: connect_signals() started
-2025-06-19 22:42:58,119 - DEBUG - logging_utils - log_debug - --> MainWindow: connect_signals() finished
-2025-06-19 22:42:58,120 - DEBUG - logging_utils - log_debug - MainWindowHelper: restore_state_after_settings_load called.
-2025-06-19 22:42:58,120 - DEBUG - logging_utils - log_debug - Restored window geometry from settings: {'x': 876, 'y': 337, 'width': 1288, 'height': 1008}
-2025-06-19 22:42:58,121 - DEBUG - logging_utils - log_debug - MainWindowHelper: Attempting to load initial file from settings: C:/Users/xHR/Desktop/en-firered_original.json
-2025-06-19 22:42:58,121 - DEBUG - logging_utils - log_debug - --> AppActionHandler: load_all_data_for_path START. Original: 'C:/Users/xHR/Desktop/en-firered_original.json', Manual Edit Path: '//192.168.50.168/tloz_tmc_ua/UKR.json', InitialLoad: True
-2025-06-19 22:42:58,121 - DEBUG - logging_utils - log_debug - load_json_file: Attempting to load 'C:/Users/xHR/Desktop/en-firered_original.json'
-2025-06-19 22:42:58,123 - DEBUG - logging_utils - log_debug - load_json_file: Successfully loaded 'C:/Users/xHR/Desktop/en-firered_original.json'.
-2025-06-19 22:42:58,129 - DEBUG - logging_utils - log_debug - load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR.json'
-2025-06-19 22:42:58,619 - DEBUG - logging_utils - log_debug - load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR.json'.
-2025-06-19 22:42:58,619 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 1. Rehighlighting.
-2025-06-19 22:42:58,620 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 1, Added: 0. Rehighlighting.
-2025-06-19 22:42:58,620 - DEBUG - logging_utils - log_debug - UIUpdater: Cleared all problem block text. Highlights are managed by delegate.
-2025-06-19 22:42:58,647 - DEBUG - logging_utils - log_debug - <-- AppActionHandler: load_all_data_for_path FINISHED (Success)
-2025-06-19 22:42:58,647 - DEBUG - logging_utils - log_debug - MainWindowHelper: last_selected_block_index (3) is out of bounds or no data. Skipping selection restore.
-2025-06-19 22:42:58,648 - DEBUG - logging_utils - log_debug - MainWindowHelper: Search history loaded into panel. Last query (if any) set in SearchHandler: просто стояти й 
-2025-06-19 22:42:58,649 - DEBUG - logging_utils - log_debug - MainWindow: Applying font. General: Family='Segoe UI', Editor: Family='Consolas', Size=13
-2025-06-19 22:42:58,669 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 1. Rehighlighting.
-2025-06-19 22:42:58,669 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 1, Added: 0. Rehighlighting.
-2025-06-19 22:42:58,669 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 1. Rehighlighting.
-2025-06-19 22:42:58,670 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 1, Added: 0. Rehighlighting.
-2025-06-19 22:42:58,670 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 1. Rehighlighting.
-2025-06-19 22:42:58,670 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 1, Added: 0. Rehighlighting.
-2025-06-19 22:42:58,670 - DEBUG - logging_utils - log_debug - Applying text wrap settings: Preview wrap: False, Editors wrap: False
-2025-06-19 22:42:58,671 - DEBUG - logging_utils - log_debug - Rebuilt unsaved_block_indices: set()
-2025-06-19 22:42:58,671 - DEBUG - logging_utils - log_debug - ++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++
-2025-06-19 22:42:58,778 - DEBUG - logging_utils - log_debug - Starting Qt event loop...
-2025-06-19 22:42:58,780 - DEBUG - logging_utils - log_debug - Forcing window focus.
-2025-06-19 22:42:58,782 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 1, Added: 0. Rehighlighting.
-2025-06-19 22:42:58,788 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 2096. Rehighlighting.
-2025-06-19 22:43:04,450 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview. Data Line number: 52
-2025-06-19 22:43:04,452 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 1, Added: 0. Rehighlighting.
-2025-06-19 22:43:04,452 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 191. Rehighlighting.
-2025-06-19 22:43:04,453 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 1, Added: 0. Rehighlighting.
-2025-06-19 22:43:04,454 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 191. Rehighlighting.
-2025-06-19 22:43:04,455 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 52
-2025-06-19 22:43:06,065 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview. Data Line number: 53
-2025-06-19 22:43:06,066 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 191, Added: 0. Rehighlighting.
-2025-06-19 22:43:06,067 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 146. Rehighlighting.
-2025-06-19 22:43:06,068 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 191, Added: 0. Rehighlighting.
-2025-06-19 22:43:06,068 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 146. Rehighlighting.
-2025-06-19 22:43:06,070 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 53
-2025-06-19 22:43:07,824 - DEBUG - logging_utils - log_debug - --> MainWindow: closeEvent received.
-2025-06-19 22:43:07,825 - DEBUG - logging_utils - log_debug - MainWindowHelper: prepare_to_close called.
-2025-06-19 22:43:07,825 - DEBUG - logging_utils - log_debug - MainWindowHelper: Updated search_history_to_save: 20 items
-2025-06-19 22:43:07,825 - DEBUG - logging_utils - log_debug - --> AppActionHandler: handle_close_event called.
-2025-06-19 22:43:07,825 - DEBUG - logging_utils - log_debug - <-- AppActionHandler: handle_close_event finished.
-2025-06-19 22:43:07,826 - DEBUG - logging_utils - log_debug - Close accepted (no unsaved changes). Saving editor settings via SettingsManager.
-2025-06-19 22:43:07,827 - DEBUG - logging_utils - log_debug - Global settings saved.
-2025-06-19 22:43:07,827 - DEBUG - logging_utils - log_debug - Plugin settings saved to 'plugins\pokemon_fr\config.json'.
-2025-06-19 22:43:07,828 - DEBUG - logging_utils - log_debug - <-- MainWindow: closeEvent finished.
-2025-06-19 22:43:07,838 - DEBUG - logging_utils - log_debug - Qt event loop finished with exit code: 0
-2025-06-19 22:43:07,838 - DEBUG - logging_utils - log_debug - ================= Application End =================
+2025-06-19 22:52:54,045 - DEBUG - logging_utils - log_debug - ================= Application Start =================
+2025-06-19 22:52:54,056 - DEBUG - logging_utils - log_debug - ++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++
+2025-06-19 22:52:54,057 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Core Components...
+2025-06-19 22:52:54,057 - DEBUG - logging_utils - log_debug - --> SettingsManager: load_settings from settings.json
+2025-06-19 22:52:54,058 - DEBUG - logging_utils - log_debug - Global settings loaded.
+2025-06-19 22:52:54,058 - DEBUG - logging_utils - log_debug - Plugin settings loaded from 'plugins\zelda_mc\config.json'.
+2025-06-19 22:52:54,058 - DEBUG - logging_utils - log_debug - --> SettingsManager: Attempting to load font_map from plugin path: plugins\zelda_mc\font_map.json
+2025-06-19 22:52:54,059 - DEBUG - logging_utils - log_debug - Successfully loaded font_map. Count: 117
+2025-06-19 22:52:54,059 - DEBUG - logging_utils - log_debug - <-- SettingsManager: load_settings finished
+2025-06-19 22:52:54,059 - DEBUG - logging_utils - log_debug - MainWindow: Loading game plugin...
+2025-06-19 22:52:54,059 - DEBUG - logging_utils - log_debug - --> MainWindow: load_game_plugin called.
+2025-06-19 22:52:54,060 - DEBUG - logging_utils - log_debug -     Attempting to load plugin: 'zelda_mc'
+2025-06-19 22:52:54,060 - DEBUG - logging_utils - log_debug -     Importing module: plugins.zelda_mc.rules
+2025-06-19 22:52:54,063 - DEBUG - logging_utils - log_debug -     Successfully loaded and instantiated game rules: GameRules from plugins.zelda_mc.rules
+2025-06-19 22:52:54,064 - DEBUG - logging_utils - log_debug - <-- MainWindow: load_game_plugin finished.
+2025-06-19 22:52:54,064 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Handlers (Pre-UI setup)...
+2025-06-19 22:52:54,064 - DEBUG - logging_utils - log_debug - Handler 'ListSelectionHandler' initialized.
+2025-06-19 22:52:54,064 - DEBUG - logging_utils - log_debug - Handler 'TextOperationHandler' initialized.
+2025-06-19 22:52:54,065 - DEBUG - logging_utils - log_debug - Handler 'AppActionHandler' initialized.
+2025-06-19 22:52:54,065 - DEBUG - logging_utils - log_debug - Handler 'SearchHandler' initialized.
+2025-06-19 22:52:54,065 - DEBUG - logging_utils - log_debug - MainWindow: Setting up UI...
+2025-06-19 22:52:54,065 - DEBUG - logging_utils - log_debug - setup_main_window_ui: Starting UI setup.
+2025-06-19 22:52:54,066 - DEBUG - logging_utils - log_debug - CustomListWidget INITIALIZED, parent: <__main__.MainWindow object at 0x00000201E8FC9EE0>
+2025-06-19 22:52:54,067 - DEBUG - logging_utils - log_debug - CustomListWidget: Item delegate set to <components.CustomListItemDelegate.CustomListItemDelegate object at 0x00000201E9AD84C0>
+2025-06-19 22:52:54,074 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
+2025-06-19 22:52:54,074 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+2025-06-19 22:52:54,075 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
+2025-06-19 22:52:54,075 - DEBUG - logging_utils - log_debug - Loaded 8 syntax highlighting rules from game plugin.
+2025-06-19 22:52:54,240 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
+2025-06-19 22:52:54,241 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+2025-06-19 22:52:54,241 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
+2025-06-19 22:52:54,241 - DEBUG - logging_utils - log_debug - Loaded 8 syntax highlighting rules from game plugin.
+2025-06-19 22:52:54,243 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
+2025-06-19 22:52:54,243 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+2025-06-19 22:52:54,243 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
+2025-06-19 22:52:54,243 - DEBUG - logging_utils - log_debug - Loaded 8 syntax highlighting rules from game plugin.
+2025-06-19 22:52:54,260 - DEBUG - logging_utils - log_debug - setup_main_window_ui: UI setup complete.
+2025-06-19 22:52:54,260 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Handlers and dynamic UI from plugin (Post-UI setup)...
+2025-06-19 22:52:54,260 - DEBUG - logging_utils - log_debug - TagCheckerHandler of type TagCheckerHandler was provided by the plugin.
+2025-06-19 22:52:54,261 - DEBUG - logging_utils - log_debug - MainWindow: Connecting Signals...
+2025-06-19 22:52:54,261 - DEBUG - logging_utils - log_debug - --> MainWindow: connect_signals() started
+2025-06-19 22:52:54,262 - DEBUG - logging_utils - log_debug - --> MainWindow: connect_signals() finished
+2025-06-19 22:52:54,262 - DEBUG - logging_utils - log_debug - MainWindowHelper: restore_state_after_settings_load called.
+2025-06-19 22:52:54,262 - DEBUG - logging_utils - log_debug - Restored window geometry from settings: {'x': 876, 'y': 337, 'width': 1288, 'height': 1008}
+2025-06-19 22:52:54,291 - DEBUG - logging_utils - log_debug - MainWindowHelper: Attempting to load initial file from settings: //192.168.50.168/tloz_tmc_ua/UKR_orig.json
+2025-06-19 22:52:54,291 - DEBUG - logging_utils - log_debug - --> AppActionHandler: load_all_data_for_path START. Original: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Manual Edit Path: '//192.168.50.168/tloz_tmc_ua/UKR.json', InitialLoad: True
+2025-06-19 22:52:54,292 - DEBUG - logging_utils - log_debug - load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR_orig.json'
+2025-06-19 22:52:54,636 - DEBUG - logging_utils - log_debug - load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR_orig.json'.
+2025-06-19 22:52:54,640 - DEBUG - logging_utils - log_debug - load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR.json'
+2025-06-19 22:52:55,157 - DEBUG - logging_utils - log_debug - load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR.json'.
+2025-06-19 22:52:55,157 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 1. Rehighlighting.
+2025-06-19 22:52:55,158 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 1, Added: 0. Rehighlighting.
+2025-06-19 22:52:55,158 - DEBUG - logging_utils - log_debug - UIUpdater: Cleared all problem block text. Highlights are managed by delegate.
+2025-06-19 22:52:55,158 - DEBUG - logging_utils - log_debug - Loaded 18 exact legitimate tags.
+2025-06-19 22:52:55,433 - DEBUG - logging_utils - log_debug - <-- AppActionHandler: load_all_data_for_path FINISHED (Success)
+2025-06-19 22:52:55,434 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 1, Added: 0. Rehighlighting.
+2025-06-19 22:52:55,439 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 367. Rehighlighting.
+2025-06-19 22:52:55,441 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview. Data Line number: 2
+2025-06-19 22:52:55,442 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 1, Added: 0. Rehighlighting.
+2025-06-19 22:52:55,443 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 64. Rehighlighting.
+2025-06-19 22:52:55,444 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 1, Added: 0. Rehighlighting.
+2025-06-19 22:52:55,444 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 37. Rehighlighting.
+2025-06-19 22:52:55,445 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 2
+2025-06-19 22:52:55,445 - DEBUG - logging_utils - log_debug - MainWindowHelper: Restored selection to block 15, string 2, cursor 0
+2025-06-19 22:52:55,446 - DEBUG - logging_utils - log_debug - MainWindowHelper: Search history loaded into panel. Last query (if any) set in SearchHandler: просто стояти й 
+2025-06-19 22:52:55,446 - DEBUG - logging_utils - log_debug - MainWindow: Applying font. General: Family='Segoe UI', Editor: Family='Consolas', Size=13
+2025-06-19 22:52:55,454 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (15, 2) updated. New edited_data size: 1
+2025-06-19 22:52:55,455 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Unsaved changes status changed to True
+2025-06-19 22:52:55,471 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 1. Rehighlighting.
+2025-06-19 22:52:55,471 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 367, Added: 0. Rehighlighting.
+2025-06-19 22:52:55,471 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 1. Rehighlighting.
+2025-06-19 22:52:55,472 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 64, Added: 0. Rehighlighting.
+2025-06-19 22:52:55,472 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 1. Rehighlighting.
+2025-06-19 22:52:55,472 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 37, Added: 0. Rehighlighting.
+2025-06-19 22:52:55,481 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 1, Added: 0. Rehighlighting.
+2025-06-19 22:52:55,482 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 367. Rehighlighting.
+2025-06-19 22:52:55,483 - DEBUG - logging_utils - log_debug - Applying text wrap settings: Preview wrap: False, Editors wrap: False
+2025-06-19 22:52:55,483 - DEBUG - logging_utils - log_debug - Rebuilt unsaved_block_indices: {15}
+2025-06-19 22:52:55,484 - DEBUG - logging_utils - log_debug - ++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++
+2025-06-19 22:52:55,613 - DEBUG - logging_utils - log_debug - Starting Qt event loop...
+2025-06-19 22:52:55,617 - DEBUG - logging_utils - log_debug - Forcing window focus.
+2025-06-19 22:52:55,708 - DEBUG - logging_utils - log_debug - TextOperationHandler: Updating preview content via timer.
+2025-06-19 22:52:59,649 - DEBUG - logging_utils - log_debug - --> MainWindow: closeEvent received.
+2025-06-19 22:52:59,649 - DEBUG - logging_utils - log_debug - MainWindowHelper: prepare_to_close called.
+2025-06-19 22:52:59,650 - DEBUG - logging_utils - log_debug - MainWindowHelper: Updated search_history_to_save: 20 items
+2025-06-19 22:52:59,650 - DEBUG - logging_utils - log_debug - --> AppActionHandler: handle_close_event called.
+2025-06-19 22:53:00,744 - DEBUG - logging_utils - log_debug - <-- AppActionHandler: handle_close_event finished.
+2025-06-19 22:53:00,744 - DEBUG - logging_utils - log_debug - Close accepted (unsaved changes were handled). Settings should have been saved by AppActionHandler or by user choice during handle_close_event.
+2025-06-19 22:53:00,744 - DEBUG - logging_utils - log_debug - <-- MainWindow: closeEvent finished.
+2025-06-19 22:53:00,762 - DEBUG - logging_utils - log_debug - Qt event loop finished with exit code: 0
+2025-06-19 22:53:00,762 - DEBUG - logging_utils - log_debug - ================= Application End =================
