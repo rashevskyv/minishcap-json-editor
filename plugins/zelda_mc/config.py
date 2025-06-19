@@ -24,39 +24,39 @@ COLOR_SINGLE_WORD_SUBLINE = QColor(0, 0, 255, 128)
 
 PROBLEM_DEFINITIONS = {
     PROBLEM_TAG_WARNING: {
-        "name": "Попередження тегів",
+        "name": "Tag Warning",
         "color": COLOR_WARNING_TAG, 
         "priority": PRIORITY_TAG_WARNING,
-        "description": "Невідповідність кількості тегів {...} або нелегітимний тег."
+        "description": "Tag count mismatch for {...} or an illegitimate tag."
     },
     PROBLEM_WIDTH_EXCEEDED: {
-        "name": "Перевищення ширини підрядка",
+        "name": "Subline Width Exceeded",
         "color": COLOR_WIDTH_EXCEEDED,
         "priority": PRIORITY_WIDTH_EXCEEDED,
-        "description": "Підрядок довший за встановлений ліміт ширини."
+        "description": "The subline is longer than the set width limit."
     },
     PROBLEM_EMPTY_ODD_SUBLINE_LOGICAL: {
-        "name": "Порожній непарний логічний підрядок",
+        "name": "Empty Odd Logical Subline",
         "color": COLOR_EMPTY_ODD,
         "priority": PRIORITY_EMPTY_ODD,
-        "description": "Логічний непарний підрядок (якщо їх більше одного в рядку даних) порожній або містить '0' без тегів."
+        "description": "A logical odd-numbered subline (if more than one) is empty or contains only '0' without tags."
     },
     PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY: {
-        "name": "Порожній непарний відображуваний підрядок",
+        "name": "Empty Odd Display Subline",
         "color": COLOR_EMPTY_ODD,
         "priority": PRIORITY_EMPTY_ODD,
-        "description": "Відображуваний непарний підрядок (QTextBlock) порожній або містить '0' без тегів (якщо це не єдиний підрядок в документі)."
+        "description": "A displayed odd-numbered subline (QTextBlock) is empty or contains '0' (if not the only subline)."
     },
     PROBLEM_SHORT_LINE: {
-        "name": "Короткий підрядок",
+        "name": "Short Subline",
         "color": COLOR_SHORT_LINE,
         "priority": PRIORITY_SHORT_LINE,
-        "description": "Підрядок не закінчується розділовим знаком і має достатньо місця для першого слова наступного підрядка."
+        "description": "The subline does not end with a punctuation mark and has enough space for the first word of the next subline."
     },
     PROBLEM_SINGLE_WORD_SUBLINE: { 
-        "name": "Підрядок з одним словом",
+        "name": "Single Word Subline",
         "color": COLOR_SINGLE_WORD_SUBLINE,
         "priority": PRIORITY_SINGLE_WORD_SUBLINE,
-        "description": "Підрядок складається лише з одного слова (та можливих розділових знаків)."
+        "description": "The subline consists of only one word (and possible punctuation)."
     }
 }

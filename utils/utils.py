@@ -31,10 +31,15 @@ def convert_spaces_to_dots_for_display(text: str, enable_conversion: bool) -> st
     if not enable_conversion or text is None:
         return text if text is not None else ""
     
-    def replace_match(match):
-        return SPACE_DOT_SYMBOL * len(match.group(0))
-
-    processed_text = re.sub(r" {2,}", replace_match, text)
+    # Замінюємо 2+ пробіли
+    processed_text = re.sub(r" {2,}", lambda m: SPACE_DOT_SYMBOL * len(m.group(0)), text)
+    
+    # Замінюємо пробіл на початку рядка (якщо за ним не йде ще один пробіл, оброблений вище)
+    processed_text = re.sub(r"^ (?=[^ ])", SPACE_DOT_SYMBOL, processed_text)
+    
+    # Замінюємо пробіл в кінці рядка (якщо перед ним не стоїть пробіл)
+    processed_text = re.sub(r"(?<![ ]) $", SPACE_DOT_SYMBOL, processed_text)
+    
     return processed_text
 
 def convert_dots_to_spaces_from_editor(text: str) -> str:

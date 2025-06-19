@@ -49,6 +49,9 @@ class SettingsDialog(QDialog):
         self.mw = main_window
         self.setWindowTitle("Settings")
         self.setMinimumWidth(500)
+        
+        self.autofix_checkboxes = {}
+        self.detection_checkboxes = {}
 
         main_layout = QVBoxLayout(self)
         
@@ -56,23 +59,38 @@ class SettingsDialog(QDialog):
         main_layout.addWidget(self.tabs)
         
         self.general_tab = QWidget()
-        self.display_tab = QWidget()
-        self.rules_tab = QWidget()
+        self.plugin_tab = QWidget()
 
         self.tabs.addTab(self.general_tab, "Global")
-        self.tabs.addTab(self.display_tab, "Plugin: Display")
-        self.tabs.addTab(self.rules_tab, "Plugin: Rules")
-
+        self.tabs.addTab(self.plugin_tab, "Plugin")
+        
         self.setup_general_tab()
-        self.setup_display_tab()
-        self.setup_rules_tab()
+        self.setup_plugin_tab()
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
-        self.button_box.accepted.connect(self.accept)
+        self.button_box.accepted.connect(self.accept_and_process)
         self.button_box.rejected.connect(self.reject)
         main_layout.addWidget(self.button_box)
 
         self.load_initial_settings()
+        self.store_initial_plugin_settings()
+
+    def store_initial_plugin_settings(self):
+        self._initial_detection_settings = getattr(self.mw, 'detection_enabled', {}).copy()
+        self._initial_autofix_settings = getattr(self.mw, 'autofix_enabled', {}).copy()
+
+    def accept_and_process(self):
+        new_settings = self.get_settings()
+        
+        detection_changed = new_settings.get('detection_enabled') != self._initial_detection_settings
+        autofix_changed = new_settings.get('autofix_enabled') != self._initial_autofix_settings
+
+        self.accept()
+        
+        if detection_changed or autofix_changed:
+            log_debug("Detection or autofix settings changed, triggering rescan.")
+            if hasattr(self.mw, 'app_action_handler'):
+                self.mw.app_action_handler.rescan_all_tags()
 
     def _create_path_selector(self, line_edit: QLineEdit):
         widget = QWidget()
@@ -104,51 +122,91 @@ class SettingsDialog(QDialog):
         self.font_size_spinbox = LabeledSpinBox("Application Font Size:", 6, 24, 10, parent=self)
         layout.addRow(self.font_size_spinbox)
 
+        self.show_spaces_checkbox = QCheckBox("Show special spaces as dots", self)
+        layout.addRow(self.show_spaces_checkbox)
+        
+        self.space_dot_color_picker = ColorPickerButton(parent=self)
+        layout.addRow("Space Dot Color:", self.space_dot_color_picker)
+
         self.original_path_edit = QLineEdit(self)
         self.edited_path_edit = QLineEdit(self)
         
-        layout.addRow("Original File Path:", self._create_path_selector(self.original_path_edit))
-        layout.addRow("Changes File Path:", self._create_path_selector(self.edited_path_edit))
+        layout.addRow("Original File Path (Plugin Specific):", self._create_path_selector(self.original_path_edit))
+        layout.addRow("Changes File Path (Plugin Specific):", self._create_path_selector(self.edited_path_edit))
 
         self.plugin_combo.activated.connect(self.on_plugin_changed)
 
-    def setup_display_tab(self):
-        layout = QFormLayout(self.display_tab)
-        layout.addRow(QLabel("These settings are specific to the active plugin."))
-        
+    def setup_plugin_tab(self):
+        plugin_layout = QVBoxLayout(self.plugin_tab)
+        plugin_tabs = QTabWidget(self.plugin_tab)
+        plugin_layout.addWidget(plugin_tabs)
+
+        display_tab = QWidget()
+        rules_tab = QWidget()
+        detection_tab = QWidget()
+        autofix_tab = QWidget()
+
+        plugin_tabs.addTab(display_tab, "Display")
+        plugin_tabs.addTab(rules_tab, "Rules")
+        plugin_tabs.addTab(detection_tab, "Detection")
+        plugin_tabs.addTab(autofix_tab, "Auto-fix")
+
+        self._setup_display_subtab(display_tab)
+        self._setup_rules_subtab(rules_tab)
+        self._setup_detection_subtab(detection_tab)
+        self._setup_autofix_subtab(autofix_tab)
+
+    def _setup_display_subtab(self, tab):
+        layout = QFormLayout(tab)
         self.preview_wrap_checkbox = QCheckBox("Wrap lines in preview panel", self)
         layout.addRow(self.preview_wrap_checkbox)
-        
         self.editors_wrap_checkbox = QCheckBox("Wrap lines in editor panels", self)
         layout.addRow(self.editors_wrap_checkbox)
-
-        self.show_spaces_checkbox = QCheckBox("Show multiple spaces as dots", self)
-        layout.addRow(self.show_spaces_checkbox)
-
         self.newline_symbol_edit = QLineEdit(self)
         layout.addRow("Newline Symbol:", self.newline_symbol_edit)
-
         self.newline_css_edit = QLineEdit(self)
         layout.addRow("Newline Symbol CSS:", self.newline_css_edit)
-        
         self.tag_css_edit = QLineEdit(self)
         layout.addRow("Tag CSS:", self.tag_css_edit)
-
-        self.space_dot_color_picker = ColorPickerButton(parent=self)
-        layout.addRow("Space Dot Color:", self.space_dot_color_picker)
-        
         self.bracket_tag_color_picker = ColorPickerButton(parent=self)
         layout.addRow("Bracket Tag Color:", self.bracket_tag_color_picker)
-        
-    def setup_rules_tab(self):
-        layout = QFormLayout(self.rules_tab)
-        layout.addRow(QLabel("These settings are specific to the active plugin."))
-        
+
+    def _setup_rules_subtab(self, tab):
+        layout = QFormLayout(tab)
         self.game_dialog_width_spinbox = LabeledSpinBox("Game Dialog Max Width (px):", 100, 500, 240, parent=self)
         layout.addRow(self.game_dialog_width_spinbox)
-        
         self.width_warning_spinbox = LabeledSpinBox("Editor Line Width Warning (px):", 100, 500, 208, parent=self)
         layout.addRow(self.width_warning_spinbox)
+
+    def _populate_checkbox_subtab(self, tab, checkbox_dict, title):
+        layout = QFormLayout(tab)
+        layout.addRow(QLabel(title))
+        
+        if not self.mw.current_game_rules:
+            return
+
+        problem_definitions = self.mw.current_game_rules.get_problem_definitions()
+        if not problem_definitions:
+            return
+
+        sorted_problem_ids = sorted(
+            problem_definitions.keys(),
+            key=lambda pid: problem_definitions[pid].get("priority", 99)
+        )
+
+        for problem_id in sorted_problem_ids:
+            definition = problem_definitions[problem_id]
+            checkbox = QCheckBox(definition.get("name", problem_id), self)
+            checkbox.setToolTip(definition.get("description", "No description available."))
+            checkbox_dict[problem_id] = checkbox
+            layout.addRow(checkbox)
+
+    def _setup_detection_subtab(self, tab):
+        self._populate_checkbox_subtab(tab, self.detection_checkboxes, "Enable/disable problem detection:")
+
+    def _setup_autofix_subtab(self, tab):
+        self._populate_checkbox_subtab(tab, self.autofix_checkboxes, "Enable/disable auto-fix for specific problems:")
+
 
     def find_plugins(self):
         plugins_dir = "plugins"
@@ -159,7 +217,7 @@ class SettingsDialog(QDialog):
         for item in os.listdir(plugins_dir):
             item_path = os.path.join(plugins_dir, item)
             config_path = os.path.join(item_path, "config.json")
-            if os.path.isdir(item_path) and os.path.exists(config_path):
+            if os.path.isdir(item_path) and os.path.exists(config_path) and item != "import_plugins":
                 try:
                     with open(config_path, 'r', encoding='utf-8') as f:
                         config_data = json.load(f)
@@ -177,17 +235,18 @@ class SettingsDialog(QDialog):
     def on_plugin_changed(self):
         log_debug("SettingsDialog: Plugin changed in dropdown.")
         
-        current_settings = self.get_settings()
         self.mw.settings_manager._save_plugin_settings()
         
         selected_dir_name = self.plugin_map.get(self.plugin_combo.currentText())
         self.mw.active_game_plugin = selected_dir_name
         
+        self.mw.load_game_plugin()
         self.mw.settings_manager._load_plugin_settings()
         
+        self.setup_plugin_tab()
         self.load_initial_settings()
+        self.store_initial_plugin_settings()
         log_debug(f"SettingsDialog: Reloaded UI with settings for '{selected_dir_name}'.")
-
 
     def load_initial_settings(self):
         current_plugin_dir_name = getattr(self.mw, 'active_game_plugin', 'zelda_mc')
@@ -199,37 +258,57 @@ class SettingsDialog(QDialog):
                 break
         
         self.font_size_spinbox.setValue(self.mw.current_font_size)
+        self.show_spaces_checkbox.setChecked(self.mw.show_multiple_spaces_as_dots)
+        self.space_dot_color_picker.setColor(QColor(self.mw.space_dot_color_hex))
+        
         self.original_path_edit.setText(self.mw.original_file_path or "")
-        self.edited_path_edit.setText(self.mw.edited_file_path or "")
+        self.edited_path_edit.setText(self.mw.edited_json_path or "")
         
         self.preview_wrap_checkbox.setChecked(self.mw.preview_wrap_lines)
         self.editors_wrap_checkbox.setChecked(self.mw.editors_wrap_lines)
-        self.show_spaces_checkbox.setChecked(self.mw.show_multiple_spaces_as_dots)
         self.newline_symbol_edit.setText(self.mw.newline_display_symbol)
         self.newline_css_edit.setText(self.mw.newline_css)
         self.tag_css_edit.setText(self.mw.tag_css)
-        self.space_dot_color_picker.setColor(QColor(self.mw.space_dot_color_hex))
         self.bracket_tag_color_picker.setColor(QColor(self.mw.bracket_tag_color_hex))
         self.game_dialog_width_spinbox.setValue(self.mw.game_dialog_max_width_pixels)
         self.width_warning_spinbox.setValue(self.mw.line_width_warning_threshold_pixels)
+
+        autofix_settings = getattr(self.mw, 'autofix_enabled', {})
+        for problem_id, checkbox in self.autofix_checkboxes.items():
+            checkbox.setChecked(autofix_settings.get(problem_id, False))
+            
+        detection_settings = getattr(self.mw, 'detection_enabled', {})
+        for problem_id, checkbox in self.detection_checkboxes.items():
+            checkbox.setChecked(detection_settings.get(problem_id, True))
+
 
     def get_settings(self) -> dict:
         selected_display_name = self.plugin_combo.currentText()
         selected_dir_name = self.plugin_map.get(selected_display_name)
         
+        autofix_settings = {}
+        for problem_id, checkbox in self.autofix_checkboxes.items():
+            autofix_settings[problem_id] = checkbox.isChecked()
+            
+        detection_settings = {}
+        for problem_id, checkbox in self.detection_checkboxes.items():
+            detection_settings[problem_id] = checkbox.isChecked()
+
         return {
             'active_game_plugin': selected_dir_name,
             'font_size': self.font_size_spinbox.value(),
+            'show_multiple_spaces_as_dots': self.show_spaces_checkbox.isChecked(),
+            'space_dot_color_hex': self.space_dot_color_picker.color().name(),
             'original_file_path': self.original_path_edit.text(),
             'edited_file_path': self.edited_path_edit.text(),
             'preview_wrap_lines': self.preview_wrap_checkbox.isChecked(),
             'editors_wrap_lines': self.editors_wrap_checkbox.isChecked(),
-            'show_multiple_spaces_as_dots': self.show_spaces_checkbox.isChecked(),
             'newline_display_symbol': self.newline_symbol_edit.text(),
             'newline_css': self.newline_css_edit.text(),
             'tag_css': self.tag_css_edit.text(),
-            'space_dot_color_hex': self.space_dot_color_picker.color().name(),
             'bracket_tag_color_hex': self.bracket_tag_color_picker.color().name(),
             'game_dialog_max_width_pixels': self.game_dialog_width_spinbox.value(),
-            'line_width_warning_threshold_pixels': self.width_warning_spinbox.value()
+            'line_width_warning_threshold_pixels': self.width_warning_spinbox.value(),
+            'autofix_enabled': autofix_settings,
+            'detection_enabled': detection_settings
         }

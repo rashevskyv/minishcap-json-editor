@@ -23,6 +23,9 @@ class BaseGameRules:
     def get_ctrl_enter_char(self) -> str:
         return '\n'
 
+    def convert_editor_text_to_data(self, text: str) -> str:
+        return text
+
     def get_display_name(self) -> str:
         if self.mw and hasattr(self.mw, 'display_name'):
             return self.mw.display_name

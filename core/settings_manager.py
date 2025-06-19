@@ -9,6 +9,7 @@ from utils.constants import (
     DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS,
     DEFAULT_LINE_WIDTH_WARNING_THRESHOLD
 )
+from plugins.pokemon_fr.config import DEFAULT_AUTOFIX_SETTINGS, DEFAULT_DETECTION_SETTINGS
 
 class SettingsManager:
     def __init__(self, main_window):
@@ -43,6 +44,8 @@ class SettingsManager:
         defaults = {
             "font_size": default_font_size,
             "active_game_plugin": "zelda_mc",
+            "show_multiple_spaces_as_dots": True,
+            "space_dot_color_hex": "#BBBBBB",
             "window_was_maximized": False,
             "window_normal_geometry": None,
             "main_splitter_state": None,
@@ -75,8 +78,8 @@ class SettingsManager:
         defaults = {
             "display_name": "Unknown Plugin", "default_tag_mappings": {}, "block_names": {}, "block_color_markers": {},
             "newline_display_symbol": "↵", "newline_css": "color: #A020F0; font-weight: bold;",
-            "tag_css": "color: #808080; font-style: italic;", "show_multiple_spaces_as_dots": True,
-            "space_dot_color_hex": "#BBBBBB", "bracket_tag_color_hex": "#FF8C00",
+            "tag_css": "color: #808080; font-style: italic;",
+            "bracket_tag_color_hex": "#FF8C00",
             "preview_wrap_lines": True, "editors_wrap_lines": False,
             "game_dialog_max_width_pixels": DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS,
             "line_width_warning_threshold_pixels": DEFAULT_LINE_WIDTH_WARNING_THRESHOLD,
@@ -85,7 +88,9 @@ class SettingsManager:
             "last_cursor_position_in_edited": 0, "last_edited_text_edit_scroll_value_v": 0,
             "last_edited_text_edit_scroll_value_h": 0, "last_preview_text_edit_scroll_value_v": 0,
             "last_original_text_edit_scroll_value_v": 0, "last_original_text_edit_scroll_value_h": 0,
-            "search_history": []
+            "search_history": [],
+            "autofix_enabled": DEFAULT_AUTOFIX_SETTINGS.copy(),
+            "detection_enabled": DEFAULT_DETECTION_SETTINGS.copy()
         }
         for key, value in defaults.items():
             setattr(self.mw, key, value)
@@ -105,6 +110,17 @@ class SettingsManager:
             self.mw.block_names = {str(k): v for k, v in plugin_data.get("block_names", {}).items()}
             self.mw.block_color_markers = {k: set(v) for k, v in plugin_data.get("block_color_markers", {}).items()}
             self.mw.search_history_to_save = plugin_data.get("search_history", [])
+            
+            loaded_autofix = plugin_data.get("autofix_enabled", {})
+            autofix_settings = DEFAULT_AUTOFIX_SETTINGS.copy()
+            autofix_settings.update(loaded_autofix)
+            self.mw.autofix_enabled = autofix_settings
+
+            loaded_detection = plugin_data.get("detection_enabled", {})
+            detection_settings = DEFAULT_DETECTION_SETTINGS.copy()
+            detection_settings.update(loaded_detection)
+            self.mw.detection_enabled = detection_settings
+
             log_debug(f"Plugin settings loaded from '{plugin_config_path}'.")
         except Exception as e:
             log_debug(f"Error loading plugin settings from '{plugin_config_path}': {e}")
@@ -125,6 +141,8 @@ class SettingsManager:
         global_data.update({
             "font_size": self.mw.current_font_size,
             "active_game_plugin": self.mw.active_game_plugin,
+            "show_multiple_spaces_as_dots": self.mw.show_multiple_spaces_as_dots,
+            "space_dot_color_hex": self.mw.space_dot_color_hex,
             "window_was_maximized": self.mw.window_was_maximized_on_close
         })
 
@@ -164,8 +182,6 @@ class SettingsManager:
             "newline_display_symbol": self.mw.newline_display_symbol,
             "newline_css": self.mw.newline_css,
             "tag_css": self.mw.tag_css,
-            "show_multiple_spaces_as_dots": self.mw.show_multiple_spaces_as_dots,
-            "space_dot_color_hex": self.mw.space_dot_color_hex,
             "bracket_tag_color_hex": self.mw.bracket_tag_color_hex,
             "preview_wrap_lines": self.mw.preview_wrap_lines,
             "editors_wrap_lines": self.mw.editors_wrap_lines,
@@ -181,7 +197,9 @@ class SettingsManager:
             "last_preview_text_edit_scroll_value_v": self.mw.last_preview_text_edit_scroll_value_v,
             "last_original_text_edit_scroll_value_v": self.mw.last_original_text_edit_scroll_value_v,
             "last_original_text_edit_scroll_value_h": self.mw.last_original_text_edit_scroll_value_h,
-            "search_history": self.mw.search_history_to_save
+            "search_history": self.mw.search_history_to_save,
+            "autofix_enabled": self.mw.autofix_enabled,
+            "detection_enabled": self.mw.detection_enabled
         })
         
         try:

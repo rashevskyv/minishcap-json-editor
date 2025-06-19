@@ -2,10 +2,11 @@ from typing import Dict, Any, Tuple, Set, Optional, List
 from collections import OrderedDict
 from PyQt5.QtGui import QTextCharFormat, QColor, QFont
 from plugins.base_game_rules import BaseGameRules
-from .config import (PROBLEM_DEFINITIONS, DEFAULT_TAG_MAPPINGS_POKEMON_FR, 
+from .config import (PROBLEM_DEFINITIONS, DEFAULT_AUTOFIX_SETTINGS, DEFAULT_DETECTION_SETTINGS, DEFAULT_TAG_MAPPINGS_POKEMON_FR, 
                      P_NEWLINE_MARKER, L_NEWLINE_MARKER, P_VISUAL_EDITOR_MARKER, L_VISUAL_EDITOR_MARKER)
 from .tag_manager import TagManager
 from .problem_analyzer import ProblemAnalyzer
+from .text_fixer import TextFixer
 from utils.logging_utils import log_debug
 from utils.utils import convert_spaces_to_dots_for_display
 import re
@@ -17,6 +18,7 @@ class GameRules(BaseGameRules):
         
         self.tag_manager = TagManager(main_window_ref)
         self.problem_analyzer = ProblemAnalyzer(main_window_ref, self.tag_manager, PROBLEM_DEFINITIONS, {})
+        self.text_fixer = TextFixer(main_window_ref, self.tag_manager, self.problem_analyzer)
 
     def load_data_from_json_obj(self, json_data: Any) -> Tuple[list, dict]:
         if not isinstance(json_data, dict):
@@ -89,6 +91,12 @@ class GameRules(BaseGameRules):
         processed = processed.replace('\\n', '\n')
         return processed
 
+    def convert_editor_text_to_data(self, text: str) -> str:
+        actual_text = text.replace(f"{P_VISUAL_EDITOR_MARKER}\n", '\\p')
+        actual_text = actual_text.replace(f"{L_VISUAL_EDITOR_MARKER}\n", '\\l')
+        actual_text = actual_text.replace('\n', '\\n')
+        return actual_text
+
     def get_syntax_highlighting_rules(self) -> List[Tuple[str, QTextCharFormat]]:
         return self.tag_manager.get_syntax_highlighting_rules()
 
@@ -101,11 +109,32 @@ class GameRules(BaseGameRules):
     def get_default_tag_mappings(self) -> Dict[str, str]:
         return DEFAULT_TAG_MAPPINGS_POKEMON_FR
 
-    def analyze_subline(self, *args, **kwargs) -> Set[str]:
-        return self.problem_analyzer.analyze_subline(*args, **kwargs)
+    def analyze_subline(self,
+                        text: str,
+                        next_text: Optional[str],
+                        subline_number_in_data_string: int,
+                        qtextblock_number_in_editor: int,
+                        is_last_subline_in_data_string: bool,
+                        editor_font_map: dict,
+                        editor_line_width_threshold: int,
+                        full_data_string_text_for_logical_check: str,
+                        is_target_for_debug: bool = False) -> Set[str]:
+        
+        problems_per_subline = self.problem_analyzer.analyze_data_string(
+            full_data_string_text_for_logical_check,
+            editor_font_map,
+            editor_line_width_threshold
+        )
+        
+        if qtextblock_number_in_editor < len(problems_per_subline):
+            return problems_per_subline[qtextblock_number_in_editor]
+        
+        return set()
 
-    def autofix_data_string(self, data_string: str, *args, **kwargs) -> Tuple[str, bool]:
-        return data_string, False
+    def autofix_data_string(self, data_string: str, editor_font_map: dict, editor_line_width_threshold: int) -> Tuple[str, bool]:
+        return self.text_fixer.autofix_data_string(
+            data_string, editor_font_map, editor_line_width_threshold
+        )
 
     def process_pasted_segment(self, segment_to_insert: str, *args, **kwargs) -> Tuple[str, str, str]:
         return segment_to_insert, "OK", ""

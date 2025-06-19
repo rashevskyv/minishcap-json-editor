@@ -30,6 +30,8 @@ class AppActionHandler(BaseHandler):
         if not (0 <= block_idx < len(self.mw.data)):
             return
 
+        detection_config = getattr(self.mw, 'detection_enabled', {})
+
         changes_made_to_edited_data_in_this_block = False
         
         keys_to_remove_from_problems = [
@@ -45,59 +47,41 @@ class AppActionHandler(BaseHandler):
             return
 
         for data_string_idx in range(num_strings_in_block):
-            is_current_ds_target_for_debug = (target_string_idx_for_debug != -1 and 
-                                              data_string_idx == target_string_idx_for_debug and 
-                                              str(self.data_processor.get_current_string_text(block_idx, data_string_idx)[0]) == "")
-            
-            current_data_string_text, source = self.data_processor.get_current_string_text(block_idx, data_string_idx)
+            current_data_string_text, _ = self.data_processor.get_current_string_text(block_idx, data_string_idx)
             current_data_string_text_with_spaces = convert_dots_to_spaces_from_editor(str(current_data_string_text))
-            
-            if is_current_ds_target_for_debug:
-                 log_debug(f"  ORANGE_BUG_DEBUG (Scan BEGIN): B:{block_idx}, S:{data_string_idx} (TARGET & EMPTY). Text for scan='{repr(current_data_string_text_with_spaces)}'")
-
-
-            if use_default_mappings_in_scan:
-                normalized_text, was_normalized = apply_default_mappings_only(
-                    current_data_string_text_with_spaces,
-                    self.mw.default_tag_mappings 
-                )
-                if was_normalized:
-                    if self.data_processor.update_edited_data(block_idx, data_string_idx, normalized_text):
-                        self.ui_updater.update_title()
-                    changes_made_to_edited_data_in_this_block = True
-                    current_data_string_text_with_spaces = normalized_text
             
             logical_sublines = current_data_string_text_with_spaces.split('\n')
             
             for subline_local_idx, logical_subline_text in enumerate(logical_sublines):
                 next_logical_subline_text = logical_sublines[subline_local_idx + 1] if subline_local_idx + 1 < len(logical_sublines) else None
                 
+                # Повертаємось до універсального analyze_subline
                 subline_problems = self.game_rules_plugin.analyze_subline(
                     text=logical_subline_text, 
                     next_text=next_logical_subline_text,
                     subline_number_in_data_string=subline_local_idx, 
-                    qtextblock_number_in_editor=subline_local_idx, 
+                    qtextblock_number_in_editor=subline_local_idx, # Це важливо для Zelda
                     is_last_subline_in_data_string=(subline_local_idx == len(logical_sublines) - 1),
                     editor_font_map=self.mw.font_map,
                     editor_line_width_threshold=self.mw.line_width_warning_threshold_pixels,
                     full_data_string_text_for_logical_check=current_data_string_text_with_spaces, 
-                    is_target_for_debug=is_current_ds_target_for_debug 
+                    is_target_for_debug=False
                 )
                 
+                filtered_problems = {
+                    problem_id for problem_id in subline_problems 
+                    if detection_config.get(problem_id, True)
+                }
+
                 problem_key = (block_idx, data_string_idx, subline_local_idx)
-                if subline_problems:
-                    self.mw.problems_per_subline[problem_key] = subline_problems
+                if filtered_problems:
+                    self.mw.problems_per_subline[problem_key] = filtered_problems
                 elif problem_key in self.mw.problems_per_subline:
                     del self.mw.problems_per_subline[problem_key]
-                
-                if is_current_ds_target_for_debug:
-                    log_debug(f"    ORANGE_BUG_DEBUG (Scan Subline): B:{block_idx}, S:{data_string_idx}, SubL:{subline_local_idx}. Problems: {subline_problems}. Text='{repr(logical_subline_text)}'")
-            
-            if is_current_ds_target_for_debug:
-                log_debug(f"  ORANGE_BUG_DEBUG (Scan END): B:{block_idx}, S:{data_string_idx} (TARGET & EMPTY). Finished processing sublines.")
         
         return changes_made_to_edited_data_in_this_block
-        
+
+
     def _perform_initial_silent_scan_all_issues(self):
         if not self.mw.data:
             return
@@ -476,9 +460,9 @@ class AppActionHandler(BaseHandler):
 
             for title_prefix, text_to_analyze, text_source_info in sources_to_check:
                 line_report_parts.append(f"  {title_prefix} (src:{text_source_info}):")
-                logical_sublines = text_to_analyze.split('\n')
+                logical_sublines = self.game_rules_plugin.problem_analyzer._get_sublines_from_data_string(text_to_analyze)
                 
-                game_like_text_no_newlines_rstripped = remove_all_tags(text_to_analyze.replace('\n','')).rstrip()
+                game_like_text_no_newlines_rstripped = remove_all_tags(text_to_analyze.replace('\\n','').replace('\\p','').replace('\\l','')).rstrip()
                 total_game_width = calculate_string_width(game_like_text_no_newlines_rstripped, self.mw.font_map)
                 game_status = "OK"
                 if total_game_width > self.mw.game_dialog_max_width_pixels:
@@ -489,21 +473,8 @@ class AppActionHandler(BaseHandler):
                     sub_line_no_tags_rstripped = remove_all_tags(sub_line_text).rstrip()
                     width_px = calculate_string_width(sub_line_no_tags_rstripped, self.mw.font_map)
                     
-                    current_subline_problems = set()
-                    if title_prefix == "Current":
-                        current_subline_problems = self.mw.problems_per_subline.get((block_idx, data_str_idx, subline_idx), set())
-                    else: 
-                        next_original_subline = logical_sublines[subline_idx + 1] if subline_idx + 1 < len(logical_sublines) else None
-                        current_subline_problems = self.game_rules_plugin.analyze_subline(
-                            text=sub_line_text,
-                            next_text=next_original_subline,
-                            subline_number_in_data_string=subline_idx,
-                            qtextblock_number_in_editor=subline_idx, 
-                            is_last_subline_in_data_string=(subline_idx == len(logical_sublines) - 1),
-                            editor_font_map=self.mw.font_map,
-                            editor_line_width_threshold=editor_warning_threshold,
-                            full_data_string_text_for_logical_check=text_to_analyze 
-                        )
+                    problems_per_subline_list = self.game_rules_plugin.problem_analyzer.analyze_data_string(text_to_analyze, self.mw.font_map, editor_warning_threshold)
+                    current_subline_problems = problems_per_subline_list[subline_idx] if subline_idx < len(problems_per_subline_list) else set()
                     
                     statuses = []
                     for prob_id in current_subline_problems:

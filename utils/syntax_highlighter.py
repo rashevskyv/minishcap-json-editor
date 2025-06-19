@@ -1,7 +1,7 @@
 import sys
 import re
 from PyQt5.QtCore import QRegExp, Qt
-from PyQt5.QtGui import QSyntaxHighlighter, QTextCharFormat, QColor, QFont, QPen
+from PyQt5.QtGui import QSyntaxHighlighter, QTextCharFormat, QColor, QFont, QPen, QTextDocument
 from PyQt5.QtWidgets import QWidget, QMainWindow
 
 from .logging_utils import log_debug
@@ -14,20 +14,15 @@ class JsonTagHighlighter(QSyntaxHighlighter):
     STATE_GREEN = 2
     STATE_BLUE = 3
 
-    def __init__(self, parent=None, main_window_ref=None):
+    def __init__(self, parent: QTextDocument, main_window_ref=None):
         super().__init__(parent)
         log_debug("JsonTagHighlighter initialized.")
         self.mw = main_window_ref
         
         self.default_text_color = QColor(Qt.black)
-        doc = self.document()
-        editor_widget = None
-        if doc:
-            parent_object = doc.parent()
-            if isinstance(parent_object, QWidget):
-                editor_widget = parent_object
+        editor_widget = parent.parent() if parent else None
 
-        if editor_widget and hasattr(editor_widget, 'palette'):
+        if editor_widget and isinstance(editor_widget, QWidget) and hasattr(editor_widget, 'palette'):
             self.default_text_color = editor_widget.palette().color(editor_widget.foregroundRole())
         else:
             log_debug("JsonTagHighlighter: Could not get editor widget or palette, using default black text color.")
@@ -47,11 +42,14 @@ class JsonTagHighlighter(QSyntaxHighlighter):
         self.blue_text_format = QTextCharFormat()
         self.color_default_format = QTextCharFormat()
         self.color_default_format.setForeground(self.default_text_color)
+        
+        parent.contentsChange.connect(self.on_contents_change)
 
         self.reconfigure_styles()
         
-    def set_newline_format_ranges(self, ranges):
-        pass
+    def on_contents_change(self, position, chars_removed, chars_added):
+        log_debug(f"Highlighter: on_contents_change triggered at pos {position}. Removed: {chars_removed}, Added: {chars_added}. Rehighlighting.")
+        self.rehighlight()
 
     def _apply_css_to_format(self, char_format, css_str, base_color=None):
         if base_color:

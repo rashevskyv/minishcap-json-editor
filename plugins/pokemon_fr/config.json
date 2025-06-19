@@ -33,13 +33,13 @@
     "game_dialog_max_width_pixels": 214,
     "line_width_warning_threshold_pixels": 214,
     "original_file_path": "C:/Users/xHR/Desktop/en-firered_original.json",
-    "edited_file_path": "C:/Users/xHR/Desktop/en-firered.json",
-    "last_selected_block_index": 1,
-    "last_selected_string_index": 24,
+    "edited_file_path": "//192.168.50.168/tloz_tmc_ua/UKR.json",
+    "last_selected_block_index": 0,
+    "last_selected_string_index": 53,
     "last_cursor_position_in_edited": 0,
     "last_edited_text_edit_scroll_value_v": 0,
     "last_edited_text_edit_scroll_value_h": 0,
-    "last_preview_text_edit_scroll_value_v": 21,
+    "last_preview_text_edit_scroll_value_v": 48,
     "last_original_text_edit_scroll_value_v": 0,
     "last_original_text_edit_scroll_value_h": 0,
     "search_history": [
@@ -63,5 +63,31 @@
         "всього лише",
         "суворо заборонено",
         "просто стояти й "
-    ]
+    ],
+    "autofix_enabled": {
+        "PKFR_WIDTH_EXCEEDED": true,
+        "PKFR_SHORT_LINE": true,
+        "PKFR_EMPTY_SUBLINE": true,
+        "PKFR_SINGLE_WORD_SUBLINE": false,
+        "PKFR_TAG_WARNING": false,
+        "ZMC_TAG_WARNING": false,
+        "ZMC_WIDTH_EXCEEDED": false,
+        "ZMC_EMPTY_ODD_SUBLINE_LOGICAL": false,
+        "ZMC_EMPTY_ODD_SUBLINE_DISPLAY": false,
+        "ZMC_SINGLE_WORD_SUBLINE": false,
+        "ZMC_SHORT_LINE": false
+    },
+    "detection_enabled": {
+        "PKFR_WIDTH_EXCEEDED": true,
+        "PKFR_SHORT_LINE": true,
+        "PKFR_EMPTY_SUBLINE": true,
+        "PKFR_SINGLE_WORD_SUBLINE": false,
+        "PKFR_TAG_WARNING": false,
+        "ZMC_TAG_WARNING": true,
+        "ZMC_WIDTH_EXCEEDED": true,
+        "ZMC_EMPTY_ODD_SUBLINE_LOGICAL": true,
+        "ZMC_EMPTY_ODD_SUBLINE_DISPLAY": true,
+        "ZMC_SINGLE_WORD_SUBLINE": true,
+        "ZMC_SHORT_LINE": true
+    }
 }

@@ -94,6 +94,8 @@ class MainWindow(QMainWindow):
         
         self.problems_per_subline: Dict[Tuple[int, int, int], Set[str]] = {}
         self.block_color_markers = {}
+        self.autofix_enabled = {}
+        self.detection_enabled = {}
 
         self.can_undo_paste = False
         self.before_paste_edited_data_snapshot = {}

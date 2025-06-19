@@ -7,6 +7,7 @@ from .LineNumberArea import LineNumberArea
 from .TextHighlightManager import TextHighlightManager
 from utils.logging_utils import log_debug
 from utils.syntax_highlighter import JsonTagHighlighter
+from utils.utils import SPACE_DOT_SYMBOL
 from utils.constants import (
     EDITOR_PLAYER_TAG as EDITOR_PLAYER_TAG_CONST,
     ORIGINAL_PLAYER_TAG as ORIGINAL_PLAYER_TAG_CONST,
@@ -257,6 +258,26 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
     def keyPressEvent(self, event: QKeyEvent):
         main_window = self.window()
+        
+        # Обробка пробілів
+        if not self.isReadOnly() and event.key() == Qt.Key_Space and getattr(main_window, 'show_multiple_spaces_as_dots', False):
+            cursor = self.textCursor()
+            block_text = cursor.block().text()
+            pos = cursor.positionInBlock()
+
+            # Перевіряємо символ до та після курсора
+            char_before = block_text[pos-1] if pos > 0 else '\n'
+            char_after = block_text[pos] if pos < len(block_text) else '\n'
+
+            # Перетворюємо на крапку, тільки якщо поруч вже є пробіл/крапка, або на межах рядка
+            if char_before in (' ', SPACE_DOT_SYMBOL) or char_after in (' ', SPACE_DOT_SYMBOL) or pos == 0 or pos == len(block_text):
+                self.textCursor().insertText(SPACE_DOT_SYMBOL)
+            else:
+                self.textCursor().insertText(' ')
+            event.accept()
+            return
+            
+        # Обробка Enter та його комбінацій
         if not self.isReadOnly() and isinstance(main_window, QMainWindow) and main_window.current_game_rules:
             game_rules = main_window.current_game_rules
             is_enter_key = event.key() in (Qt.Key_Return, Qt.Key_Enter)
@@ -278,7 +299,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
                     return
 
         super().keyPressEvent(event)
-
 
     def setReadOnly(self, ro):
         super().setReadOnly(ro)

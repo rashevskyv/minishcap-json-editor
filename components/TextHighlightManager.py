@@ -155,22 +155,12 @@ class TextHighlightManager:
             self.applyHighlights()
 
     def addProblemLineHighlight(self, line_number: int):
-        self.addCriticalProblemHighlight(line_number)
+        # Цей метод більше нічого не робить
+        pass
 
     def addCriticalProblemHighlight(self, line_number: int):
-        doc = self.editor.document()
-        needs_update = False
-        if line_number >= 0 and line_number < doc.blockCount():
-            block = doc.findBlockByNumber(line_number)
-            if block.isValid():
-                is_already_added = any(s.cursor.blockNumber() == line_number for s in self._critical_problem_selections)
-                if not is_already_added:
-                    selection = self._create_block_background_selection(block, self.editor.critical_problem_line_color, use_full_width=False) 
-                    if selection: 
-                        self._critical_problem_selections.append(selection)
-                        needs_update = True
-        if needs_update:
-             self.applyHighlights()
+        # Цей метод більше нічого не робить
+        pass
 
     def removeCriticalProblemHighlight(self, line_number: int) -> bool:
         removed = False; initial_len = len(self._critical_problem_selections)

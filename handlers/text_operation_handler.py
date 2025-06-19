@@ -1,11 +1,10 @@
 import re
-from PyQt5.QtWidgets import QMessageBox, QApplication
+from PyQt5.QtWidgets import QMessageBox, QApplication, QPlainTextEdit
 from PyQt5.QtGui import QTextCursor, QTextBlock
 from PyQt5.QtCore import QTimer
 from .base_handler import BaseHandler
 from utils.logging_utils import log_debug
 from utils.utils import convert_dots_to_spaces_from_editor, convert_spaces_to_dots_for_display, calculate_string_width, remove_all_tags, SPACE_DOT_SYMBOL, ALL_TAGS_PATTERN
-from plugins.pokemon_fr.config import P_VISUAL_EDITOR_MARKER, L_VISUAL_EDITOR_MARKER
 
 PREVIEW_UPDATE_DELAY = 250
 
@@ -22,6 +21,7 @@ class TextOperationHandler(BaseHandler):
             log_debug(f"UNDO_DEBUG ({context_message}): Editor='{editor.objectName()}', UndoAvailable={doc.isUndoAvailable()}, RedoAvailable={doc.isRedoAvailable()}, Revision={doc.revision()}")
 
     def _update_preview_content(self):
+        log_debug("TextOperationHandler: Updating preview content via timer.")
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         if not preview_edit or self.mw.current_block_idx == -1:
             return
@@ -46,6 +46,9 @@ class TextOperationHandler(BaseHandler):
                 preview_edit.setPlainText(preview_full_text)
         
         if hasattr(preview_edit, 'highlightManager'):
+            preview_edit.highlightManager.clearAllProblemHighlights()
+            self.ui_updater._apply_highlights_for_block(block_idx)
+
             if self.mw.current_string_idx != -1 and 0 <= self.mw.current_string_idx < preview_edit.document().blockCount():
                 preview_edit.highlightManager.setPreviewSelectedLineHighlight(self.mw.current_string_idx)
             else:
@@ -75,9 +78,7 @@ class TextOperationHandler(BaseHandler):
         
         text_from_editor = edited_edit.toPlainText()
         
-        actual_text = text_from_editor.replace(f"{P_VISUAL_EDITOR_MARKER}\n", '\\p')
-        actual_text = actual_text.replace(f"{L_VISUAL_EDITOR_MARKER}\n", '\\l')
-        actual_text = actual_text.replace('\n', '\\n')
+        actual_text = self.mw.current_game_rules.convert_editor_text_to_data(text_from_editor)
         
         actual_text_with_spaces = convert_dots_to_spaces_from_editor(actual_text)
         
@@ -411,103 +412,29 @@ class TextOperationHandler(BaseHandler):
             QMessageBox.warning(self.mw, "Auto-fix Error", "Game rules plugin not loaded.")
             return
 
-        block_idx = self.mw.current_block_idx
-        active_string_idx = self.mw.current_string_idx
-        edited_text_edit = self.mw.edited_text_edit 
+        edited_text_edit = self.mw.edited_text_edit
         
-        current_text_before_autofix, _ = self.data_processor.get_current_string_text(block_idx, active_string_idx)
-        if edited_text_edit: self._log_undo_state(edited_text_edit, f"auto_fix S:{active_string_idx} - Before plugin call")
-
-        final_text_to_apply, changed = self.mw.current_game_rules.autofix_data_string(
-            str(current_text_before_autofix), 
+        data_to_fix = self.mw.current_game_rules.convert_editor_text_to_data(edited_text_edit.toPlainText())
+        
+        fixed_data, changed = self.mw.current_game_rules.autofix_data_string(
+            data_to_fix, 
             self.mw.font_map, 
             self.mw.line_width_warning_threshold_pixels
         )
         
         if changed:
-            original_cursor_pos = 0
-            current_v_scroll = 0
-            current_h_scroll = 0
+            visual_text_for_editor = self.mw.current_game_rules.get_text_representation_for_editor(fixed_data)
             
-            if edited_text_edit:
-                original_cursor_pos = edited_text_edit.textCursor().position()
-                current_v_scroll = edited_text_edit.verticalScrollBar().value()
-                current_h_scroll = edited_text_edit.horizontalScrollBar().value()
-                self._log_undo_state(edited_text_edit, f"auto_fix S:{active_string_idx} - Before programmatic change")
+            cursor = edited_text_edit.textCursor()
+            cursor.beginEditBlock()
             
-            self.mw.is_programmatically_changing_text = True 
-
-            if self.data_processor.update_edited_data(block_idx, active_string_idx, final_text_to_apply):
-                if hasattr(self.mw, 'title_status_bar_updater'):
-                    self.mw.title_status_bar_updater.update_title()
-                elif hasattr(self.ui_updater, 'update_title'): 
-                    self.ui_updater.update_title()
+            cursor.select(QTextCursor.Document)
+            cursor.insertText(visual_text_for_editor)
             
-            if edited_text_edit:
-                text_for_display = convert_spaces_to_dots_for_display(final_text_to_apply, self.mw.show_multiple_spaces_as_dots)
-                edited_text_edit.blockSignals(True)
-                cursor = edited_text_edit.textCursor()
-                cursor.beginEditBlock() 
-                cursor.select(QTextCursor.Document)
-                cursor.insertText(text_for_display) 
-                cursor.endEditBlock()
-                edited_text_edit.blockSignals(False)
-                
-                new_doc_len = edited_text_edit.document().characterCount() -1 
-                final_cursor_pos = min(original_cursor_pos, new_doc_len if new_doc_len >= 0 else 0)
-                restored_cursor = edited_text_edit.textCursor() 
-                restored_cursor.setPosition(final_cursor_pos)
-                edited_text_edit.setTextCursor(restored_cursor)
-                
-                edited_text_edit.verticalScrollBar().setValue(current_v_scroll)
-                edited_text_edit.horizontalScrollBar().setValue(current_h_scroll)
-                self._log_undo_state(edited_text_edit, f"auto_fix S:{active_string_idx} - After programmatic change")
-
-            self.mw.is_programmatically_changing_text = False 
-
-            self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False) 
+            cursor.endEditBlock()
             
-            if hasattr(self.mw, 'preview_updater') and hasattr(self.mw.preview_updater, 'update_preview_for_block'):
-                self.mw.preview_updater.update_preview_for_block(block_idx)
-            elif hasattr(self.ui_updater, 'populate_strings_for_block'):
-                self.ui_updater.populate_strings_for_block(block_idx)
-
-            if hasattr(self.mw, 'editor_state_updater') and hasattr(self.mw.editor_state_updater, 'update_editor_content'):
-                self.mw.editor_state_updater.update_editor_content() 
-            elif hasattr(self.ui_updater, 'update_text_views'): 
-                self.ui_updater.update_text_views()
-
-            if hasattr(self.mw, 'block_list_updater'):
-                self.mw.block_list_updater.update_block_item_text_with_problem_count(block_idx)
-            elif hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
-                self.ui_updater.update_block_item_text_with_problem_count(block_idx)
-            
-            if hasattr(self.mw, 'editor_state_updater'):
-                self.mw.editor_state_updater.update_status_bar()
-                self.mw.editor_state_updater.synchronize_original_cursor()
-            elif hasattr(self.ui_updater, 'update_status_bar'):
-                self.ui_updater.update_status_bar()
-                self.ui_updater.synchronize_original_cursor()
-            
-            if hasattr(self.mw, 'preview_text_edit') and self.mw.preview_text_edit and hasattr(self.mw.preview_text_edit, 'lineNumberArea'):
-                self.mw.preview_text_edit.lineNumberArea.update()
-            if edited_text_edit and hasattr(edited_text_edit, 'lineNumberArea'):
-                edited_text_edit.lineNumberArea.update()
             if hasattr(self.mw, 'statusBar'):
-                self.mw.statusBar.showMessage("Auto-fix applied to current string.", 2000)
-        else: 
-            self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False)
-            
-            if hasattr(self.mw, 'preview_updater') and hasattr(self.mw.preview_updater, 'update_preview_for_block'):
-                self.mw.preview_updater.update_preview_for_block(block_idx)
-            elif hasattr(self.ui_updater, 'populate_strings_for_block'):
-                self.ui_updater.populate_strings_for_block(block_idx)
-            
-            if hasattr(self.mw, 'block_list_updater'):
-                 self.mw.block_list_updater.update_block_item_text_with_problem_count(block_idx)
-            elif hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'): 
-                 self.ui_updater.update_block_item_text_with_problem_count(block_idx)
-
+                self.mw.statusBar.showMessage("Auto-fix applied.", 2000)
+        else:
             if hasattr(self.mw, 'statusBar'):
                 self.mw.statusBar.showMessage("Auto-fix: No changes made.", 2000)
-            if edited_text_edit: self._log_undo_state(edited_text_edit, f"auto_fix S:{active_string_idx} - No change by plugin, after rescan")

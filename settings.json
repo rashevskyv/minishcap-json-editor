@@ -10,5 +10,7 @@
     },
     "main_splitter_state": "AAAA/wAAAAEAAAACAAAAyAAAAyAB/////wEAAAABAA==",
     "right_splitter_state": "AAAA/wAAAAEAAAACAAAAlgAAAcIB/////wEAAAACAA==",
-    "bottom_right_splitter_state": "AAAA/wAAAAEAAAACAAABkAAAAZAB/////wEAAAABAA=="
+    "bottom_right_splitter_state": "AAAA/wAAAAEAAAACAAABkAAAAZAB/////wEAAAABAA==",
+    "show_multiple_spaces_as_dots": true,
+    "space_dot_color_hex": "#808080"
 }

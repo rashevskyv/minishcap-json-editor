@@ -206,7 +206,6 @@ def setup_main_window_ui(main_window):
     main_window.main_toolbar.addAction(main_window.redo_typing_action)
     main_window.main_toolbar.addSeparator()
     main_window.main_toolbar.addAction(main_window.find_action)
-    main_window.main_toolbar.addAction(main_window.auto_fix_action) 
     main_window.main_toolbar.addSeparator()
     main_window.main_toolbar.addAction(main_window.open_settings_action)
 
