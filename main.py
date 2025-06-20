@@ -106,6 +106,7 @@ class MainWindow(QMainWindow):
         self.search_match_block_indices = set()
         self.current_search_results = []
         self.current_search_index = -1
+        self.is_restart_in_progress = False
 
 
         self.main_splitter = None; self.right_splitter = None; self.bottom_right_splitter = None
@@ -574,11 +575,11 @@ class MainWindow(QMainWindow):
         self.app_action_handler.handle_close_event(event)
 
         if event.isAccepted():
-            if not self.unsaved_changes :
-                log_debug("Close accepted (no unsaved changes). Saving editor settings via SettingsManager.")
+            if not self.unsaved_changes and not self.is_restart_in_progress:
+                log_debug("Close accepted (no unsaved changes, not a restart). Saving editor settings via SettingsManager.")
                 self.settings_manager.save_settings()
             else:
-                 log_debug("Close accepted (unsaved changes were handled). Settings should have been saved by AppActionHandler or by user choice during handle_close_event.")
+                 log_debug("Close accepted. Settings save skipped due to unsaved changes (handled by dialog) or restart in progress.")
             super().closeEvent(event)
         else:
             log_debug("Close ignored by user or handler.")

@@ -12,44 +12,55 @@ class MainWindowActions:
     
     def open_settings_dialog(self):
         log_debug("<<<<<<<<<< ACTION: Open Settings Dialog Triggered >>>>>>>>>>")
+        
         dialog = SettingsDialog(self.mw)
         
-        # Зберігаємо назву активного плагіна до відкриття діалогу
-        old_plugin_name = self.mw.active_game_plugin
+        if not dialog.exec_():
+            log_debug("Settings dialog cancelled.")
+            return
 
-        if dialog.exec_():
-            new_settings = dialog.get_settings()
-            log_debug(f"Settings dialog accepted. New settings: {new_settings}")
+        new_settings = dialog.get_settings()
+        
+        if dialog.plugin_changed_requires_restart:
+            log_debug(f"Plugin change confirmed. Saving current state for plugin '{dialog.initial_plugin_name}' before restart.")
             
-            plugin_changed = new_settings.get('active_game_plugin') != old_plugin_name
+            self.mw.current_font_size = new_settings.get('font_size')
+            self.mw.show_multiple_spaces_as_dots = new_settings.get('show_multiple_spaces_as_dots')
+            self.mw.space_dot_color_hex = new_settings.get('space_dot_color_hex')
 
-            # Застосовуємо всі налаштування до об'єкта MainWindow
+            self.mw.settings_manager.save_settings()
+
+            self.mw.active_game_plugin = new_settings.get('active_game_plugin')
+            log_debug(f"Set new active plugin to: {self.mw.active_game_plugin}")
+
+            self.mw.settings_manager._save_global_settings()
+            
+            self.mw.is_restart_in_progress = True
+            self.helper.restart_application()
+        else:
+            log_debug("Settings changed without plugin change. Applying settings.")
+            
+            initial_paths = (self.mw.json_path, self.mw.edited_json_path)
+
             for key, value in new_settings.items():
                 if hasattr(self.mw, key):
                      setattr(self.mw, key, value)
             
-            self.mw.current_font_size = new_settings.get('font_size')
-            self.mw.json_path = new_settings.get('original_file_path')
-            self.mw.edited_json_path = new_settings.get('edited_file_path')
-            
-            # Зберігаємо всі налаштування
             self.mw.settings_manager.save_settings()
 
-            # Якщо плагін змінився, ініціюємо перезапуск
-            if plugin_changed:
-                reply = QMessageBox.information(self.mw, "Plugin Changed", 
-                                        "The active game plugin has been changed.\nThe application will now restart.",
-                                        QMessageBox.Ok)
-                if reply == QMessageBox.Ok:
-                    self.helper.restart_application()
+            self.mw.apply_font_size()
+            self.mw.helper.reconfigure_all_highlighters()
+            self.mw.helper.apply_text_wrap_settings()
+
+            new_paths = (new_settings.get('original_file_path'), new_settings.get('edited_file_path'))
+            if initial_paths != new_paths and new_paths[0]:
+                log_debug("File paths have changed, reloading data.")
+                self.mw.load_all_data_for_path(new_paths[0], new_paths[1])
             else:
-                # Якщо плагін не змінився, просто застосовуємо візуальні налаштування
-                self.mw.apply_font_size()
-                self.mw.helper.reconfigure_all_highlighters()
-                self.mw.helper.apply_text_wrap_settings()
-                if new_settings.get('original_file_path') != self.mw.json_path or \
-                   new_settings.get('edited_file_path') != self.mw.edited_json_path:
-                    self.mw.load_all_data_for_path(self.mw.json_path, self.mw.edited_json_path)
+                log_debug("Settings changed, but paths are the same or new path is empty. Rescanning issues.")
+                if hasattr(self.mw.app_action_handler, 'rescan_all_tags'):
+                    self.mw.app_action_handler.rescan_all_tags()
+
 
     def trigger_save_action(self):
         log_debug("<<<<<<<<<< ACTION: Save Triggered (via MainWindowActions) >>>>>>>>>>")

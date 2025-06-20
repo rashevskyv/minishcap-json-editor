@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QFormLayout, QComboBox,
     QDialogButtonBox, QWidget, QLabel, QTabWidget,
     QCheckBox, QLineEdit, QColorDialog, QPushButton,
-    QHBoxLayout, QFileDialog
+    QHBoxLayout, QFileDialog, QMessageBox
 )
 from PyQt5.QtGui import QColor, QPalette
 from PyQt5.QtCore import pyqtSignal
@@ -52,6 +52,8 @@ class SettingsDialog(QDialog):
         
         self.autofix_checkboxes = {}
         self.detection_checkboxes = {}
+        self.plugin_changed_requires_restart = False
+        self.initial_plugin_name = self.mw.active_game_plugin
 
         main_layout = QVBoxLayout(self)
         
@@ -68,29 +70,11 @@ class SettingsDialog(QDialog):
         self.setup_plugin_tab()
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
-        self.button_box.accepted.connect(self.accept_and_process)
+        self.button_box.accepted.connect(self.accept)
         self.button_box.rejected.connect(self.reject)
         main_layout.addWidget(self.button_box)
 
         self.load_initial_settings()
-        self.store_initial_plugin_settings()
-
-    def store_initial_plugin_settings(self):
-        self._initial_detection_settings = getattr(self.mw, 'detection_enabled', {}).copy()
-        self._initial_autofix_settings = getattr(self.mw, 'autofix_enabled', {}).copy()
-
-    def accept_and_process(self):
-        new_settings = self.get_settings()
-        
-        detection_changed = new_settings.get('detection_enabled') != self._initial_detection_settings
-        autofix_changed = new_settings.get('autofix_enabled') != self._initial_autofix_settings
-
-        self.accept()
-        
-        if detection_changed or autofix_changed:
-            log_debug("Detection or autofix settings changed, triggering rescan.")
-            if hasattr(self.mw, 'app_action_handler'):
-                self.mw.app_action_handler.rescan_all_tags()
 
     def _create_path_selector(self, line_edit: QLineEdit):
         widget = QWidget()
@@ -121,38 +105,43 @@ class SettingsDialog(QDialog):
         
         self.font_size_spinbox = LabeledSpinBox("Application Font Size:", 6, 24, 10, parent=self)
         layout.addRow(self.font_size_spinbox)
-
+        
         self.show_spaces_checkbox = QCheckBox("Show special spaces as dots", self)
         layout.addRow(self.show_spaces_checkbox)
         
         self.space_dot_color_picker = ColorPickerButton(parent=self)
         layout.addRow("Space Dot Color:", self.space_dot_color_picker)
-
-        self.original_path_edit = QLineEdit(self)
-        self.edited_path_edit = QLineEdit(self)
         
-        layout.addRow("Original File Path (Plugin Specific):", self._create_path_selector(self.original_path_edit))
-        layout.addRow("Changes File Path (Plugin Specific):", self._create_path_selector(self.edited_path_edit))
-
         self.plugin_combo.activated.connect(self.on_plugin_changed)
 
     def setup_plugin_tab(self):
         plugin_layout = QVBoxLayout(self.plugin_tab)
-        plugin_tabs = QTabWidget(self.plugin_tab)
-        plugin_layout.addWidget(plugin_tabs)
+        self.plugin_tabs = QTabWidget(self.plugin_tab)
+        plugin_layout.addWidget(self.plugin_tabs)
+        self.rebuild_plugin_tabs()
 
+    def rebuild_plugin_tabs(self):
+        while self.plugin_tabs.count():
+            self.plugin_tabs.removeTab(0)
+
+        paths_tab = QWidget()
         display_tab = QWidget()
         rules_tab = QWidget()
         detection_tab = QWidget()
         autofix_tab = QWidget()
 
-        plugin_tabs.addTab(display_tab, "Display")
-        plugin_tabs.addTab(rules_tab, "Rules")
-        plugin_tabs.addTab(detection_tab, "Detection")
-        plugin_tabs.addTab(autofix_tab, "Auto-fix")
+        self.plugin_tabs.addTab(paths_tab, "File Paths")
+        self.plugin_tabs.addTab(display_tab, "Display")
+        self.plugin_tabs.addTab(rules_tab, "Rules")
+        self.plugin_tabs.addTab(detection_tab, "Detection")
+        self.plugin_tabs.addTab(autofix_tab, "Auto-fix")
 
+        self._setup_paths_subtab(paths_tab)
         self._setup_display_subtab(display_tab)
         self._setup_rules_subtab(rules_tab)
+        
+        self.detection_checkboxes.clear()
+        self.autofix_checkboxes.clear()
         self._setup_detection_subtab(detection_tab)
         self._setup_autofix_subtab(autofix_tab)
 
@@ -177,6 +166,13 @@ class SettingsDialog(QDialog):
         layout.addRow(self.game_dialog_width_spinbox)
         self.width_warning_spinbox = LabeledSpinBox("Editor Line Width Warning (px):", 100, 500, 208, parent=self)
         layout.addRow(self.width_warning_spinbox)
+
+    def _setup_paths_subtab(self, tab):
+        layout = QFormLayout(tab)
+        self.original_path_edit = QLineEdit(self)
+        self.edited_path_edit = QLineEdit(self)
+        layout.addRow("Original File Path:", self._create_path_selector(self.original_path_edit))
+        layout.addRow("Changes File Path:", self._create_path_selector(self.edited_path_edit))
 
     def _populate_checkbox_subtab(self, tab, checkbox_dict, title):
         layout = QFormLayout(tab)
@@ -232,21 +228,29 @@ class SettingsDialog(QDialog):
         self.plugin_map = self.find_plugins()
         self.plugin_combo.addItems(self.plugin_map.keys())
 
-    def on_plugin_changed(self):
+    def on_plugin_changed(self, index):
         log_debug("SettingsDialog: Plugin changed in dropdown.")
-        
-        self.mw.settings_manager._save_plugin_settings()
-        
         selected_dir_name = self.plugin_map.get(self.plugin_combo.currentText())
-        self.mw.active_game_plugin = selected_dir_name
         
-        self.mw.load_game_plugin()
-        self.mw.settings_manager._load_plugin_settings()
-        
-        self.setup_plugin_tab()
-        self.load_initial_settings()
-        self.store_initial_plugin_settings()
-        log_debug(f"SettingsDialog: Reloaded UI with settings for '{selected_dir_name}'.")
+        if selected_dir_name == self.initial_plugin_name:
+            self.plugin_changed_requires_restart = False
+            return
+
+        reply = QMessageBox.question(self, "Plugin Change",
+                                     "Changing the active plugin requires an application restart. Proceed?",
+                                     QMessageBox.Ok | QMessageBox.Cancel, QMessageBox.Ok)
+
+        if reply == QMessageBox.Cancel:
+            log_debug("SettingsDialog: User cancelled plugin change.")
+            for i, (display_name, dir_name) in enumerate(self.plugin_map.items()):
+                if dir_name == self.initial_plugin_name:
+                    self.plugin_combo.setCurrentIndex(i)
+                    break
+            self.plugin_changed_requires_restart = False
+        else:
+            log_debug("SettingsDialog: User accepted plugin change. Setting flag and accepting dialog.")
+            self.plugin_changed_requires_restart = True
+            self.accept()
 
     def load_initial_settings(self):
         current_plugin_dir_name = getattr(self.mw, 'active_game_plugin', 'zelda_mc')

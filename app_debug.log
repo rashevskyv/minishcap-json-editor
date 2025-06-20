@@ -1,91 +1,343 @@
-2025-06-19 22:52:54,045 - DEBUG - logging_utils - log_debug - ================= Application Start =================
-2025-06-19 22:52:54,056 - DEBUG - logging_utils - log_debug - ++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++
-2025-06-19 22:52:54,057 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Core Components...
-2025-06-19 22:52:54,057 - DEBUG - logging_utils - log_debug - --> SettingsManager: load_settings from settings.json
-2025-06-19 22:52:54,058 - DEBUG - logging_utils - log_debug - Global settings loaded.
-2025-06-19 22:52:54,058 - DEBUG - logging_utils - log_debug - Plugin settings loaded from 'plugins\zelda_mc\config.json'.
-2025-06-19 22:52:54,058 - DEBUG - logging_utils - log_debug - --> SettingsManager: Attempting to load font_map from plugin path: plugins\zelda_mc\font_map.json
-2025-06-19 22:52:54,059 - DEBUG - logging_utils - log_debug - Successfully loaded font_map. Count: 117
-2025-06-19 22:52:54,059 - DEBUG - logging_utils - log_debug - <-- SettingsManager: load_settings finished
-2025-06-19 22:52:54,059 - DEBUG - logging_utils - log_debug - MainWindow: Loading game plugin...
-2025-06-19 22:52:54,059 - DEBUG - logging_utils - log_debug - --> MainWindow: load_game_plugin called.
-2025-06-19 22:52:54,060 - DEBUG - logging_utils - log_debug -     Attempting to load plugin: 'zelda_mc'
-2025-06-19 22:52:54,060 - DEBUG - logging_utils - log_debug -     Importing module: plugins.zelda_mc.rules
-2025-06-19 22:52:54,063 - DEBUG - logging_utils - log_debug -     Successfully loaded and instantiated game rules: GameRules from plugins.zelda_mc.rules
-2025-06-19 22:52:54,064 - DEBUG - logging_utils - log_debug - <-- MainWindow: load_game_plugin finished.
-2025-06-19 22:52:54,064 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Handlers (Pre-UI setup)...
-2025-06-19 22:52:54,064 - DEBUG - logging_utils - log_debug - Handler 'ListSelectionHandler' initialized.
-2025-06-19 22:52:54,064 - DEBUG - logging_utils - log_debug - Handler 'TextOperationHandler' initialized.
-2025-06-19 22:52:54,065 - DEBUG - logging_utils - log_debug - Handler 'AppActionHandler' initialized.
-2025-06-19 22:52:54,065 - DEBUG - logging_utils - log_debug - Handler 'SearchHandler' initialized.
-2025-06-19 22:52:54,065 - DEBUG - logging_utils - log_debug - MainWindow: Setting up UI...
-2025-06-19 22:52:54,065 - DEBUG - logging_utils - log_debug - setup_main_window_ui: Starting UI setup.
-2025-06-19 22:52:54,066 - DEBUG - logging_utils - log_debug - CustomListWidget INITIALIZED, parent: <__main__.MainWindow object at 0x00000201E8FC9EE0>
-2025-06-19 22:52:54,067 - DEBUG - logging_utils - log_debug - CustomListWidget: Item delegate set to <components.CustomListItemDelegate.CustomListItemDelegate object at 0x00000201E9AD84C0>
-2025-06-19 22:52:54,074 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
-2025-06-19 22:52:54,074 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-2025-06-19 22:52:54,075 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
-2025-06-19 22:52:54,075 - DEBUG - logging_utils - log_debug - Loaded 8 syntax highlighting rules from game plugin.
-2025-06-19 22:52:54,240 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
-2025-06-19 22:52:54,241 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-2025-06-19 22:52:54,241 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
-2025-06-19 22:52:54,241 - DEBUG - logging_utils - log_debug - Loaded 8 syntax highlighting rules from game plugin.
-2025-06-19 22:52:54,243 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
-2025-06-19 22:52:54,243 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-2025-06-19 22:52:54,243 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
-2025-06-19 22:52:54,243 - DEBUG - logging_utils - log_debug - Loaded 8 syntax highlighting rules from game plugin.
-2025-06-19 22:52:54,260 - DEBUG - logging_utils - log_debug - setup_main_window_ui: UI setup complete.
-2025-06-19 22:52:54,260 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Handlers and dynamic UI from plugin (Post-UI setup)...
-2025-06-19 22:52:54,260 - DEBUG - logging_utils - log_debug - TagCheckerHandler of type TagCheckerHandler was provided by the plugin.
-2025-06-19 22:52:54,261 - DEBUG - logging_utils - log_debug - MainWindow: Connecting Signals...
-2025-06-19 22:52:54,261 - DEBUG - logging_utils - log_debug - --> MainWindow: connect_signals() started
-2025-06-19 22:52:54,262 - DEBUG - logging_utils - log_debug - --> MainWindow: connect_signals() finished
-2025-06-19 22:52:54,262 - DEBUG - logging_utils - log_debug - MainWindowHelper: restore_state_after_settings_load called.
-2025-06-19 22:52:54,262 - DEBUG - logging_utils - log_debug - Restored window geometry from settings: {'x': 876, 'y': 337, 'width': 1288, 'height': 1008}
-2025-06-19 22:52:54,291 - DEBUG - logging_utils - log_debug - MainWindowHelper: Attempting to load initial file from settings: //192.168.50.168/tloz_tmc_ua/UKR_orig.json
-2025-06-19 22:52:54,291 - DEBUG - logging_utils - log_debug - --> AppActionHandler: load_all_data_for_path START. Original: '//192.168.50.168/tloz_tmc_ua/UKR_orig.json', Manual Edit Path: '//192.168.50.168/tloz_tmc_ua/UKR.json', InitialLoad: True
-2025-06-19 22:52:54,292 - DEBUG - logging_utils - log_debug - load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR_orig.json'
-2025-06-19 22:52:54,636 - DEBUG - logging_utils - log_debug - load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR_orig.json'.
-2025-06-19 22:52:54,640 - DEBUG - logging_utils - log_debug - load_json_file: Attempting to load '//192.168.50.168/tloz_tmc_ua/UKR.json'
-2025-06-19 22:52:55,157 - DEBUG - logging_utils - log_debug - load_json_file: Successfully loaded '//192.168.50.168/tloz_tmc_ua/UKR.json'.
-2025-06-19 22:52:55,157 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 1. Rehighlighting.
-2025-06-19 22:52:55,158 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 1, Added: 0. Rehighlighting.
-2025-06-19 22:52:55,158 - DEBUG - logging_utils - log_debug - UIUpdater: Cleared all problem block text. Highlights are managed by delegate.
-2025-06-19 22:52:55,158 - DEBUG - logging_utils - log_debug - Loaded 18 exact legitimate tags.
-2025-06-19 22:52:55,433 - DEBUG - logging_utils - log_debug - <-- AppActionHandler: load_all_data_for_path FINISHED (Success)
-2025-06-19 22:52:55,434 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 1, Added: 0. Rehighlighting.
-2025-06-19 22:52:55,439 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 367. Rehighlighting.
-2025-06-19 22:52:55,441 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview. Data Line number: 2
-2025-06-19 22:52:55,442 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 1, Added: 0. Rehighlighting.
-2025-06-19 22:52:55,443 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 64. Rehighlighting.
-2025-06-19 22:52:55,444 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 1, Added: 0. Rehighlighting.
-2025-06-19 22:52:55,444 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 37. Rehighlighting.
-2025-06-19 22:52:55,445 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 2
-2025-06-19 22:52:55,445 - DEBUG - logging_utils - log_debug - MainWindowHelper: Restored selection to block 15, string 2, cursor 0
-2025-06-19 22:52:55,446 - DEBUG - logging_utils - log_debug - MainWindowHelper: Search history loaded into panel. Last query (if any) set in SearchHandler: просто стояти й 
-2025-06-19 22:52:55,446 - DEBUG - logging_utils - log_debug - MainWindow: Applying font. General: Family='Segoe UI', Editor: Family='Consolas', Size=13
-2025-06-19 22:52:55,454 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (15, 2) updated. New edited_data size: 1
-2025-06-19 22:52:55,455 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Unsaved changes status changed to True
-2025-06-19 22:52:55,471 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 1. Rehighlighting.
-2025-06-19 22:52:55,471 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 367, Added: 0. Rehighlighting.
-2025-06-19 22:52:55,471 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 1. Rehighlighting.
-2025-06-19 22:52:55,472 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 64, Added: 0. Rehighlighting.
-2025-06-19 22:52:55,472 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 1. Rehighlighting.
-2025-06-19 22:52:55,472 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 37, Added: 0. Rehighlighting.
-2025-06-19 22:52:55,481 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 1, Added: 0. Rehighlighting.
-2025-06-19 22:52:55,482 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 367. Rehighlighting.
-2025-06-19 22:52:55,483 - DEBUG - logging_utils - log_debug - Applying text wrap settings: Preview wrap: False, Editors wrap: False
-2025-06-19 22:52:55,483 - DEBUG - logging_utils - log_debug - Rebuilt unsaved_block_indices: {15}
-2025-06-19 22:52:55,484 - DEBUG - logging_utils - log_debug - ++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++
-2025-06-19 22:52:55,613 - DEBUG - logging_utils - log_debug - Starting Qt event loop...
-2025-06-19 22:52:55,617 - DEBUG - logging_utils - log_debug - Forcing window focus.
-2025-06-19 22:52:55,708 - DEBUG - logging_utils - log_debug - TextOperationHandler: Updating preview content via timer.
-2025-06-19 22:52:59,649 - DEBUG - logging_utils - log_debug - --> MainWindow: closeEvent received.
-2025-06-19 22:52:59,649 - DEBUG - logging_utils - log_debug - MainWindowHelper: prepare_to_close called.
-2025-06-19 22:52:59,650 - DEBUG - logging_utils - log_debug - MainWindowHelper: Updated search_history_to_save: 20 items
-2025-06-19 22:52:59,650 - DEBUG - logging_utils - log_debug - --> AppActionHandler: handle_close_event called.
-2025-06-19 22:53:00,744 - DEBUG - logging_utils - log_debug - <-- AppActionHandler: handle_close_event finished.
-2025-06-19 22:53:00,744 - DEBUG - logging_utils - log_debug - Close accepted (unsaved changes were handled). Settings should have been saved by AppActionHandler or by user choice during handle_close_event.
-2025-06-19 22:53:00,744 - DEBUG - logging_utils - log_debug - <-- MainWindow: closeEvent finished.
-2025-06-19 22:53:00,762 - DEBUG - logging_utils - log_debug - Qt event loop finished with exit code: 0
-2025-06-19 22:53:00,762 - DEBUG - logging_utils - log_debug - ================= Application End =================
+2025-06-20 23:56:48,519 - DEBUG - logging_utils - log_debug - ================= Application Start =================
+2025-06-20 23:56:48,543 - DEBUG - logging_utils - log_debug - ++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++
+2025-06-20 23:56:48,544 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Core Components...
+2025-06-20 23:56:48,544 - DEBUG - logging_utils - log_debug - --> SettingsManager: load_settings from settings.json
+2025-06-20 23:56:48,545 - DEBUG - logging_utils - log_debug - Global settings loaded.
+2025-06-20 23:56:48,545 - DEBUG - logging_utils - log_debug - Plugin settings loaded from 'plugins\pokemon_fr\config.json'.
+2025-06-20 23:56:48,546 - DEBUG - logging_utils - log_debug - --> SettingsManager: Attempting to load font_map from plugin path: plugins\pokemon_fr\font_map.json
+2025-06-20 23:56:48,547 - DEBUG - logging_utils - log_debug - Successfully loaded font_map. Count: 117
+2025-06-20 23:56:48,547 - DEBUG - logging_utils - log_debug - <-- SettingsManager: load_settings finished
+2025-06-20 23:56:48,547 - DEBUG - logging_utils - log_debug - MainWindow: Loading game plugin...
+2025-06-20 23:56:48,548 - DEBUG - logging_utils - log_debug - --> MainWindow: load_game_plugin called.
+2025-06-20 23:56:48,548 - DEBUG - logging_utils - log_debug -     Attempting to load plugin: 'pokemon_fr'
+2025-06-20 23:56:48,548 - DEBUG - logging_utils - log_debug -     Importing module: plugins.pokemon_fr.rules
+2025-06-20 23:56:48,551 - DEBUG - logging_utils - log_debug -     Successfully loaded and instantiated game rules: GameRules from plugins.pokemon_fr.rules
+2025-06-20 23:56:48,551 - DEBUG - logging_utils - log_debug - <-- MainWindow: load_game_plugin finished.
+2025-06-20 23:56:48,552 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Handlers (Pre-UI setup)...
+2025-06-20 23:56:48,552 - DEBUG - logging_utils - log_debug - Handler 'ListSelectionHandler' initialized.
+2025-06-20 23:56:48,552 - DEBUG - logging_utils - log_debug - Handler 'TextOperationHandler' initialized.
+2025-06-20 23:56:48,553 - DEBUG - logging_utils - log_debug - Handler 'AppActionHandler' initialized.
+2025-06-20 23:56:48,553 - DEBUG - logging_utils - log_debug - Handler 'SearchHandler' initialized.
+2025-06-20 23:56:48,553 - DEBUG - logging_utils - log_debug - MainWindow: Setting up UI...
+2025-06-20 23:56:48,554 - DEBUG - logging_utils - log_debug - setup_main_window_ui: Starting UI setup.
+2025-06-20 23:56:48,555 - DEBUG - logging_utils - log_debug - CustomListWidget INITIALIZED, parent: <__main__.MainWindow object at 0x000001BB394F9160>
+2025-06-20 23:56:48,556 - DEBUG - logging_utils - log_debug - CustomListWidget: Item delegate set to <components.CustomListItemDelegate.CustomListItemDelegate object at 0x000001BB3952D160>
+2025-06-20 23:56:48,567 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
+2025-06-20 23:56:48,568 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+2025-06-20 23:56:48,568 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
+2025-06-20 23:56:48,742 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
+2025-06-20 23:56:48,742 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+2025-06-20 23:56:48,742 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
+2025-06-20 23:56:48,744 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
+2025-06-20 23:56:48,744 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+2025-06-20 23:56:48,744 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
+2025-06-20 23:56:48,764 - DEBUG - logging_utils - log_debug - setup_main_window_ui: UI setup complete.
+2025-06-20 23:56:48,764 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Handlers and dynamic UI from plugin (Post-UI setup)...
+2025-06-20 23:56:48,766 - DEBUG - logging_utils - log_debug - MainWindow: Connecting Signals...
+2025-06-20 23:56:48,766 - DEBUG - logging_utils - log_debug - --> MainWindow: connect_signals() started
+2025-06-20 23:56:48,766 - DEBUG - logging_utils - log_debug - --> MainWindow: connect_signals() finished
+2025-06-20 23:56:48,767 - DEBUG - logging_utils - log_debug - MainWindowHelper: restore_state_after_settings_load called.
+2025-06-20 23:56:48,767 - DEBUG - logging_utils - log_debug - Restored window geometry from settings: {'x': 876, 'y': 337, 'width': 1288, 'height': 1008}
+2025-06-20 23:56:48,767 - DEBUG - logging_utils - log_debug - MainWindowHelper: Attempting to load initial file from settings: C:/Users/xHR/Desktop/en-firered_original.json
+2025-06-20 23:56:48,768 - DEBUG - logging_utils - log_debug - --> AppActionHandler: load_all_data_for_path START. Original: 'C:/Users/xHR/Desktop/en-firered_original.json', Manual Edit Path: 'C:/Users/xHR/Desktop/en-firered.json', InitialLoad: True
+2025-06-20 23:56:48,768 - DEBUG - logging_utils - log_debug - load_json_file: Attempting to load 'C:/Users/xHR/Desktop/en-firered_original.json'
+2025-06-20 23:56:48,769 - DEBUG - logging_utils - log_debug - load_json_file: Successfully loaded 'C:/Users/xHR/Desktop/en-firered_original.json'.
+2025-06-20 23:56:48,769 - DEBUG - logging_utils - log_debug - load_json_file: Attempting to load 'C:/Users/xHR/Desktop/en-firered.json'
+2025-06-20 23:56:48,771 - DEBUG - logging_utils - log_debug - load_json_file: Successfully loaded 'C:/Users/xHR/Desktop/en-firered.json'.
+2025-06-20 23:56:48,771 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:56:48,771 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 1, Added: 0. Rehighlighting.
+2025-06-20 23:56:48,772 - DEBUG - logging_utils - log_debug - UIUpdater: Cleared all problem block text. Highlights are managed by delegate.
+2025-06-20 23:56:48,796 - DEBUG - logging_utils - log_debug - <-- AppActionHandler: load_all_data_for_path FINISHED (Success)
+2025-06-20 23:56:48,797 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 1, Added: 0. Rehighlighting.
+2025-06-20 23:56:48,804 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 2096. Rehighlighting.
+2025-06-20 23:56:48,807 - DEBUG - logging_utils - log_debug - MainWindowHelper: last_selected_string_index (-1) is out of bounds for block 0. Skipping string/cursor restore.
+2025-06-20 23:56:48,808 - DEBUG - logging_utils - log_debug - MainWindowHelper: Search history loaded into panel. Last query (if any) set in SearchHandler: Король та варта
+2025-06-20 23:56:48,808 - DEBUG - logging_utils - log_debug - MainWindow: Applying font. General: Family='Segoe UI', Editor: Family='Consolas', Size=13
+2025-06-20 23:56:48,899 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:56:48,899 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 2096, Added: 0. Rehighlighting.
+2025-06-20 23:56:48,900 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:56:48,900 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 1, Added: 0. Rehighlighting.
+2025-06-20 23:56:48,900 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:56:48,901 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 1, Added: 0. Rehighlighting.
+2025-06-20 23:56:48,904 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 1, Added: 0. Rehighlighting.
+2025-06-20 23:56:48,908 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 2096. Rehighlighting.
+2025-06-20 23:56:48,911 - DEBUG - logging_utils - log_debug - Applying text wrap settings: Preview wrap: False, Editors wrap: False
+2025-06-20 23:56:48,911 - DEBUG - logging_utils - log_debug - Rebuilt unsaved_block_indices: set()
+2025-06-20 23:56:48,912 - DEBUG - logging_utils - log_debug - ++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++
+2025-06-20 23:56:49,018 - DEBUG - logging_utils - log_debug - Starting Qt event loop...
+2025-06-20 23:56:49,020 - DEBUG - logging_utils - log_debug - Forcing window focus.
+2025-06-20 23:56:51,964 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview. Data Line number: 59
+2025-06-20 23:56:51,966 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 1, Added: 0. Rehighlighting.
+2025-06-20 23:56:51,966 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 33. Rehighlighting.
+2025-06-20 23:56:51,968 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 1, Added: 0. Rehighlighting.
+2025-06-20 23:56:51,968 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 33. Rehighlighting.
+2025-06-20 23:56:51,970 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 59
+2025-06-20 23:56:53,045 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 32, Added: 32. Rehighlighting.
+2025-06-20 23:56:53,046 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 59) updated. New edited_data size: 1
+2025-06-20 23:56:53,047 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Unsaved changes status changed to True
+2025-06-20 23:56:53,285 - DEBUG - logging_utils - log_debug - TextOperationHandler: Updating preview content via timer.
+2025-06-20 23:56:53,286 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 2096, Added: 0. Rehighlighting.
+2025-06-20 23:56:53,288 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 2096. Rehighlighting.
+2025-06-20 23:56:53,976 - DEBUG - logging_utils - log_debug - MainWindow keyPressEvent: This should not be called if eventFilter is working.
+2025-06-20 23:56:53,995 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 32, Added: 32. Rehighlighting.
+2025-06-20 23:56:53,997 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 59) removed. New edited_data size: 0
+2025-06-20 23:56:53,998 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Unsaved changes status changed to False
+2025-06-20 23:56:54,258 - DEBUG - logging_utils - log_debug - TextOperationHandler: Updating preview content via timer.
+2025-06-20 23:56:54,258 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 2096, Added: 0. Rehighlighting.
+2025-06-20 23:56:54,260 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 2096. Rehighlighting.
+2025-06-20 23:56:55,214 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview. Data Line number: 61
+2025-06-20 23:56:55,215 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 33, Added: 0. Rehighlighting.
+2025-06-20 23:56:55,216 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 36. Rehighlighting.
+2025-06-20 23:56:55,216 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 33, Added: 0. Rehighlighting.
+2025-06-20 23:56:55,216 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 36. Rehighlighting.
+2025-06-20 23:56:55,217 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 61
+2025-06-20 23:56:56,253 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 35. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:56:56,255 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 61) updated. New edited_data size: 1
+2025-06-20 23:56:56,256 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Unsaved changes status changed to True
+2025-06-20 23:56:56,506 - DEBUG - logging_utils - log_debug - TextOperationHandler: Updating preview content via timer.
+2025-06-20 23:56:56,507 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 2096, Added: 0. Rehighlighting.
+2025-06-20 23:56:56,511 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 2097. Rehighlighting.
+2025-06-20 23:56:56,568 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 36. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:56:56,569 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 61) updated. New edited_data size: 1
+2025-06-20 23:56:56,582 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 37. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:56:56,584 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 61) updated. New edited_data size: 1
+2025-06-20 23:56:56,733 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 38. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:56:56,735 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 61) updated. New edited_data size: 1
+2025-06-20 23:56:56,781 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 39. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:56:56,782 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 61) updated. New edited_data size: 1
+2025-06-20 23:56:56,811 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 40. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:56:56,812 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 61) updated. New edited_data size: 1
+2025-06-20 23:56:56,891 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 41. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:56:56,892 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 61) updated. New edited_data size: 1
+2025-06-20 23:56:57,149 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 41. Removed: 1, Added: 0. Rehighlighting.
+2025-06-20 23:56:57,150 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 61) updated. New edited_data size: 1
+2025-06-20 23:56:57,154 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 40. Removed: 1, Added: 0. Rehighlighting.
+2025-06-20 23:56:57,155 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 61) updated. New edited_data size: 1
+2025-06-20 23:56:57,161 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 39. Removed: 1, Added: 0. Rehighlighting.
+2025-06-20 23:56:57,162 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 61) updated. New edited_data size: 1
+2025-06-20 23:56:57,165 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 38. Removed: 1, Added: 0. Rehighlighting.
+2025-06-20 23:56:57,167 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 61) updated. New edited_data size: 1
+2025-06-20 23:56:57,172 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 37. Removed: 1, Added: 0. Rehighlighting.
+2025-06-20 23:56:57,172 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 61) updated. New edited_data size: 1
+2025-06-20 23:56:57,177 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 36. Removed: 1, Added: 0. Rehighlighting.
+2025-06-20 23:56:57,178 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 61) updated. New edited_data size: 1
+2025-06-20 23:56:57,189 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 36. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:56:57,189 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 61) updated. New edited_data size: 1
+2025-06-20 23:56:57,194 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 37. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:56:57,195 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 61) updated. New edited_data size: 1
+2025-06-20 23:56:57,198 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 38. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:56:57,199 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 61) updated. New edited_data size: 1
+2025-06-20 23:56:57,202 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 39. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:56:57,203 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 61) updated. New edited_data size: 1
+2025-06-20 23:56:57,206 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 40. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:56:57,207 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 61) updated. New edited_data size: 1
+2025-06-20 23:56:57,211 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 41. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:56:57,212 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 61) updated. New edited_data size: 1
+2025-06-20 23:56:57,216 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 42. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:56:57,216 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 61) updated. New edited_data size: 1
+2025-06-20 23:56:57,457 - DEBUG - logging_utils - log_debug - TextOperationHandler: Updating preview content via timer.
+2025-06-20 23:56:57,458 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 2097, Added: 0. Rehighlighting.
+2025-06-20 23:56:57,459 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 2104. Rehighlighting.
+2025-06-20 23:56:58,061 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 43, Added: 43. Rehighlighting.
+2025-06-20 23:56:58,061 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 61) updated. New edited_data size: 1
+2025-06-20 23:56:58,302 - DEBUG - logging_utils - log_debug - TextOperationHandler: Updating preview content via timer.
+2025-06-20 23:56:58,303 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 2104, Added: 0. Rehighlighting.
+2025-06-20 23:56:58,305 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 2104. Rehighlighting.
+2025-06-20 23:57:00,452 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview. Data Line number: 62
+2025-06-20 23:57:00,453 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 36, Added: 0. Rehighlighting.
+2025-06-20 23:57:00,453 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 21. Rehighlighting.
+2025-06-20 23:57:00,454 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 44, Added: 0. Rehighlighting.
+2025-06-20 23:57:00,454 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 21. Rehighlighting.
+2025-06-20 23:57:00,456 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 62
+2025-06-20 23:57:00,875 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview. Data Line number: 61
+2025-06-20 23:57:00,876 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 21, Added: 0. Rehighlighting.
+2025-06-20 23:57:00,877 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 36. Rehighlighting.
+2025-06-20 23:57:00,877 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 21, Added: 0. Rehighlighting.
+2025-06-20 23:57:00,878 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 44. Rehighlighting.
+2025-06-20 23:57:00,879 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 61
+2025-06-20 23:57:01,867 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview. Data Line number: 60
+2025-06-20 23:57:01,869 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 36, Added: 0. Rehighlighting.
+2025-06-20 23:57:01,870 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 101. Rehighlighting.
+2025-06-20 23:57:01,871 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 44, Added: 0. Rehighlighting.
+2025-06-20 23:57:01,872 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 101. Rehighlighting.
+2025-06-20 23:57:01,874 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 60
+2025-06-20 23:57:02,219 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview. Data Line number: 61
+2025-06-20 23:57:02,220 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 101, Added: 0. Rehighlighting.
+2025-06-20 23:57:02,221 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 36. Rehighlighting.
+2025-06-20 23:57:02,221 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 101, Added: 0. Rehighlighting.
+2025-06-20 23:57:02,222 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 44. Rehighlighting.
+2025-06-20 23:57:02,223 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 61
+2025-06-20 23:57:02,979 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 43, Added: 43. Rehighlighting.
+2025-06-20 23:57:02,980 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 61) updated. New edited_data size: 1
+2025-06-20 23:57:03,225 - DEBUG - logging_utils - log_debug - TextOperationHandler: Updating preview content via timer.
+2025-06-20 23:57:03,226 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 2104, Added: 0. Rehighlighting.
+2025-06-20 23:57:03,228 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 2104. Rehighlighting.
+2025-06-20 23:57:05,651 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview. Data Line number: 62
+2025-06-20 23:57:05,652 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 36, Added: 0. Rehighlighting.
+2025-06-20 23:57:05,652 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 21. Rehighlighting.
+2025-06-20 23:57:05,652 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 44, Added: 0. Rehighlighting.
+2025-06-20 23:57:05,652 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 21. Rehighlighting.
+2025-06-20 23:57:05,653 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 62
+2025-06-20 23:57:06,041 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview. Data Line number: 61
+2025-06-20 23:57:06,042 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 21, Added: 0. Rehighlighting.
+2025-06-20 23:57:06,043 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 36. Rehighlighting.
+2025-06-20 23:57:06,043 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 21, Added: 0. Rehighlighting.
+2025-06-20 23:57:06,044 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 44. Rehighlighting.
+2025-06-20 23:57:06,046 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 61
+2025-06-20 23:57:07,001 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview. Data Line number: 61
+2025-06-20 23:57:07,003 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 61
+2025-06-20 23:57:07,720 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview. Data Line number: 59
+2025-06-20 23:57:07,721 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 36, Added: 0. Rehighlighting.
+2025-06-20 23:57:07,722 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 33. Rehighlighting.
+2025-06-20 23:57:07,723 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 44, Added: 0. Rehighlighting.
+2025-06-20 23:57:07,723 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 33. Rehighlighting.
+2025-06-20 23:57:07,724 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 59
+2025-06-20 23:57:10,033 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview. Data Line number: 62
+2025-06-20 23:57:10,035 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 33, Added: 0. Rehighlighting.
+2025-06-20 23:57:10,036 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 21. Rehighlighting.
+2025-06-20 23:57:10,037 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 33, Added: 0. Rehighlighting.
+2025-06-20 23:57:10,037 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 21. Rehighlighting.
+2025-06-20 23:57:10,040 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 62
+2025-06-20 23:57:10,496 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview. Data Line number: 64
+2025-06-20 23:57:10,497 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 21, Added: 0. Rehighlighting.
+2025-06-20 23:57:10,498 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 125. Rehighlighting.
+2025-06-20 23:57:10,498 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 21, Added: 0. Rehighlighting.
+2025-06-20 23:57:10,499 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 125. Rehighlighting.
+2025-06-20 23:57:10,500 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 64
+2025-06-20 23:57:11,868 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 42. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:11,869 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:12,118 - DEBUG - logging_utils - log_debug - TextOperationHandler: Updating preview content via timer.
+2025-06-20 23:57:12,119 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 2104, Added: 0. Rehighlighting.
+2025-06-20 23:57:12,121 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 2105. Rehighlighting.
+2025-06-20 23:57:12,268 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 43. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:12,269 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:12,363 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 44. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:12,365 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:12,386 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 45. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:12,387 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:12,568 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 46. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:12,570 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:12,587 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 47. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:12,589 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:12,791 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 47. Removed: 1, Added: 0. Rehighlighting.
+2025-06-20 23:57:12,793 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:12,800 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 46. Removed: 1, Added: 0. Rehighlighting.
+2025-06-20 23:57:12,802 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:12,809 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 45. Removed: 1, Added: 0. Rehighlighting.
+2025-06-20 23:57:12,811 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:12,817 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 44. Removed: 1, Added: 0. Rehighlighting.
+2025-06-20 23:57:12,820 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:12,827 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 43. Removed: 1, Added: 0. Rehighlighting.
+2025-06-20 23:57:12,830 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:12,891 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 43. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:12,893 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:12,900 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 44. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:12,902 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:12,908 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 45. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:12,910 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:12,917 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 46. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:12,918 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:12,925 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 47. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:12,927 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:12,934 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 48. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:12,936 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:12,940 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 49. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:12,941 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:12,989 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 50. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:12,991 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:13,239 - DEBUG - logging_utils - log_debug - TextOperationHandler: Updating preview content via timer.
+2025-06-20 23:57:13,240 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 2105, Added: 0. Rehighlighting.
+2025-06-20 23:57:13,242 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 2113. Rehighlighting.
+2025-06-20 23:57:13,308 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 51. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:13,309 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:13,474 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 52. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:13,476 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:13,486 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 53. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:13,487 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:13,653 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 54. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:13,654 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:13,705 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 55. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:13,707 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:13,750 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 56. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:13,751 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:13,795 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 57. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:13,797 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:13,864 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 58. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:13,866 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:14,116 - DEBUG - logging_utils - log_debug - TextOperationHandler: Updating preview content via timer.
+2025-06-20 23:57:14,116 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 2113, Added: 0. Rehighlighting.
+2025-06-20 23:57:14,118 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 2121. Rehighlighting.
+2025-06-20 23:57:14,209 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 59. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:14,210 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:14,322 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 60. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:14,324 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:14,336 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 61. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:14,336 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:14,456 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 62. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:14,458 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:14,501 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 63. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:14,502 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:14,627 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 64. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:14,628 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:14,650 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 65. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:14,651 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:14,719 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 66. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:14,720 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:14,757 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 67. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:14,757 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:14,860 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 68. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:14,862 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:14,873 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 69. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:14,874 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:14,924 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 69. Removed: 1, Added: 0. Rehighlighting.
+2025-06-20 23:57:14,925 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:14,929 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 68. Removed: 1, Added: 0. Rehighlighting.
+2025-06-20 23:57:14,930 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:14,934 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 67. Removed: 1, Added: 0. Rehighlighting.
+2025-06-20 23:57:14,937 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:14,952 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 67. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:14,953 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:14,957 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 68. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:14,959 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:14,963 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 69. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:14,965 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:14,968 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 70. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:14,969 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:15,057 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 71. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:15,058 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:15,079 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 72. Removed: 0, Added: 1. Rehighlighting.
+2025-06-20 23:57:15,080 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:15,335 - DEBUG - logging_utils - log_debug - TextOperationHandler: Updating preview content via timer.
+2025-06-20 23:57:15,336 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 2121, Added: 0. Rehighlighting.
+2025-06-20 23:57:15,339 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 2135. Rehighlighting.
+2025-06-20 23:57:17,903 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 155, Added: 153. Rehighlighting.
+2025-06-20 23:57:17,904 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:18,144 - DEBUG - logging_utils - log_debug - TextOperationHandler: Updating preview content via timer.
+2025-06-20 23:57:18,146 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 2135, Added: 0. Rehighlighting.
+2025-06-20 23:57:18,149 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 2135. Rehighlighting.
+2025-06-20 23:57:20,230 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview. Data Line number: 63
+2025-06-20 23:57:20,232 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 125, Added: 0. Rehighlighting.
+2025-06-20 23:57:20,232 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 53. Rehighlighting.
+2025-06-20 23:57:20,233 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 154, Added: 0. Rehighlighting.
+2025-06-20 23:57:20,233 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 53. Rehighlighting.
+2025-06-20 23:57:20,235 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 63
+2025-06-20 23:57:20,630 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview. Data Line number: 64
+2025-06-20 23:57:20,631 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 53, Added: 0. Rehighlighting.
+2025-06-20 23:57:20,632 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 125. Rehighlighting.
+2025-06-20 23:57:20,633 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 53, Added: 0. Rehighlighting.
+2025-06-20 23:57:20,634 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 154. Rehighlighting.
+2025-06-20 23:57:20,635 - DEBUG - logging_utils - log_debug - ListSelectionHandler: string_selected_from_preview finished. current_string_idx: 64
+2025-06-20 23:57:21,743 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 153, Added: 153. Rehighlighting.
+2025-06-20 23:57:21,744 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Key (0, 64) updated. New edited_data size: 2
+2025-06-20 23:57:21,992 - DEBUG - logging_utils - log_debug - TextOperationHandler: Updating preview content via timer.
+2025-06-20 23:57:21,993 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 2135, Added: 0. Rehighlighting.
+2025-06-20 23:57:21,995 - DEBUG - logging_utils - log_debug - Highlighter: on_contents_change triggered at pos 0. Removed: 0, Added: 2135. Rehighlighting.
+2025-06-20 23:57:23,542 - DEBUG - logging_utils - log_debug - --> MainWindow: closeEvent received.
+2025-06-20 23:57:23,545 - DEBUG - logging_utils - log_debug - MainWindowHelper: prepare_to_close called.
+2025-06-20 23:57:23,545 - DEBUG - logging_utils - log_debug - MainWindowHelper: Updated search_history_to_save: 20 items
+2025-06-20 23:57:23,545 - DEBUG - logging_utils - log_debug - --> AppActionHandler: handle_close_event called.
+2025-06-20 23:57:24,557 - DEBUG - logging_utils - log_debug - <-- AppActionHandler: handle_close_event finished.
+2025-06-20 23:57:24,557 - DEBUG - logging_utils - log_debug - Close accepted. Settings save skipped due to unsaved changes (handled by dialog) or restart in progress.
+2025-06-20 23:57:24,557 - DEBUG - logging_utils - log_debug - <-- MainWindow: closeEvent finished.
+2025-06-20 23:57:24,579 - DEBUG - logging_utils - log_debug - Qt event loop finished with exit code: 0
+2025-06-20 23:57:24,579 - DEBUG - logging_utils - log_debug - ================= Application End =================

@@ -33,7 +33,7 @@
     "game_dialog_max_width_pixels": 214,
     "line_width_warning_threshold_pixels": 214,
     "original_file_path": "C:/Users/xHR/Desktop/en-firered_original.json",
-    "edited_file_path": "//192.168.50.168/tloz_tmc_ua/UKR.json",
+    "edited_file_path": "C:/Users/xHR/Desktop/en-firered.json",
     "last_selected_block_index": 0,
     "last_selected_string_index": -1,
     "last_cursor_position_in_edited": 0,
@@ -65,17 +65,17 @@
         "просто стояти й "
     ],
     "autofix_enabled": {
-        "PKFR_TAG_WARNING": false,
         "PKFR_WIDTH_EXCEEDED": true,
+        "PKFR_SHORT_LINE": true,
         "PKFR_EMPTY_SUBLINE": true,
         "PKFR_SINGLE_WORD_SUBLINE": false,
-        "PKFR_SHORT_LINE": true
+        "PKFR_TAG_WARNING": false
     },
     "detection_enabled": {
-        "PKFR_TAG_WARNING": false,
         "PKFR_WIDTH_EXCEEDED": true,
+        "PKFR_SHORT_LINE": true,
         "PKFR_EMPTY_SUBLINE": true,
         "PKFR_SINGLE_WORD_SUBLINE": false,
-        "PKFR_SHORT_LINE": true
+        "PKFR_TAG_WARNING": false
     }
 }
