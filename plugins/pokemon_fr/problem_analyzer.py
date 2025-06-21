@@ -9,6 +9,7 @@ from .config import (PROBLEM_WIDTH_EXCEEDED, PROBLEM_SHORT_LINE, PROBLEM_EMPTY_S
 
 SENTENCE_END_PUNCTUATION_CHARS = ['.', '!', '?']
 TAG_PATTERN = re.compile(r"(\{[^}]*\})")
+NEWLINE_TAGS_PATTERN = re.compile(r'(\\n|\\p|\\l)')
 
 class ProblemAnalyzer:
     def __init__(self, main_window_ref, tag_manager_ref, problem_definitions_ref, problem_ids_ref):
@@ -23,28 +24,21 @@ class ProblemAnalyzer:
             'TAG': PROBLEM_TAG_WARNING,
         }
 
-    def _split_by_newlines(self, text: str) -> List[str]:
-        return re.split(r'(\\n|\\p|\\l)', text)
-
-    def _get_sublines_from_data_string(self, data_string: str) -> List[str]:
-        parts = self._split_by_newlines(data_string)
+    def _get_sublines_from_data_string(self, data_string: str) -> List[Tuple[str, str]]:
         sublines = []
-        if not parts:
-            return []
+        parts = NEWLINE_TAGS_PATTERN.split(data_string)
         
-        current_subline = parts[0]
-        
+        current_text = parts[0]
         for i in range(1, len(parts), 2):
-            tag = parts[i]
-            text_after = parts[i+1] if i + 1 < len(parts) else ""
+            newline_tag = parts[i]
+            text_after = parts[i+1]
+            sublines.append((current_text, newline_tag))
+            current_text = text_after
+        
+        if current_text or (not sublines and data_string):
+            sublines.append((current_text, ""))
             
-            sublines.append(current_subline + tag)
-            current_subline = text_after
-
-        if current_subline or not sublines:
-            sublines.append(current_subline)
-
-        return [s for s in sublines if s]
+        return sublines
 
     def _ends_with_sentence_punctuation(self, text_no_tags_stripped: str) -> bool:
         if not text_no_tags_stripped:
@@ -68,7 +62,7 @@ class ProblemAnalyzer:
         width_first_word_next = calculate_string_width(first_word_next, font_map)
         space_width = calculate_string_width(" ", font_map)
 
-        return (threshold - width_current) >= (width_first_word_next + space_width)
+        return (width_current + space_width + width_first_word_next) <= threshold
 
     def _check_single_word_subline(self, subline_text: str) -> bool:
         text_no_tags = remove_all_tags(subline_text).strip()
@@ -86,37 +80,35 @@ class ProblemAnalyzer:
         return False
 
     def analyze_data_string(self, data_string: str, font_map: dict, threshold: int) -> List[Set[str]]:
-        problems_per_subline_idx = []
         if not data_string:
-            return [set()]
+            return []
 
-        sublines = self._get_sublines_from_data_string(data_string)
-        is_only_one_subline_in_total = len(sublines) == 1
+        sublines_with_tags = self._get_sublines_from_data_string(data_string)
+        problems_per_subline_idx = [set() for _ in sublines_with_tags]
+        is_only_one_subline_in_total = len(sublines_with_tags) == 1
         
-        for i, subline_with_tag in enumerate(sublines):
-            found_problems = set()
-            text_part = re.sub(r'\\.$', '', subline_with_tag)
-
+        for i, (text_part, newline_tag) in enumerate(sublines_with_tags):
+            text_part_no_tags = remove_all_tags(text_part)
+            width = calculate_string_width(text_part_no_tags, font_map)
+            
             if (text_part.count('{') != text_part.count('}')) or (text_part.count('[') != text_part.count(']')):
-                found_problems.add(self.problem_ids['TAG'])
+                problems_per_subline_idx[i].add(self.problem_ids['TAG'])
             
-            if not remove_all_tags(text_part).strip():
-                if i < len(sublines) - 1 or len(sublines) == 1 and not data_string:
-                    found_problems.add(self.problem_ids['EMPTY'])
+            if not text_part_no_tags.strip():
+                if i < len(sublines_with_tags) - 1:
+                    problems_per_subline_idx[i].add(self.problem_ids['EMPTY'])
             
-            width = calculate_string_width(remove_all_tags(text_part), font_map)
             if width > threshold:
-                found_problems.add(self.problem_ids['WIDTH'])
+                problems_per_subline_idx[i].add(self.problem_ids['WIDTH'])
+                log_debug(f"WIDTH EXCEEDED: Subline {i+1} has width {width} > {threshold}. Text: '{text_part[:50]}...'")
             
-            if i + 1 < len(sublines):
-                next_subline_with_tag = sublines[i+1]
-                if self._check_short_line(text_part, next_subline_with_tag, font_map, threshold):
-                    found_problems.add(self.problem_ids['SHORT'])
+            if i + 1 < len(sublines_with_tags):
+                next_text_part, _ = sublines_with_tags[i+1]
+                if self._check_short_line(text_part, next_text_part, font_map, threshold):
+                    problems_per_subline_idx[i].add(self.problem_ids['SHORT'])
 
             if not is_only_one_subline_in_total and self._check_single_word_subline(text_part):
-                found_problems.add(self.problem_ids['SINGLE'])
-
-            problems_per_subline_idx.append(found_problems)
+                 problems_per_subline_idx[i].add(self.problem_ids['SINGLE'])
             
         return problems_per_subline_idx
 

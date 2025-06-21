@@ -65,48 +65,60 @@ class LNETLineNumberAreaPaintLogic:
                 bg_color_extra_info_area = bg_color_number_area
 
                 problem_ids_for_this_qtextblock = set()
-
-                if self.editor.objectName() in ["original_text_edit", "edited_text_edit"]:
-                    if game_rules and current_block_idx_data_mw != -1 and current_string_idx_data_mw != -1:
-                        subline_local_idx_for_problems = current_q_block_number_in_editor_doc
-                        problem_key = (current_block_idx_data_mw, current_string_idx_data_mw, subline_local_idx_for_problems)
-                        problem_ids_for_this_qtextblock = main_window_ref.problems_per_subline.get(problem_key, set())
-
-                elif self.editor.objectName() == "preview_text_edit":
-                    if game_rules and current_block_idx_data_mw != -1:
-                        data_line_index_preview = current_q_block_number_in_editor_doc
-                        aggregated_problems_for_data_line = set()
-                        if 0 <= current_block_idx_data_mw < len(main_window_ref.data) and \
-                           isinstance(main_window_ref.data[current_block_idx_data_mw], list) and \
-                           0 <= data_line_index_preview < len(main_window_ref.data[current_block_idx_data_mw]):
-                            data_string_text_preview, _ = main_window_ref.data_processor.get_current_string_text(current_block_idx_data_mw, data_line_index_preview)
-                            if data_string_text_preview is not None:
-                                logical_sublines_for_data_string = str(data_string_text_preview).split('\n')
-                                for subline_local_idx_preview in range(len(logical_sublines_for_data_string)):
-                                    problem_key_preview = (current_block_idx_data_mw, data_line_index_preview, subline_local_idx_preview)
-                                    if problem_key_preview in main_window_ref.problems_per_subline:
-                                        aggregated_problems_for_data_line.update(main_window_ref.problems_per_subline[problem_key_preview])
-                        problem_ids_for_this_qtextblock = aggregated_problems_for_data_line
-
-                if self.editor.objectName() in ["original_text_edit", "edited_text_edit"]:
-                    if problem_ids_for_this_qtextblock:
-                        sorted_subline_problem_ids = sorted(
-                            list(problem_ids_for_this_qtextblock),
-                            key=lambda pid: problem_definitions.get(pid, {}).get("priority", 99)
-                        )
-                        if sorted_subline_problem_ids:
-                            highest_priority_pid = sorted_subline_problem_ids[0]
-                            color_def = problem_definitions.get(highest_priority_pid)
-                            if color_def and "color" in color_def:
-                                chosen_color = QColor(color_def["color"])
-                                bg_color_extra_info_area = chosen_color
-                                empty_odd_display_id = None
-                                for pid, pdef in problem_definitions.items():
-                                    if "EmptyOddD" in pdef.get("name", ""):
-                                        empty_odd_display_id = pid
-                                        break
-                                if empty_odd_display_id and highest_priority_pid == empty_odd_display_id:
-                                     bg_color_number_area = chosen_color
+                
+                is_preview = self.editor.objectName() == "preview_text_edit"
+                is_editor = self.editor.objectName() in ["original_text_edit", "edited_text_edit"]
+                
+                if game_rules and hasattr(game_rules, 'problem_analyzer'):
+                    analyzer = game_rules.problem_analyzer
+                    # Перевіряємо, який метод аналізу використовувати
+                    if is_editor and hasattr(analyzer, 'analyze_data_string'):
+                        # Логіка для плагінів типу "pokemon_fr"
+                        if current_block_idx_data_mw != -1 and current_string_idx_data_mw != -1:
+                            data_string_text, _ = main_window_ref.data_processor.get_current_string_text(current_block_idx_data_mw, current_string_idx_data_mw)
+                            if data_string_text is not None:
+                                problems = analyzer.analyze_data_string(
+                                    str(data_string_text), main_window_ref.font_map, main_window_ref.line_width_warning_threshold_pixels
+                                )
+                                if 0 <= current_q_block_number_in_editor_doc < len(problems):
+                                    problem_ids_for_this_qtextblock = problems[current_q_block_number_in_editor_doc]
+                    elif is_preview and hasattr(analyzer, 'analyze_data_string'):
+                         if current_block_idx_data_mw != -1:
+                            data_line_index_preview = current_q_block_number_in_editor_doc
+                            if 0 <= current_block_idx_data_mw < len(main_window_ref.data) and \
+                               isinstance(main_window_ref.data[current_block_idx_data_mw], list) and \
+                               0 <= data_line_index_preview < len(main_window_ref.data[current_block_idx_data_mw]):
+                                data_string_text_preview, _ = main_window_ref.data_processor.get_current_string_text(current_block_idx_data_mw, data_line_index_preview)
+                                if data_string_text_preview is not None:
+                                    problems = analyzer.analyze_data_string(
+                                        str(data_string_text_preview), main_window_ref.font_map, main_window_ref.line_width_warning_threshold_pixels
+                                    )
+                                    for problem_set in problems:
+                                        problem_ids_for_this_qtextblock.update(problem_set)
+                    else:
+                        # Логіка для плагінів типу "zelda_mc" (використовуємо кеш)
+                        if is_editor and current_block_idx_data_mw != -1 and current_string_idx_data_mw != -1:
+                            problem_key = (current_block_idx_data_mw, current_string_idx_data_mw, current_q_block_number_in_editor_doc)
+                            problem_ids_for_this_qtextblock = main_window_ref.problems_per_subline.get(problem_key, set())
+                        elif is_preview and current_block_idx_data_mw != -1:
+                            data_line_index_preview = current_q_block_number_in_editor_doc
+                            for i in range(100): # Max sublines check
+                                problem_key = (current_block_idx_data_mw, data_line_index_preview, i)
+                                if problem_key in main_window_ref.problems_per_subline:
+                                    problem_ids_for_this_qtextblock.update(main_window_ref.problems_per_subline[problem_key])
+                                else:
+                                    break
+                
+                if is_editor and problem_ids_for_this_qtextblock:
+                    sorted_subline_problem_ids = sorted(
+                        list(problem_ids_for_this_qtextblock),
+                        key=lambda pid: problem_definitions.get(pid, {}).get("priority", 99)
+                    )
+                    if sorted_subline_problem_ids:
+                        highest_priority_pid = sorted_subline_problem_ids[0]
+                        color_def = problem_definitions.get(highest_priority_pid)
+                        if color_def and "color" in color_def:
+                            bg_color_extra_info_area = QColor(color_def["color"])
 
 
                 painter.fillRect(number_part_rect, bg_color_number_area)
@@ -117,7 +129,7 @@ class LNETLineNumberAreaPaintLogic:
                 painter.drawText(QRect(0, top, number_part_width - 3, line_height), Qt.AlignRight | Qt.AlignVCenter, display_number_for_line_area)
 
                 if extra_part_width > 0:
-                    if self.editor.objectName() in ["original_text_edit", "edited_text_edit"] and self.editor.font_map:
+                    if is_editor and self.editor.font_map:
                         q_block_text_raw_dots_paint_text = current_q_block.text()
                         q_block_text_spaces_paint_text = convert_dots_to_spaces_from_editor(q_block_text_raw_dots_paint_text)
                         text_for_width_calc_rstripped_paint_text = remove_all_tags(q_block_text_spaces_paint_text).rstrip()
@@ -127,7 +139,7 @@ class LNETLineNumberAreaPaintLogic:
                         painter.setPen(text_color_for_extra_part)
                         painter.drawText(QRect(number_part_width, top, extra_part_width -3 , line_height), Qt.AlignRight | Qt.AlignVCenter, width_str_text)
 
-                    elif self.editor.objectName() == "preview_text_edit" and isinstance(main_window_ref, QMainWindow) and current_block_idx_data_mw != -1 and game_rules:
+                    elif is_preview and isinstance(main_window_ref, QMainWindow) and current_block_idx_data_mw != -1 and game_rules:
                         indicator_x_start = number_part_width + 2
                         indicators_to_draw_preview = []
 
