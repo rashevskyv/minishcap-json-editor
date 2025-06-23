@@ -44,42 +44,51 @@ class DataStateProcessor:
         edit_key = (block_idx, string_idx)
         original_text_from_mw_data = self._get_string_from_source(block_idx, string_idx, self.mw.data, "original_data_for_update_check")
         
-        text_currently_in_edited_data = self.mw.edited_data.get(edit_key)
         old_unsaved_changes = self.mw.unsaved_changes
-        change_made_to_dict = False
 
-        if original_text_from_mw_data is None: 
-            log_debug(f"DSP.update_edited_data: Original text for key {edit_key} is None. Treating as new data if different from current edit.")
-            if text_currently_in_edited_data != new_text: 
-                self.mw.edited_data[edit_key] = new_text
-                change_made_to_dict = True
-        elif new_text != original_text_from_mw_data: 
-            if text_currently_in_edited_data != new_text:
-                 self.mw.edited_data[edit_key] = new_text
-                 change_made_to_dict = True
-        elif edit_key in self.mw.edited_data: 
-            del self.mw.edited_data[edit_key]
-            change_made_to_dict = True
+        if new_text != original_text_from_mw_data:
+            self.mw.edited_data[edit_key] = new_text
+            log_debug(f"DSP.update_edited_data: Change for {edit_key} added/updated in memory.")
+        else:
+            if edit_key in self.mw.edited_data:
+                del self.mw.edited_data[edit_key]
+                log_debug(f"DSP.update_edited_data: Reverted to original. Change for {edit_key} removed from memory.")
+
+            if 0 <= block_idx < len(self.mw.edited_file_data) and isinstance(self.mw.edited_file_data[block_idx], list) and \
+               0 <= string_idx < len(self.mw.edited_file_data[block_idx]):
+                if self.mw.edited_file_data[block_idx][string_idx] != original_text_from_mw_data:
+                    self.mw.edited_file_data[block_idx][string_idx] = original_text_from_mw_data
+                    log_debug(f"DSP.update_edited_data: Change for {edit_key} also reverted in loaded edited_file_data.")
+                    if not self.mw.unsaved_changes:
+                        self.mw.unsaved_changes = True # Mark as unsaved to allow saving this "revert"
+                        log_debug(f"DSP.update_edited_data: Reverting a saved change. Marking unsaved=True to enable saving.")
+
+        new_unsaved_status = bool(self.mw.edited_data) or self.mw.unsaved_changes
+        if self.mw.unsaved_changes != new_unsaved_status:
+            self.mw.unsaved_changes = new_unsaved_status
         
-        if change_made_to_dict:
-            log_debug(f"DSP.update_edited_data: Key {edit_key} {'updated' if edit_key in self.mw.edited_data else 'removed'}. New edited_data size: {len(self.mw.edited_data)}")
-
-        self.mw.unsaved_changes = bool(self.mw.edited_data)
         unsaved_status_actually_changed = self.mw.unsaved_changes != old_unsaved_changes
         if unsaved_status_actually_changed:
             log_debug(f"DSP.update_edited_data: Unsaved changes status changed to {self.mw.unsaved_changes}")
+        
         return unsaved_status_actually_changed
 
+
     def save_current_edits(self, ask_confirmation=True):
-        has_pending_edits = bool(self.mw.edited_data)
-        if not self.mw.json_path: QMessageBox.warning(self.mw, "Save Error", "Original file path not set."); return False
-        if not self.mw.edited_json_path: self.mw.edited_json_path = self.mw.app_action_handler._derive_edited_path(self.mw.json_path) 
-        if not self.mw.current_game_rules: QMessageBox.critical(self.mw, "Save Error", "No game plugin active to format the save file."); return False
+        log_debug(f"--> AppActionHandler: save_data_action called. ask_confirmation={ask_confirmation}, current unsaved={self.mw.unsaved_changes}")
+        if self.mw.json_path and not self.mw.edited_json_path:
+            self.mw.edited_json_path = self.mw.app_action_handler._derive_edited_path(self.mw.json_path) 
+        if not self.mw.edited_json_path:
+            QMessageBox.warning(self.mw, "Save Error", "Edited file path is not set. Cannot save.")
+            return False
+        if not self.mw.current_game_rules: 
+            QMessageBox.critical(self.mw, "Save Error", "No game plugin active to format the save file.")
+            return False
         
-        if not has_pending_edits and os.path.exists(self.mw.edited_json_path):
-            log_debug("No pending memory edits found, but will proceed to write/update the changes file.")
-        elif not has_pending_edits:
-            log_debug("No pending memory edits and no existing changes file to update. Save operation skipped.")
+        if not self.mw.unsaved_changes:
+            log_debug("Save called but no unsaved changes detected. Skipping file write.")
+            if ask_confirmation:
+                QMessageBox.information(self.mw, "Save", "No changes to save.")
             return True
 
         if ask_confirmation:
