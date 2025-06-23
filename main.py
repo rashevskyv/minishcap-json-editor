@@ -17,7 +17,7 @@ from core.data_state_processor import DataStateProcessor
 from ui.ui_updater import UIUpdater
 from core.settings_manager import SettingsManager
 from components.search_panel import SearchPanelWidget
-from ui.ui_event_filters import MainWindowEventFilter
+from ui.ui_event_filters import MainWindowEventFilter, TextEditEventFilter
 from main_window_helper import MainWindowHelper
 from main_window_actions import MainWindowActions
 from ui.themes import DARK_THEME_STYLESHEET, LIGHT_THEME_STYLESHEET
@@ -173,6 +173,12 @@ class MainWindow(QMainWindow):
 
         self.event_filter = MainWindowEventFilter(self)
         self.installEventFilter(self.event_filter)
+        
+        self.text_edit_filter = TextEditEventFilter(self)
+        self.preview_text_edit.installEventFilter(self.text_edit_filter)
+        self.original_text_edit.installEventFilter(self.text_edit_filter)
+        self.edited_text_edit.installEventFilter(self.text_edit_filter)
+
 
         self.ui_updater.update_plugin_status_label()
 
