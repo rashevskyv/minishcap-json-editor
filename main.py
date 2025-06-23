@@ -20,6 +20,7 @@ from components.search_panel import SearchPanelWidget
 from ui.ui_event_filters import MainWindowEventFilter
 from main_window_helper import MainWindowHelper
 from main_window_actions import MainWindowActions
+from ui.themes import DARK_THEME_STYLESHEET, LIGHT_THEME_STYLESHEET
 
 
 from handlers.list_selection_handler import ListSelectionHandler
@@ -55,6 +56,7 @@ class MainWindow(QMainWindow):
         self.editor_font_family = MONOSPACE_EDITOR_FONT_FAMILY
         self.active_game_plugin = "zelda_mc"
         self.display_name = ""
+        self.theme = "auto"
 
         self.is_programmatically_changing_text = False
         self.is_adjusting_cursor = False
@@ -585,9 +587,35 @@ class MainWindow(QMainWindow):
             log_debug("Close ignored by user or handler.")
         log_debug("<-- MainWindow: closeEvent finished.")
 
+def apply_theme(app, theme_name: str):
+    if theme_name == "dark":
+        app.setStyleSheet(DARK_THEME_STYLESHEET)
+        log_debug("Applied Dark Theme.")
+    elif theme_name == "light":
+        app.setStyleSheet(LIGHT_THEME_STYLESHEET)
+        log_debug("Applied Light Theme.")
+    else: # 'auto' or any other value
+        app.setStyleSheet("")
+        log_debug("Applied system default theme.")
+
+
 if __name__ == '__main__':
     log_debug("================= Application Start =================")
     app = QApplication(sys.argv)
+    
+    # Pre-load settings to apply theme before window creation
+    temp_settings = {}
+    try:
+        with open("settings.json", 'r') as f:
+            temp_settings = json.load(f)
+    except FileNotFoundError:
+        log_debug("settings.json not found, using default theme.")
+    except Exception as e:
+        log_debug(f"Error reading settings.json for theme: {e}")
+        
+    theme_to_apply = temp_settings.get("theme", "auto")
+    apply_theme(app, theme_to_apply)
+
     window = MainWindow()
     window.show()
     log_debug("Starting Qt event loop...")

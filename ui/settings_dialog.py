@@ -53,7 +53,9 @@ class SettingsDialog(QDialog):
         self.autofix_checkboxes = {}
         self.detection_checkboxes = {}
         self.plugin_changed_requires_restart = False
+        self.theme_changed_requires_restart = False
         self.initial_plugin_name = self.mw.active_game_plugin
+        self.initial_theme = getattr(self.mw, 'theme', 'auto')
 
         main_layout = QVBoxLayout(self)
         
@@ -99,6 +101,10 @@ class SettingsDialog(QDialog):
     def setup_general_tab(self):
         layout = QFormLayout(self.general_tab)
         
+        self.theme_combo = QComboBox(self)
+        self.theme_combo.addItems(["Auto", "Light", "Dark"])
+        layout.addRow(QLabel("Theme (requires restart):"), self.theme_combo)
+        
         self.plugin_combo = QComboBox(self)
         self.populate_plugin_list()
         layout.addRow(QLabel("Active Game Plugin:"), self.plugin_combo)
@@ -113,6 +119,8 @@ class SettingsDialog(QDialog):
         layout.addRow("Space Dot Color:", self.space_dot_color_picker)
         
         self.plugin_combo.activated.connect(self.on_plugin_changed)
+        self.theme_combo.activated.connect(self.on_theme_changed)
+
 
     def setup_plugin_tab(self):
         plugin_layout = QVBoxLayout(self.plugin_tab)
@@ -170,7 +178,9 @@ class SettingsDialog(QDialog):
     def _setup_paths_subtab(self, tab):
         layout = QFormLayout(tab)
         self.original_path_edit = QLineEdit(self)
+        self.original_path_edit.setObjectName("PathLineEdit")
         self.edited_path_edit = QLineEdit(self)
+        self.edited_path_edit.setObjectName("PathLineEdit")
         layout.addRow("Original File Path:", self._create_path_selector(self.original_path_edit))
         layout.addRow("Changes File Path:", self._create_path_selector(self.edited_path_edit))
 
@@ -228,6 +238,15 @@ class SettingsDialog(QDialog):
         self.plugin_map = self.find_plugins()
         self.plugin_combo.addItems(self.plugin_map.keys())
 
+    def on_theme_changed(self, index):
+        log_debug("SettingsDialog: Theme changed in dropdown.")
+        selected_theme = self.theme_combo.currentText().lower()
+        if selected_theme != self.initial_theme:
+            self.theme_changed_requires_restart = True
+            QMessageBox.information(self, "Theme Change", "A restart is required to apply the new theme.", QMessageBox.Ok)
+        else:
+            self.theme_changed_requires_restart = False
+
     def on_plugin_changed(self, index):
         log_debug("SettingsDialog: Plugin changed in dropdown.")
         selected_dir_name = self.plugin_map.get(self.plugin_combo.currentText())
@@ -236,23 +255,19 @@ class SettingsDialog(QDialog):
             self.plugin_changed_requires_restart = False
             return
 
-        reply = QMessageBox.question(self, "Plugin Change",
-                                     "Changing the active plugin requires an application restart. Proceed?",
-                                     QMessageBox.Ok | QMessageBox.Cancel, QMessageBox.Ok)
+        self.plugin_changed_requires_restart = True
+        QMessageBox.information(self, "Plugin Change", "A restart is required to switch the game plugin.", QMessageBox.Ok)
 
-        if reply == QMessageBox.Cancel:
-            log_debug("SettingsDialog: User cancelled plugin change.")
-            for i, (display_name, dir_name) in enumerate(self.plugin_map.items()):
-                if dir_name == self.initial_plugin_name:
-                    self.plugin_combo.setCurrentIndex(i)
-                    break
-            self.plugin_changed_requires_restart = False
-        else:
-            log_debug("SettingsDialog: User accepted plugin change. Setting flag and accepting dialog.")
-            self.plugin_changed_requires_restart = True
-            self.accept()
 
     def load_initial_settings(self):
+        current_theme = getattr(self.mw, 'theme', 'auto')
+        if current_theme == 'dark':
+            self.theme_combo.setCurrentIndex(2)
+        elif current_theme == 'light':
+            self.theme_combo.setCurrentIndex(1)
+        else:
+            self.theme_combo.setCurrentIndex(0)
+            
         current_plugin_dir_name = getattr(self.mw, 'active_game_plugin', 'zelda_mc')
         for display_name, dir_name in self.plugin_map.items():
             if dir_name == current_plugin_dir_name:
@@ -299,6 +314,7 @@ class SettingsDialog(QDialog):
             detection_settings[problem_id] = checkbox.isChecked()
 
         return {
+            'theme': self.theme_combo.currentText().lower(),
             'active_game_plugin': selected_dir_name,
             'font_size': self.font_size_spinbox.value(),
             'show_multiple_spaces_as_dots': self.show_spaces_checkbox.isChecked(),

@@ -21,24 +21,25 @@ class MainWindowActions:
 
         new_settings = dialog.get_settings()
         
-        if dialog.plugin_changed_requires_restart:
-            log_debug(f"Plugin change confirmed. Saving current state for plugin '{dialog.initial_plugin_name}' before restart.")
+        if dialog.plugin_changed_requires_restart or dialog.theme_changed_requires_restart:
+            log_debug(f"Restart required. Plugin change: {dialog.plugin_changed_requires_restart}, Theme change: {dialog.theme_changed_requires_restart}")
             
             self.mw.current_font_size = new_settings.get('font_size')
             self.mw.show_multiple_spaces_as_dots = new_settings.get('show_multiple_spaces_as_dots')
             self.mw.space_dot_color_hex = new_settings.get('space_dot_color_hex')
-
+            
             self.mw.settings_manager.save_settings()
 
             self.mw.active_game_plugin = new_settings.get('active_game_plugin')
-            log_debug(f"Set new active plugin to: {self.mw.active_game_plugin}")
-
+            self.mw.theme = new_settings.get('theme')
+            log_debug(f"Set new active plugin: {self.mw.active_game_plugin}, theme: {self.mw.theme}")
+            
             self.mw.settings_manager._save_global_settings()
             
             self.mw.is_restart_in_progress = True
             self.helper.restart_application()
         else:
-            log_debug("Settings changed without plugin change. Applying settings.")
+            log_debug("Settings changed without restart. Applying settings.")
             
             initial_paths = (self.mw.json_path, self.mw.edited_json_path)
 

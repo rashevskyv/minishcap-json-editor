@@ -16,9 +16,13 @@ class LNETLineNumberAreaPaintLogic:
 
         game_rules = None
         problem_definitions = {}
-        if isinstance(main_window_ref, QMainWindow) and hasattr(main_window_ref, 'current_game_rules') and main_window_ref.current_game_rules:
-            game_rules = main_window_ref.current_game_rules
-            problem_definitions = game_rules.get_problem_definitions()
+        theme = 'light'
+        if isinstance(main_window_ref, QMainWindow):
+            if hasattr(main_window_ref, 'current_game_rules') and main_window_ref.current_game_rules:
+                game_rules = main_window_ref.current_game_rules
+                problem_definitions = game_rules.get_problem_definitions()
+            if hasattr(main_window_ref, 'theme'):
+                theme = main_window_ref.theme
 
         default_bg_color_for_area = self.editor.palette().base().color()
         if self.editor.isReadOnly():
@@ -42,7 +46,9 @@ class LNETLineNumberAreaPaintLogic:
         painter.setFont(current_font_for_numbers)
 
         odd_bg_color_const = self.editor.lineNumberArea.odd_line_background
-        even_bg_color_const = default_bg_color_for_area
+        even_bg_color_const = self.editor.lineNumberArea.even_line_background
+        number_text_color_const = self.editor.lineNumberArea.number_color
+
 
         current_block_idx_data_mw = -1
         current_string_idx_data_mw = -1
@@ -71,9 +77,7 @@ class LNETLineNumberAreaPaintLogic:
                 
                 if game_rules and hasattr(game_rules, 'problem_analyzer'):
                     analyzer = game_rules.problem_analyzer
-                    # Перевіряємо, який метод аналізу використовувати
                     if is_editor and hasattr(analyzer, 'analyze_data_string'):
-                        # Логіка для плагінів типу "pokemon_fr"
                         if current_block_idx_data_mw != -1 and current_string_idx_data_mw != -1:
                             data_string_text, _ = main_window_ref.data_processor.get_current_string_text(current_block_idx_data_mw, current_string_idx_data_mw)
                             if data_string_text is not None:
@@ -96,13 +100,12 @@ class LNETLineNumberAreaPaintLogic:
                                     for problem_set in problems:
                                         problem_ids_for_this_qtextblock.update(problem_set)
                     else:
-                        # Логіка для плагінів типу "zelda_mc" (використовуємо кеш)
                         if is_editor and current_block_idx_data_mw != -1 and current_string_idx_data_mw != -1:
                             problem_key = (current_block_idx_data_mw, current_string_idx_data_mw, current_q_block_number_in_editor_doc)
                             problem_ids_for_this_qtextblock = main_window_ref.problems_per_subline.get(problem_key, set())
                         elif is_preview and current_block_idx_data_mw != -1:
                             data_line_index_preview = current_q_block_number_in_editor_doc
-                            for i in range(100): # Max sublines check
+                            for i in range(100):
                                 problem_key = (current_block_idx_data_mw, data_line_index_preview, i)
                                 if problem_key in main_window_ref.problems_per_subline:
                                     problem_ids_for_this_qtextblock.update(main_window_ref.problems_per_subline[problem_key])
@@ -123,9 +126,8 @@ class LNETLineNumberAreaPaintLogic:
 
                 painter.fillRect(number_part_rect, bg_color_number_area)
                 painter.fillRect(extra_info_part_rect, bg_color_extra_info_area)
-
-                number_text_color = QColor(Qt.black)
-                painter.setPen(number_text_color)
+                
+                painter.setPen(number_text_color_const)
                 painter.drawText(QRect(0, top, number_part_width - 3, line_height), Qt.AlignRight | Qt.AlignVCenter, display_number_for_line_area)
 
                 if extra_part_width > 0:
@@ -135,7 +137,8 @@ class LNETLineNumberAreaPaintLogic:
                         text_for_width_calc_rstripped_paint_text = remove_all_tags(q_block_text_spaces_paint_text).rstrip()
                         pixel_width = calculate_string_width(text_for_width_calc_rstripped_paint_text, self.editor.font_map)
                         width_str_text = str(pixel_width)
-                        text_color_for_extra_part = QColor(Qt.black)
+                        
+                        text_color_for_extra_part = QColor(Qt.darkGray) if theme == 'light' else QColor(Qt.darkGray).darker(120)
                         painter.setPen(text_color_for_extra_part)
                         painter.drawText(QRect(number_part_width, top, extra_part_width -3 , line_height), Qt.AlignRight | Qt.AlignVCenter, width_str_text)
 
@@ -156,8 +159,8 @@ class LNETLineNumberAreaPaintLogic:
                                 color = problem_def_preview.get("color")
                                 if color:
                                     indicator_color = QColor(color)
-                                    if indicator_color.alpha() < 100:
-                                        indicator_color = indicator_color.lighter(120)
+                                    if indicator_color.alpha() < 120 and theme == 'dark':
+                                         indicator_color.setAlpha(180)
                                     if indicator_color not in indicators_to_draw_preview:
                                         indicators_to_draw_preview.append(indicator_color)
 

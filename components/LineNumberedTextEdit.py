@@ -16,9 +16,9 @@ from utils.constants import (
     DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS
 )
 from .LNET_constants import (
-    CURRENT_LINE_COLOR, LINKED_CURSOR_BLOCK_COLOR, LINKED_CURSOR_POS_COLOR,
-    PREVIEW_SELECTED_LINE_COLOR, CRITICAL_PROBLEM_LINE_COLOR,
-    WARNING_PROBLEM_LINE_COLOR, TAG_INTERACTION_HIGHLIGHT_COLOR,
+    LT_CURRENT_LINE_COLOR, LT_LINKED_CURSOR_BLOCK_COLOR, LT_PREVIEW_SELECTED_LINE_COLOR,
+    DT_CURRENT_LINE_COLOR, DT_LINKED_CURSOR_BLOCK_COLOR, DT_PREVIEW_SELECTED_LINE_COLOR,
+    LINKED_CURSOR_POS_COLOR, TAG_INTERACTION_HIGHLIGHT_COLOR,
     SEARCH_MATCH_HIGHLIGHT_COLOR, WIDTH_EXCEEDED_LINE_COLOR, SHORT_LINE_COLOR,
     EMPTY_ODD_SUBLINE_COLOR, NEW_BLUE_SUBLINE_COLOR,
     CHARACTER_LIMIT_LINE_POSITION, CHARACTER_LIMIT_LINE_COLOR, CHARACTER_LIMIT_LINE_STYLE, CHARACTER_LIMIT_LINE_WIDTH,
@@ -37,19 +37,9 @@ class LineNumberedTextEdit(QPlainTextEdit):
         super().__init__(parent)
         self.widget_id = str(id(self))[-6:]
         self.lineNumberArea = LineNumberArea(self)
-
-        self.current_line_color = CURRENT_LINE_COLOR
-        self.linked_cursor_block_color = LINKED_CURSOR_BLOCK_COLOR
-        self.linked_cursor_pos_color = LINKED_CURSOR_POS_COLOR
-        self.preview_selected_line_color = PREVIEW_SELECTED_LINE_COLOR
-        self.critical_problem_line_color = CRITICAL_PROBLEM_LINE_COLOR
-        self.warning_problem_line_color = WARNING_PROBLEM_LINE_COLOR
-        self.tag_interaction_highlight_color = TAG_INTERACTION_HIGHLIGHT_COLOR
-        self.search_match_highlight_color = SEARCH_MATCH_HIGHLIGHT_COLOR
-        self.width_exceeded_line_color = WIDTH_EXCEEDED_LINE_COLOR 
-        self.short_line_color = SHORT_LINE_COLOR 
-        self.empty_odd_subline_color = EMPTY_ODD_SUBLINE_COLOR
-        self.new_blue_subline_color = NEW_BLUE_SUBLINE_COLOR 
+        
+        main_window_ref = parent if isinstance(parent, QMainWindow) else (self.window() if isinstance(self.window(), QMainWindow) else None)
+        self._set_theme_colors(main_window_ref)
 
         self.highlightManager = TextHighlightManager(self)
         self.mouse_handler = LNETMouseHandlers(self) 
@@ -77,7 +67,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
         initial_font.setPointSize(font_size_to_set)
         self.setFont(initial_font)
 
-        main_window_ref = parent if isinstance(parent, QMainWindow) else (self.window() if isinstance(self.window(), QMainWindow) else None)
         self.highlighter = JsonTagHighlighter(self.document(), main_window_ref=main_window_ref)
         self.ensurePolished()
 
@@ -107,6 +96,34 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
 
         self._update_auxiliary_widths()
+
+    def _set_theme_colors(self, main_window_ref):
+        theme = 'light'
+        if main_window_ref and hasattr(main_window_ref, 'theme'):
+            theme = main_window_ref.theme
+
+        if theme == 'dark':
+            self.current_line_color = DT_CURRENT_LINE_COLOR
+            self.linked_cursor_block_color = DT_LINKED_CURSOR_BLOCK_COLOR
+            self.preview_selected_line_color = DT_PREVIEW_SELECTED_LINE_COLOR
+            self.lineNumberArea.odd_line_background = QColor("#303030") 
+            self.lineNumberArea.even_line_background = QColor("#383838")
+            self.lineNumberArea.number_color = QColor("#B0B0B0")
+        else:
+            self.current_line_color = LT_CURRENT_LINE_COLOR
+            self.linked_cursor_block_color = LT_LINKED_CURSOR_BLOCK_COLOR
+            self.preview_selected_line_color = LT_PREVIEW_SELECTED_LINE_COLOR
+            self.lineNumberArea.odd_line_background = QColor(Qt.lightGray).lighter(115) 
+            self.lineNumberArea.even_line_background = QColor(Qt.white) 
+            self.lineNumberArea.number_color = QColor(Qt.darkGray)
+
+        self.linked_cursor_pos_color = LINKED_CURSOR_POS_COLOR
+        self.tag_interaction_highlight_color = TAG_INTERACTION_HIGHLIGHT_COLOR
+        self.search_match_highlight_color = SEARCH_MATCH_HIGHLIGHT_COLOR
+        self.width_exceeded_line_color = WIDTH_EXCEEDED_LINE_COLOR 
+        self.short_line_color = SHORT_LINE_COLOR 
+        self.empty_odd_subline_color = EMPTY_ODD_SUBLINE_COLOR
+        self.new_blue_subline_color = NEW_BLUE_SUBLINE_COLOR 
 
     def _create_color_button(self, parent_widget, color_name: str, color_rgb_str: str, menu_to_close: QMenu):
         btn = QPushButton(parent_widget)
@@ -259,17 +276,14 @@ class LineNumberedTextEdit(QPlainTextEdit):
     def keyPressEvent(self, event: QKeyEvent):
         main_window = self.window()
         
-        # Обробка пробілів
         if not self.isReadOnly() and event.key() == Qt.Key_Space and getattr(main_window, 'show_multiple_spaces_as_dots', False):
             cursor = self.textCursor()
             block_text = cursor.block().text()
             pos = cursor.positionInBlock()
 
-            # Перевіряємо символ до та після курсора
             char_before = block_text[pos-1] if pos > 0 else '\n'
             char_after = block_text[pos] if pos < len(block_text) else '\n'
 
-            # Перетворюємо на крапку, тільки якщо поруч вже є пробіл/крапка, або на межах рядка
             if char_before in (' ', SPACE_DOT_SYMBOL) or char_after in (' ', SPACE_DOT_SYMBOL) or pos == 0 or pos == len(block_text):
                 self.textCursor().insertText(SPACE_DOT_SYMBOL)
             else:
@@ -277,7 +291,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
             event.accept()
             return
             
-        # Обробка Enter та його комбінацій
         if not self.isReadOnly() and isinstance(main_window, QMainWindow) and main_window.current_game_rules:
             game_rules = main_window.current_game_rules
             is_enter_key = event.key() in (Qt.Key_Return, Qt.Key_Enter)

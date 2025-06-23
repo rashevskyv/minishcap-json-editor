@@ -88,36 +88,38 @@ class CustomListItemDelegate(QStyledItemDelegate):
         painter.save()
         painter.setRenderHint(QPainter.Antialiasing)
 
-        palette = option.palette
         is_selected = option.state & QStyle.State_Selected
+        main_window = self.list_widget.window() if self.list_widget else None
+        theme = 'light'
+        if main_window and hasattr(main_window, 'theme'):
+            theme = main_window.theme
 
-        current_element_bg_color = palette.base().color()
         if is_selected:
-            current_element_bg_color = palette.highlight().color()
-
-        painter.fillRect(option.rect, current_element_bg_color)
+            painter.fillRect(option.rect, QColor(option.palette.highlight()))
+        else:
+            painter.fillRect(option.rect, QColor(option.palette.base()))
 
         item_rect = option.rect
         current_number_area_width = self._get_current_number_area_width(option)
 
         number_area_bg = QColor("#F0F0F0") 
         number_text_color = QColor(Qt.black)
+        
+        if theme == 'dark':
+            number_area_bg = QColor("#383838")
+            number_text_color = QColor("#B0B0B0")
+        
         if is_selected:
-             number_area_bg = palette.highlight().color().darker(110) 
-             number_text_color = palette.highlightedText().color()
+            number_area_bg = option.palette.highlight().color().darker(110) 
+            number_text_color = option.palette.highlightedText().color()
         
         unsaved_indicator_color = QColor(Qt.red).darker(120)
         active_color_markers_for_block = set()
         
         block_idx_data = index.data(Qt.UserRole)
-        main_window = None
-        if self.list_widget:
-            main_window = self.list_widget.window()
-
         problem_definitions = {}
         block_aggregated_problem_ids = set()
         has_unsaved_changes_in_block = False
-
 
         if main_window and block_idx_data is not None:
             if hasattr(main_window, 'unsaved_block_indices'):
@@ -129,14 +131,11 @@ class CustomListItemDelegate(QStyledItemDelegate):
             if hasattr(main_window, 'current_game_rules') and main_window.current_game_rules:
                 problem_definitions = main_window.current_game_rules.get_problem_definitions()
 
-            # Aggregate problems from problems_per_subline for the current block_idx_data
             if hasattr(main_window, 'problems_per_subline') and hasattr(main_window, 'data') and \
                0 <= block_idx_data < len(main_window.data) and isinstance(main_window.data[block_idx_data], list):
                 
                 num_data_strings_in_block = len(main_window.data[block_idx_data])
                 for data_string_idx_iter in range(num_data_strings_in_block):
-                    # We need to know the number of logical sublines for this data_string
-                    # This requires getting the current text of the data_string
                     current_ds_text, _ = main_window.data_processor.get_current_string_text(block_idx_data, data_string_idx_iter)
                     if current_ds_text is not None:
                         logical_sublines_for_ds = str(current_ds_text).split('\n')
@@ -186,8 +185,8 @@ class CustomListItemDelegate(QStyledItemDelegate):
                 problem_def = problem_definitions.get(problem_id)
                 if problem_def and "color" in problem_def:
                     indicator_color = QColor(problem_def["color"])
-                    if indicator_color.alpha() < 100:
-                         indicator_color = indicator_color.lighter(120)
+                    if indicator_color.alpha() < 120 and theme == 'dark':
+                         indicator_color.setAlpha(180)
                     if indicator_color not in problem_indicator_colors_to_draw:
                         problem_indicator_colors_to_draw.append(indicator_color)
 
@@ -212,9 +211,9 @@ class CustomListItemDelegate(QStyledItemDelegate):
                           item_rect.width() - text_start_x - 2, 
                           item_rect.height())
 
-        text_color_for_name_final = palette.text().color()
+        text_color_for_name_final = option.palette.text().color()
         if is_selected:
-            text_color_for_name_final = palette.highlightedText().color()
+            text_color_for_name_final = option.palette.highlightedText().color()
         painter.setPen(text_color_for_name_final)
 
         text_to_display = index.data(Qt.DisplayRole)

@@ -50,7 +50,8 @@ class SettingsManager:
             "window_normal_geometry": None,
             "main_splitter_state": None,
             "right_splitter_state": None,
-            "bottom_right_splitter_state": None
+            "bottom_right_splitter_state": None,
+            "theme": "auto"
         }
         for key, value in defaults.items():
             setattr(self.mw, key, value)
@@ -155,7 +156,8 @@ class SettingsManager:
             "active_game_plugin": self.mw.active_game_plugin,
             "show_multiple_spaces_as_dots": self.mw.show_multiple_spaces_as_dots,
             "space_dot_color_hex": self.mw.space_dot_color_hex,
-            "window_was_maximized": self.mw.window_was_maximized_on_close
+            "window_was_maximized": self.mw.window_was_maximized_on_close,
+            "theme": getattr(self.mw, 'theme', 'auto')
         })
 
         if self.mw.window_normal_geometry_on_close:

@@ -20,12 +20,16 @@ class JsonTagHighlighter(QSyntaxHighlighter):
         self.mw = main_window_ref
         
         self.default_text_color = QColor(Qt.black)
-        editor_widget = parent.parent() if parent else None
-
-        if editor_widget and isinstance(editor_widget, QWidget) and hasattr(editor_widget, 'palette'):
-            self.default_text_color = editor_widget.palette().color(editor_widget.foregroundRole())
+        
+        current_theme = getattr(self.mw, 'theme', 'auto')
+        if current_theme == 'dark':
+            self.default_text_color = QColor("#E0E0E0")
         else:
-            log_debug("JsonTagHighlighter: Could not get editor widget or palette, using default black text color.")
+            editor_widget = parent.parent() if parent else None
+            if editor_widget and isinstance(editor_widget, QWidget) and hasattr(editor_widget, 'palette'):
+                self.default_text_color = editor_widget.palette().color(editor_widget.foregroundRole())
+            else:
+                log_debug("JsonTagHighlighter: Could not get editor widget or palette, using default black text color.")
 
         self.custom_rules = []
         self.curly_tag_format = QTextCharFormat()
@@ -48,7 +52,6 @@ class JsonTagHighlighter(QSyntaxHighlighter):
         self.reconfigure_styles()
         
     def on_contents_change(self, position, chars_removed, chars_added):
-        log_debug(f"Highlighter: on_contents_change triggered at pos {position}. Removed: {chars_removed}, Added: {chars_added}. Rehighlighting.")
         self.rehighlight()
 
     def _apply_css_to_format(self, char_format, css_str, base_color=None):
@@ -82,14 +85,18 @@ class JsonTagHighlighter(QSyntaxHighlighter):
                            space_dot_color_hex="#BBBBBB",
                            bracket_tag_color_hex="#FF8C00"):
         log_debug(f"JsonTagHighlighter reconfiguring styles...")
-
+        
         doc = self.document()
         editor_widget = doc.parent() if doc else None
-
-        if editor_widget and hasattr(editor_widget, 'palette'):
-            self.default_text_color = editor_widget.palette().color(editor_widget.foregroundRole())
+        
+        current_theme = getattr(self.mw, 'theme', 'auto')
+        if current_theme == 'dark':
+            self.default_text_color = QColor("#E0E0E0")
         else:
-            self.default_text_color = QColor(Qt.black)
+            if editor_widget and hasattr(editor_widget, 'palette'):
+                self.default_text_color = editor_widget.palette().color(editor_widget.foregroundRole())
+            else:
+                 self.default_text_color = QColor(Qt.black)
         
         self.color_default_format.setForeground(self.default_text_color)
         
@@ -119,9 +126,9 @@ class JsonTagHighlighter(QSyntaxHighlighter):
         try: self.space_dot_format.setForeground(QColor(space_dot_color_hex))
         except Exception: self.space_dot_format.setForeground(QColor(Qt.lightGray))
 
-        self.red_text_format.setForeground(QColor(Qt.red))
-        self.green_text_format.setForeground(QColor(Qt.darkGreen))
-        self.blue_text_format.setForeground(QColor(Qt.blue))
+        self.red_text_format.setForeground(QColor("#FF4C4C"))
+        self.green_text_format.setForeground(QColor("#4CAF50"))
+        self.blue_text_format.setForeground(QColor("#0958e0"))
 
         self.newline_char = newline_symbol
         if self.document():
