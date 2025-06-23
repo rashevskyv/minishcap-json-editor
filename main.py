@@ -58,6 +58,7 @@ class MainWindow(QMainWindow):
         self.active_game_plugin = "zelda_mc"
         self.display_name = ""
         self.theme = "auto"
+        self.restore_unsaved_on_startup = True
 
         self.is_programmatically_changing_text = False
         self.is_adjusting_cursor = False

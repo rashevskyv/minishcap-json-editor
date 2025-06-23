@@ -30,6 +30,9 @@ class SettingsManager:
 
         self.mw.initial_load_path = getattr(self.mw, 'original_file_path', None)
         self.mw.initial_edited_load_path = getattr(self.mw, 'edited_file_path', None)
+        
+        if self.mw.restore_unsaved_on_startup:
+            self.load_unsaved_session()
 
         if not self.mw.initial_load_path and not self.mw.json_path:
             log_debug("SettingsManager: No initial_load_path, ensuring UI is cleared.")
@@ -51,7 +54,8 @@ class SettingsManager:
             "main_splitter_state": None,
             "right_splitter_state": None,
             "bottom_right_splitter_state": None,
-            "theme": "auto"
+            "theme": "auto",
+            "restore_unsaved_on_startup": True
         }
         for key, value in defaults.items():
             setattr(self.mw, key, value)
@@ -157,8 +161,15 @@ class SettingsManager:
             "show_multiple_spaces_as_dots": self.mw.show_multiple_spaces_as_dots,
             "space_dot_color_hex": self.mw.space_dot_color_hex,
             "window_was_maximized": self.mw.window_was_maximized_on_close,
-            "theme": getattr(self.mw, 'theme', 'auto')
+            "theme": getattr(self.mw, 'theme', 'auto'),
+            "restore_unsaved_on_startup": self.mw.restore_unsaved_on_startup
         })
+
+        if self.mw.restore_unsaved_on_startup and self.mw.edited_data:
+            serializable_edited_data = {str(k): v for k, v in self.mw.edited_data.items()}
+            global_data["unsaved_session_data"] = serializable_edited_data
+        elif "unsaved_session_data" in global_data:
+            del global_data["unsaved_session_data"]
 
         if self.mw.window_normal_geometry_on_close:
             geom = self.mw.window_normal_geometry_on_close
@@ -247,6 +258,31 @@ class SettingsManager:
         except Exception as e:
             log_debug(f"ERROR saving block names to '{plugin_config_path}': {e}")
             QMessageBox.critical(self.mw, "Save Error", f"Could not save block names to\n{plugin_config_path}")
+
+    def load_unsaved_session(self):
+        log_debug("Attempting to load unsaved session data...")
+        if not os.path.exists(self.settings_file_path):
+            return
+        
+        try:
+            with open(self.settings_file_path, 'r', encoding='utf-8') as f:
+                settings_data = json.load(f)
+            
+            if settings_data.get("restore_unsaved_on_startup", True):
+                session_data_str_keys = settings_data.get("unsaved_session_data")
+                if session_data_str_keys and isinstance(session_data_str_keys, dict):
+                    # Deserializing keys from string " (b, s) " to tuple (b, s)
+                    deserialized_data = {eval(k): v for k, v in session_data_str_keys.items()}
+                    self.mw.edited_data = deserialized_data
+                    self.mw.unsaved_changes = bool(self.mw.edited_data)
+                    log_debug(f"Successfully loaded {len(self.mw.edited_data)} unsaved items from session.")
+                    if self.mw.unsaved_changes:
+                         self.mw.ui_updater.update_title()
+            else:
+                log_debug("Restore unsaved session is disabled in settings. Skipping load.")
+
+        except Exception as e:
+            log_debug(f"Error loading unsaved session data: {e}")
 
 
     def load_font_map(self):

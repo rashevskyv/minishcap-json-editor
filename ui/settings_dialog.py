@@ -118,6 +118,10 @@ class SettingsDialog(QDialog):
         self.space_dot_color_picker = ColorPickerButton(parent=self)
         layout.addRow("Space Dot Color:", self.space_dot_color_picker)
         
+        self.restore_session_checkbox = QCheckBox("Restore unsaved session on startup", self)
+        self.restore_session_checkbox.setToolTip("If unchecked, any unsaved changes will be discarded on close.")
+        layout.addRow(self.restore_session_checkbox)
+
         self.plugin_combo.activated.connect(self.on_plugin_changed)
         self.theme_combo.activated.connect(self.on_theme_changed)
 
@@ -279,6 +283,7 @@ class SettingsDialog(QDialog):
         self.font_size_spinbox.setValue(self.mw.current_font_size)
         self.show_spaces_checkbox.setChecked(self.mw.show_multiple_spaces_as_dots)
         self.space_dot_color_picker.setColor(QColor(self.mw.space_dot_color_hex))
+        self.restore_session_checkbox.setChecked(self.mw.restore_unsaved_on_startup)
         
         self.original_path_edit.setText(self.mw.original_file_path or "")
         self.edited_path_edit.setText(self.mw.edited_json_path or "")
@@ -319,6 +324,7 @@ class SettingsDialog(QDialog):
             'font_size': self.font_size_spinbox.value(),
             'show_multiple_spaces_as_dots': self.show_spaces_checkbox.isChecked(),
             'space_dot_color_hex': self.space_dot_color_picker.color().name(),
+            'restore_unsaved_on_startup': self.restore_session_checkbox.isChecked(),
             'original_file_path': self.original_path_edit.text(),
             'edited_file_path': self.edited_path_edit.text(),
             'preview_wrap_lines': self.preview_wrap_checkbox.isChecked(),

@@ -13,5 +13,6 @@
     "bottom_right_splitter_state": "AAAA/wAAAAEAAAACAAABkAAAAZAB/////wEAAAABAA==",
     "show_multiple_spaces_as_dots": true,
     "space_dot_color_hex": "#808080",
-    "theme": "auto"
+    "theme": "auto",
+    "restore_unsaved_on_startup": false
 }

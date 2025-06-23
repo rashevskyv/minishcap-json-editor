@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QStyledItemDelegate, QStyle, QStyleOptionViewItem
 from PyQt5.QtGui import QPainter, QColor, QPalette, QBrush, QPen, QFontMetrics, QFont
 from PyQt5.QtCore import QRect, Qt, QPoint, QSize, QModelIndex
 from utils.logging_utils import log_debug
-from utils.constants import LT_PREVIEW_SELECTED_LINE_COLOR, DT_PREVIEW_SELECTED_LINE_COLOR
+from .LNET_constants import LT_PREVIEW_SELECTED_LINE_COLOR, DT_PREVIEW_SELECTED_LINE_COLOR
 
 class CustomListItemDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
@@ -106,11 +106,11 @@ class CustomListItemDelegate(QStyledItemDelegate):
         if theme == 'dark':
             number_area_bg = QColor("#383838") if not is_selected else option.palette.highlight().color().darker(110)
             number_text_color = QColor("#B0B0B0") if not is_selected else option.palette.color(QPalette.HighlightedText)
-        else: # light theme
+        else:
             number_area_bg = QColor("#F0F0F0") if not is_selected else option.palette.highlight().color().darker(105)
             number_text_color = QColor(Qt.darkGray) if not is_selected else QColor(Qt.black)
         
-        unsaved_indicator_color = QColor(Qt.red).darker(120)
+        unsaved_indicator_color = QColor(255, 0, 0, 100)
         active_color_markers_for_block = set()
         
         block_idx_data = index.data(Qt.UserRole)
@@ -166,7 +166,8 @@ class CustomListItemDelegate(QStyledItemDelegate):
         problem_indicator_zone_x_start = current_color_marker_x + (self.padding_after_color_marker_zone if active_color_markers_for_block else 0)
         
         problem_indicator_colors_to_draw = []
-        if has_unsaved_changes_in_block: problem_indicator_colors_to_draw.append(unsaved_indicator_color)
+        if has_unsaved_changes_in_block:
+            problem_indicator_colors_to_draw.append(unsaved_indicator_color)
         
         if problem_definitions and block_aggregated_problem_ids:
             sorted_block_problem_ids = sorted(

@@ -27,7 +27,8 @@ class MainWindowActions:
             self.mw.current_font_size = new_settings.get('font_size')
             self.mw.show_multiple_spaces_as_dots = new_settings.get('show_multiple_spaces_as_dots')
             self.mw.space_dot_color_hex = new_settings.get('space_dot_color_hex')
-            
+            self.mw.restore_unsaved_on_startup = new_settings.get('restore_unsaved_on_startup')
+
             self.mw.settings_manager.save_settings()
 
             self.mw.active_game_plugin = new_settings.get('active_game_plugin')
@@ -42,11 +43,28 @@ class MainWindowActions:
             log_debug("Settings changed without restart. Applying settings.")
             
             initial_paths = (self.mw.json_path, self.mw.edited_json_path)
+            restore_session_before = self.mw.restore_unsaved_on_startup
 
             for key, value in new_settings.items():
                 if hasattr(self.mw, key):
                      setattr(self.mw, key, value)
             
+            restore_session_after = self.mw.restore_unsaved_on_startup
+            
+            if restore_session_before and not restore_session_after and self.mw.unsaved_changes:
+                reply = QMessageBox.question(self.mw, "Discard Unsaved Changes?",
+                                             "You have disabled session restore.\nDo you want to discard the current unsaved changes now?",
+                                             QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                if reply == QMessageBox.Yes:
+                    self.mw.edited_data.clear()
+                    self.mw.unsaved_changes = False
+                    self.mw.helper.rebuild_unsaved_block_indices()
+                    if hasattr(self.mw, 'ui_updater'):
+                        self.mw.ui_updater.update_title()
+                        self.mw.ui_updater.populate_blocks()
+                        self.mw.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
+                    log_debug("User discarded unsaved changes after disabling session restore.")
+
             self.mw.settings_manager.save_settings()
 
             self.mw.apply_font_size()

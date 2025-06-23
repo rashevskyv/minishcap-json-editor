@@ -146,6 +146,9 @@ class LNETLineNumberAreaPaintLogic:
                         indicator_x_start = number_part_width + 2
                         indicators_to_draw_preview = []
 
+                        if (current_block_idx_data_mw, current_q_block_number_in_editor_doc) in main_window_ref.edited_data:
+                            indicators_to_draw_preview.append(QColor(255, 0, 0, 100))
+
                         sorted_problem_ids_for_preview_indicator = sorted(
                             list(problem_ids_for_this_qtextblock),
                             key=lambda pid: problem_definitions.get(pid, {}).get("priority", 99)
