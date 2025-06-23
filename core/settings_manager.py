@@ -93,7 +93,12 @@ class SettingsManager:
             "detection_enabled": DEFAULT_DETECTION_SETTINGS.copy()
         }
         for key, value in defaults.items():
-            setattr(self.mw, key, value)
+             if key not in ["block_names", "block_color_markers", "default_tag_mappings"]:
+                setattr(self.mw, key, value)
+        
+        if not hasattr(self.mw, 'block_names'): self.mw.block_names = {}
+        if not hasattr(self.mw, 'block_color_markers'): self.mw.block_color_markers = {}
+        if not hasattr(self.mw, 'default_tag_mappings'): self.mw.default_tag_mappings = {}
         
         self.mw.search_history_to_save = []
 
@@ -104,11 +109,17 @@ class SettingsManager:
         try:
             with open(plugin_config_path, 'r', encoding='utf-8') as f:
                 plugin_data = json.load(f)
+
+            self.mw.block_names.update({str(k): v for k, v in plugin_data.get("block_names", {}).items()})
+            self.mw.block_color_markers.update({k: set(v) for k, v in plugin_data.get("block_color_markers", {}).items()})
+            self.mw.default_tag_mappings.update(plugin_data.get("default_tag_mappings", {}))
+            
             for key, value in plugin_data.items():
+                if key in ["block_names", "block_color_markers", "default_tag_mappings"]:
+                    continue
                 if hasattr(self.mw, key):
                      setattr(self.mw, key, value)
-            self.mw.block_names = {str(k): v for k, v in plugin_data.get("block_names", {}).items()}
-            self.mw.block_color_markers = {k: set(v) for k, v in plugin_data.get("block_color_markers", {}).items()}
+            
             self.mw.search_history_to_save = plugin_data.get("search_history", [])
             
             loaded_autofix = plugin_data.get("autofix_enabled", {})
@@ -126,6 +137,7 @@ class SettingsManager:
             log_debug(f"Error loading plugin settings from '{plugin_config_path}': {e}")
 
     def save_settings(self):
+        log_debug("Saving all settings...")
         self._save_global_settings()
         self._save_plugin_settings()
 
@@ -209,6 +221,31 @@ class SettingsManager:
         except Exception as e:
             log_debug(f"ERROR saving plugin settings to '{plugin_config_path}': {e}")
             QMessageBox.critical(self.mw, "Save Error", f"Could not save plugin configuration to\n{plugin_config_path}")
+
+    def save_block_names(self):
+        plugin_config_path = self._get_plugin_config_path()
+        if not plugin_config_path:
+            log_debug("save_block_names: Cannot save, no plugin config path found.")
+            return
+
+        plugin_data = {}
+        try:
+            if os.path.exists(plugin_config_path):
+                with open(plugin_config_path, 'r', encoding='utf-8') as f:
+                    plugin_data = json.load(f)
+        except Exception as e:
+            log_debug(f"Could not read existing plugin config at {plugin_config_path} to save block names. A new one will be created. Error: {e}")
+
+        plugin_data["block_names"] = self.mw.block_names
+        
+        try:
+            with open(plugin_config_path, 'w', encoding='utf-8') as f:
+                json.dump(plugin_data, f, indent=4, ensure_ascii=False)
+            log_debug(f"Block names saved successfully to '{plugin_config_path}'.")
+        except Exception as e:
+            log_debug(f"ERROR saving block names to '{plugin_config_path}': {e}")
+            QMessageBox.critical(self.mw, "Save Error", f"Could not save block names to\n{plugin_config_path}")
+
 
     def load_font_map(self):
         plugin_name = getattr(self.mw, 'active_game_plugin', None)

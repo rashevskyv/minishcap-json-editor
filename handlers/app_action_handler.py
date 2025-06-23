@@ -55,12 +55,11 @@ class AppActionHandler(BaseHandler):
             for subline_local_idx, logical_subline_text in enumerate(logical_sublines):
                 next_logical_subline_text = logical_sublines[subline_local_idx + 1] if subline_local_idx + 1 < len(logical_sublines) else None
                 
-                # Повертаємось до універсального analyze_subline
                 subline_problems = self.game_rules_plugin.analyze_subline(
                     text=logical_subline_text, 
                     next_text=next_logical_subline_text,
                     subline_number_in_data_string=subline_local_idx, 
-                    qtextblock_number_in_editor=subline_local_idx, # Це важливо для Zelda
+                    qtextblock_number_in_editor=subline_local_idx,
                     is_last_subline_in_data_string=(subline_local_idx == len(logical_sublines) - 1),
                     editor_font_map=self.mw.font_map,
                     editor_line_width_threshold=self.mw.line_width_warning_threshold_pixels,
@@ -355,7 +354,7 @@ class AppActionHandler(BaseHandler):
             self.mw.is_programmatically_changing_text = False
             QMessageBox.critical(self.mw, "Load Error", f"Failed to load: {original_file_path}\n{error}"); return
 
-        data, block_names = self.mw.current_game_rules.load_data_from_json_obj(json_obj)
+        data, block_names_from_plugin = self.mw.current_game_rules.load_data_from_json_obj(json_obj)
         if not data and json_obj is not None:
             QMessageBox.critical(self.mw, "Plugin Error", f"The active plugin '{self.mw.current_game_rules.get_display_name()}' could not parse the file:\n{original_file_path}")
             self.mw.json_path = None
@@ -367,7 +366,13 @@ class AppActionHandler(BaseHandler):
 
         self.mw.json_path = original_file_path
         self.mw.data = data
-        self.mw.block_names = block_names
+        
+        final_block_names = {}
+        if block_names_from_plugin:
+            final_block_names.update(block_names_from_plugin)
+        final_block_names.update(self.mw.block_names)
+        self.mw.block_names = final_block_names
+        
         self.mw.edited_data = {}
         self.mw.unsaved_changes = False
         

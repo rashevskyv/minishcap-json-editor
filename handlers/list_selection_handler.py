@@ -25,24 +25,19 @@ class ListSelectionHandler(BaseHandler):
         self.mw.is_programmatically_changing_text = True
 
         if not current_item:
-            # log_debug("--> ListSelectionHandler: block_selected - No current item (selection cleared).") # Reduced logging
             self.mw.current_block_idx = -1
             self.mw.current_string_idx = -1
             self.ui_updater.populate_strings_for_block(-1)
-            # log_debug("<-- ListSelectionHandler: block_selected finished (selection cleared).") # Reduced logging
             self.mw.is_programmatically_changing_text = False
             return
 
         block_index = current_item.data(Qt.UserRole)
-        # block_name = current_item.text() # Reduced logging
-        # log_debug(f"--> ListSelectionHandler: block_selected. Item: '{block_name}', Index: {block_index}") # Reduced logging
         
         if self.mw.current_block_idx != block_index:
             self.mw.current_block_idx = block_index
             self.mw.current_string_idx = -1
             
         self.ui_updater.populate_strings_for_block(block_index)
-        # log_debug("<-- ListSelectionHandler: block_selected finished.") # Reduced logging
         self.mw.is_programmatically_changing_text = False
 
 
@@ -101,7 +96,6 @@ class ListSelectionHandler(BaseHandler):
 
 
     def rename_block(self, item):
-        # log_debug("--> ListSelectionHandler: rename_block triggered.") # Reduced logging
         block_index_from_data = item.data(Qt.UserRole);
         if block_index_from_data is None: return
         block_index_str = str(block_index_from_data)
@@ -109,12 +103,13 @@ class ListSelectionHandler(BaseHandler):
         new_name, ok = QInputDialog.getText(self.mw, "Rename Block", f"New name for '{current_name}':", text=current_name)
         if ok and new_name and new_name.strip() and new_name.strip() != current_name:
             actual_new_name = new_name.strip()
-            self.mw.block_names[block_index_str] = actual_new_name; item.setText(actual_new_name)
-        # log_debug("<-- ListSelectionHandler: rename_block finished.") # Reduced logging
+            self.mw.block_names[block_index_str] = actual_new_name
+            self.ui_updater.populate_blocks()
+            log_debug(f"Block {block_index_str} renamed to '{actual_new_name}'. Requesting save.")
+            self.mw.settings_manager.save_block_names()
+
 
     def _data_string_has_any_problem(self, block_idx: int, string_idx: int) -> bool:
-        # log_debug(f"  Checking problems for string B{block_idx}-S{string_idx}") # Reduced logging
-        
         data_string_text, _ = self.data_processor.get_current_string_text(block_idx, string_idx)
         if data_string_text is None:
             return False
@@ -123,7 +118,6 @@ class ListSelectionHandler(BaseHandler):
         for subline_local_idx in range(len(logical_sublines)):
             problem_key = (block_idx, string_idx, subline_local_idx)
             if self.mw.problems_per_subline.get(problem_key):
-                # log_debug(f"    Found problems in subline {subline_local_idx} for B{block_idx}-S{string_idx}: {self.mw.problems_per_subline.get(problem_key)}") # Reduced logging
                 return True
         return False
 
@@ -156,17 +150,17 @@ class ListSelectionHandler(BaseHandler):
                 if self._data_string_has_any_problem(self.mw.current_block_idx, s_idx):
                     found_target_s_idx = s_idx
                     break
-            if found_target_s_idx == -1: # Wrap around
+            if found_target_s_idx == -1: 
                 for s_idx in range(0, current_check_idx if start_scan_idx != -1 else num_strings_in_block): 
                     if self._data_string_has_any_problem(self.mw.current_block_idx, s_idx):
                         found_target_s_idx = s_idx
                         break
-        else: # Direction Up
+        else: 
             for s_idx in range(current_check_idx, -1, -1):
                 if self._data_string_has_any_problem(self.mw.current_block_idx, s_idx):
                     found_target_s_idx = s_idx
                     break
-            if found_target_s_idx == -1: # Wrap around
+            if found_target_s_idx == -1: 
                 for s_idx in range(num_strings_in_block - 1, current_check_idx if start_scan_idx != -1 else -1, -1): 
                     if self._data_string_has_any_problem(self.mw.current_block_idx, s_idx):
                         found_target_s_idx = s_idx
@@ -177,7 +171,6 @@ class ListSelectionHandler(BaseHandler):
             self.string_selected_from_preview(found_target_s_idx)
         else:
             log_debug(f"  No OTHER problematic string found in block {self.mw.current_block_idx} in the given direction.")
-            # If no other problem, but current is a problem, ensure it's re-selected/re-highlighted
             if start_scan_idx != -1 and self._data_string_has_any_problem(self.mw.current_block_idx, start_scan_idx):
                  self.string_selected_from_preview(start_scan_idx)
 

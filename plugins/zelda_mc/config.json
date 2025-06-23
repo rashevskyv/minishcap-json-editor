@@ -18,7 +18,10 @@
         "{PKMN}": "{PKMN}",
         "player": "original"
     },
-    "block_names": {},
+    "block_names": {
+        "0": "0",
+        "38": "AS"
+    },
     "block_color_markers": {},
     "newline_display_symbol": "↵",
     "newline_css": "color: #A020F0; font-weight: bold;",
