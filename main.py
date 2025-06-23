@@ -6,7 +6,7 @@ import re
 import importlib 
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QPlainTextEdit, QVBoxLayout, QSpinBox, QWidget, QLabel, QAction, QMenu
 from PyQt5.QtCore import Qt, QEvent, QRect, QTimer
-from PyQt5.QtGui import QKeyEvent, QTextCursor, QKeySequence, QFont
+from PyQt5.QtGui import QKeyEvent, QTextCursor, QKeySequence, QFont, QPalette, QColor
 from typing import Optional, Dict, Set, Tuple
 
 
@@ -35,7 +35,8 @@ from utils.constants import (
     EDITOR_PLAYER_TAG, ORIGINAL_PLAYER_TAG,
     DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS,
     DEFAULT_LINE_WIDTH_WARNING_THRESHOLD,
-    GENERAL_APP_FONT_FAMILY, MONOSPACE_EDITOR_FONT_FAMILY, DEFAULT_APP_FONT_SIZE
+    GENERAL_APP_FONT_FAMILY, MONOSPACE_EDITOR_FONT_FAMILY, DEFAULT_APP_FONT_SIZE,
+    LT_PREVIEW_SELECTED_LINE_COLOR, DT_PREVIEW_SELECTED_LINE_COLOR
 )
 from plugins.base_game_rules import BaseGameRules
 
@@ -589,21 +590,36 @@ class MainWindow(QMainWindow):
 
 def apply_theme(app, theme_name: str):
     if theme_name == "dark":
+        palette = QPalette()
+        palette.setColor(QPalette.Window, QColor(46, 46, 46))
+        palette.setColor(QPalette.WindowText, QColor(224, 224, 224))
+        palette.setColor(QPalette.Base, QColor(37, 37, 37))
+        palette.setColor(QPalette.AlternateBase, QColor(74, 74, 74))
+        palette.setColor(QPalette.ToolTipBase, QColor(46, 46, 46))
+        palette.setColor(QPalette.ToolTipText, QColor(224, 224, 224))
+        palette.setColor(QPalette.Text, QColor(224, 224, 224))
+        palette.setColor(QPalette.Button, QColor(74, 74, 74))
+        palette.setColor(QPalette.ButtonText, QColor(224, 224, 224))
+        palette.setColor(QPalette.BrightText, Qt.red)
+        palette.setColor(QPalette.Link, QColor(42, 130, 218))
+        palette.setColor(QPalette.Highlight, QColor(DT_PREVIEW_SELECTED_LINE_COLOR))
+        palette.setColor(QPalette.HighlightedText, Qt.white)
+        app.setPalette(palette)
         app.setStyleSheet(DARK_THEME_STYLESHEET)
         log_debug("Applied Dark Theme.")
-    elif theme_name == "light":
+    else: # 'auto' or 'light'
+        palette = QPalette()
+        palette.setColor(QPalette.Highlight, QColor(LT_PREVIEW_SELECTED_LINE_COLOR))
+        palette.setColor(QPalette.HighlightedText, QColor(Qt.black))
+        app.setPalette(palette)
         app.setStyleSheet(LIGHT_THEME_STYLESHEET)
         log_debug("Applied Light Theme.")
-    else: # 'auto' or any other value
-        app.setStyleSheet("")
-        log_debug("Applied system default theme.")
 
 
 if __name__ == '__main__':
     log_debug("================= Application Start =================")
     app = QApplication(sys.argv)
     
-    # Pre-load settings to apply theme before window creation
     temp_settings = {}
     try:
         with open("settings.json", 'r') as f:

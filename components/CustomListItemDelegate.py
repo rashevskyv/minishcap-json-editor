@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QStyledItemDelegate, QStyle, QStyleOptionViewItem
 from PyQt5.QtGui import QPainter, QColor, QPalette, QBrush, QPen, QFontMetrics, QFont
 from PyQt5.QtCore import QRect, Qt, QPoint, QSize, QModelIndex
 from utils.logging_utils import log_debug
-from components.LNET_constants import EMPTY_ODD_SUBLINE_COLOR
+from utils.constants import LT_PREVIEW_SELECTED_LINE_COLOR, DT_PREVIEW_SELECTED_LINE_COLOR
 
 class CustomListItemDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
@@ -89,29 +89,26 @@ class CustomListItemDelegate(QStyledItemDelegate):
         painter.setRenderHint(QPainter.Antialiasing)
 
         is_selected = option.state & QStyle.State_Selected
+        
+        if is_selected:
+            painter.fillRect(option.rect, option.palette.highlight())
+        else:
+            painter.fillRect(option.rect, option.palette.base())
+        
         main_window = self.list_widget.window() if self.list_widget else None
         theme = 'light'
         if main_window and hasattr(main_window, 'theme'):
             theme = main_window.theme
 
-        if is_selected:
-            painter.fillRect(option.rect, QColor(option.palette.highlight()))
-        else:
-            painter.fillRect(option.rect, QColor(option.palette.base()))
-
         item_rect = option.rect
         current_number_area_width = self._get_current_number_area_width(option)
 
-        number_area_bg = QColor("#F0F0F0") 
-        number_text_color = QColor(Qt.black)
-        
         if theme == 'dark':
-            number_area_bg = QColor("#383838")
-            number_text_color = QColor("#B0B0B0")
-        
-        if is_selected:
-            number_area_bg = option.palette.highlight().color().darker(110) 
-            number_text_color = option.palette.highlightedText().color()
+            number_area_bg = QColor("#383838") if not is_selected else option.palette.highlight().color().darker(110)
+            number_text_color = QColor("#B0B0B0") if not is_selected else option.palette.color(QPalette.HighlightedText)
+        else: # light theme
+            number_area_bg = QColor("#F0F0F0") if not is_selected else option.palette.highlight().color().darker(105)
+            number_text_color = QColor(Qt.darkGray) if not is_selected else QColor(Qt.black)
         
         unsaved_indicator_color = QColor(Qt.red).darker(120)
         active_color_markers_for_block = set()
@@ -144,7 +141,6 @@ class CustomListItemDelegate(QStyledItemDelegate):
                             if problem_key_iter in main_window.problems_per_subline:
                                 block_aggregated_problem_ids.update(main_window.problems_per_subline[problem_key_iter])
 
-
         number_rect = QRect(item_rect.left(), item_rect.top(), current_number_area_width, item_rect.height())
         painter.fillRect(number_rect, number_area_bg)
         painter.setPen(number_text_color)
@@ -154,8 +150,6 @@ class CustomListItemDelegate(QStyledItemDelegate):
         painter.drawText(number_rect, Qt.AlignCenter | Qt.TextShowMnemonic, str(index.row() + 1))
 
         color_marker_zone_x_start = number_rect.right() + self.padding_after_number_area
-        color_marker_zone_total_width = self._get_color_marker_zone_width()
-        
         current_color_marker_x = color_marker_zone_x_start
         sorted_active_markers = sorted(list(active_color_markers_for_block)) 
 
@@ -169,8 +163,7 @@ class CustomListItemDelegate(QStyledItemDelegate):
                 painter.drawEllipse(current_color_marker_x, marker_y, self.color_marker_size, self.color_marker_size)
                 current_color_marker_x += self.color_marker_size + self.color_marker_spacing
         
-        problem_indicator_zone_x_start = color_marker_zone_x_start + color_marker_zone_total_width + \
-                                         (self.padding_after_color_marker_zone if color_marker_zone_total_width > 0 else 0)
+        problem_indicator_zone_x_start = current_color_marker_x + (self.padding_after_color_marker_zone if active_color_markers_for_block else 0)
         
         problem_indicator_colors_to_draw = []
         if has_unsaved_changes_in_block: problem_indicator_colors_to_draw.append(unsaved_indicator_color)
@@ -189,11 +182,8 @@ class CustomListItemDelegate(QStyledItemDelegate):
                          indicator_color.setAlpha(180)
                     if indicator_color not in problem_indicator_colors_to_draw:
                         problem_indicator_colors_to_draw.append(indicator_color)
-
         
         current_problem_indicator_x = problem_indicator_zone_x_start
-        problem_indicator_zone_total_width = self._get_problem_indicator_zone_width()
-
         for i, color in enumerate(problem_indicator_colors_to_draw):
             if i >= self.max_problem_indicators: break 
             indicator_rect = QRect(current_problem_indicator_x,
@@ -202,19 +192,14 @@ class CustomListItemDelegate(QStyledItemDelegate):
                                    item_rect.height() - 2 * self.indicator_v_offset)
             painter.fillRect(indicator_rect, color)
             current_problem_indicator_x += self.problem_indicator_strip_width + self.problem_indicator_strip_spacing
-
-        text_start_x = problem_indicator_zone_x_start + \
-                       (problem_indicator_zone_total_width if problem_indicator_zone_total_width > 0 else -self.padding_after_problem_indicator_zone) + \
-                       self.padding_after_problem_indicator_zone
+        
+        text_start_x = current_problem_indicator_x + (self.padding_after_problem_indicator_zone if problem_indicator_colors_to_draw else 0)
         
         text_rect = QRect(text_start_x, item_rect.top(),
                           item_rect.width() - text_start_x - 2, 
                           item_rect.height())
 
-        text_color_for_name_final = option.palette.text().color()
-        if is_selected:
-            text_color_for_name_final = option.palette.highlightedText().color()
-        painter.setPen(text_color_for_name_final)
+        painter.setPen(option.palette.color(QPalette.HighlightedText if is_selected else QPalette.Text))
 
         text_to_display = index.data(Qt.DisplayRole)
         if text_to_display is None: text_to_display = ""

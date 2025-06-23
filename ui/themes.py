@@ -22,15 +22,21 @@ QMenu {
 QMenu::item:selected {
     background-color: #505050;
 }
-QPlainTextEdit, QTextEdit, QListWidget {
+QPlainTextEdit, QTextEdit {
     background-color: #252525;
     color: #E0E0E0;
     border: 1px solid #505050;
     selection-background-color: #005A9E;
     selection-color: #FFFFFF;
 }
+QListWidget {
+    background-color: #252525;
+    color: #E0E0E0;
+    border: 1px solid #505050;
+    selection-color: #FFFFFF;
+}
 QListWidget::item:selected {
-    background-color: #005A9E;
+    background-color: #004A7E;
     color: #FFFFFF;
 }
 QLineEdit#PathLineEdit {
