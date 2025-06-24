@@ -46,12 +46,9 @@ class TextOperationHandler(BaseHandler):
 
 
     def _log_undo_state(self, editor, context_message):
-        if editor and hasattr(editor, 'document'):
-            doc = editor.document()
-            log_debug(f"UNDO_DEBUG ({context_message}): UndoAvailable={doc.isUndoAvailable()}, RedoAvailable={doc.isRedoAvailable()}, Revision={doc.revision()}")
+        pass
 
     def _update_preview_content(self):
-        log_debug("TextOperationHandler: Updating preview content via timer.")
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         if not preview_edit or self.mw.current_block_idx == -1:
             return
@@ -96,8 +93,6 @@ class TextOperationHandler(BaseHandler):
         if self.mw.is_programmatically_changing_text:
             return
         
-        self._log_undo_state(self.mw.edited_text_edit, "text_edited START")
-        
         if self.mw.current_block_idx == -1 or self.mw.current_string_idx == -1:
             return
         
@@ -129,8 +124,6 @@ class TextOperationHandler(BaseHandler):
         
         if edited_edit and hasattr(edited_edit, 'lineNumberArea'):
             edited_edit.lineNumberArea.update()
-        
-        self._log_undo_state(self.mw.edited_text_edit, "text_edited END")
 
 
     def paste_block_text(self):
@@ -179,10 +172,6 @@ class TextOperationHandler(BaseHandler):
         successfully_processed_count = 0
         any_change_applied_to_data = False
         
-        active_editor_for_paste = self.mw.edited_text_edit
-        if active_editor_for_paste:
-            self._log_undo_state(active_editor_for_paste, "paste_block_text - Before paste loop")
-
         for i, segment_to_insert_raw in enumerate(parsed_strings):
             current_target_string_idx = start_string_idx + i
             if current_target_string_idx >= original_block_len:
@@ -212,9 +201,6 @@ class TextOperationHandler(BaseHandler):
         self.mw.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
         self.mw.ui_updater.update_text_views()
         
-        if active_editor_for_paste:
-            self._log_undo_state(active_editor_for_paste, "paste_block_text - After UI update")
-
 
         if any_change_applied_to_data:
             self.mw.can_undo_paste = True
@@ -229,28 +215,19 @@ class TextOperationHandler(BaseHandler):
     def revert_single_line(self, line_index: int):
         block_idx = self.mw.current_block_idx
         if block_idx == -1:
-             log_debug("Revert single line: No block selected.")
              return
-             
-        log_debug(f"Attempting to revert data line {line_index} in block {block_idx} to original.")
              
         original_text = self.data_processor._get_string_from_source(block_idx, line_index, self.mw.data, "original_for_revert")
         
         if original_text is None:
-            log_debug(f"Revert single line: Could not find original text for data line {line_index} in block {block_idx}.")
             QMessageBox.warning(self.mw, "Revert Error", f"Could not find original text for data line {line_index + 1}.")
             return
 
         current_text, _ = self.data_processor.get_current_string_text(block_idx, line_index)
         
         if current_text == original_text:
-             log_debug(f"Revert single line: Data line {line_index} in block {block_idx} already matches original.")
              return
         
-        active_editor_for_revert = self.mw.edited_text_edit
-        if active_editor_for_revert and self.mw.current_string_idx == line_index:
-            self._log_undo_state(active_editor_for_revert, f"revert_single_line S:{line_index} - Before data update")
-
         if self.data_processor.update_edited_data(block_idx, line_index, original_text):
             if hasattr(self.mw, 'title_status_bar_updater'):
                 self.mw.title_status_bar_updater.update_title()
@@ -261,9 +238,6 @@ class TextOperationHandler(BaseHandler):
         self.mw.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
         self.mw.ui_updater.update_text_views()
         
-        if active_editor_for_revert and self.mw.current_string_idx == line_index:
-            self._log_undo_state(active_editor_for_revert, f"revert_single_line S:{line_index} - After UI update")
-
 
         if hasattr(self.mw, 'statusBar'):
              self.mw.statusBar.showMessage(f"Data line {line_index + 1} reverted to original.", 2000)
@@ -276,7 +250,6 @@ class TextOperationHandler(BaseHandler):
 
 
     def calculate_width_for_data_line_action(self, data_line_idx: int):
-        log_debug(f"--> TextOperationHandler: calculate_width_for_data_line_action. Data Line: {data_line_idx}")
         if self.mw.current_block_idx == -1 or data_line_idx < 0:
             QMessageBox.warning(self.mw, "Calculate Width Error", "No block or data line selected.")
             return
@@ -355,7 +328,6 @@ class TextOperationHandler(BaseHandler):
             text_edit_for_size.setMinimumWidth(700)
             text_edit_for_size.setMinimumHeight(500)
         result_dialog.exec_()
-        log_debug(f"<-- TextOperationHandler: calculate_width_for_data_line_action finished.")
         
     def auto_fix_current_string(self):
         if self.mw.current_block_idx == -1 or self.mw.current_string_idx == -1:
@@ -378,13 +350,11 @@ class TextOperationHandler(BaseHandler):
         if changed:
             visual_text_for_editor = self.mw.current_game_rules.get_text_representation_for_editor(fixed_data)
             
-            self._log_undo_state(edited_text_edit, "Before auto_fix")
             cursor = edited_text_edit.textCursor()
             cursor.beginEditBlock()
             cursor.select(QTextCursor.Document)
             cursor.insertText(visual_text_for_editor)
             cursor.endEditBlock()
-            self._log_undo_state(edited_text_edit, "After auto_fix")
             
             if hasattr(self.mw, 'statusBar'):
                 self.mw.statusBar.showMessage("Auto-fix applied.", 2000)

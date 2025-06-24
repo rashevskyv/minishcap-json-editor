@@ -98,7 +98,6 @@ class MainWindowEventHandler:
                     new_cursor_pos_abs = current_block.position() + tag_end
                     cursor.setPosition(new_cursor_pos_abs)
                     editor.setTextCursor(cursor)
-                    log_debug(f"Cursor was inside tag '{match.group(0)}' at rel_pos {pos_in_block}, moved to abs_pos {new_cursor_pos_abs} (rel_pos {tag_end})")
                     break 
             self.mw.is_adjusting_cursor = False
         
@@ -126,7 +125,6 @@ class MainWindowEventHandler:
         position_block = doc.findBlock(position_abs)
 
         if anchor_block.blockNumber() != position_block.blockNumber():
-            log_debug("Selection spans multiple blocks. No adjustment.")
             self.mw.is_adjusting_selection = False
             self.mw.ui_updater.update_status_bar_selection()
             return
@@ -157,15 +155,12 @@ class MainWindowEventHandler:
                 adjusted = True
         
         if new_sel_start_rel > new_sel_end_rel :
-            log_debug(f"Warning: sel_start ({new_sel_start_rel}) > sel_end ({new_sel_end_rel}) after adjustment attempt. Reverting to original selection for this event.")
             new_sel_start_rel = current_sel_start_rel
             new_sel_end_rel = current_sel_end_rel
             adjusted = False
 
 
         if adjusted and (new_sel_start_rel != current_sel_start_rel or new_sel_end_rel != current_sel_end_rel):
-            log_debug(f"Original sel: {current_sel_start_rel}-{current_sel_end_rel}. Proposed new: {new_sel_start_rel}-{new_sel_end_rel}")
-            
             new_cursor = QTextCursor(current_block)
             
             final_anchor_abs = current_block.position() + (new_sel_start_rel if original_anchor_rel == current_sel_start_rel else new_sel_end_rel)
@@ -175,7 +170,6 @@ class MainWindowEventHandler:
             new_cursor.setPosition(final_position_abs, QTextCursor.KeepAnchor)
             
             editor.setTextCursor(new_cursor)
-            log_debug("Selection adjusted to encompass full tags.")
         
         self.mw.is_adjusting_selection = False
         self.mw.ui_updater.update_status_bar_selection()

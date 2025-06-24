@@ -22,6 +22,11 @@ class ListSelectionHandler(BaseHandler):
     def block_selected(self, current_item, previous_item):
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         
+        if previous_item:
+            previous_block_idx = previous_item.data(Qt.UserRole)
+            if previous_block_idx is not None:
+                self.ui_updater.update_block_item_text_with_problem_count(previous_block_idx)
+
         self.mw.is_programmatically_changing_text = True
 
         if not current_item:
@@ -42,7 +47,6 @@ class ListSelectionHandler(BaseHandler):
 
 
     def string_selected_from_preview(self, line_number: int):
-        log_debug(f"ListSelectionHandler: string_selected_from_preview. Data Line number: {line_number}")
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
 
         original_programmatic_state = self.mw.is_programmatically_changing_text
@@ -70,9 +74,8 @@ class ListSelectionHandler(BaseHandler):
                 preview_edit.highlightManager.clearPreviewSelectedLineHighlight()
         else:
             self.mw.current_string_idx = line_number
-            if previous_string_idx != self.mw.current_string_idx :
-                if hasattr(self.ui_updater, 'update_block_item_text_with_problem_count'):
-                    self.ui_updater.update_block_item_text_with_problem_count(self.mw.current_block_idx)
+            if previous_string_idx != self.mw.current_string_idx and previous_string_idx != -1:
+                self.ui_updater.update_block_item_text_with_problem_count(self.mw.current_block_idx)
             
             self.ui_updater.populate_strings_for_block(self.mw.current_block_idx) 
 
@@ -92,7 +95,6 @@ class ListSelectionHandler(BaseHandler):
             preview_edit.highlightManager.clearPreviewSelectedLineHighlight()
         
         self.mw.is_programmatically_changing_text = original_programmatic_state
-        log_debug(f"ListSelectionHandler: string_selected_from_preview finished. current_string_idx: {self.mw.current_string_idx}")
 
 
     def rename_block(self, item):
@@ -105,7 +107,6 @@ class ListSelectionHandler(BaseHandler):
             actual_new_name = new_name.strip()
             self.mw.block_names[block_index_str] = actual_new_name
             self.ui_updater.populate_blocks()
-            log_debug(f"Block {block_index_str} renamed to '{actual_new_name}'. Requesting save.")
             self.mw.settings_manager.save_block_names()
 
 
@@ -146,13 +147,9 @@ class ListSelectionHandler(BaseHandler):
         filtered_problems = {p_id for p_id in found_problems if detection_config.get(p_id, True)}
         has_problems = bool(filtered_problems)
         
-        if has_problems:
-            log_debug(f"Check problems for B:{block_idx} S:{string_idx}. Filtered problems: {filtered_problems}")
-
         return has_problems
 
     def navigate_to_problem_string(self, direction_down: bool):
-        log_debug(f"ListSelectionHandler: navigate_to_problem_string. Direction down: {direction_down}")
         if self.mw.current_block_idx == -1 or not self.mw.data or \
            not (0 <= self.mw.current_block_idx < len(self.mw.data)):
             return
@@ -197,10 +194,8 @@ class ListSelectionHandler(BaseHandler):
                         break
         
         if found_target_s_idx != -1:
-            log_debug(f"  Found problem. Navigating to S{found_target_s_idx}")
             self.string_selected_from_preview(found_target_s_idx)
         else:
-            log_debug(f"  No OTHER problematic string found in block {self.mw.current_block_idx} in the given direction.")
             if start_scan_idx != -1 and self._data_string_has_any_problem(self.mw.current_block_idx, start_scan_idx):
                  self.string_selected_from_preview(start_scan_idx)
 

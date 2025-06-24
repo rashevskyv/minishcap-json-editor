@@ -18,32 +18,10 @@ class UIUpdater:
         problem_definitions = self.mw.current_game_rules.get_problem_definitions()
         problem_counts = {pid: 0 for pid in problem_definitions.keys()}
         detection_config = getattr(self.mw, 'detection_enabled', {})
-        analyzer = self.mw.current_game_rules.problem_analyzer
         
-        if not isinstance(self.mw.data[block_idx], list):
-            return problem_counts
-            
-        for string_idx in range(len(self.mw.data[block_idx])):
-            text, _ = self.data_processor.get_current_string_text(block_idx, string_idx)
-            text = str(text)
-            
-            all_problems_for_string = []
-            if hasattr(analyzer, 'analyze_data_string'):
-                all_problems_for_string = analyzer.analyze_data_string(text, self.mw.font_map, self.mw.line_width_warning_threshold_pixels)
-            else:
-                sublines = text.split('\n')
-                for i, subline in enumerate(sublines):
-                    next_subline = sublines[i+1] if i + 1 < len(sublines) else None
-                    problems = analyzer.analyze_subline(
-                        text=subline, next_text=next_subline, subline_number_in_data_string=i, qtextblock_number_in_editor=i,
-                        is_last_subline_in_data_string=(i == len(sublines) - 1), editor_font_map=self.mw.font_map,
-                        editor_line_width_threshold=self.mw.line_width_warning_threshold_pixels,
-                        full_data_string_text_for_logical_check=text
-                    )
-                    all_problems_for_string.append(problems)
-
-            for problem_set in all_problems_for_string:
-                filtered_problems = {p_id for p_id in problem_set if detection_config.get(p_id, True)}
+        for (b_idx, s_idx, subline_idx), problems in self.mw.problems_per_subline.items():
+            if b_idx == block_idx:
+                filtered_problems = {p_id for p_id in problems if detection_config.get(p_id, True)}
                 for p_id in filtered_problems:
                     if p_id in problem_counts:
                         problem_counts[p_id] += 1
@@ -298,7 +276,6 @@ class UIUpdater:
                     item.setText(base_display_name) 
         if hasattr(self.mw, 'block_list_widget'):
             self.mw.block_list_widget.viewport().update()
-        log_debug("UIUpdater: Cleared all problem block text. Highlights are managed by delegate.")
 
             
     def update_title(self):

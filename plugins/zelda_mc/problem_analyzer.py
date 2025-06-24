@@ -54,54 +54,40 @@ class ProblemAnalyzer:
                                              is_single_subline_in_document: bool,
                                              is_logically_single_and_empty_data_string: bool,
                                              is_target_for_debug: bool = False) -> bool:
-        if is_target_for_debug:
-            log_debug(f"    ORANGE_BUG_DEBUG (Analyzer): _check_empty_odd_subline_display_zmc: text='{repr(subline_text)}', qblk_num={subline_qtextblock_number_in_editor}, is_single_doc={is_single_subline_in_document}, is_logically_single_empty_ds={is_logically_single_and_empty_data_string}")
-
         if is_logically_single_and_empty_data_string:
-            if is_target_for_debug: log_debug(f"      ORANGE_BUG_DEBUG (Analyzer): Data string is logically single and empty. Returning False.")
             return False
 
         if is_single_subline_in_document:
-            if is_target_for_debug: log_debug(f"      ORANGE_BUG_DEBUG (Analyzer): Is single subline in document. Returning False.")
             return False
 
         is_odd_qtextblock_editor = (subline_qtextblock_number_in_editor + 1) % 2 != 0
-        if is_target_for_debug: log_debug(f"      ORANGE_BUG_DEBUG (Analyzer): is_odd_qtextblock_editor: {is_odd_qtextblock_editor}")
         if not is_odd_qtextblock_editor:
             return False
 
         text_no_dots = convert_dots_to_spaces_from_editor(subline_text)
         if ALL_TAGS_PATTERN.search(text_no_dots):
-            if is_target_for_debug: log_debug(f"      ORANGE_BUG_DEBUG (Analyzer): Contains tags. Returning False.")
             return False
 
         text_no_tags_for_empty_check = remove_all_tags(text_no_dots)
         stripped_text_no_tags_for_empty_check = text_no_tags_for_empty_check.strip()
         is_content_empty_or_zero = not stripped_text_no_tags_for_empty_check or stripped_text_no_tags_for_empty_check == "0"
-        if is_target_for_debug: log_debug(f"      ORANGE_BUG_DEBUG (Analyzer): stripped_text_no_tags_for_empty_check='{repr(stripped_text_no_tags_for_empty_check)}', is_content_empty_or_zero={is_content_empty_or_zero}. Returning {is_content_empty_or_zero}")
         return is_content_empty_or_zero
 
     def _check_single_word_subline_zmc(self, subline_text: str) -> bool:
         text_no_tags = remove_all_tags(subline_text).strip()
-        if not text_no_tags: # Порожній рядок не є одним словом
+        if not text_no_tags: 
             return False
         
-        # Розділяємо на "слова" (послідовності не-пробільних символів)
         words = text_no_tags.split()
         
-        # Якщо слів більше одного, це не "одне слово"
         if len(words) > 1:
             return False
         
-        # Якщо слів рівно одне, перевіряємо, чи це не просто розділовий знак
         if len(words) == 1:
             word = words[0]
-            # Видаляємо кінцеві розділові знаки для перевірки, чи залишилося щось ще
-            # Це допоможе відрізнити "слово." від просто "."
-            # Патерн для слів (послідовність букв/цифр)
             word_content_pattern = re.compile(r'[\wа-яА-ЯіїІїЄєґҐ]+') 
             if word_content_pattern.search(word):
-                return True # Є буквено-цифровий вміст, отже це слово
+                return True 
 
         return False
 
@@ -109,16 +95,13 @@ class ProblemAnalyzer:
     def analyze_subline(self,
                         text: str,
                         next_text: Optional[str],
-                        subline_number_in_data_string: int, # 0-based index of the logical subline within the data string
-                        qtextblock_number_in_editor: int,   # 0-based index of the QTextBlock in the editor
+                        subline_number_in_data_string: int, 
+                        qtextblock_number_in_editor: int,   
                         is_last_subline_in_data_string: bool,
                         editor_font_map: dict,
                         editor_line_width_threshold: int,
                         full_data_string_text_for_logical_check: str,
                         is_target_for_debug: bool = False) -> Set[str]:
-
-        if is_target_for_debug:
-            log_debug(f"  ORANGE_BUG_DEBUG (Analyzer): analyze_subline: text='{repr(text)}', next_text='{repr(next_text)}', sub_num_data={subline_number_in_data_string}, qblk_num_edit={qtextblock_number_in_editor}, is_last_sub_data={is_last_subline_in_data_string}, full_ds_text='{repr(full_data_string_text_for_logical_check)}'")
 
         found_problems = set()
         text_with_spaces = convert_dots_to_spaces_from_editor(text)
@@ -138,13 +121,8 @@ class ProblemAnalyzer:
 
             if active_editor and hasattr(active_editor, 'document') and active_editor.document():
                  is_single_doc_block_for_display_check = (active_editor.document().blockCount() == 1)
-            elif is_target_for_debug:
-                 log_debug(f"    ORANGE_BUG_DEBUG (Analyzer): analyze_subline: Could not determine is_single_doc_block_for_display_check. Active editor or document missing.")
 
         is_logically_single_and_empty_data_string_check = (full_data_string_text_for_logical_check == "" and subline_number_in_data_string == 0 and is_last_subline_in_data_string)
-        if is_target_for_debug:
-            log_debug(f"    ORANGE_BUG_DEBUG (Analyzer): analyze_subline: is_logically_single_and_empty_data_string_check={is_logically_single_and_empty_data_string_check}")
-
 
         if self._check_empty_odd_subline_display_zmc(text, 
                                                      qtextblock_number_in_editor,
@@ -160,21 +138,14 @@ class ProblemAnalyzer:
         is_odd_logical_subline = (subline_number_in_data_string + 1) % 2 != 0
         is_only_logical_subline_in_data_string = (subline_number_in_data_string == 0 and is_last_subline_in_data_string)
 
-        if is_target_for_debug: log_debug(f"    ORANGE_BUG_DEBUG (Analyzer): analyze_subline: is_odd_logical_subline={is_odd_logical_subline}, is_only_logical_subline_in_data_string={is_only_logical_subline_in_data_string}")
-
         if is_odd_logical_subline and not is_only_logical_subline_in_data_string:
             if not ALL_TAGS_PATTERN.search(text_with_spaces):
                 text_no_tags_for_logical_empty_check = remove_all_tags(text_with_spaces)
                 stripped_text_no_tags_for_logical_empty_check = text_no_tags_for_logical_empty_check.strip()
                 is_content_empty_or_zero_logical = not stripped_text_no_tags_for_logical_empty_check or stripped_text_no_tags_for_logical_empty_check == "0"
-                if is_target_for_debug: log_debug(f"    ORANGE_BUG_DEBUG (Analyzer): analyze_subline: LOGICAL CHECK: stripped_text_no_tags_for_logical_empty_check='{repr(stripped_text_no_tags_for_logical_empty_check)}', is_content_empty_or_zero_logical={is_content_empty_or_zero_logical}")
                 if is_content_empty_or_zero_logical:
                     found_problems.add(self.problem_ids.PROBLEM_EMPTY_ODD_SUBLINE_LOGICAL)
         
-        # Перевірка на одне слово
-        # Застосовуємо, якщо:
-        # 1. Це НЕ перший логічний підрядок у рядку даних (subline_number_in_data_string > 0)
-        # 2. І поточний логічний підрядок є непарним (is_odd_logical_subline)
         if subline_number_in_data_string > 0 and is_odd_logical_subline:
             if self._check_single_word_subline_zmc(text_with_spaces):
                 found_problems.add(self.problem_ids.PROBLEM_SINGLE_WORD_SUBLINE)
@@ -184,8 +155,6 @@ class ProblemAnalyzer:
             tag = tag_match.group(0)
             if not self.tag_manager.is_tag_legitimate(tag):
                 found_problems.add(self.problem_ids.PROBLEM_TAG_WARNING)
-                log_debug(f"Found illegitimate tag '{tag}' in subline: '{text_with_spaces}'")
                 break
 
-        if is_target_for_debug: log_debug(f"  ORANGE_BUG_DEBUG (Analyzer): analyze_subline returning problems: {found_problems}")
         return found_problems
