@@ -34,11 +34,14 @@
 │   │   │   └── rules.py
 │   │   └── base_import_rules.py
 │   ├── pokemon_fr
+│   │   ├── __init__.py
 │   │   ├── config.json
 │   │   ├── config.py
+│   │   ├── font_map.json
 │   │   ├── problem_analyzer.py
 │   │   ├── rules.py
-│   │   └── tag_manager.py
+│   │   ├── tag_manager.py
+│   │   └── text_fixer.py
 │   ├── zelda_mc
 │   │   ├── config.json
 │   │   ├── config.py
@@ -60,6 +63,7 @@
 │   │   └── title_status_bar_updater.py
 │   ├── __init__.py
 │   ├── settings_dialog.py
+│   ├── themes.py
 │   ├── ui_event_filters.py
 │   ├── ui_setup.py
 │   └── ui_updater.py
@@ -72,5 +76,11 @@
 ├── app_debug.log
 ├── main.py
 ├── main_window_actions.py
+├── main_window_block_handler.py
+├── main_window_event_handler.py
 ├── main_window_helper.py
+├── main_window_plugin_handler.py
+├── main_window_ui_handler.py
+├── requirements.txt
+├── run.sh
 └── settings.json

@@ -1,7 +1,7 @@
 import json
 import os
 import base64
-from PyQt5.QtCore import QByteArray, QRect
+from PyQt5.QtCore import QByteArray, QRect, QTimer
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QFont
 from utils.logging_utils import log_debug
@@ -55,7 +55,7 @@ class SettingsManager:
             "right_splitter_state": None,
             "bottom_right_splitter_state": None,
             "theme": "auto",
-            "restore_unsaved_on_startup": True
+            "restore_unsaved_on_startup": False
         }
         for key, value in defaults.items():
             setattr(self.mw, key, value)
@@ -268,16 +268,17 @@ class SettingsManager:
             with open(self.settings_file_path, 'r', encoding='utf-8') as f:
                 settings_data = json.load(f)
             
-            if settings_data.get("restore_unsaved_on_startup", True):
+            if settings_data.get("restore_unsaved_on_startup", False):
                 session_data_str_keys = settings_data.get("unsaved_session_data")
                 if session_data_str_keys and isinstance(session_data_str_keys, dict):
-                    # Deserializing keys from string " (b, s) " to tuple (b, s)
                     deserialized_data = {eval(k): v for k, v in session_data_str_keys.items()}
                     self.mw.edited_data = deserialized_data
                     self.mw.unsaved_changes = bool(self.mw.edited_data)
                     log_debug(f"Successfully loaded {len(self.mw.edited_data)} unsaved items from session.")
                     if self.mw.unsaved_changes:
-                         self.mw.ui_updater.update_title()
+                        QTimer.singleShot(0, self.mw.helper.rebuild_unsaved_block_indices)
+                        QTimer.singleShot(0, self.mw.ui_updater.update_title)
+                        QTimer.singleShot(0, self.mw.ui_updater.populate_blocks)
             else:
                 log_debug("Restore unsaved session is disabled in settings. Skipping load.")
 
