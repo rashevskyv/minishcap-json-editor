@@ -93,7 +93,6 @@ class GameRules(BaseGameRules):
                 'tooltip': 'Check for tags mismatch between original and translation',
                 'shortcut': None, 
                 'handler': self.mw.trigger_check_tags_action,
-                'toolbar': True,
                 'menu': 'Tools'
             }
         ]
