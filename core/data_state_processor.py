@@ -26,8 +26,8 @@ class DataStateProcessor:
 
     def get_current_string_text(self, block_idx, string_idx):
         edit_key = (block_idx, string_idx)
-        if self.mw.restore_unsaved_on_startup and edit_key in self.mw.edited_data:
-            return self.mw.edited_data[edit_key], "edited_data"
+        if edit_key in self.mw.edited_data:
+            return self.mw.edited_data[edit_key], "edited_data (in-memory)"
         
         text_from_file = self._get_string_from_source(block_idx, string_idx, self.mw.edited_file_data, "edited_file_data")
         if text_from_file is not None: 
@@ -42,29 +42,22 @@ class DataStateProcessor:
 
     def update_edited_data(self, block_idx, string_idx, new_text):
         edit_key = (block_idx, string_idx)
-        original_text_from_mw_data = self._get_string_from_source(block_idx, string_idx, self.mw.data, "original_data_for_update_check")
         
+        original_text = self._get_string_from_source(block_idx, string_idx, self.mw.data, "original_data_for_update_check")
+        
+        text_from_saved_file = self._get_string_from_source(block_idx, string_idx, self.mw.edited_file_data, "edited_file_data")
+        if text_from_saved_file is None:
+            text_from_saved_file = original_text
+            
         old_unsaved_changes = self.mw.unsaved_changes
-        is_different_from_original = (new_text != original_text_from_mw_data)
 
-        if self.mw.restore_unsaved_on_startup:
-            if is_different_from_original:
-                self.mw.edited_data[edit_key] = new_text
-            elif edit_key in self.mw.edited_data:
+        if new_text == text_from_saved_file:
+            if edit_key in self.mw.edited_data:
                 del self.mw.edited_data[edit_key]
-        
-        # Визначаємо, чи є зміни відносно збереженого стану (edited_file_data)
-        text_in_edited_file = self._get_string_from_source(block_idx, string_idx, self.mw.edited_file_data, "edited_file_data")
-        if text_in_edited_file is None:
-            text_in_edited_file = original_text_from_mw_data
+        else:
+            self.mw.edited_data[edit_key] = new_text
 
-        is_different_from_saved_file = (new_text != text_in_edited_file)
-
-        # Прапорець unsaved_changes встановлюється, якщо є будь-які незбережені зміни в пам'яті
-        # АБО якщо поточний текст відрізняється від того, що в файлі змін
-        has_in_memory_edits = bool(self.mw.edited_data)
-        
-        self.mw.unsaved_changes = has_in_memory_edits or is_different_from_saved_file
+        self.mw.unsaved_changes = bool(self.mw.edited_data)
         
         unsaved_status_actually_changed = self.mw.unsaved_changes != old_unsaved_changes
         if unsaved_status_actually_changed:
@@ -98,22 +91,11 @@ class DataStateProcessor:
             if not self.mw.data: QMessageBox.critical(self.mw, "Save Error", "Original data not loaded. Cannot save."); return False
             
             output_data_list = json.loads(json.dumps(self.mw.data)) 
-
             if self.mw.edited_file_data:
-                log_debug(f"Applying changes from loaded edited_file_data (count: {sum(len(b) for b in self.mw.edited_file_data if isinstance(b,list))})")
-                for b_idx, block_from_edited_file in enumerate(self.mw.edited_file_data):
-                    if 0 <= b_idx < len(output_data_list) and isinstance(output_data_list[b_idx], list) and \
-                       isinstance(block_from_edited_file, list):
-                        for s_idx, text_from_edited_file in enumerate(block_from_edited_file):
-                            if 0 <= s_idx < len(output_data_list[b_idx]):
-                                if 0 <= s_idx < len(self.mw.data[b_idx]) and text_from_edited_file != self.mw.data[b_idx][s_idx]:
-                                    output_data_list[b_idx][s_idx] = text_from_edited_file
-                                elif not (0 <= s_idx < len(self.mw.data[b_idx])): 
-                                    log_debug(f"Save: String at ({b_idx},{s_idx}) in edited_file_data has no counterpart in original. Ignored.")
-
+                output_data_list = json.loads(json.dumps(self.mw.edited_file_data))
 
             if self.mw.edited_data:
-                log_debug(f"Applying changes from current memory edits (self.mw.edited_data, count: {len(self.mw.edited_data)})")
+                log_debug(f"Applying {len(self.mw.edited_data)} in-memory edits before saving...")
             for (b_idx, s_idx), edited_text_from_memory in self.mw.edited_data.items():
                 if 0 <= b_idx < len(output_data_list) and isinstance(output_data_list[b_idx], list) and \
                    0 <= s_idx < len(output_data_list[b_idx]):

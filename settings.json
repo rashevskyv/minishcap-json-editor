@@ -1,10 +1,10 @@
 {
     "font_size": 13,
     "active_game_plugin": "zelda_mc",
-    "window_was_maximized": false,
+    "window_was_maximized": true,
     "window_normal_geometry": {
-        "x": 876,
-        "y": 337,
+        "x": 2989,
+        "y": 285,
         "width": 1288,
         "height": 1008
     },
