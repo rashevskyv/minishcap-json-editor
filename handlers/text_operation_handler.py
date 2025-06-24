@@ -15,6 +15,36 @@ class TextOperationHandler(BaseHandler):
         self.preview_update_timer.setSingleShot(True)
         self.preview_update_timer.timeout.connect(self._update_preview_content)
 
+    def _rescan_issues_for_current_string(self, block_idx: int, string_idx: int, new_text: str):
+        if not self.mw.current_game_rules:
+            return
+
+        keys_to_remove = [k for k in self.mw.problems_per_subline if k[0] == block_idx and k[1] == string_idx]
+        for key in keys_to_remove:
+            del self.mw.problems_per_subline[key]
+            
+        analyzer = self.mw.current_game_rules.problem_analyzer
+        sublines = new_text.split('\n')
+        
+        problems_in_string = []
+        if hasattr(analyzer, 'analyze_data_string'):
+            problems_in_string = analyzer.analyze_data_string(new_text, self.mw.font_map, self.mw.line_width_warning_threshold_pixels)
+        else:
+            for i, subline in enumerate(sublines):
+                next_subline = sublines[i+1] if i + 1 < len(sublines) else None
+                problems = analyzer.analyze_subline(
+                    text=subline, next_text=next_subline, subline_number_in_data_string=i, qtextblock_number_in_editor=i,
+                    is_last_subline_in_data_string=(i == len(sublines) - 1), editor_font_map=self.mw.font_map,
+                    editor_line_width_threshold=self.mw.line_width_warning_threshold_pixels,
+                    full_data_string_text_for_logical_check=new_text
+                )
+                problems_in_string.append(problems)
+
+        for i, problem_set in enumerate(problems_in_string):
+             if problem_set:
+                 self.mw.problems_per_subline[(block_idx, string_idx, i)] = problem_set
+
+
     def _log_undo_state(self, editor, context_message):
         if editor and hasattr(editor, 'document'):
             doc = editor.document()
@@ -85,6 +115,8 @@ class TextOperationHandler(BaseHandler):
         
         actual_text_with_spaces = convert_dots_to_spaces_from_editor(actual_text)
         
+        self._rescan_issues_for_current_string(block_idx, string_idx_in_block, actual_text_with_spaces)
+
         needs_title_update = self.data_processor.update_edited_data(block_idx, string_idx_in_block, actual_text_with_spaces)
         
         if needs_title_update: 

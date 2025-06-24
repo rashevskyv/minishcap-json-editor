@@ -91,32 +91,13 @@ class LNETLineNumberAreaPaintLogic:
 
                 problem_ids_for_this_qtextblock = set()
                 
-                if game_rules and hasattr(game_rules, 'problem_analyzer'):
-                    analyzer = game_rules.problem_analyzer
-                    data_string_text, _ = main_window_ref.data_processor.get_current_string_text(current_block_idx_data_mw, current_string_idx_data_mw if is_editor else current_q_block_number_in_editor_doc)
-                    
-                    if data_string_text is not None:
-                        current_text = str(data_string_text)
-                        all_problems_for_string = []
-                        if hasattr(analyzer, 'analyze_data_string'):
-                            all_problems_for_string = analyzer.analyze_data_string(current_text, main_window_ref.font_map, main_window_ref.line_width_warning_threshold_pixels)
-                        else:
-                            sublines = current_text.split('\n')
-                            for i, subline in enumerate(sublines):
-                                next_subline = sublines[i+1] if i + 1 < len(sublines) else None
-                                problems = analyzer.analyze_subline(
-                                    text=subline, next_text=next_subline, subline_number_in_data_string=i, qtextblock_number_in_editor=i,
-                                    is_last_subline_in_data_string=(i == len(sublines) - 1), editor_font_map=main_window_ref.font_map,
-                                    editor_line_width_threshold=main_window_ref.line_width_warning_threshold_pixels,
-                                    full_data_string_text_for_logical_check=current_text
-                                )
-                                all_problems_for_string.append(problems)
+                data_line_idx_for_lookup = current_string_idx_data_mw if is_editor else current_q_block_number_in_editor_doc
+                qtextblock_idx_for_lookup = current_q_block_number_in_editor_doc
 
-                        if is_editor and current_q_block_number_in_editor_doc < len(all_problems_for_string):
-                            problem_ids_for_this_qtextblock = all_problems_for_string[current_q_block_number_in_editor_doc]
-                        elif is_preview:
-                            for problem_set in all_problems_for_string:
-                                problem_ids_for_this_qtextblock.update(problem_set)
+                problem_key = (current_block_idx_data_mw, data_line_idx_for_lookup, qtextblock_idx_for_lookup)
+                
+                if problem_key in main_window_ref.problems_per_subline:
+                    problem_ids_for_this_qtextblock = main_window_ref.problems_per_subline[problem_key]
 
                 filtered_problems = {p_id for p_id in problem_ids_for_this_qtextblock if detection_config.get(p_id, True)}
                 
@@ -154,11 +135,16 @@ class LNETLineNumberAreaPaintLogic:
                         indicator_x_start = number_part_width + 2
                         indicators_to_draw_preview = []
 
-                        if filtered_problems:
-                            log_debug(f"Preview Line {current_q_block_number_in_editor_doc+1} has filtered problems: {filtered_problems}")
+                        preview_problem_key = (current_block_idx_data_mw, current_q_block_number_in_editor_doc)
+                        aggregated_problems_for_preview_line = set()
+                        for key, problems in main_window_ref.problems_per_subline.items():
+                            if key[0] == preview_problem_key[0] and key[1] == preview_problem_key[1]:
+                                 aggregated_problems_for_preview_line.update(problems)
+
+                        filtered_problems_preview = {p_id for p_id in aggregated_problems_for_preview_line if detection_config.get(p_id, True)}
 
                         sorted_problem_ids_for_preview_indicator = sorted(
-                            list(filtered_problems),
+                            list(filtered_problems_preview),
                             key=lambda pid: problem_definitions.get(pid, {}).get("priority", 99)
                         )
 
