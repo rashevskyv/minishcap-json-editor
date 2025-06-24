@@ -35,10 +35,11 @@ class TextOperationHandler(BaseHandler):
         
         if self.mw.current_game_rules:
             preview_lines = []
-            for i in range(len(self.mw.data[block_idx])):
-                text_for_preview_raw, _ = self.data_processor.get_current_string_text(block_idx, i)
-                preview_line_text = self.mw.current_game_rules.get_text_representation_for_preview(str(text_for_preview_raw))
-                preview_lines.append(preview_line_text)
+            if 0 <= block_idx < len(self.mw.data) and isinstance(self.mw.data[block_idx], list):
+                for i in range(len(self.mw.data[block_idx])):
+                    text_for_preview_raw, _ = self.data_processor.get_current_string_text(block_idx, i)
+                    preview_line_text = self.mw.current_game_rules.get_text_representation_for_preview(str(text_for_preview_raw))
+                    preview_lines.append(preview_line_text)
 
             preview_full_text = "\n".join(preview_lines)
             
@@ -84,7 +85,7 @@ class TextOperationHandler(BaseHandler):
         
         needs_title_update = self.data_processor.update_edited_data(block_idx, string_idx_in_block, actual_text_with_spaces)
         
-        self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False)
+        self.mw.app_action_handler._perform_issues_scan_for_block(block_idx)
         
         if needs_title_update: 
             if hasattr(self.mw, 'title_status_bar_updater'):
@@ -196,7 +197,7 @@ class TextOperationHandler(BaseHandler):
 
         if successfully_processed_count > 0:
              log_debug(f"Paste block finished processing data. Triggering scan for block {block_idx} due to paste.")
-             self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False) 
+             self.mw.app_action_handler._perform_issues_scan_for_block(block_idx) 
         
         problem_summary_texts = []
         if self.mw.current_game_rules:
@@ -284,7 +285,7 @@ class TextOperationHandler(BaseHandler):
             elif hasattr(self.ui_updater, 'update_title'): 
                 self.ui_updater.update_title()
 
-        self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False)
+        self.mw.app_action_handler._perform_issues_scan_for_block(block_idx)
         
         self.mw.is_programmatically_changing_text = True
         if self.mw.current_string_idx == line_index: 
@@ -414,6 +415,8 @@ class TextOperationHandler(BaseHandler):
 
         edited_text_edit = self.mw.edited_text_edit
         
+        cursor_pos_before_fix = edited_text_edit.textCursor().position()
+
         data_to_fix = self.mw.current_game_rules.convert_editor_text_to_data(edited_text_edit.toPlainText())
         
         fixed_data, changed = self.mw.current_game_rules.autofix_data_string(
@@ -425,13 +428,21 @@ class TextOperationHandler(BaseHandler):
         if changed:
             visual_text_for_editor = self.mw.current_game_rules.get_text_representation_for_editor(fixed_data)
             
+            edited_text_edit.blockSignals(True)
+            self.mw.is_programmatically_changing_text = True
+            
+            edited_text_edit.setPlainText(visual_text_for_editor)
+            
+            new_doc_len = edited_text_edit.document().characterCount() -1 
+            final_cursor_pos = min(cursor_pos_before_fix, new_doc_len if new_doc_len >= 0 else 0)
             cursor = edited_text_edit.textCursor()
-            cursor.beginEditBlock()
+            cursor.setPosition(final_cursor_pos)
+            edited_text_edit.setTextCursor(cursor)
             
-            cursor.select(QTextCursor.Document)
-            cursor.insertText(visual_text_for_editor)
-            
-            cursor.endEditBlock()
+            self.mw.is_programmatically_changing_text = False
+            edited_text_edit.blockSignals(False)
+
+            self.text_edited()
             
             if hasattr(self.mw, 'statusBar'):
                 self.mw.statusBar.showMessage("Auto-fix applied.", 2000)

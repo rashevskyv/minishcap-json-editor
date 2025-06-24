@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import QStyledItemDelegate, QStyle, QStyleOptionViewItem
 from PyQt5.QtGui import QPainter, QColor, QPalette, QBrush, QPen, QFontMetrics, QFont
 from PyQt5.QtCore import QRect, Qt, QPoint, QSize, QModelIndex
 from utils.logging_utils import log_debug
-from .LNET_constants import LT_PREVIEW_SELECTED_LINE_COLOR, DT_PREVIEW_SELECTED_LINE_COLOR
+from utils.constants import LT_PREVIEW_SELECTED_LINE_COLOR, DT_PREVIEW_SELECTED_LINE_COLOR
 
 class CustomListItemDelegate(QStyledItemDelegate):
     def __init__(self, parent=None):
@@ -110,12 +110,11 @@ class CustomListItemDelegate(QStyledItemDelegate):
             number_area_bg = QColor("#F0F0F0") if not is_selected else option.palette.highlight().color().darker(105)
             number_text_color = QColor(Qt.darkGray) if not is_selected else QColor(Qt.black)
         
-        unsaved_indicator_color = QColor(255, 0, 0, 100)
         active_color_markers_for_block = set()
         
         block_idx_data = index.data(Qt.UserRole)
         problem_definitions = {}
-        block_aggregated_problem_ids = set()
+        block_problem_counts = {}
         has_unsaved_changes_in_block = False
 
         if main_window and block_idx_data is not None:
@@ -128,18 +127,9 @@ class CustomListItemDelegate(QStyledItemDelegate):
             if hasattr(main_window, 'current_game_rules') and main_window.current_game_rules:
                 problem_definitions = main_window.current_game_rules.get_problem_definitions()
 
-            if hasattr(main_window, 'problems_per_subline') and hasattr(main_window, 'data') and \
-               0 <= block_idx_data < len(main_window.data) and isinstance(main_window.data[block_idx_data], list):
-                
-                num_data_strings_in_block = len(main_window.data[block_idx_data])
-                for data_string_idx_iter in range(num_data_strings_in_block):
-                    current_ds_text, _ = main_window.data_processor.get_current_string_text(block_idx_data, data_string_idx_iter)
-                    if current_ds_text is not None:
-                        logical_sublines_for_ds = str(current_ds_text).split('\n')
-                        for subline_local_idx_iter in range(len(logical_sublines_for_ds)):
-                            problem_key_iter = (block_idx_data, data_string_idx_iter, subline_local_idx_iter)
-                            if problem_key_iter in main_window.problems_per_subline:
-                                block_aggregated_problem_ids.update(main_window.problems_per_subline[problem_key_iter])
+            if hasattr(main_window, 'ui_updater') and hasattr(main_window.ui_updater, '_get_aggregated_problems_for_block'):
+                block_problem_counts = main_window.ui_updater._get_aggregated_problems_for_block(block_idx_data)
+
 
         number_rect = QRect(item_rect.left(), item_rect.top(), current_number_area_width, item_rect.height())
         painter.fillRect(number_rect, number_area_bg)
@@ -147,7 +137,9 @@ class CustomListItemDelegate(QStyledItemDelegate):
         current_font = option.font
         if not current_font.family(): current_font = QFont()
         painter.setFont(current_font)
-        painter.drawText(number_rect, Qt.AlignCenter | Qt.TextShowMnemonic, str(index.row() + 1))
+        
+        number_text = f"* {index.row() + 1}" if has_unsaved_changes_in_block else str(index.row() + 1)
+        painter.drawText(number_rect, Qt.AlignCenter | Qt.TextShowMnemonic, number_text)
 
         color_marker_zone_x_start = number_rect.right() + self.padding_after_number_area
         current_color_marker_x = color_marker_zone_x_start
@@ -166,23 +158,21 @@ class CustomListItemDelegate(QStyledItemDelegate):
         problem_indicator_zone_x_start = current_color_marker_x + (self.padding_after_color_marker_zone if active_color_markers_for_block else 0)
         
         problem_indicator_colors_to_draw = []
-        if has_unsaved_changes_in_block:
-            problem_indicator_colors_to_draw.append(unsaved_indicator_color)
-        
-        if problem_definitions and block_aggregated_problem_ids:
+        if problem_definitions and block_problem_counts:
             sorted_block_problem_ids = sorted(
-                list(block_aggregated_problem_ids),
+                block_problem_counts.keys(),
                 key=lambda pid: problem_definitions.get(pid, {}).get("priority", 99)
             )
             for problem_id in sorted_block_problem_ids:
-                if len(problem_indicator_colors_to_draw) >= self.max_problem_indicators: break
-                problem_def = problem_definitions.get(problem_id)
-                if problem_def and "color" in problem_def:
-                    indicator_color = QColor(problem_def["color"])
-                    if indicator_color.alpha() < 120 and theme == 'dark':
-                         indicator_color.setAlpha(180)
-                    if indicator_color not in problem_indicator_colors_to_draw:
-                        problem_indicator_colors_to_draw.append(indicator_color)
+                if block_problem_counts[problem_id] > 0:
+                    if len(problem_indicator_colors_to_draw) >= self.max_problem_indicators: break
+                    problem_def = problem_definitions.get(problem_id)
+                    if problem_def and "color" in problem_def:
+                        indicator_color = QColor(problem_def["color"])
+                        if indicator_color.alpha() < 120 and theme == 'dark':
+                            indicator_color.setAlpha(180)
+                        if indicator_color not in problem_indicator_colors_to_draw:
+                            problem_indicator_colors_to_draw.append(indicator_color)
         
         current_problem_indicator_x = problem_indicator_zone_x_start
         for i, color in enumerate(problem_indicator_colors_to_draw):

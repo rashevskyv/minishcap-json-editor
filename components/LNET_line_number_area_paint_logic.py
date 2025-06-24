@@ -17,12 +17,15 @@ class LNETLineNumberAreaPaintLogic:
         game_rules = None
         problem_definitions = {}
         theme = 'light'
+        detection_config = {}
         if isinstance(main_window_ref, QMainWindow):
             if hasattr(main_window_ref, 'current_game_rules') and main_window_ref.current_game_rules:
                 game_rules = main_window_ref.current_game_rules
                 problem_definitions = game_rules.get_problem_definitions()
             if hasattr(main_window_ref, 'theme'):
                 theme = main_window_ref.theme
+            if hasattr(main_window_ref, 'detection_enabled'):
+                detection_config = main_window_ref.detection_enabled
 
         default_bg_color_for_area = self.editor.palette().base().color()
         if self.editor.isReadOnly():
@@ -60,7 +63,23 @@ class LNETLineNumberAreaPaintLogic:
         while current_q_block.isValid() and top <= event.rect().bottom():
             if current_q_block.isVisible() and bottom >= event.rect().top():
                 line_height = int(self.editor.blockBoundingRect(current_q_block).height())
+                
+                is_preview = self.editor.objectName() == "preview_text_edit"
+                is_editor = self.editor.objectName() in ["original_text_edit", "edited_text_edit"]
+                
                 display_number_for_line_area = str(current_q_block_number_in_editor_doc + 1)
+                
+                if isinstance(main_window_ref, QMainWindow):
+                    is_unsaved = False
+                    if is_preview:
+                        data_line_idx = current_q_block_number_in_editor_doc
+                        is_unsaved = (current_block_idx_data_mw, data_line_idx) in main_window_ref.edited_data
+                    elif is_editor and current_string_idx_data_mw != -1:
+                        is_unsaved = (current_block_idx_data_mw, current_string_idx_data_mw) in main_window_ref.edited_data
+                    
+                    if is_unsaved:
+                        display_number_for_line_area = f"* {display_number_for_line_area}"
+
 
                 number_part_rect = QRect(0, top, number_part_width, line_height)
                 extra_info_part_rect = QRect(number_part_width, top, extra_part_width, line_height)
@@ -72,49 +91,38 @@ class LNETLineNumberAreaPaintLogic:
 
                 problem_ids_for_this_qtextblock = set()
                 
-                is_preview = self.editor.objectName() == "preview_text_edit"
-                is_editor = self.editor.objectName() in ["original_text_edit", "edited_text_edit"]
-                
                 if game_rules and hasattr(game_rules, 'problem_analyzer'):
                     analyzer = game_rules.problem_analyzer
-                    if is_editor and hasattr(analyzer, 'analyze_data_string'):
-                        if current_block_idx_data_mw != -1 and current_string_idx_data_mw != -1:
-                            data_string_text, _ = main_window_ref.data_processor.get_current_string_text(current_block_idx_data_mw, current_string_idx_data_mw)
-                            if data_string_text is not None:
-                                problems = analyzer.analyze_data_string(
-                                    str(data_string_text), main_window_ref.font_map, main_window_ref.line_width_warning_threshold_pixels
+                    data_string_text, _ = main_window_ref.data_processor.get_current_string_text(current_block_idx_data_mw, current_string_idx_data_mw if is_editor else current_q_block_number_in_editor_doc)
+                    
+                    if data_string_text is not None:
+                        current_text = str(data_string_text)
+                        all_problems_for_string = []
+                        if hasattr(analyzer, 'analyze_data_string'):
+                            all_problems_for_string = analyzer.analyze_data_string(current_text, main_window_ref.font_map, main_window_ref.line_width_warning_threshold_pixels)
+                        else:
+                            sublines = current_text.split('\n')
+                            for i, subline in enumerate(sublines):
+                                next_subline = sublines[i+1] if i + 1 < len(sublines) else None
+                                problems = analyzer.analyze_subline(
+                                    text=subline, next_text=next_subline, subline_number_in_data_string=i, qtextblock_number_in_editor=i,
+                                    is_last_subline_in_data_string=(i == len(sublines) - 1), editor_font_map=main_window_ref.font_map,
+                                    editor_line_width_threshold=main_window_ref.line_width_warning_threshold_pixels,
+                                    full_data_string_text_for_logical_check=current_text
                                 )
-                                if 0 <= current_q_block_number_in_editor_doc < len(problems):
-                                    problem_ids_for_this_qtextblock = problems[current_q_block_number_in_editor_doc]
-                    elif is_preview and hasattr(analyzer, 'analyze_data_string'):
-                         if current_block_idx_data_mw != -1:
-                            data_line_index_preview = current_q_block_number_in_editor_doc
-                            if 0 <= current_block_idx_data_mw < len(main_window_ref.data) and \
-                               isinstance(main_window_ref.data[current_block_idx_data_mw], list) and \
-                               0 <= data_line_index_preview < len(main_window_ref.data[current_block_idx_data_mw]):
-                                data_string_text_preview, _ = main_window_ref.data_processor.get_current_string_text(current_block_idx_data_mw, data_line_index_preview)
-                                if data_string_text_preview is not None:
-                                    problems = analyzer.analyze_data_string(
-                                        str(data_string_text_preview), main_window_ref.font_map, main_window_ref.line_width_warning_threshold_pixels
-                                    )
-                                    for problem_set in problems:
-                                        problem_ids_for_this_qtextblock.update(problem_set)
-                    else:
-                        if is_editor and current_block_idx_data_mw != -1 and current_string_idx_data_mw != -1:
-                            problem_key = (current_block_idx_data_mw, current_string_idx_data_mw, current_q_block_number_in_editor_doc)
-                            problem_ids_for_this_qtextblock = main_window_ref.problems_per_subline.get(problem_key, set())
-                        elif is_preview and current_block_idx_data_mw != -1:
-                            data_line_index_preview = current_q_block_number_in_editor_doc
-                            for i in range(100):
-                                problem_key = (current_block_idx_data_mw, data_line_index_preview, i)
-                                if problem_key in main_window_ref.problems_per_subline:
-                                    problem_ids_for_this_qtextblock.update(main_window_ref.problems_per_subline[problem_key])
-                                else:
-                                    break
+                                all_problems_for_string.append(problems)
+
+                        if is_editor and current_q_block_number_in_editor_doc < len(all_problems_for_string):
+                            problem_ids_for_this_qtextblock = all_problems_for_string[current_q_block_number_in_editor_doc]
+                        elif is_preview:
+                            for problem_set in all_problems_for_string:
+                                problem_ids_for_this_qtextblock.update(problem_set)
+
+                filtered_problems = {p_id for p_id in problem_ids_for_this_qtextblock if detection_config.get(p_id, True)}
                 
-                if is_editor and problem_ids_for_this_qtextblock:
+                if is_editor and filtered_problems:
                     sorted_subline_problem_ids = sorted(
-                        list(problem_ids_for_this_qtextblock),
+                        list(filtered_problems),
                         key=lambda pid: problem_definitions.get(pid, {}).get("priority", 99)
                     )
                     if sorted_subline_problem_ids:
@@ -146,11 +154,11 @@ class LNETLineNumberAreaPaintLogic:
                         indicator_x_start = number_part_width + 2
                         indicators_to_draw_preview = []
 
-                        if (current_block_idx_data_mw, current_q_block_number_in_editor_doc) in main_window_ref.edited_data:
-                            indicators_to_draw_preview.append(QColor(255, 0, 0, 100))
+                        if filtered_problems:
+                            log_debug(f"Preview Line {current_q_block_number_in_editor_doc+1} has filtered problems: {filtered_problems}")
 
                         sorted_problem_ids_for_preview_indicator = sorted(
-                            list(problem_ids_for_this_qtextblock),
+                            list(filtered_problems),
                             key=lambda pid: problem_definitions.get(pid, {}).get("priority", 99)
                         )
 

@@ -110,16 +110,46 @@ class ListSelectionHandler(BaseHandler):
 
 
     def _data_string_has_any_problem(self, block_idx: int, string_idx: int) -> bool:
+        if not self.mw.current_game_rules:
+            return False
+            
         data_string_text, _ = self.data_processor.get_current_string_text(block_idx, string_idx)
         if data_string_text is None:
             return False
-            
-        logical_sublines = str(data_string_text).split('\n')
-        for subline_local_idx in range(len(logical_sublines)):
-            problem_key = (block_idx, string_idx, subline_local_idx)
-            if self.mw.problems_per_subline.get(problem_key):
-                return True
-        return False
+        
+        detection_config = getattr(self.mw, 'detection_enabled', {})
+        analyzer = self.mw.current_game_rules.problem_analyzer
+        found_problems = set()
+
+        if hasattr(analyzer, 'analyze_data_string'):
+            problems_per_subline = analyzer.analyze_data_string(
+                data_string_text, self.mw.font_map, self.mw.line_width_warning_threshold_pixels
+            )
+            for problem_set in problems_per_subline:
+                found_problems.update(problem_set)
+        else:
+            sublines = str(data_string_text).split('\n')
+            for i, subline in enumerate(sublines):
+                next_subline = sublines[i+1] if i + 1 < len(sublines) else None
+                problems = analyzer.analyze_subline(
+                    text=subline,
+                    next_text=next_subline,
+                    subline_number_in_data_string=i,
+                    qtextblock_number_in_editor=i,
+                    is_last_subline_in_data_string=(i == len(sublines) - 1),
+                    editor_font_map=self.mw.font_map,
+                    editor_line_width_threshold=self.mw.line_width_warning_threshold_pixels,
+                    full_data_string_text_for_logical_check=data_string_text
+                )
+                found_problems.update(problems)
+        
+        filtered_problems = {p_id for p_id in found_problems if detection_config.get(p_id, True)}
+        has_problems = bool(filtered_problems)
+        
+        if has_problems:
+            log_debug(f"Check problems for B:{block_idx} S:{string_idx}. Filtered problems: {filtered_problems}")
+
+        return has_problems
 
     def navigate_to_problem_string(self, direction_down: bool):
         log_debug(f"ListSelectionHandler: navigate_to_problem_string. Direction down: {direction_down}")

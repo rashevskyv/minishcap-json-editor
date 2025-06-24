@@ -10,6 +10,47 @@ class UIUpdater:
         self.mw = main_window
         self.data_processor = data_processor
 
+    def _get_aggregated_problems_for_block(self, block_idx: int) -> dict:
+        problem_counts = {}
+        if not self.mw.current_game_rules or not (0 <= block_idx < len(self.mw.data)):
+            return problem_counts
+        
+        problem_definitions = self.mw.current_game_rules.get_problem_definitions()
+        problem_counts = {pid: 0 for pid in problem_definitions.keys()}
+        detection_config = getattr(self.mw, 'detection_enabled', {})
+        analyzer = self.mw.current_game_rules.problem_analyzer
+        
+        if not isinstance(self.mw.data[block_idx], list):
+            return problem_counts
+            
+        for string_idx in range(len(self.mw.data[block_idx])):
+            text, _ = self.data_processor.get_current_string_text(block_idx, string_idx)
+            text = str(text)
+            
+            all_problems_for_string = []
+            if hasattr(analyzer, 'analyze_data_string'):
+                all_problems_for_string = analyzer.analyze_data_string(text, self.mw.font_map, self.mw.line_width_warning_threshold_pixels)
+            else:
+                sublines = text.split('\n')
+                for i, subline in enumerate(sublines):
+                    next_subline = sublines[i+1] if i + 1 < len(sublines) else None
+                    problems = analyzer.analyze_subline(
+                        text=subline, next_text=next_subline, subline_number_in_data_string=i, qtextblock_number_in_editor=i,
+                        is_last_subline_in_data_string=(i == len(sublines) - 1), editor_font_map=self.mw.font_map,
+                        editor_line_width_threshold=self.mw.line_width_warning_threshold_pixels,
+                        full_data_string_text_for_logical_check=text
+                    )
+                    all_problems_for_string.append(problems)
+
+            for problem_set in all_problems_for_string:
+                filtered_problems = {p_id for p_id in problem_set if detection_config.get(p_id, True)}
+                for p_id in filtered_problems:
+                    if p_id in problem_counts:
+                        problem_counts[p_id] += 1
+                        
+        return problem_counts
+
+
     def populate_blocks(self):
         current_selection_block_idx = self.mw.block_list_widget.currentRow()
         self.mw.block_list_widget.clear()
@@ -22,20 +63,7 @@ class UIUpdater:
 
         for i in range(len(self.mw.data)):
             base_display_name = self.mw.block_names.get(str(i), f"Block {i}")
-            
-            block_problem_counts = {pid: 0 for pid in problem_definitions.keys()}
-            
-            if 0 <= i < len(self.mw.data) and isinstance(self.mw.data[i], list):
-                for data_string_idx in range(len(self.mw.data[i])):
-                    data_string_text, _ = self.data_processor.get_current_string_text(i, data_string_idx) 
-                    if data_string_text is not None:
-                        logical_sublines = str(data_string_text).split('\n')
-                        for subline_local_idx in range(len(logical_sublines)):
-                            problem_key = (i, data_string_idx, subline_local_idx)
-                            subline_problems = self.mw.problems_per_subline.get(problem_key, set())
-                            for problem_id in subline_problems:
-                                if problem_id in block_problem_counts:
-                                    block_problem_counts[problem_id] += 1
+            block_problem_counts = self._get_aggregated_problems_for_block(i)
             
             display_name_with_issues = base_display_name
             issue_texts = []
@@ -69,24 +97,8 @@ class UIUpdater:
         if not item: return
 
         base_display_name = self.mw.block_names.get(str(block_idx), f"Block {block_idx}")
-        
-        problem_definitions = {}
-        if self.mw.current_game_rules:
-            problem_definitions = self.mw.current_game_rules.get_problem_definitions()
-        
-        block_problem_counts = {pid: 0 for pid in problem_definitions.keys()}
-
-        if block_idx < len(self.mw.data) and isinstance(self.mw.data[block_idx], list):
-            for data_string_idx in range(len(self.mw.data[block_idx])):
-                data_string_text, _ = self.data_processor.get_current_string_text(block_idx, data_string_idx)
-                if data_string_text is not None:
-                    logical_sublines = str(data_string_text).split('\n')
-                    for subline_local_idx in range(len(logical_sublines)):
-                        problem_key = (block_idx, data_string_idx, subline_local_idx)
-                        subline_problems = self.mw.problems_per_subline.get(problem_key, set())
-                        for problem_id in subline_problems:
-                            if problem_id in block_problem_counts:
-                                block_problem_counts[problem_id] += 1
+        problem_definitions = self.mw.current_game_rules.get_problem_definitions() if self.mw.current_game_rules else {}
+        block_problem_counts = self._get_aggregated_problems_for_block(block_idx)
         
         display_name_with_issues = base_display_name
         issue_texts = []
@@ -112,21 +124,17 @@ class UIUpdater:
 
     def _apply_highlights_for_block(self, block_idx: int):
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
-        if not preview_edit or not self.mw.current_game_rules:
+        if not preview_edit or not hasattr(preview_edit, 'highlightManager') or not self.mw.current_game_rules:
             return
 
         preview_edit.highlightManager.clearAllProblemHighlights()
         
-        problem_definitions = self.mw.current_game_rules.get_problem_definitions()
+        if not (0 <= block_idx < len(self.mw.data)):
+            return
 
-        for (b_idx, data_str_idx, subline_idx), problem_ids in self.mw.problems_per_subline.items():
-            if b_idx != block_idx:
-                continue
-            
-            if problem_ids:
-                highest_priority_id = min(problem_ids, key=lambda pid: problem_definitions.get(pid, {}).get("priority", 99))
-                if highest_priority_id in problem_definitions:
-                    preview_edit.highlightManager.addProblemLineHighlight(data_str_idx)
+        for data_str_idx in range(len(self.mw.data[block_idx])):
+            if self.mw.list_selection_handler._data_string_has_any_problem(block_idx, data_str_idx):
+                preview_edit.highlightManager.addProblemLineHighlight(data_str_idx)
 
 
     def populate_strings_for_block(self, block_idx):

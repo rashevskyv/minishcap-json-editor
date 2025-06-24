@@ -63,6 +63,11 @@ class MainWindowActions:
                         self.mw.ui_updater.update_title()
                         self.mw.ui_updater.populate_blocks()
                         self.mw.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
+                    if hasattr(self.mw, 'preview_text_edit'):
+                        self.mw.preview_text_edit.viewport().update()
+                    if hasattr(self.mw, 'edited_text_edit'):
+                        self.mw.edited_text_edit.viewport().update()
+
                     log_debug("User discarded unsaved changes after disabling session restore.")
 
             self.mw.settings_manager.save_settings()
@@ -70,15 +75,9 @@ class MainWindowActions:
             self.mw.apply_font_size()
             self.mw.helper.reconfigure_all_highlighters()
             self.mw.helper.apply_text_wrap_settings()
-
-            new_paths = (new_settings.get('original_file_path'), new_settings.get('edited_file_path'))
-            if initial_paths != new_paths and new_paths[0]:
-                log_debug("File paths have changed, reloading data.")
-                self.mw.load_all_data_for_path(new_paths[0], new_paths[1])
-            else:
-                log_debug("Settings changed, but paths are the same or new path is empty. Rescanning issues.")
-                if hasattr(self.mw.app_action_handler, 'rescan_all_tags'):
-                    self.mw.app_action_handler.rescan_all_tags()
+            
+            if hasattr(self.mw, 'app_action_handler'):
+                self.mw.app_action_handler.rescan_all_tags()
 
 
     def trigger_save_action(self):
