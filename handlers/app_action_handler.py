@@ -14,12 +14,52 @@ class AppActionHandler(BaseHandler):
         super().__init__(main_window, data_processor, ui_updater)
         self.game_rules_plugin = game_rules_plugin
 
-    def _perform_issues_scan_for_block(self, block_idx: int):
-        pass
+    def _perform_issues_scan_for_block(self, block_idx: int, is_single_block_scan: bool = False, use_default_mappings_in_scan: bool = False):
+        if not self.mw.current_game_rules or not (0 <= block_idx < len(self.mw.data)):
+            return
+
+        keys_to_remove = [k for k in self.mw.problems_per_subline if k[0] == block_idx]
+        for key in keys_to_remove:
+            del self.mw.problems_per_subline[key]
+        
+        block_data = self.mw.data[block_idx]
+        if not isinstance(block_data, list):
+            return
+
+        for string_idx, _ in enumerate(block_data):
+            text, _ = self.data_processor.get_current_string_text(block_idx, string_idx)
+            text = str(text)
+
+            analyzer = self.mw.current_game_rules.problem_analyzer
+            all_problems_for_string = []
+            if hasattr(analyzer, 'analyze_data_string'):
+                all_problems_for_string = analyzer.analyze_data_string(text, self.mw.font_map, self.mw.line_width_warning_threshold_pixels)
+            else:
+                sublines = text.split('\n')
+                for i, subline in enumerate(sublines):
+                    next_subline = sublines[i+1] if i + 1 < len(sublines) else None
+                    problems = analyzer.analyze_subline(
+                        text=subline, next_text=next_subline, subline_number_in_data_string=i, qtextblock_number_in_editor=i,
+                        is_last_subline_in_data_string=(i == len(sublines) - 1), editor_font_map=self.mw.font_map,
+                        editor_line_width_threshold=self.mw.line_width_warning_threshold_pixels,
+                        full_data_string_text_for_logical_check=text
+                    )
+                    all_problems_for_string.append(problems)
+
+            for i, problem_set in enumerate(all_problems_for_string):
+                if problem_set:
+                    self.mw.problems_per_subline[(block_idx, string_idx, i)] = problem_set
 
 
     def _perform_initial_silent_scan_all_issues(self):
-        pass
+        log_debug("Performing initial silent scan for all issues...")
+        self.mw.problems_per_subline.clear()
+        if not self.mw.data:
+            return
+        
+        for block_idx in range(len(self.mw.data)):
+            self._perform_issues_scan_for_block(block_idx)
+        log_debug(f"Initial scan complete. Found problems in {len(self.mw.problems_per_subline)} sublines.")
 
 
     def save_data_action(self, ask_confirmation=True):
@@ -54,10 +94,19 @@ class AppActionHandler(BaseHandler):
         log_debug("<-- AppActionHandler: handle_close_event finished.")
     
     def rescan_issues_for_single_block(self, block_idx: int = -1, show_message_on_completion: bool = True, use_default_mappings: bool = True):
-        pass
+        target_block_idx = block_idx if block_idx != -1 else self.mw.current_block_idx
+        if target_block_idx == -1: return
+
+        self._perform_issues_scan_for_block(target_block_idx, is_single_block_scan=True, use_default_mappings_in_scan=use_default_mappings)
+        self.ui_updater.populate_blocks() 
+        self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
+        if show_message_on_completion:
+            QMessageBox.information(self.mw, "Rescan Complete", f"Issue scan complete for block {target_block_idx}.")
+
 
     def rescan_all_tags(self): 
         log_debug("<<<<<<<<<< ACTION: Rescan All Issues Triggered >>>>>>>>>>") 
+        self._perform_initial_silent_scan_all_issues()
         self.ui_updater.populate_blocks()
         self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
             
@@ -103,6 +152,7 @@ class AppActionHandler(BaseHandler):
             self.mw.edited_data = {}
             self.mw.unsaved_changes = False
             
+            self._perform_initial_silent_scan_all_issues()
             self.ui_updater.update_title()
             self.ui_updater.update_statusbar_paths()
             self.ui_updater.populate_blocks()
@@ -188,6 +238,8 @@ class AppActionHandler(BaseHandler):
         if hasattr(self.mw, 'preview_text_edit'): self.mw.preview_text_edit.clear()
         if hasattr(self, 'mw.original_text_edit'): self.mw.original_text_edit.clear()
         if hasattr(self, 'mw.edited_text_edit'): self.mw.edited_text_edit.clear()
+
+        self._perform_initial_silent_scan_all_issues()
         
         self.ui_updater.update_title(); self.ui_updater.update_statusbar_paths()
         self.ui_updater.populate_blocks()

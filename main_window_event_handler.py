@@ -50,6 +50,12 @@ class MainWindowEventHandler:
             self.mw.auto_fix_button.clicked.connect(self.mw.editor_operation_handler.auto_fix_current_string)
         if hasattr(self.mw, 'auto_fix_action') and self.mw.auto_fix_action: 
             self.mw.auto_fix_action.triggered.connect(self.mw.editor_operation_handler.auto_fix_current_string)
+            
+        if hasattr(self.mw, 'navigate_up_button'):
+            self.mw.navigate_up_button.clicked.connect(lambda: self.mw.list_selection_handler.navigate_to_problem_string(direction_down=False))
+        if hasattr(self.mw, 'navigate_down_button'):
+            self.mw.navigate_down_button.clicked.connect(lambda: self.mw.list_selection_handler.navigate_to_problem_string(direction_down=True))
+
 
         log_debug("--> MainWindowEventHandler: connect_signals() finished")
 

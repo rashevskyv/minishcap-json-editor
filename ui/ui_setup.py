@@ -56,6 +56,16 @@ def setup_main_window_ui(main_window):
     spacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
     editable_text_header_layout.addItem(spacer)
     
+    main_window.navigate_up_button = QPushButton()
+    main_window.navigate_up_button.setIcon(main_window.style().standardIcon(QStyle.SP_ArrowUp))
+    main_window.navigate_up_button.setToolTip("Navigate to previous problem string (Ctrl+Up)")
+    editable_text_header_layout.addWidget(main_window.navigate_up_button)
+
+    main_window.navigate_down_button = QPushButton()
+    main_window.navigate_down_button.setIcon(main_window.style().standardIcon(QStyle.SP_ArrowDown))
+    main_window.navigate_down_button.setToolTip("Navigate to next problem string (Ctrl+Down)")
+    editable_text_header_layout.addWidget(main_window.navigate_down_button)
+
     main_window.auto_fix_button = QPushButton("Auto-fix")
     main_window.auto_fix_button.setToolTip("Automatically fix issues in the current string (Ctrl+Shift+A)") 
     editable_text_header_layout.addWidget(main_window.auto_fix_button)
