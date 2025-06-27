@@ -350,12 +350,33 @@ class TextOperationHandler(BaseHandler):
         if changed:
             visual_text_for_editor = self.mw.current_game_rules.get_text_representation_for_editor(fixed_data)
             
+            # Зберігаємо позицію курсору
+            original_cursor = edited_text_edit.textCursor()
+            original_cursor_pos = original_cursor.position()
+            
+            # Вставляємо текст, зберігаючи історію undo
+            self.mw.is_programmatically_changing_text = True
             cursor = edited_text_edit.textCursor()
             cursor.beginEditBlock()
             cursor.select(QTextCursor.Document)
             cursor.insertText(visual_text_for_editor)
             cursor.endEditBlock()
             
+            # Відновлюємо позицію курсору
+            new_doc_len = edited_text_edit.document().characterCount() -1
+            final_cursor_pos = min(original_cursor_pos, new_doc_len if new_doc_len >= 0 else 0)
+            restored_cursor = edited_text_edit.textCursor()
+            restored_cursor.setPosition(final_cursor_pos)
+            edited_text_edit.setTextCursor(restored_cursor)
+            
+            # Викликаємо text_edited вручну, щоб оновити дані
+            self.mw.is_programmatically_changing_text = False
+            self.text_edited()
+            
+            # Явно оновлюємо інші елементи UI
+            self.mw.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
+            self.mw.ui_updater.update_text_views()
+
             if hasattr(self.mw, 'statusBar'):
                 self.mw.statusBar.showMessage("Auto-fix applied.", 2000)
         else:

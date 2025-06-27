@@ -10,17 +10,31 @@ class TextEditEventFilter(QObject):
     def eventFilter(self, obj, event):
         if event.type() == QEvent.KeyPress:
             is_ctrl_pressed = event.modifiers() & Qt.ControlModifier
+            
+            if obj is self.mw.preview_text_edit:
+                if event.key() == Qt.Key_Up and not is_ctrl_pressed:
+                    current_row = self.mw.current_string_idx
+                    if current_row > 0:
+                        self.mw.list_selection_handler.string_selected_from_preview(current_row - 1)
+                    return True
+                elif event.key() == Qt.Key_Down and not is_ctrl_pressed:
+                    current_row = self.mw.current_string_idx
+                    if self.mw.current_block_idx != -1 and current_row < len(self.mw.data[self.mw.current_block_idx]) - 1:
+                        self.mw.list_selection_handler.string_selected_from_preview(current_row + 1)
+                    return True
+
             if is_ctrl_pressed:
                 if event.key() == Qt.Key_Up:
                     log_debug(f"TextEditEventFilter: Ctrl+Up captured on {obj.objectName()}. Calling navigation.")
                     if hasattr(self.mw, 'list_selection_handler'):
                         self.mw.list_selection_handler.navigate_to_problem_string(direction_down=False)
-                    return True  # Поглинаємо подію
+                    return True
                 elif event.key() == Qt.Key_Down:
                     log_debug(f"TextEditEventFilter: Ctrl+Down captured on {obj.objectName()}. Calling navigation.")
                     if hasattr(self.mw, 'list_selection_handler'):
                         self.mw.list_selection_handler.navigate_to_problem_string(direction_down=True)
-                    return True  # Поглинаємо подію
+                    return True
+                    
         return super().eventFilter(obj, event)
 
 class MainWindowEventFilter(QObject):
