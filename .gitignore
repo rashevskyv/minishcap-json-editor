@@ -3,3 +3,4 @@ fonts
 __pycache__/
 *.pyc
 /app_debug.log
+/venv/

@@ -2,6 +2,7 @@ import datetime
 import re
 import os
 from plugins.pokemon_fr.config import P_VISUAL_EDITOR_MARKER, L_VISUAL_EDITOR_MARKER
+from .logging_utils import log_debug
 
 
 SPACE_DOT_SYMBOL = "·"
@@ -16,15 +17,34 @@ def remove_all_tags(text: str) -> str:
 def calculate_string_width(text: str, font_map: dict, default_char_width: int = DEFAULT_CHAR_WIDTH_FALLBACK) -> int:
     if text is None or not font_map:
         return 0
-    
-    text_no_tags = remove_all_tags(text)
+
+    # Патерн для розділення рядка за тегами, зберігаючи самі теги
+    tag_split_pattern = re.compile(r'(\{[^}]*\}|\[[^\]]*\])')
+
     total_width = 0
-    for char_code in text_no_tags:
-        char_data = font_map.get(char_code)
-        if char_data and isinstance(char_data, dict) and 'width' in char_data:
-            total_width += char_data['width']
+    parts = tag_split_pattern.split(text)
+
+    for part in parts:
+        if not part:
+            continue
+
+        is_tag = (part.startswith('{') and part.endswith('}')) or \
+                 (part.startswith('[') and part.endswith(']'))
+
+        if is_tag:
+            # Перевіряємо, чи є для цього конкретного тега запис у font_map
+            tag_data = font_map.get(part)
+            if tag_data and isinstance(tag_data, dict) and 'width' in tag_data:
+                total_width += tag_data['width']
         else:
-            total_width += default_char_width
+            # Ця частина є звичайним текстом, розраховуємо її ширину посимвольно
+            for char_code in part:
+                char_data = font_map.get(char_code)
+                if char_data and isinstance(char_data, dict) and 'width' in char_data:
+                    total_width += char_data['width']
+                else:
+                    total_width += default_char_width
+                    
     return total_width
 
 def convert_spaces_to_dots_for_display(text: str, enable_conversion: bool) -> str:
@@ -41,6 +61,7 @@ def convert_spaces_to_dots_for_display(text: str, enable_conversion: bool) -> st
     processed_text = re.sub(r"(?<![ ]) $", SPACE_DOT_SYMBOL, processed_text)
     
     return processed_text
+
 
 def convert_dots_to_spaces_from_editor(text: str) -> str:
     if text is None:

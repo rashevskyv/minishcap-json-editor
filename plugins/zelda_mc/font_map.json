@@ -1051,5 +1051,32 @@
     "width": 6,
     "height": 16,
     "file": "CHR001.bmp"
+  },
+  "{Key:Left}": {
+    "width": 16
+  },
+  "{Key:Right}": {
+    "width": 16
+  },
+  "{Key:Dpad}": {
+    "width": 16
+  },
+  "{Key:A}": {
+    "width": 16
+  },
+  "{Key:B}": {
+    "width": 16
+  },
+  "{Key:DUp}": {
+    "width": 16
+  },
+  "{Key:DDown}": {
+    "width": 16
+  },
+  "{Key:DLeft}": {
+    "width": 16
+  },
+  "{Key:DRight}": {
+    "width": 16
   }
 }

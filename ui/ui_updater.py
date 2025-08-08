@@ -186,15 +186,14 @@ class UIUpdater:
 
             text_to_cursor_with_dots = line_text_with_dots[:pos_in_block]
             text_to_cursor_with_spaces = convert_dots_to_spaces_from_editor(text_to_cursor_with_dots)
-            text_to_cursor_no_all_tags = remove_all_tags(text_to_cursor_with_spaces)
-            pixel_width = calculate_string_width(text_to_cursor_no_all_tags, self.mw.font_map)
+            
+            pixel_width = calculate_string_width(text_to_cursor_with_spaces, self.mw.font_map)
             
             self.mw.status_label_part1.setText(f"Pos: {pos_in_block}")
             self.mw.status_label_part2.setText(f"Line: {line_len_no_tags}/{line_len_with_tags}")
             self.mw.status_label_part3.setText(f"Width: {pixel_width}px")
         
         self.synchronize_original_cursor()
-
 
     def update_status_bar_selection(self):
         if not hasattr(self.mw, 'edited_text_edit') or not self.mw.edited_text_edit or \
@@ -214,8 +213,7 @@ class UIUpdater:
             line_len_with_tags = len(line_text_with_spaces)
             text_to_cursor_with_dots = line_text_with_dots[:pos_in_block]
             text_to_cursor_with_spaces = convert_dots_to_spaces_from_editor(text_to_cursor_with_dots)
-            text_to_cursor_no_all_tags = remove_all_tags(text_to_cursor_with_spaces)
-            pixel_width = calculate_string_width(text_to_cursor_no_all_tags, self.mw.font_map)
+            pixel_width = calculate_string_width(text_to_cursor_with_spaces, self.mw.font_map)
             self.mw.status_label_part1.setText(f"Pos: {pos_in_block}")
             self.mw.status_label_part2.setText(f"Line: {line_len_no_tags}/{line_len_with_tags}")
             self.mw.status_label_part3.setText(f"Width: {pixel_width}px")
@@ -226,7 +224,8 @@ class UIUpdater:
         len_with_tags = len(selected_text_with_spaces)
         selected_text_no_all_tags = remove_all_tags(selected_text_with_spaces)
         len_no_tags = len(selected_text_no_all_tags)
-        pixel_width = calculate_string_width(selected_text_no_all_tags, self.mw.font_map)
+        
+        pixel_width = calculate_string_width(selected_text_with_spaces, self.mw.font_map)
         
         sel_start_abs = cursor.selectionStart()
         sel_start_block_obj = editor.document().findBlock(sel_start_abs)
@@ -235,7 +234,6 @@ class UIUpdater:
         self.mw.status_label_part1.setText(f"Sel: {len_no_tags}/{len_with_tags}")
         self.mw.status_label_part2.setText(f"At: {sel_start_pos_in_block}")
         self.mw.status_label_part3.setText(f"Width: {pixel_width}px")
-
 
     def clear_status_bar(self):
         if hasattr(self.mw, 'status_label_part1'): self.mw.status_label_part1.setText("Pos: 0")

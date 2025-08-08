@@ -123,8 +123,8 @@ class LNETLineNumberAreaPaintLogic:
                     if is_editor and self.editor.font_map:
                         q_block_text_raw_dots_paint_text = current_q_block.text()
                         q_block_text_spaces_paint_text = convert_dots_to_spaces_from_editor(q_block_text_raw_dots_paint_text)
-                        text_for_width_calc_rstripped_paint_text = remove_all_tags(q_block_text_spaces_paint_text).rstrip()
-                        pixel_width = calculate_string_width(text_for_width_calc_rstripped_paint_text, self.editor.font_map)
+                        
+                        pixel_width = calculate_string_width(q_block_text_spaces_paint_text.rstrip(), self.editor.font_map)
                         width_str_text = str(pixel_width)
                         
                         text_color_for_extra_part = QColor(Qt.darkGray) if theme == 'light' else QColor(Qt.darkGray).darker(120)

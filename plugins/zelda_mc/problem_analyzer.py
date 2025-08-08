@@ -42,8 +42,8 @@ class ProblemAnalyzer:
         text_for_width_calc_current = convert_dots_to_spaces_from_editor(current_subline_text.rstrip())
         text_for_width_calc_next_word = convert_dots_to_spaces_from_editor(first_word_next)
 
-        width_current_rstripped = calculate_string_width(remove_all_tags(text_for_width_calc_current), font_map)
-        width_first_word_next = calculate_string_width(remove_all_tags(text_for_width_calc_next_word), font_map)
+        width_current_rstripped = calculate_string_width(text_for_width_calc_current, font_map)
+        width_first_word_next = calculate_string_width(text_for_width_calc_next_word, font_map)
         space_width = calculate_string_width(" ", font_map)
 
         return (threshold - width_current_rstripped) >= (width_first_word_next + space_width)
@@ -107,8 +107,9 @@ class ProblemAnalyzer:
         text_with_spaces = convert_dots_to_spaces_from_editor(text)
         next_text_with_spaces = convert_dots_to_spaces_from_editor(next_text) if next_text is not None else None
 
-        text_no_tags_rstripped = remove_all_tags(text_with_spaces).rstrip()
-        pixel_width_subline = calculate_string_width(text_no_tags_rstripped, editor_font_map)
+        # --- ОСНОВНА ЗМІНА ТУТ ---
+        # Рахуємо ширину тексту З УРАХУВАННЯМ тегів і порівнюємо з порогом
+        pixel_width_subline = calculate_string_width(text_with_spaces.rstrip(), editor_font_map)
         if pixel_width_subline > editor_line_width_threshold:
             found_problems.add(self.problem_ids.PROBLEM_WIDTH_EXCEEDED)
 
