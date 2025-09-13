@@ -27,6 +27,15 @@ class ListSelectionHandler(BaseHandler):
             if previous_block_idx is not None:
                 self.ui_updater.update_block_item_text_with_problem_count(previous_block_idx)
 
+        # Якщо новий вибраний елемент відсутній, і це не початкове завантаження,
+        # можливо, це скидання фокусу. Ігноруємо цю подію, щоб не втратити стан.
+        if not current_item and not self.mw.is_loading_data:
+            log_debug(f"ListSelectionHandler.block_selected: current_item is None, but not loading data. Ignoring to prevent state loss. Current block idx: {self.mw.current_block_idx}")
+            # Перевибираємо поточний елемент, якщо він є, щоб візуально відновити виділення
+            if self.mw.current_block_idx != -1:
+                self.mw.block_list_widget.setCurrentRow(self.mw.current_block_idx)
+            return
+
         self.mw.is_programmatically_changing_text = True
 
         if not current_item:
@@ -139,7 +148,7 @@ class ListSelectionHandler(BaseHandler):
                     qtextblock_number_in_editor=i,
                     is_last_subline_in_data_string=(i == len(sublines) - 1),
                     editor_font_map=self.mw.font_map,
-                    editor_line_width_threshold=self.mw.line_width_warning_threshold_pixels,
+                    editor_line_width_warning_threshold_pixels=self.mw.line_width_warning_threshold_pixels,
                     full_data_string_text_for_logical_check=data_string_text
                 )
                 found_problems.update(problems)

@@ -82,5 +82,6 @@
 ├── main_window_plugin_handler.py
 ├── main_window_ui_handler.py
 ├── requirements.txt
+├── run.bat
 ├── run.sh
 └── settings.json

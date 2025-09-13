@@ -134,10 +134,15 @@ class MainWindowHelper:
         log_debug("MainWindowHelper: prepare_to_close called.")
         self.mw.last_selected_block_index = self.mw.current_block_idx
         self.mw.last_selected_string_index = self.mw.current_string_idx
+        
+        log_debug(f"  [SAVE STATE] Block Idx: {self.mw.last_selected_block_index}, String Idx: {self.mw.last_selected_string_index}")
+
         if self.mw.edited_text_edit:
             self.mw.last_cursor_position_in_edited = self.mw.edited_text_edit.textCursor().position()
             self.mw.last_edited_text_edit_scroll_value_v = self.mw.edited_text_edit.verticalScrollBar().value()
             self.mw.last_edited_text_edit_scroll_value_h = self.mw.edited_text_edit.horizontalScrollBar().value()
+            log_debug(f"  [SAVE STATE] Cursor Pos: {self.mw.last_cursor_position_in_edited}, Scroll V/H: {self.mw.last_edited_text_edit_scroll_value_v}/{self.mw.last_edited_text_edit_scroll_value_h}")
+        
         if self.mw.preview_text_edit:
             self.mw.last_preview_text_edit_scroll_value_v = self.mw.preview_text_edit.verticalScrollBar().value()
         if self.mw.original_text_edit:
@@ -172,22 +177,40 @@ class MainWindowHelper:
             log_debug(f"MainWindowHelper: Attempting to load initial file from settings: {self.mw.initial_load_path}")
             self.mw.app_action_handler.load_all_data_for_path(self.mw.initial_load_path, self.mw.initial_edited_load_path, is_initial_load_from_settings=True)
 
+            log_debug(f"  [RESTORE STATE] Attempting restore with Block Idx: {self.mw.last_selected_block_index}, String Idx: {self.mw.last_selected_string_index}")
+
             if self.mw.data and 0 <= self.mw.last_selected_block_index < len(self.mw.data):
+                log_debug(f"  [RESTORE STATE] Block index {self.mw.last_selected_block_index} is valid. Setting current row...")
+                self.mw.block_list_widget.currentItemChanged.disconnect()
                 self.mw.block_list_widget.setCurrentRow(self.mw.last_selected_block_index)
+                
+                selected_item = self.mw.block_list_widget.item(self.mw.last_selected_block_index)
+                if selected_item:
+                    log_debug(f"  [RESTORE STATE] Manually calling block_selected for item '{selected_item.text()}'")
+                    self.mw.list_selection_handler.block_selected(selected_item, None)
+                else:
+                    log_debug(f"  [RESTORE STATE] WARNING: Could not get item for row {self.mw.last_selected_block_index}")
+
+                self.mw.block_list_widget.currentItemChanged.connect(self.mw.list_selection_handler.block_selected)
                 QApplication.processEvents()
-                if self.mw.block_list_widget.currentItem() and \
-                   self.mw.current_block_idx == self.mw.last_selected_block_index and \
+                
+                if self.mw.current_block_idx == self.mw.last_selected_block_index and \
                    0 <= self.mw.last_selected_string_index < len(self.mw.data[self.mw.last_selected_block_index]):
+                    log_debug(f"  [RESTORE STATE] String index {self.mw.last_selected_string_index} is valid. Calling string_selected_from_preview...")
                     self.mw.list_selection_handler.string_selected_from_preview(self.mw.last_selected_string_index)
                     QApplication.processEvents()
                     if self.mw.edited_text_edit:
                         doc_len = self.mw.edited_text_edit.document().characterCount() -1
                         pos_to_set = min(self.mw.last_cursor_position_in_edited, doc_len if doc_len >= 0 else 0)
+                        
+                        log_debug(f"  [RESTORE STATE] Setting cursor position. Target: {pos_to_set} (from saved {self.mw.last_cursor_position_in_edited}, doc len: {doc_len})")
                         cursor = self.mw.edited_text_edit.textCursor()
                         cursor.setPosition(pos_to_set)
                         self.mw.edited_text_edit.setTextCursor(cursor)
                         self.mw.edited_text_edit.ensureCursorVisible()
+                        log_debug(f"  [RESTORE STATE] Cursor position set. Actual final position: {self.mw.edited_text_edit.textCursor().position()}")
 
+                        log_debug(f"  [RESTORE STATE] Setting scollbars. Edited V/H: {self.mw.last_edited_text_edit_scroll_value_v}/{self.mw.last_edited_text_edit_scroll_value_h}, Preview V: {self.mw.last_preview_text_edit_scroll_value_v}, Original V/H: {self.mw.last_original_text_edit_scroll_value_v}/{self.mw.last_original_text_edit_scroll_value_h}")
                         self.mw.edited_text_edit.verticalScrollBar().setValue(self.mw.last_edited_text_edit_scroll_value_v)
                         self.mw.edited_text_edit.horizontalScrollBar().setValue(self.mw.last_edited_text_edit_scroll_value_h)
                         if self.mw.preview_text_edit:
@@ -196,8 +219,6 @@ class MainWindowHelper:
                             self.mw.original_text_edit.verticalScrollBar().setValue(self.mw.last_original_text_edit_scroll_value_v)
                             self.mw.original_text_edit.horizontalScrollBar().setValue(self.mw.last_original_text_edit_scroll_value_h)
                     log_debug(f"MainWindowHelper: Restored selection to block {self.mw.last_selected_block_index}, string {self.mw.last_selected_string_index}, cursor {self.mw.last_cursor_position_in_edited}")
-                elif not (self.mw.block_list_widget.currentItem() and self.mw.current_block_idx == self.mw.last_selected_block_index):
-                    log_debug(f"MainWindowHelper: Block item for index {self.mw.last_selected_block_index} not current or current_block_idx mismatch. Skipping string/cursor restore.")
                 else:
                     log_debug(f"MainWindowHelper: last_selected_string_index ({self.mw.last_selected_string_index}) is out of bounds for block {self.mw.last_selected_block_index}. Skipping string/cursor restore.")
             else:

@@ -6,7 +6,7 @@ from .base_handler import BaseHandler
 from utils.logging_utils import log_debug
 from utils.utils import convert_dots_to_spaces_from_editor, calculate_string_width, remove_all_tags, ALL_TAGS_PATTERN, convert_spaces_to_dots_for_display
 from core.tag_utils import apply_default_mappings_only
-from core.data_manager import load_json_file
+from core.data_manager import load_json_file, load_text_file
 from plugins.base_game_rules import BaseGameRules
 
 class AppActionHandler(BaseHandler):
@@ -124,7 +124,7 @@ class AppActionHandler(BaseHandler):
                 if not self.save_data_action(ask_confirmation=True): return
             elif reply == QMessageBox.Cancel: return
         start_dir = os.path.dirname(self.mw.json_path) if self.mw.json_path else ""
-        path, _ = QFileDialog.getOpenFileName(self.mw, "Open Original JSON", start_dir, "JSON (*.json);;All (*)")
+        path, _ = QFileDialog.getOpenFileName(self.mw, "Open Original File", start_dir, "Supported Files (*.json *.txt);;JSON (*.json);;Text files (*.txt);;All (*)")
         if path:
             self.load_all_data_for_path(path, manually_set_edited_path=None, is_initial_load_from_settings=False)
         log_debug("<-- AppActionHandler: Open File Dialog Finished")
@@ -133,19 +133,27 @@ class AppActionHandler(BaseHandler):
         log_debug("--> AppActionHandler: Open Changes File Dialog Triggered")
         if not self.mw.json_path: QMessageBox.warning(self.mw, "Open Changes File", "Please open an original file first."); return
         start_dir = os.path.dirname(self.mw.edited_json_path) if self.mw.edited_json_path else (os.path.dirname(self.mw.json_path) if self.mw.json_path else "")
-        path, _ = QFileDialog.getOpenFileName(self.mw, "Open Changes (Edited) JSON File", start_dir, "JSON Files (*.json);;All Files (*)")
+        path, _ = QFileDialog.getOpenFileName(self.mw, "Open Changes (Edited) File", start_dir, "Supported Files (*.json *.txt);;JSON Files (*.json);;Text Files (*.txt);;All Files (*)")
         if path:
             if self.mw.unsaved_changes:
                  reply = QMessageBox.question(self.mw, 'Unsaved Changes', "Loading a new changes file will discard current unsaved edits. Proceed?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
                  if reply == QMessageBox.No: return
             
-            json_obj, error = load_json_file(path, parent_widget=self.mw)
+            file_content, error = None, None
+            file_extension = os.path.splitext(path)[1].lower()
+            if file_extension == '.json':
+                file_content, error = load_json_file(path, parent_widget=self.mw)
+            elif file_extension == '.txt':
+                file_content, error = load_text_file(path, parent_widget=self.mw)
+            else:
+                error = f"Unsupported file type: {file_extension}"
+
             if error: QMessageBox.critical(self.mw, "Load Error", f"Failed to load selected changes file:\n{path}\n\n{error}"); return
             if not self.mw.current_game_rules:
                 QMessageBox.critical(self.mw, "Load Error", "No game plugin active to parse the file.")
                 return
 
-            new_edited_data, _ = self.mw.current_game_rules.load_data_from_json_obj(json_obj)
+            new_edited_data, _ = self.mw.current_game_rules.load_data_from_json_obj(file_content)
             
             self.mw.edited_json_path = path
             self.mw.edited_file_data = new_edited_data
@@ -169,7 +177,7 @@ class AppActionHandler(BaseHandler):
         if not self.mw.json_path: QMessageBox.warning(self.mw, "Save As Error", "No original file open."); return
         current_edited_path = self.mw.edited_json_path if self.mw.edited_json_path else self._derive_edited_path(self.mw.json_path)
         if not current_edited_path: current_edited_path = os.path.join(os.path.dirname(self.mw.json_path) if self.mw.json_path else ".", "untitled_edited.json")
-        new_edited_path, _ = QFileDialog.getSaveFileName(self.mw, "Save Changes As...", current_edited_path, "JSON (*.json);;All (*)")
+        new_edited_path, _ = QFileDialog.getSaveFileName(self.mw, "Save Changes As...", current_edited_path, "Supported Files (*.json *.txt);;JSON (*.json);;All (*)")
         if new_edited_path:
             original_edited_path_backup = self.mw.edited_json_path
             self.mw.edited_json_path = new_edited_path
@@ -192,7 +200,17 @@ class AppActionHandler(BaseHandler):
             self.mw.is_programmatically_changing_text = False
             return
 
-        json_obj, error = load_json_file(original_file_path, parent_widget=self.mw)
+        file_content = None
+        error = None
+        file_extension = os.path.splitext(original_file_path)[1].lower()
+
+        if file_extension == '.json':
+            file_content, error = load_json_file(original_file_path, parent_widget=self.mw)
+        elif file_extension == '.txt':
+            file_content, error = load_text_file(original_file_path, parent_widget=self.mw)
+        else:
+            error = f"Unsupported file type: {file_extension}"
+
         if error:
             self.mw.json_path = None; self.mw.edited_json_path = None
             self.mw.data = []; self.mw.edited_data = {}; self.mw.edited_file_data = []
@@ -202,8 +220,8 @@ class AppActionHandler(BaseHandler):
             self.mw.is_programmatically_changing_text = False
             QMessageBox.critical(self.mw, "Load Error", f"Failed to load: {original_file_path}\n{error}"); return
 
-        data, block_names_from_plugin = self.mw.current_game_rules.load_data_from_json_obj(json_obj)
-        if not data and json_obj is not None:
+        data, block_names_from_plugin = self.mw.current_game_rules.load_data_from_json_obj(file_content)
+        if not data and file_content is not None:
             QMessageBox.critical(self.mw, "Plugin Error", f"The active plugin '{self.mw.current_game_rules.get_display_name()}' could not parse the file:\n{original_file_path}")
             self.mw.json_path = None
             self.mw.data = []
@@ -223,11 +241,19 @@ class AppActionHandler(BaseHandler):
         self.mw.edited_json_path = manually_set_edited_path if manually_set_edited_path else self._derive_edited_path(self.mw.json_path)
         self.mw.edited_file_data = []
         if self.mw.edited_json_path and os.path.exists(self.mw.edited_json_path):
-            edited_json_obj, edit_error = load_json_file(self.mw.edited_json_path, parent_widget=self.mw)
+            edited_file_content = None
+            edit_error = None
+            edited_file_extension = os.path.splitext(self.mw.edited_json_path)[1].lower()
+
+            if edited_file_extension == '.json':
+                edited_file_content, edit_error = load_json_file(self.mw.edited_json_path, parent_widget=self.mw)
+            elif edited_file_extension == '.txt':
+                edited_file_content, edit_error = load_text_file(self.mw.edited_json_path, parent_widget=self.mw)
+
             if edit_error:
                 QMessageBox.warning(self.mw, "Edited Load Warning", f"Could not load changes file: {self.mw.edited_json_path}\n{edit_error}")
             else:
-                edited_data_from_file, _ = self.mw.current_game_rules.load_data_from_json_obj(edited_json_obj)
+                edited_data_from_file, _ = self.mw.current_game_rules.load_data_from_json_obj(edited_file_content)
                 self.mw.edited_file_data = edited_data_from_file
         
         self.mw.current_block_idx = -1; self.mw.current_string_idx = -1

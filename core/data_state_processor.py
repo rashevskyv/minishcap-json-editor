@@ -1,8 +1,8 @@
 import json
 import os
 from PyQt5.QtWidgets import QMessageBox
-from .data_manager import load_json_file, save_json_file
-from utils.logging_utils import log_debug
+from .data_manager import load_json_file, save_json_file, save_text_file
+from utils.logging_utils import log_debug, log_error
 
 class DataStateProcessor:
     def __init__(self, main_window):
@@ -103,20 +103,35 @@ class DataStateProcessor:
                 else:
                     log_debug(f"Save: Memory edit for key ({b_idx},{s_idx}) is out of bounds for output_data. Ignored.")
             
-            final_json_obj_to_save = self.mw.current_game_rules.save_data_to_json_obj(output_data_list, self.mw.block_names)
+            final_obj_to_save = self.mw.current_game_rules.save_data_to_json_obj(output_data_list, self.mw.block_names)
 
-            save_file_success = save_json_file(self.mw.edited_json_path, final_json_obj_to_save, parent_widget=self.mw)
+            save_file_success = False
+            file_extension = os.path.splitext(self.mw.edited_json_path)[1].lower()
+            
+            if file_extension == '.json':
+                save_file_success = save_json_file(self.mw.edited_json_path, final_obj_to_save, parent_widget=self.mw)
+            elif file_extension == '.txt':
+                if isinstance(final_obj_to_save, str):
+                    save_file_success = save_text_file(self.mw.edited_json_path, final_obj_to_save, parent_widget=self.mw)
+                else:
+                    log_debug("Save Error: Plugin for .txt file did not return a string for saving.")
+                    QMessageBox.critical(self.mw, "Save Error", "Plugin save format error: expected a string for .txt file.")
+                    return False
+            
             if save_file_success:
                 self.mw.unsaved_changes = False
                 self.mw.edited_data = {} 
                 
-                reloaded_edited_data, _ = self.mw.current_game_rules.load_data_from_json_obj(final_json_obj_to_save)
+                reloaded_edited_data, _ = self.mw.current_game_rules.load_data_from_json_obj(final_obj_to_save)
                 self.mw.edited_file_data = reloaded_edited_data
 
                 if ask_confirmation: QMessageBox.information(self.mw, "Saved", f"Changes saved to\n'{os.path.basename(self.mw.edited_json_path)}'.")
                 return True
             else: return False
-        except Exception as e: QMessageBox.critical(self.mw, "Save Error", f"Unexpected error during save prep:\n{e}"); return False
+        except Exception as e:
+            log_error(f"Unexpected error during save prep: {e}", exc_info=True)
+            QMessageBox.critical(self.mw, "Save Error", f"Unexpected error during save prep:\n{e}"); 
+            return False
 
     def revert_edited_file_to_original(self):
         if not self.mw.json_path or not self.mw.edited_json_path: QMessageBox.warning(self.mw, "Revert Error", "Original or Changes file path is not set."); return False
@@ -128,7 +143,19 @@ class DataStateProcessor:
         try:
             output_data = self.mw.current_game_rules.save_data_to_json_obj(self.mw.data, self.mw.block_names)
 
-            save_file_success = save_json_file(self.mw.edited_json_path, output_data, parent_widget=self.mw)
+            save_file_success = False
+            file_extension = os.path.splitext(self.mw.edited_json_path)[1].lower()
+
+            if file_extension == '.json':
+                save_file_success = save_json_file(self.mw.edited_json_path, output_data, parent_widget=self.mw)
+            elif file_extension == '.txt':
+                if isinstance(output_data, str):
+                    save_file_success = save_text_file(self.mw.edited_json_path, output_data, parent_widget=self.mw)
+                else:
+                    log_debug("Revert Error: Plugin for .txt file did not return a string for saving.")
+                    QMessageBox.critical(self.mw, "Revert Error", "Plugin save format error: expected a string for .txt file.")
+                    return False
+
             if save_file_success:
                 self.mw.unsaved_changes = False; self.mw.edited_data = {}; 
                 
@@ -140,4 +167,7 @@ class DataStateProcessor:
                 self.mw.ui_updater.populate_strings_for_block(self.mw.current_block_idx) 
                 return True
             else: return False
-        except Exception as e: QMessageBox.critical(self.mw, "Revert Error", f"Unexpected error during revert:\n{e}"); return False
+        except Exception as e:
+            log_error(f"Unexpected error during revert: {e}", exc_info=True)
+            QMessageBox.critical(self.mw, "Revert Error", f"Unexpected error during revert:\n{e}"); 
+            return False

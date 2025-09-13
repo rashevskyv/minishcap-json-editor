@@ -138,6 +138,7 @@ class SettingsManager:
             self.mw.detection_enabled = detection_settings
 
             log_debug(f"Plugin settings loaded from '{plugin_config_path}'.")
+            log_debug(f"  [LOAD STATE] Loaded Block Idx: {self.mw.last_selected_block_index}, String Idx: {self.mw.last_selected_string_index}, Cursor Pos: {self.mw.last_cursor_position_in_edited}")
         except Exception as e:
             log_debug(f"Error loading plugin settings from '{plugin_config_path}': {e}")
 
@@ -200,7 +201,7 @@ class SettingsManager:
         except Exception as e:
             log_debug(f"Could not read existing plugin config, will create a new one. Error: {e}")
 
-        plugin_data.update({
+        plugin_data_to_save = {
             "default_tag_mappings": self.mw.default_tag_mappings,
             "block_names": self.mw.block_names,
             "block_color_markers": {k: list(v) for k, v in self.mw.block_color_markers.items()},
@@ -225,8 +226,12 @@ class SettingsManager:
             "search_history": self.mw.search_history_to_save,
             "autofix_enabled": self.mw.autofix_enabled,
             "detection_enabled": self.mw.detection_enabled
-        })
+        }
         
+        plugin_data.update(plugin_data_to_save)
+        
+        log_debug(f"  [SAVE STATE TO DICT] Block Idx: {plugin_data_to_save['last_selected_block_index']}, String Idx: {plugin_data_to_save['last_selected_string_index']}, Cursor Pos: {plugin_data_to_save['last_cursor_position_in_edited']}")
+
         try:
             with open(plugin_config_path, 'w', encoding='utf-8') as f:
                 json.dump(plugin_data, f, indent=4, ensure_ascii=False)

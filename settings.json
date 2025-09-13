@@ -1,11 +1,11 @@
 {
     "font_size": 13,
-    "active_game_plugin": "zelda_mc",
+    "active_game_plugin": "zelda_ww",
     "window_was_maximized": false,
     "window_normal_geometry": {
-        "x": 402,
+        "x": 403,
         "y": 31,
-        "width": 1613,
+        "width": 1951,
         "height": 1408
     },
     "main_splitter_state": "AAAA/wAAAAEAAAACAAAAyAAAAyAB/////wEAAAABAA==",
