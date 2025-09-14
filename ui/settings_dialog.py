@@ -56,6 +56,7 @@ class SettingsDialog(QDialog):
         self.theme_changed_requires_restart = False
         self.initial_plugin_name = self.mw.active_game_plugin
         self.initial_theme = getattr(self.mw, 'theme', 'auto')
+        self.rules_changed_requires_rescan = False
 
         main_layout = QVBoxLayout(self)
         
@@ -190,11 +191,18 @@ class SettingsDialog(QDialog):
         self.bracket_tag_color_picker = ColorPickerButton(parent=self)
         layout.addRow("Bracket Tag Color:", self.bracket_tag_color_picker)
 
+    def on_rules_changed(self):
+        self.rules_changed_requires_rescan = True
+        log_debug("SettingsDialog: Rules changed, marked for rescan.")
+
     def _setup_rules_subtab(self, tab):
         layout = QFormLayout(tab)
-        self.game_dialog_width_spinbox = LabeledSpinBox("Game Dialog Max Width (px):", 100, 500, 240, parent=self)
+        self.game_dialog_width_spinbox = LabeledSpinBox("Game Dialog Max Width (px):", 100, 10000, 240, parent=self)
+        self.game_dialog_width_spinbox.spin_box.valueChanged.connect(self.on_rules_changed)
         layout.addRow(self.game_dialog_width_spinbox)
-        self.width_warning_spinbox = LabeledSpinBox("Editor Line Width Warning (px):", 100, 500, 208, parent=self)
+        
+        self.width_warning_spinbox = LabeledSpinBox("Editor Line Width Warning (px):", 100, 10000, 208, parent=self)
+        self.width_warning_spinbox.spin_box.valueChanged.connect(self.on_rules_changed)
         layout.addRow(self.width_warning_spinbox)
 
     def _setup_paths_subtab(self, tab):
@@ -227,6 +235,7 @@ class SettingsDialog(QDialog):
             checkbox = QCheckBox(definition.get("name", problem_id), self)
             checkbox.setToolTip(definition.get("description", "No description available."))
             checkbox_dict[problem_id] = checkbox
+            checkbox.stateChanged.connect(self.on_rules_changed)
             layout.addRow(checkbox)
 
     def _setup_detection_subtab(self, tab):
@@ -333,6 +342,8 @@ class SettingsDialog(QDialog):
         detection_settings = getattr(self.mw, 'detection_enabled', {})
         for problem_id, checkbox in self.detection_checkboxes.items():
             checkbox.setChecked(detection_settings.get(problem_id, True))
+        
+        self.rules_changed_requires_rescan = False
 
 
     def get_settings(self) -> dict:

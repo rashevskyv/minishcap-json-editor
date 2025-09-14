@@ -32,8 +32,8 @@
     "editors_wrap_lines": false,
     "game_dialog_max_width_pixels": 214,
     "line_width_warning_threshold_pixels": 214,
-    "original_file_path": "C:/Users/xHR/Desktop/en-firered_original.json",
-    "edited_file_path": "C:/Users/xHR/Desktop/en-firered.json",
+    "original_file_path": null,
+    "edited_file_path": null,
     "last_selected_block_index": 0,
     "last_selected_string_index": 45,
     "last_cursor_position_in_edited": 0,
@@ -77,5 +77,7 @@
         "PKFR_EMPTY_SUBLINE": true,
         "PKFR_SINGLE_WORD_SUBLINE": false,
         "PKFR_TAG_WARNING": false
-    }
+    },
+    "string_metadata": {},
+    "default_font_file": ""
 }

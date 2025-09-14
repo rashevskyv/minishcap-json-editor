@@ -13,6 +13,12 @@ class JsonTagHighlighter(QSyntaxHighlighter):
     STATE_RED = 1
     STATE_GREEN = 2
     STATE_BLUE = 3
+    STATE_YELLOW = 4
+    STATE_LBLUE = 5
+    STATE_PURPLE = 6
+    STATE_SILVER = 7
+    STATE_ORANGE = 8
+
 
     def __init__(self, parent: QTextDocument, main_window_ref=None):
         super().__init__(parent)
@@ -44,6 +50,12 @@ class JsonTagHighlighter(QSyntaxHighlighter):
         self.red_text_format = QTextCharFormat()
         self.green_text_format = QTextCharFormat()
         self.blue_text_format = QTextCharFormat()
+        self.yellow_text_format = QTextCharFormat()
+        self.lblue_text_format = QTextCharFormat()
+        self.purple_text_format = QTextCharFormat()
+        self.silver_text_format = QTextCharFormat()
+        self.orange_text_format = QTextCharFormat()
+        
         self.color_default_format = QTextCharFormat()
         self.color_default_format.setForeground(self.default_text_color)
         
@@ -129,6 +141,11 @@ class JsonTagHighlighter(QSyntaxHighlighter):
         self.red_text_format.setForeground(QColor("#FF4C4C"))
         self.green_text_format.setForeground(QColor("#4CAF50"))
         self.blue_text_format.setForeground(QColor("#0958e0"))
+        self.yellow_text_format.setForeground(QColor("yellow"))
+        self.lblue_text_format.setForeground(QColor("#ADD8E6"))
+        self.purple_text_format.setForeground(QColor("#800080"))
+        self.silver_text_format.setForeground(QColor("#C0C0C0"))
+        self.orange_text_format.setForeground(QColor("#FFA500"))
 
         self.newline_char = newline_symbol
         if self.document():
@@ -138,45 +155,66 @@ class JsonTagHighlighter(QSyntaxHighlighter):
         previous_color_state = self.previousBlockState()
         if previous_color_state == -1: previous_color_state = self.STATE_DEFAULT
 
-        current_text_format = self.color_default_format
-        if previous_color_state == self.STATE_RED: current_text_format = self.red_text_format
-        elif previous_color_state == self.STATE_GREEN: current_text_format = self.green_text_format
-        elif previous_color_state == self.STATE_BLUE: current_text_format = self.blue_text_format
-        self.setFormat(0, len(text), current_text_format)
+        format_map = {
+            self.STATE_DEFAULT: self.color_default_format,
+            self.STATE_RED: self.red_text_format,
+            self.STATE_GREEN: self.green_text_format,
+            self.STATE_BLUE: self.blue_text_format,
+            self.STATE_YELLOW: self.yellow_text_format,
+            self.STATE_LBLUE: self.lblue_text_format,
+            self.STATE_PURPLE: self.purple_text_format,
+            self.STATE_SILVER: self.silver_text_format,
+            self.STATE_ORANGE: self.orange_text_format,
+        }
+        self.setFormat(0, len(text), format_map.get(previous_color_state, self.color_default_format))
         
-        color_tag_pattern = re.compile(r"\{\s*Color\s*:\s*(Red|Green|Blue|White)\s*\}", re.IGNORECASE)
+        color_tag_pattern = re.compile(
+            r"(\[(Red|Green|Blue|Yellow|l_Blue|Purple|Silver|Orange|White)\])|"
+            r"(\[/C\])|"
+            r"(\{\s*Color\s*:\s*(Red|Green|Blue|White)\s*\})",
+            re.IGNORECASE
+        )
+
         last_pos = 0
         current_block_color_state = previous_color_state
         for match in color_tag_pattern.finditer(text):
             start, end = match.span()
-            color_name = match.group(1).lower()
-
-            format_to_apply = self.color_default_format
-            if previous_color_state == self.STATE_RED: format_to_apply = self.red_text_format
-            elif previous_color_state == self.STATE_GREEN: format_to_apply = self.green_text_format
-            elif previous_color_state == self.STATE_BLUE: format_to_apply = self.blue_text_format
             
+            format_to_apply = format_map.get(current_block_color_state, self.color_default_format)
             if start > last_pos:
                 self.setFormat(last_pos, start - last_pos, format_to_apply)
             
-            if color_name == 'red': current_block_color_state = self.STATE_RED
-            elif color_name == 'green': current_block_color_state = self.STATE_GREEN
-            elif color_name == 'blue': current_block_color_state = self.STATE_BLUE
-            else: current_block_color_state = self.STATE_DEFAULT
+            ww_color_name = match.group(2)
+            ww_closing_tag = match.group(3)
+            mc_color_name = match.group(5)
+
+            if ww_color_name:
+                color = ww_color_name.lower()
+                if color == 'red': current_block_color_state = self.STATE_RED
+                elif color == 'green': current_block_color_state = self.STATE_GREEN
+                elif color == 'blue': current_block_color_state = self.STATE_BLUE
+                elif color == 'yellow': current_block_color_state = self.STATE_YELLOW
+                elif color == 'l_blue': current_block_color_state = self.STATE_LBLUE
+                elif color == 'purple': current_block_color_state = self.STATE_PURPLE
+                elif color == 'silver': current_block_color_state = self.STATE_SILVER
+                elif color == 'orange': current_block_color_state = self.STATE_ORANGE
+                else: current_block_color_state = self.STATE_DEFAULT # White
+            elif ww_closing_tag:
+                current_block_color_state = self.STATE_DEFAULT
+            elif mc_color_name:
+                color = mc_color_name.lower()
+                if color == 'red': current_block_color_state = self.STATE_RED
+                elif color == 'green': current_block_color_state = self.STATE_GREEN
+                elif color == 'blue': current_block_color_state = self.STATE_BLUE
+                else: current_block_color_state = self.STATE_DEFAULT # White
             
             last_pos = end
-            previous_color_state = current_block_color_state
-            
+        
         if last_pos < len(text):
-            final_format = self.color_default_format
-            if current_block_color_state == self.STATE_RED: final_format = self.red_text_format
-            elif current_block_color_state == self.STATE_GREEN: final_format = self.green_text_format
-            elif current_block_color_state == self.STATE_BLUE: final_format = self.blue_text_format
+            final_format = format_map.get(current_block_color_state, self.color_default_format)
             self.setFormat(last_pos, len(text) - last_pos, final_format)
 
         all_rules = self.custom_rules + [
-            (r"(\{[^}]*\})", self.curly_tag_format),
-            (r"(\[[^\]]*\])", self.bracket_tag_format),
             (r"(\\n)", self.literal_newline_format),
             (re.escape(self.newline_char), self.newline_symbol_format),
             (re.escape(SPACE_DOT_SYMBOL), self.space_dot_format),

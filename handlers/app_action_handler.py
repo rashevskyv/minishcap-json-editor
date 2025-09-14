@@ -32,16 +32,21 @@ class AppActionHandler(BaseHandler):
 
             analyzer = self.mw.current_game_rules.problem_analyzer
             all_problems_for_string = []
+            
+            font_map_for_string = self.mw.helper.get_font_map_for_string(block_idx, string_idx)
+            string_meta = self.mw.string_metadata.get((block_idx, string_idx), {})
+            width_threshold_for_string = string_meta.get("width", self.mw.line_width_warning_threshold_pixels)
+            
             if hasattr(analyzer, 'analyze_data_string'):
-                all_problems_for_string = analyzer.analyze_data_string(text, self.mw.font_map, self.mw.line_width_warning_threshold_pixels)
+                all_problems_for_string = analyzer.analyze_data_string(text, font_map_for_string, width_threshold_for_string)
             else:
                 sublines = text.split('\n')
                 for i, subline in enumerate(sublines):
                     next_subline = sublines[i+1] if i + 1 < len(sublines) else None
                     problems = analyzer.analyze_subline(
                         text=subline, next_text=next_subline, subline_number_in_data_string=i, qtextblock_number_in_editor=i,
-                        is_last_subline_in_data_string=(i == len(sublines) - 1), editor_font_map=self.mw.font_map,
-                        editor_line_width_threshold=self.mw.line_width_warning_threshold_pixels,
+                        is_last_subline_in_data_string=(i == len(sublines) - 1), editor_font_map=font_map_for_string,
+                        editor_line_width_threshold=width_threshold_for_string,
                         full_data_string_text_for_logical_check=text
                     )
                     all_problems_for_string.append(problems)
@@ -315,8 +320,6 @@ class AppActionHandler(BaseHandler):
         results = []
         problem_definitions = self.game_rules_plugin.get_problem_definitions()
         
-        editor_warning_threshold = self.mw.line_width_warning_threshold_pixels
-        
         for data_str_idx in range(num_strings):
             progress.setValue(data_str_idx)
             if progress.wasCanceled():
@@ -326,6 +329,10 @@ class AppActionHandler(BaseHandler):
             current_text_data_line, source = self.data_processor.get_current_string_text(block_idx, data_str_idx)
             original_text_data_line = self.data_processor._get_string_from_source(block_idx, data_str_idx, self.mw.data, "width_calc_block_original_data")
             
+            font_map_for_string = self.mw.helper.get_font_map_for_string(block_idx, data_str_idx)
+            string_meta = self.mw.string_metadata.get((block_idx, data_str_idx), {})
+            editor_warning_threshold = string_meta.get("width", self.mw.line_width_warning_threshold_pixels)
+
             line_report_parts = [f"Data Line {data_str_idx + 1}:"]
             
             sources_to_check = [
@@ -338,7 +345,7 @@ class AppActionHandler(BaseHandler):
                 logical_sublines = self.game_rules_plugin.problem_analyzer._get_sublines_from_data_string(text_to_analyze)
                 
                 game_like_text_no_newlines_rstripped = remove_all_tags(text_to_analyze.replace('\\n','').replace('\\p','').replace('\\l','')).rstrip()
-                total_game_width = calculate_string_width(game_like_text_no_newlines_rstripped, self.mw.font_map)
+                total_game_width = calculate_string_width(game_like_text_no_newlines_rstripped, font_map_for_string)
                 game_status = "OK"
                 if total_game_width > self.mw.game_dialog_max_width_pixels:
                     game_status = f"EXCEEDS GAME DIALOG LIMIT ({total_game_width - self.mw.game_dialog_max_width_pixels}px)"
@@ -346,9 +353,9 @@ class AppActionHandler(BaseHandler):
 
                 for subline_idx, sub_line_text in enumerate(logical_sublines):
                     sub_line_no_tags_rstripped = remove_all_tags(sub_line_text).rstrip()
-                    width_px = calculate_string_width(sub_line_no_tags_rstripped, self.mw.font_map)
+                    width_px = calculate_string_width(sub_line_no_tags_rstripped, font_map_for_string)
                     
-                    problems_per_subline_list = self.game_rules_plugin.problem_analyzer.analyze_data_string(text_to_analyze, self.mw.font_map, editor_warning_threshold)
+                    problems_per_subline_list = self.game_rules_plugin.problem_analyzer.analyze_data_string(text_to_analyze, font_map_for_string, editor_warning_threshold)
                     current_subline_problems = problems_per_subline_list[subline_idx] if subline_idx < len(problems_per_subline_list) else set()
                     
                     statuses = []
@@ -370,7 +377,7 @@ class AppActionHandler(BaseHandler):
             return
             
         result_text_title = (f"Widths for Block {self.mw.block_names.get(str(block_idx), str(block_idx))}\n"
-                             f"(Editor Warning Threshold: {editor_warning_threshold}px)\n"
+                             f"(Editor Warning Threshold: {self.mw.line_width_warning_threshold_pixels}px - can be overridden per string)\n"
                              f"(Game Dialog Max Width (for total only): {self.mw.game_dialog_max_width_pixels}px)\n")
         result_text = result_text_title + "\n" + "\n\n".join(results)
         

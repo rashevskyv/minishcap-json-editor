@@ -78,9 +78,13 @@ class MainWindowActions:
             self.mw.apply_font_size()
             self.mw.helper.reconfigure_all_highlighters()
             self.mw.helper.apply_text_wrap_settings()
+            self.mw.ui_handler.update_editor_rules_properties()
             
-            if hasattr(self.mw, 'app_action_handler'):
-                self.mw.app_action_handler.rescan_all_tags()
+            if dialog.rules_changed_requires_rescan:
+                log_debug("Rules were changed. Triggering a full rescan of all issues.")
+                QMessageBox.information(self.mw, "Settings Changed", "Rules have been updated. Rescanning all issues...")
+                if hasattr(self.mw, 'app_action_handler'):
+                    self.mw.app_action_handler.rescan_all_tags()
 
 
     def trigger_save_action(self):

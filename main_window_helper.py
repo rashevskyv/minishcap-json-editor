@@ -9,6 +9,16 @@ class MainWindowHelper:
     def __init__(self, main_window):
         self.mw = main_window
 
+    def get_font_map_for_string(self, block_idx: int, string_idx: int) -> dict:
+        metadata_key = (block_idx, string_idx)
+        string_meta = self.mw.string_metadata.get(metadata_key, {})
+        
+        custom_font_file = string_meta.get("font_file")
+        if custom_font_file and custom_font_file in self.mw.all_font_maps:
+            return self.mw.all_font_maps[custom_font_file]
+            
+        return self.mw.font_map
+
     def restart_application(self):
         log_debug("Restarting application...")
         self.mw.close()

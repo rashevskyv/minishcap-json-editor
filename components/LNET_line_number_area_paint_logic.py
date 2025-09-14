@@ -6,14 +6,19 @@ from utils.utils import calculate_string_width, remove_all_tags, convert_dots_to
 
 class LNETLineNumberAreaPaintLogic:
 
-    def __init__(self, editor, helpers):
+    def __init__(self, editor, helpers, main_window):
         self.editor = editor
         self.helpers = helpers
+        self.mw = main_window
         self.metadata_indicator_color = QColor(148, 0, 211, 180) # DarkViolet
 
     def execute_paint_event(self, event, painter_device):
         painter = QPainter(painter_device)
-        main_window_ref = self.editor.window()
+        
+        if not self.mw:
+            main_window_ref = self.editor.window()
+        else:
+            main_window_ref = self.mw
 
         game_rules = None
         problem_definitions = {}
@@ -34,7 +39,7 @@ class LNETLineNumberAreaPaintLogic:
 
         total_area_width = self.editor.lineNumberAreaWidth()
         extra_part_width = 0
-        if self.editor.objectName() in ["original_text_edit", "edited_text_edit"] and self.editor.font_map:
+        if self.editor.objectName() in ["original_text_edit", "edited_text_edit"] and hasattr(self.mw, 'all_font_maps') and self.mw.all_font_maps:
             extra_part_width = self.editor.pixel_width_display_area_width
         elif self.editor.objectName() == "preview_text_edit":
             extra_part_width = self.editor.preview_indicator_area_width
@@ -121,11 +126,13 @@ class LNETLineNumberAreaPaintLogic:
                 painter.drawText(QRect(0, top, number_part_width - 3, line_height), Qt.AlignRight | Qt.AlignVCenter, display_number_for_line_area)
 
                 if extra_part_width > 0:
-                    if is_editor and self.editor.font_map:
+                    if is_editor and self.mw and hasattr(self.mw, 'all_font_maps') and self.mw.all_font_maps:
+                        font_map_for_line = self.mw.helper.get_font_map_for_string(current_block_idx_data_mw, current_string_idx_data_mw)
+                        
                         q_block_text_raw_dots_paint_text = current_q_block.text()
                         q_block_text_spaces_paint_text = convert_dots_to_spaces_from_editor(q_block_text_raw_dots_paint_text)
                         
-                        pixel_width = calculate_string_width(q_block_text_spaces_paint_text.rstrip(), self.editor.font_map)
+                        pixel_width = calculate_string_width(q_block_text_spaces_paint_text.rstrip(), font_map_for_line)
                         width_str_text = str(pixel_width)
                         
                         text_color_for_extra_part = QColor(Qt.darkGray) if theme == 'light' else QColor(Qt.darkGray).darker(120)

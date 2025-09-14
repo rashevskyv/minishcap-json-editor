@@ -8,7 +8,9 @@ class LNETPaintHandlers:
         self.editor = editor
         self.helpers = LNETPaintHelpers(self.editor)
         self.paint_event_logic = LNETPaintEventLogic(self.editor, self.helpers)
-        self.line_number_area_paint_logic = LNETLineNumberAreaPaintLogic(self.editor, self.helpers)
+        
+        main_window = self.editor.window() if hasattr(self.editor, 'window') else None
+        self.line_number_area_paint_logic = LNETLineNumberAreaPaintLogic(self.editor, self.helpers, main_window)
 
     def paintEvent(self, event: QPaintEvent):
         self.paint_event_logic.execute_paint_event(event)

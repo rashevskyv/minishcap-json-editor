@@ -16,7 +16,9 @@ class ListSelectionHandler(BaseHandler):
             class DummyEditor:
                 def __init__(self):
                     self.font_map = {} 
-                    self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 208 
+                    self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 208
+                def window(self):
+                    return None
             self._paint_handler_for_blue_rule = LNETPaintHandlers(DummyEditor())
 
 
@@ -143,10 +145,12 @@ class ListSelectionHandler(BaseHandler):
         detection_config = getattr(self.mw, 'detection_enabled', {})
         analyzer = self.mw.current_game_rules.problem_analyzer
         found_problems = set()
+        
+        font_map_for_string = self.mw.helper.get_font_map_for_string(block_idx, string_idx)
 
         if hasattr(analyzer, 'analyze_data_string'):
             problems_per_subline = analyzer.analyze_data_string(
-                data_string_text, self.mw.font_map, self.mw.line_width_warning_threshold_pixels
+                data_string_text, font_map_for_string, self.mw.line_width_warning_threshold_pixels
             )
             for problem_set in problems_per_subline:
                 found_problems.update(problem_set)
@@ -160,8 +164,8 @@ class ListSelectionHandler(BaseHandler):
                     subline_number_in_data_string=i,
                     qtextblock_number_in_editor=i,
                     is_last_subline_in_data_string=(i == len(sublines) - 1),
-                    editor_font_map=self.mw.font_map,
-                    editor_line_width_warning_threshold_pixels=self.mw.line_width_warning_threshold_pixels,
+                    editor_font_map=font_map_for_string,
+                    editor_line_width_threshold=self.mw.line_width_warning_threshold_pixels,
                     full_data_string_text_for_logical_check=data_string_text
                 )
                 found_problems.update(problems)

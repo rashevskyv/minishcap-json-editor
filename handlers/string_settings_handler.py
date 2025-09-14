@@ -6,12 +6,22 @@ class StringSettingsHandler(BaseHandler):
         super().__init__(main_window, data_processor, ui_updater)
         
     def _apply_and_rescan(self):
-        if self.mw.current_block_idx != -1:
-            self.mw.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
-            self.mw.ui_updater.update_block_item_text_with_problem_count(self.mw.current_block_idx)
+        log_debug("--- Applying string settings and performing full block refresh ---")
         
-        if hasattr(self.mw, 'string_settings_updater'):
-            self.mw.string_settings_updater.update_string_settings_panel()
+        current_block_idx = self.mw.current_block_idx
+
+        if current_block_idx != -1:
+            log_debug(f"Refreshing UI for block {current_block_idx}")
+            self.mw.app_action_handler._perform_issues_scan_for_block(current_block_idx)
+            self.mw.ui_updater.populate_blocks()
+            self.mw.ui_updater.populate_strings_for_block(current_block_idx)
+            
+            if hasattr(self.mw, 'string_settings_updater'):
+                self.mw.string_settings_updater.update_string_settings_panel()
+        else:
+            log_debug("No block selected, only updating settings panel.")
+            if hasattr(self.mw, 'string_settings_updater'):
+                self.mw.string_settings_updater.update_string_settings_panel()
 
     def on_font_changed(self, index):
         if self.mw.current_block_idx == -1 or self.mw.current_string_idx == -1:
@@ -83,7 +93,7 @@ class StringSettingsHandler(BaseHandler):
 
         # Застосовуємо ширину
         new_width = self.mw.width_spinbox.value()
-        if new_width == self.mw.line_width_warning_threshold_pixels:
+        if new_width == 0 or new_width == self.mw.line_width_warning_threshold_pixels:
              if "width" in self.mw.string_metadata[key]:
                 del self.mw.string_metadata[key]["width"]
         else:
@@ -94,7 +104,11 @@ class StringSettingsHandler(BaseHandler):
             del self.mw.string_metadata[key]
             
         log_debug(f"Applied and updated string_metadata for {key}: {self.mw.string_metadata.get(key)}")
+        
+        current_string_idx_before_rescan = self.mw.current_string_idx
         self._apply_and_rescan()
+        self.mw.list_selection_handler.string_selected_from_preview(current_string_idx_before_rescan)
+
 
     def apply_font_to_range(self, start_line, end_line, font_file):
         block_idx = self.mw.current_block_idx

@@ -38,6 +38,21 @@ class LineNumberedTextEdit(QPlainTextEdit):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.widget_id = str(id(self))[-6:]
+        
+        self.editor_player_tag = EDITOR_PLAYER_TAG_CONST
+        self.original_player_tag = ORIGINAL_PLAYER_TAG_CONST
+        self.font_map = {}
+        self.game_dialog_max_width_pixels = DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS
+        self.line_width_warning_threshold_pixels = DEFAULT_LINE_WIDTH_WARNING_THRESHOLD
+
+        if parent and isinstance(parent, QMainWindow):
+            self.editor_player_tag = getattr(parent, 'EDITOR_PLAYER_TAG', EDITOR_PLAYER_TAG_CONST)
+            self.original_player_tag = getattr(parent, 'ORIGINAL_PLAYER_TAG', ORIGINAL_PLAYER_TAG_CONST)
+            self.font_map = getattr(parent, 'font_map', {})
+            self.game_dialog_max_width_pixels = getattr(parent, 'game_dialog_max_width_pixels', DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS)
+            self.line_width_warning_threshold_pixels = getattr(parent, 'line_width_warning_threshold_pixels', DEFAULT_LINE_WIDTH_WARNING_THRESHOLD)
+            self.character_limit_line_position = getattr(parent, 'editor_char_limit_line_pos', CHARACTER_LIMIT_LINE_POSITION)
+
         self.lineNumberArea = LineNumberArea(self)
         
         main_window_ref = parent if isinstance(parent, QMainWindow) else (self.window() if isinstance(self.window(), QMainWindow) else None)
@@ -80,22 +95,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.width_threshold_line_color = WIDTH_THRESHOLD_LINE_COLOR
         self.width_threshold_line_style = WIDTH_THRESHOLD_LINE_STYLE
         self.width_threshold_line_width = WIDTH_THRESHOLD_LINE_WIDTH
-
-
-        self.editor_player_tag = EDITOR_PLAYER_TAG_CONST
-        self.original_player_tag = ORIGINAL_PLAYER_TAG_CONST
-        self.font_map = {}
-        self.game_dialog_max_width_pixels = DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS
-        self.line_width_warning_threshold_pixels = DEFAULT_LINE_WIDTH_WARNING_THRESHOLD
-
-        if parent and isinstance(parent, QMainWindow):
-            self.editor_player_tag = getattr(parent, 'EDITOR_PLAYER_TAG', EDITOR_PLAYER_TAG_CONST)
-            self.original_player_tag = getattr(parent, 'ORIGINAL_PLAYER_TAG', ORIGINAL_PLAYER_TAG_CONST)
-            self.font_map = getattr(parent, 'font_map', {})
-            self.game_dialog_max_width_pixels = getattr(parent, 'game_dialog_max_width_pixels', DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS)
-            self.line_width_warning_threshold_pixels = getattr(parent, 'line_width_warning_threshold_pixels', DEFAULT_LINE_WIDTH_WARNING_THRESHOLD)
-            self.character_limit_line_position = getattr(parent, 'editor_char_limit_line_pos', CHARACTER_LIMIT_LINE_POSITION)
-
 
         self._update_auxiliary_widths()
 
@@ -274,7 +273,11 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
     def _update_auxiliary_widths(self):
         current_font_metrics = self.fontMetrics()
-        self.pixel_width_display_area_width = current_font_metrics.horizontalAdvance("999") + 6
+        
+        max_width_for_calc = self.game_dialog_max_width_pixels
+        if max_width_for_calc < 1000: max_width_for_calc = 1000
+        
+        self.pixel_width_display_area_width = current_font_metrics.horizontalAdvance(str(max_width_for_calc)) + 6
         
         num_indicators_to_display = 0
         main_window = self.window()
@@ -565,7 +568,7 @@ class MassWidthDialog(QDialog):
         
         controls_layout = QHBoxLayout()
         self.width_spinbox = QSpinBox(self)
-        self.width_spinbox.setRange(0, 1000)
+        self.width_spinbox.setRange(0, 10000)
         self.width_spinbox.setValue(self.default_width)
         controls_layout.addWidget(self.width_spinbox)
 

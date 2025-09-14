@@ -82,8 +82,18 @@ def setup_main_window_ui(main_window):
 
     string_settings_layout.addWidget(QLabel("Width:"))
     main_window.width_spinbox = QSpinBox()
-    main_window.width_spinbox.setRange(0, 1000)
+    main_window.width_spinbox.setRange(0, 10000)
     main_window.width_spinbox.setToolTip("Set custom width for this string (0 = use plugin default)")
+    main_window.width_spinbox.setContextMenuPolicy(Qt.CustomContextMenu)
+    
+    def show_width_context_menu(pos):
+        menu = QMenu()
+        reset_action = menu.addAction("Reset to Plugin Default")
+        action = menu.exec_(main_window.width_spinbox.mapToGlobal(pos))
+        if action == reset_action:
+            main_window.width_spinbox.setValue(main_window.line_width_warning_threshold_pixels)
+
+    main_window.width_spinbox.customContextMenuRequested.connect(show_width_context_menu)
     string_settings_layout.addWidget(main_window.width_spinbox)
     
     main_window.apply_width_button = QPushButton("Apply")

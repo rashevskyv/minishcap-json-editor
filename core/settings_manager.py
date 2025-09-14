@@ -26,7 +26,7 @@ class SettingsManager:
         log_debug(f"--> SettingsManager: load_settings from {self.settings_file_path}")
         self._load_global_settings()
         self._load_plugin_settings()
-        self.load_font_map()
+        self.load_all_font_maps()
 
         self.mw.initial_load_path = getattr(self.mw, 'original_file_path', None)
         self.mw.initial_edited_load_path = getattr(self.mw, 'edited_file_path', None)
@@ -316,35 +316,48 @@ class SettingsManager:
         
         return font_map
 
-    def load_font_map(self):
+    def load_all_font_maps(self):
         plugin_name = getattr(self.mw, 'active_game_plugin', None)
-        font_filename = getattr(self.mw, 'default_font_file', None)
         self.mw.font_map = {}
-        
-        if not plugin_name or not font_filename:
-            log_debug("No active plugin or default_font_file specified. Character width calculations will use fallback.")
+        self.mw.all_font_maps = {}
+
+        if not plugin_name:
+            log_debug("No active plugin. Character width calculations will use fallback.")
             return
 
-        font_map_path = os.path.join("plugins", plugin_name, "fonts", font_filename)
-        log_debug(f"--> SettingsManager: Attempting to load font_map from path: {font_map_path}")
-        
-        if not os.path.exists(font_map_path):
-            log_debug(f"Font map file not found at '{font_map_path}'. Character width calculations will be disabled.")
+        fonts_dir = os.path.join("plugins", plugin_name, "fonts")
+        if not os.path.isdir(fonts_dir):
+            log_debug(f"Fonts directory not found at '{fonts_dir}'.")
             return
+        
+        log_debug(f"--> SettingsManager: Loading all font maps from: {fonts_dir}")
+        for filename in os.listdir(fonts_dir):
+            if not filename.lower().endswith(".json"):
+                continue
 
-        try:
-            with open(font_map_path, 'r', encoding='utf-8') as f:
-                raw_font_data = json.load(f)
+            font_map_path = os.path.join(fonts_dir, filename)
+            try:
+                with open(font_map_path, 'r', encoding='utf-8') as f:
+                    raw_font_data = json.load(f)
 
-            if "signature" in raw_font_data and raw_font_data["signature"] == "FFNT":
-                log_debug("Detected new FFNT font format. Parsing...")
-                self.mw.font_map = self._parse_new_font_format(raw_font_data)
-            else:
-                # Стара логіка для зворотної сумісності
-                log_debug("Detected old font format.")
-                self.mw.font_map = raw_font_data
+                if "signature" in raw_font_data and raw_font_data["signature"] == "FFNT":
+                    parsed_map = self._parse_new_font_format(raw_font_data)
+                else:
+                    parsed_map = raw_font_data
+                
+                self.mw.all_font_maps[filename] = parsed_map
+                log_debug(f"  Successfully loaded and parsed font map '{filename}'. Count: {len(parsed_map)}")
 
-            log_debug(f"Successfully loaded and parsed font_map. Count: {len(self.mw.font_map)}")
-        except Exception as e:
-            log_debug(f"ERROR reading or parsing font map file '{font_map_path}': {e}.")
-            self.mw.font_map = {}
+            except Exception as e:
+                log_debug(f"  ERROR reading or parsing font map file '{filename}': {e}.")
+
+        default_font_filename = getattr(self.mw, 'default_font_file', None)
+        if default_font_filename and default_font_filename in self.mw.all_font_maps:
+            self.mw.font_map = self.mw.all_font_maps[default_font_filename]
+            log_debug(f"Set default font_map to '{default_font_filename}'.")
+        elif self.mw.all_font_maps:
+            first_font = next(iter(self.mw.all_font_maps))
+            self.mw.font_map = self.mw.all_font_maps[first_font]
+            log_debug(f"Default font file not found, using first available font as default: '{first_font}'.")
+        else:
+            log_debug("No font maps loaded for the plugin.")

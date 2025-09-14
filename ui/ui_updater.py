@@ -170,6 +170,8 @@ class UIUpdater:
         
         editor = self.mw.edited_text_edit
         cursor = editor.textCursor()
+        
+        font_map_for_string = self.mw.helper.get_font_map_for_string(self.mw.current_block_idx, self.mw.current_string_idx)
 
         if cursor.hasSelection():
             self.update_status_bar_selection() 
@@ -187,7 +189,7 @@ class UIUpdater:
             text_to_cursor_with_dots = line_text_with_dots[:pos_in_block]
             text_to_cursor_with_spaces = convert_dots_to_spaces_from_editor(text_to_cursor_with_dots)
             
-            pixel_width = calculate_string_width(text_to_cursor_with_spaces, self.mw.font_map)
+            pixel_width = calculate_string_width(text_to_cursor_with_spaces, font_map_for_string)
             
             self.mw.status_label_part1.setText(f"Pos: {pos_in_block}")
             self.mw.status_label_part2.setText(f"Line: {line_len_no_tags}/{line_len_with_tags}")
@@ -202,6 +204,8 @@ class UIUpdater:
         
         editor = self.mw.edited_text_edit
         cursor = editor.textCursor()
+        
+        font_map_for_string = self.mw.helper.get_font_map_for_string(self.mw.current_block_idx, self.mw.current_string_idx)
 
         if not cursor.hasSelection():
             block = cursor.block()
@@ -213,7 +217,7 @@ class UIUpdater:
             line_len_with_tags = len(line_text_with_spaces)
             text_to_cursor_with_dots = line_text_with_dots[:pos_in_block]
             text_to_cursor_with_spaces = convert_dots_to_spaces_from_editor(text_to_cursor_with_dots)
-            pixel_width = calculate_string_width(text_to_cursor_with_spaces, self.mw.font_map)
+            pixel_width = calculate_string_width(text_to_cursor_with_spaces, font_map_for_string)
             self.mw.status_label_part1.setText(f"Pos: {pos_in_block}")
             self.mw.status_label_part2.setText(f"Line: {line_len_no_tags}/{line_len_with_tags}")
             self.mw.status_label_part3.setText(f"Width: {pixel_width}px")
@@ -225,7 +229,7 @@ class UIUpdater:
         selected_text_no_all_tags = remove_all_tags(selected_text_with_spaces)
         len_no_tags = len(selected_text_no_all_tags)
         
-        pixel_width = calculate_string_width(selected_text_with_spaces, self.mw.font_map)
+        pixel_width = calculate_string_width(selected_text_with_spaces, font_map_for_string)
         
         sel_start_abs = cursor.selectionStart()
         sel_start_block_obj = editor.document().findBlock(sel_start_abs)

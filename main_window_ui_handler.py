@@ -13,6 +13,17 @@ class MainWindowUIHandler:
         self.mw = main_window
         log_debug(f"UIHandler '{self.__class__.__name__}' initialized.")
 
+    def update_editor_rules_properties(self):
+        log_debug("MainWindowUIHandler: Updating editor rule properties (e.g., width thresholds).")
+        for editor in [self.mw.preview_text_edit, self.mw.original_text_edit, self.mw.edited_text_edit]:
+            if editor:
+                editor.line_width_warning_threshold_pixels = self.mw.line_width_warning_threshold_pixels
+                editor.game_dialog_max_width_pixels = self.mw.game_dialog_max_width_pixels
+                if hasattr(editor, '_update_auxiliary_widths'):
+                    editor._update_auxiliary_widths()
+                editor.viewport().update()
+        log_debug("MainWindowUIHandler: Editor rule properties updated.")
+
     def apply_font_size(self):
         log_debug(f"MainWindowUIHandler: Applying font. General: Family='{self.mw.general_font_family}', Editor: Family='{self.mw.editor_font_family}', Size={self.mw.current_font_size}")
         if self.mw.current_font_size <= 0:

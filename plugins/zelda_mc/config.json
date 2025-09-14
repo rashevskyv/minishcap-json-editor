@@ -92,5 +92,7 @@
         "ZMC_EMPTY_ODD_SUBLINE_DISPLAY": true,
         "ZMC_SINGLE_WORD_SUBLINE": false,
         "ZMC_SHORT_LINE": true
-    }
+    },
+    "string_metadata": {},
+    "default_font_file": ""
 }

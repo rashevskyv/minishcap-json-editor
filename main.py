@@ -63,6 +63,7 @@ class MainWindow(QMainWindow):
         self.game_dialog_max_width_pixels = DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS
         self.line_width_warning_threshold_pixels = DEFAULT_LINE_WIDTH_WARNING_THRESHOLD
         self.font_map = {}
+        self.all_font_maps = {}
 
         self.current_font_size = DEFAULT_APP_FONT_SIZE
         self.general_font_family = GENERAL_APP_FONT_FAMILY
