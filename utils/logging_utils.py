@@ -2,7 +2,7 @@ import logging
 import os
 
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-log_file_path = os.path.join(project_root, 'app_debug.log')
+log_file_path = os.path.join(project_root, 'app_debug.txt')
 
 logger = logging.getLogger("app_logger")
 

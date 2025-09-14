@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QSplitter,
     QLabel, QAction, QStatusBar, QMenu, QPlainTextEdit, QToolBar,
-    QStyle, QSpinBox, QPushButton, QSpacerItem, QSizePolicy
+    QStyle, QSpinBox, QPushButton, QSpacerItem, QSizePolicy, QComboBox
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QFont, QFontMetrics, QKeySequence 
@@ -71,6 +71,27 @@ def setup_main_window_ui(main_window):
     editable_text_header_layout.addWidget(main_window.auto_fix_button)
     
     bottom_right_layout.addLayout(editable_text_header_layout)
+
+    string_settings_panel = QWidget()
+    string_settings_layout = QHBoxLayout(string_settings_panel)
+    string_settings_layout.setContentsMargins(0, 5, 0, 5)
+
+    string_settings_layout.addWidget(QLabel("Font:"))
+    main_window.font_combobox = QComboBox()
+    string_settings_layout.addWidget(main_window.font_combobox)
+
+    string_settings_layout.addWidget(QLabel("Width:"))
+    main_window.width_spinbox = QSpinBox()
+    main_window.width_spinbox.setRange(0, 1000)
+    main_window.width_spinbox.setToolTip("Set custom width for this string (0 = use plugin default)")
+    string_settings_layout.addWidget(main_window.width_spinbox)
+    
+    main_window.apply_width_button = QPushButton("Apply")
+    main_window.apply_width_button.setEnabled(False)
+    string_settings_layout.addWidget(main_window.apply_width_button)
+    
+    string_settings_layout.addStretch(1)
+    bottom_right_layout.addWidget(string_settings_panel)
 
     main_window.edited_text_edit = LineNumberedTextEdit(main_window)
     main_window.edited_text_edit.setObjectName("edited_text_edit")

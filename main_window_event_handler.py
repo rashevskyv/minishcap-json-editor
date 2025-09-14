@@ -55,6 +55,13 @@ class MainWindowEventHandler:
             self.mw.navigate_up_button.clicked.connect(lambda: self.mw.list_selection_handler.navigate_to_problem_string(direction_down=False))
         if hasattr(self.mw, 'navigate_down_button'):
             self.mw.navigate_down_button.clicked.connect(lambda: self.mw.list_selection_handler.navigate_to_problem_string(direction_down=True))
+        
+        if hasattr(self.mw, 'font_combobox'):
+            self.mw.font_combobox.currentIndexChanged.connect(self.mw.string_settings_handler.on_font_changed)
+        if hasattr(self.mw, 'width_spinbox'):
+            self.mw.width_spinbox.valueChanged.connect(self.mw.string_settings_handler.on_width_changed)
+        if hasattr(self.mw, 'apply_width_button'):
+            self.mw.apply_width_button.clicked.connect(self.mw.string_settings_handler.apply_settings_change)
 
 
         log_debug("--> MainWindowEventHandler: connect_signals() finished")

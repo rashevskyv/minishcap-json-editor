@@ -9,6 +9,7 @@ class LNETLineNumberAreaPaintLogic:
     def __init__(self, editor, helpers):
         self.editor = editor
         self.helpers = helpers
+        self.metadata_indicator_color = QColor(148, 0, 211, 180) # DarkViolet
 
     def execute_paint_event(self, event, painter_device):
         painter = QPainter(painter_device)
@@ -133,8 +134,24 @@ class LNETLineNumberAreaPaintLogic:
 
                     elif is_preview and isinstance(main_window_ref, QMainWindow) and current_block_idx_data_mw != -1 and game_rules:
                         indicator_x_start = number_part_width + 2
-                        indicators_to_draw_preview = []
+                        
+                        string_meta = main_window_ref.string_metadata.get((current_block_idx_data_mw, current_q_block_number_in_editor_doc), {})
+                        has_custom_font = "font_file" in string_meta
+                        has_custom_width = "width" in string_meta
 
+                        if has_custom_font or has_custom_width:
+                            indicator_rect = QRect(indicator_x_start, top + 2, self.editor.lineNumberArea.preview_indicator_width, line_height - 4)
+                            if has_custom_font and has_custom_width:
+                                painter.fillRect(indicator_rect, self.metadata_indicator_color)
+                            elif has_custom_font:
+                                top_half = QRect(indicator_rect.left(), indicator_rect.top(), indicator_rect.width(), indicator_rect.height() // 2)
+                                painter.fillRect(top_half, self.metadata_indicator_color)
+                            elif has_custom_width:
+                                bottom_half = QRect(indicator_rect.left(), indicator_rect.top() + indicator_rect.height() // 2, indicator_rect.width(), indicator_rect.height() // 2)
+                                painter.fillRect(bottom_half, self.metadata_indicator_color)
+                            indicator_x_start += self.editor.lineNumberArea.preview_indicator_width + self.editor.lineNumberArea.preview_indicator_spacing
+
+                        indicators_to_draw_preview = []
                         preview_problem_key = (current_block_idx_data_mw, current_q_block_number_in_editor_doc)
                         aggregated_problems_for_preview_line = set()
                         for key, problems in main_window_ref.problems_per_subline.items():

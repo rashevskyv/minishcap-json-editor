@@ -1,7 +1,7 @@
 import os
 
 EXCLUDE_FILES = {'tree.py', 'tree.txt', '.gitignore'}
-EXCLUDE_DIRS = {'__pycache__', '.git', 'fonts'}
+EXCLUDE_DIRS = {'__pycache__', '.git', 'font_tool', 'venv'}
 
 def tree(dir_path, prefix="", log_file=None, is_last=True, root=True):
     entries = [e for e in os.listdir(dir_path) if e not in EXCLUDE_FILES and e not in EXCLUDE_DIRS]

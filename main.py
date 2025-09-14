@@ -7,7 +7,7 @@ import inspect
 from datetime import datetime
 from pathlib import Path
 
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMessageBox, QLabel, QComboBox, QSpinBox, QPushButton
 from PyQt5.QtCore import Qt, QSize, QEvent, QTimer, QRect, QPoint, pyqtSignal
 from PyQt5.QtGui import QFont, QColor, QPalette, QIcon, QKeyEvent
 from typing import Optional, Dict, Tuple, Set
@@ -15,6 +15,7 @@ from typing import Optional, Dict, Tuple, Set
 from ui.ui_setup import setup_main_window_ui
 from ui.ui_event_filters import MainWindowEventFilter, TextEditEventFilter
 from ui.ui_updater import UIUpdater
+from ui.updaters.string_settings_updater import StringSettingsUpdater
 from components.LineNumberedTextEdit import LineNumberedTextEdit
 from components.CustomListWidget import CustomListWidget
 from components.search_panel import SearchPanelWidget
@@ -24,6 +25,7 @@ from handlers.app_action_handler import AppActionHandler
 from handlers.list_selection_handler import ListSelectionHandler
 from handlers.text_operation_handler import TextOperationHandler
 from handlers.search_handler import SearchHandler
+from handlers.string_settings_handler import StringSettingsHandler
 
 from core.settings_manager import SettingsManager
 from core.data_state_processor import DataStateProcessor
@@ -152,6 +154,8 @@ class MainWindow(QMainWindow):
         self.default_tag_mappings = {}
         
         self.block_color_markers = {}
+        self.string_metadata = {}
+        self.default_font_file = ""
         self.autofix_enabled = {}
         self.detection_enabled = {}
 
@@ -176,6 +180,9 @@ class MainWindow(QMainWindow):
         self.auto_fix_action = None 
         self.main_vertical_layout = None
         self.auto_fix_button = None 
+        self.font_combobox: QComboBox = None
+        self.width_spinbox: QSpinBox = None
+        self.apply_width_button: QPushButton = None
         
         self.status_label_part1: QLabel = None
         self.status_label_part2: QLabel = None
@@ -195,6 +202,7 @@ class MainWindow(QMainWindow):
         self.actions = MainWindowActions(self)
         self.data_processor = DataStateProcessor(self)
         self.ui_updater = UIUpdater(self, self.data_processor)
+        self.string_settings_updater = StringSettingsUpdater(self, self.data_processor)
 
         self.ui_handler = MainWindowUIHandler(self)
         self.plugin_handler = MainWindowPluginHandler(self)
@@ -211,6 +219,7 @@ class MainWindow(QMainWindow):
         self.editor_operation_handler = TextOperationHandler(self, self.data_processor, self.ui_updater)
         self.app_action_handler = AppActionHandler(self, self.data_processor, self.ui_updater, self.current_game_rules) 
         self.search_handler = SearchHandler(self, self.data_processor, self.ui_updater)
+        self.string_settings_handler = StringSettingsHandler(self, self.data_processor, self.ui_updater)
 
 
         log_debug("MainWindow: Setting up UI...")
@@ -250,6 +259,8 @@ class MainWindow(QMainWindow):
         self.helper.restore_state_after_settings_load()
         self.apply_font_size()
         self.helper.apply_text_wrap_settings()
+        self.string_settings_updater.update_font_combobox()
+        self.string_settings_updater.update_string_settings_panel()
 
         self.helper.rebuild_unsaved_block_indices()
 

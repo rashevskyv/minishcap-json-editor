@@ -157,8 +157,26 @@ class SettingsDialog(QDialog):
         self._setup_detection_subtab(detection_tab)
         self._setup_autofix_subtab(autofix_tab)
 
+    def _populate_font_list(self, plugin_dir_name: str):
+        self.font_file_combo.clear()
+        self.font_file_combo.addItem("None", "")
+
+        if not plugin_dir_name:
+            return
+            
+        fonts_dir = os.path.join("plugins", plugin_dir_name, "fonts")
+        if not os.path.isdir(fonts_dir):
+            return
+
+        for filename in sorted(os.listdir(fonts_dir)):
+            if filename.lower().endswith(".json"):
+                self.font_file_combo.addItem(filename, filename)
+
     def _setup_display_subtab(self, tab):
         layout = QFormLayout(tab)
+        self.font_file_combo = QComboBox(self)
+        layout.addRow("Default Font for Plugin:", self.font_file_combo)
+        
         self.preview_wrap_checkbox = QCheckBox("Wrap lines in preview panel", self)
         layout.addRow(self.preview_wrap_checkbox)
         self.editors_wrap_checkbox = QCheckBox("Wrap lines in editor panels", self)
@@ -255,6 +273,8 @@ class SettingsDialog(QDialog):
         log_debug("SettingsDialog: Plugin changed in dropdown.")
         selected_dir_name = self.plugin_map.get(self.plugin_combo.currentText())
         
+        self._populate_font_list(selected_dir_name)
+        
         if selected_dir_name == self.initial_plugin_name:
             self.plugin_changed_requires_restart = False
             return
@@ -280,12 +300,14 @@ class SettingsDialog(QDialog):
                 self.plugin_combo.blockSignals(False)
                 break
         
+        self._populate_font_list(current_plugin_dir_name)
+        
         self.font_size_spinbox.setValue(self.mw.current_font_size)
         self.show_spaces_checkbox.setChecked(self.mw.show_multiple_spaces_as_dots)
         self.space_dot_color_picker.setColor(QColor(self.mw.space_dot_color_hex))
         self.restore_session_checkbox.setChecked(self.mw.restore_unsaved_on_startup)
         
-        self.original_path_edit.setText(self.mw.original_file_path or "")
+        self.original_path_edit.setText(self.mw.json_path or "")
         self.edited_path_edit.setText(self.mw.edited_json_path or "")
         
         self.preview_wrap_checkbox.setChecked(self.mw.preview_wrap_lines)
@@ -296,6 +318,13 @@ class SettingsDialog(QDialog):
         self.bracket_tag_color_picker.setColor(QColor(self.mw.bracket_tag_color_hex))
         self.game_dialog_width_spinbox.setValue(self.mw.game_dialog_max_width_pixels)
         self.width_warning_spinbox.setValue(self.mw.line_width_warning_threshold_pixels)
+
+        current_font_file = getattr(self.mw, 'default_font_file', "")
+        font_index = self.font_file_combo.findData(current_font_file)
+        if font_index != -1:
+            self.font_file_combo.setCurrentIndex(font_index)
+        else:
+            self.font_file_combo.setCurrentIndex(0) # "None"
 
         autofix_settings = getattr(self.mw, 'autofix_enabled', {})
         for problem_id, checkbox in self.autofix_checkboxes.items():
@@ -327,6 +356,7 @@ class SettingsDialog(QDialog):
             'restore_unsaved_on_startup': self.restore_session_checkbox.isChecked(),
             'original_file_path': self.original_path_edit.text(),
             'edited_file_path': self.edited_path_edit.text(),
+            'default_font_file': self.font_file_combo.currentData(),
             'preview_wrap_lines': self.preview_wrap_checkbox.isChecked(),
             'editors_wrap_lines': self.editors_wrap_checkbox.isChecked(),
             'newline_display_symbol': self.newline_symbol_edit.text(),

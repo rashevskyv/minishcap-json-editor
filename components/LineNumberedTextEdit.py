@@ -1,7 +1,9 @@
 from PyQt5.QtWidgets import (QPlainTextEdit, QMainWindow, QMenu, QApplication, QAction, 
-                             QWidget, QHBoxLayout, QPushButton, QWidgetAction) 
+                             QWidget, QHBoxLayout, QPushButton, QWidgetAction, QDialog,
+                             QVBoxLayout, QComboBox, QDialogButtonBox, QLabel, QSpinBox) 
 from PyQt5.QtGui import (QPainter, QFont, QPaintEvent, QKeyEvent, QKeySequence, QMouseEvent, QIcon, QPixmap, QColor, QTextLine, QTextCursor) 
 from PyQt5.QtCore import Qt, QRect, QSize, QRectF, pyqtSignal
+import os
 
 from .LineNumberArea import LineNumberArea
 from .TextHighlightManager import TextHighlightManager
@@ -145,7 +147,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
         btn.clicked.connect(on_button_clicked)
         
         return btn
-
+        
     def populateContextMenu(self, menu: QMenu, position_in_widget_coords):
         log_debug(f"LNET ({self.objectName()}): populateContextMenu called.")
         main_window = self.window()
@@ -187,6 +189,33 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
         elif self.objectName() == "preview_text_edit":
             log_debug(f"LNET ({self.objectName()}): Adding actions for preview.")
+            
+            cursor = self.textCursor()
+            if cursor.hasSelection():
+                selection_start_pos = cursor.selectionStart()
+                selection_end_pos = cursor.selectionEnd()
+
+                start_block = self.document().findBlock(selection_start_pos)
+                end_block = self.document().findBlock(selection_end_pos)
+
+                if start_block.blockNumber() != end_block.blockNumber() or \
+                   (selection_end_pos > selection_start_pos and selection_end_pos == end_block.position()):
+                    
+                    start_line = start_block.blockNumber()
+                    end_line = end_block.blockNumber()
+
+                    if selection_end_pos == end_block.position() and selection_end_pos > selection_start_pos:
+                        end_line -= 1
+
+                    if end_line >= start_line:
+                        menu.addSeparator()
+                        set_font_action = menu.addAction(f"Set Font for Lines {start_line + 1}-{end_line + 1}...")
+                        set_font_action.triggered.connect(lambda: self.handle_mass_set_font(start_line, end_line))
+                        
+                        set_width_action = menu.addAction(f"Set Width for Lines {start_line + 1}-{end_line + 1}...")
+                        set_width_action.triggered.connect(lambda: self.handle_mass_set_width(start_line, end_line))
+                        custom_actions_added_header = True
+            
             if hasattr(main_window, 'data_processor') and hasattr(main_window, 'editor_operation_handler'):
                 current_block_idx_data = main_window.current_block_idx
                 clicked_cursor_obj = self.cursorForPosition(position_in_widget_coords)
@@ -256,11 +285,17 @@ class LineNumberedTextEdit(QPlainTextEdit):
         max_preview_indicators = getattr(self.lineNumberArea, 'max_problem_indicators', 5) 
         num_indicators_to_display = min(num_indicators_to_display, max_preview_indicators)
 
+        # Резервуємо місце під 1 маркер метаданих + до 3 маркерів проблем
+        indicator_area_width = 0
+        # 1 маркер метаданих
+        indicator_area_width += self.lineNumberArea.preview_indicator_width + self.lineNumberArea.preview_indicator_spacing
+        # до 3 маркерів проблем
         if num_indicators_to_display > 0:
-            self.preview_indicator_area_width = (self.lineNumberArea.preview_indicator_width * num_indicators_to_display) + \
-                                            (self.lineNumberArea.preview_indicator_spacing * (num_indicators_to_display - 1)) + 2
-        else:
-            self.preview_indicator_area_width = 2 
+            indicator_area_width += (self.lineNumberArea.preview_indicator_width * num_indicators_to_display) + \
+                                    (self.lineNumberArea.preview_indicator_spacing * num_indicators_to_display)
+        
+        self.preview_indicator_area_width = indicator_area_width + 2
+
 
         self.updateLineNumberAreaWidth(0)
 
@@ -472,3 +507,80 @@ class LineNumberedTextEdit(QPlainTextEdit):
         
     def hasProblemHighlight(self, line_number = None) -> bool:
         return self.hasProblemHighlight(line_number)
+
+    def handle_mass_set_font(self, start_line, end_line):
+        main_window = self.window()
+        dialog = MassFontDialog(main_window)
+        if dialog.exec_():
+            font_file = dialog.get_selected_font()
+            main_window.string_settings_handler.apply_font_to_range(start_line, end_line, font_file)
+
+    def handle_mass_set_width(self, start_line, end_line):
+        main_window = self.window()
+        dialog = MassWidthDialog(main_window)
+        if dialog.exec_():
+            width = dialog.get_width()
+            main_window.string_settings_handler.apply_width_to_range(start_line, end_line, width)
+
+class MassFontDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Set Font for Multiple Lines")
+        layout = QVBoxLayout(self)
+        
+        layout.addWidget(QLabel("Select a font to apply to the selected lines:"))
+        
+        self.font_combo = QComboBox(self)
+        self.populate_fonts(parent)
+        layout.addWidget(self.font_combo)
+        
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+    def populate_fonts(self, main_window):
+        self.font_combo.addItem(f"Plugin Default ({main_window.default_font_file or 'None'})", "default")
+        
+        plugin_dir_name = main_window.active_game_plugin
+        if plugin_dir_name:
+            fonts_dir = os.path.join("plugins", plugin_dir_name, "fonts")
+            if os.path.isdir(fonts_dir):
+                for filename in sorted(os.listdir(fonts_dir)):
+                    if filename.lower().endswith(".json"):
+                        self.font_combo.addItem(filename, filename)
+
+    def get_selected_font(self):
+        return self.font_combo.currentData()
+
+class MassWidthDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.main_window = parent
+        self.setWindowTitle("Set Width for Multiple Lines")
+        layout = QVBoxLayout(self)
+        
+        self.default_width = self.main_window.line_width_warning_threshold_pixels if self.main_window else 0
+        layout.addWidget(QLabel(f"Enter a new width for the selected lines.\nEnter 0 to reset to plugin default ({self.default_width})."))
+        
+        controls_layout = QHBoxLayout()
+        self.width_spinbox = QSpinBox(self)
+        self.width_spinbox.setRange(0, 1000)
+        self.width_spinbox.setValue(self.default_width)
+        controls_layout.addWidget(self.width_spinbox)
+
+        self.default_button = QPushButton("Default", self)
+        self.default_button.clicked.connect(self.set_default_width)
+        controls_layout.addWidget(self.default_button)
+        layout.addLayout(controls_layout)
+        
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+        
+    def get_width(self):
+        return self.width_spinbox.value()
+
+    def set_default_width(self):
+        self.width_spinbox.setValue(self.default_width)

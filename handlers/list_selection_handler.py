@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QInputDialog, QTextEdit 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QTextCursor, QTextBlockFormat, QColor, QTextBlock 
 from .base_handler import BaseHandler
 from utils.logging_utils import log_debug
@@ -9,6 +9,7 @@ from components.LNET_paint_handlers import LNETPaintHandlers
 class ListSelectionHandler(BaseHandler):
     def __init__(self, main_window, data_processor, ui_updater):
         super().__init__(main_window, data_processor, ui_updater)
+        self._restoring_selection = False
         if hasattr(self.mw, 'preview_text_edit') and hasattr(self.mw.preview_text_edit, 'paint_handler'):
             self._paint_handler_for_blue_rule = self.mw.preview_text_edit.paint_handler 
         else:
@@ -27,13 +28,11 @@ class ListSelectionHandler(BaseHandler):
             if previous_block_idx is not None:
                 self.ui_updater.update_block_item_text_with_problem_count(previous_block_idx)
 
-        # Якщо новий вибраний елемент відсутній, і це не початкове завантаження,
-        # можливо, це скидання фокусу. Ігноруємо цю подію, щоб не втратити стан.
         if not current_item and not self.mw.is_loading_data:
-            log_debug(f"ListSelectionHandler.block_selected: current_item is None, but not loading data. Ignoring to prevent state loss. Current block idx: {self.mw.current_block_idx}")
-            # Перевибираємо поточний елемент, якщо він є, щоб візуально відновити виділення
-            if self.mw.current_block_idx != -1:
-                self.mw.block_list_widget.setCurrentRow(self.mw.current_block_idx)
+            if not self._restoring_selection and self.mw.current_block_idx != -1:
+                self._restoring_selection = True
+                log_debug(f"ListSelectionHandler.block_selected: current_item is None. Attempting to restore selection to {self.mw.current_block_idx}.")
+                QTimer.singleShot(0, self._restore_block_selection)
             return
 
         self.mw.is_programmatically_changing_text = True
@@ -42,6 +41,8 @@ class ListSelectionHandler(BaseHandler):
             self.mw.current_block_idx = -1
             self.mw.current_string_idx = -1
             self.ui_updater.populate_strings_for_block(-1)
+            if hasattr(self.mw, 'string_settings_updater'):
+                self.mw.string_settings_updater.update_string_settings_panel()
             self.mw.is_programmatically_changing_text = False
             return
 
@@ -52,7 +53,15 @@ class ListSelectionHandler(BaseHandler):
             self.mw.current_string_idx = -1
             
         self.ui_updater.populate_strings_for_block(block_index)
+        if hasattr(self.mw, 'string_settings_updater'):
+            self.mw.string_settings_updater.update_font_combobox()
+            self.mw.string_settings_updater.update_string_settings_panel()
         self.mw.is_programmatically_changing_text = False
+
+    def _restore_block_selection(self):
+        if self.mw.current_block_idx != -1:
+            self.mw.block_list_widget.setCurrentRow(self.mw.current_block_idx)
+        self._restoring_selection = False
 
 
     def string_selected_from_preview(self, line_number: int):
@@ -66,6 +75,8 @@ class ListSelectionHandler(BaseHandler):
             if preview_edit and hasattr(preview_edit, 'highlightManager'):
                  preview_edit.highlightManager.clearPreviewSelectedLineHighlight()
             self.ui_updater.update_text_views()
+            if hasattr(self.mw, 'string_settings_updater'):
+                self.mw.string_settings_updater.update_string_settings_panel()
             self.mw.is_programmatically_changing_text = original_programmatic_state
             return
 
@@ -88,7 +99,9 @@ class ListSelectionHandler(BaseHandler):
             
             self.ui_updater.populate_strings_for_block(self.mw.current_block_idx) 
 
-        self.ui_updater.update_text_views() 
+        self.ui_updater.update_text_views()
+        if hasattr(self.mw, 'string_settings_updater'):
+            self.mw.string_settings_updater.update_string_settings_panel()
 
         if preview_edit and self.mw.current_string_idx != -1 and \
            0 <= self.mw.current_string_idx < preview_edit.document().blockCount():
@@ -207,6 +220,5 @@ class ListSelectionHandler(BaseHandler):
         else:
             if start_scan_idx != -1 and self._data_string_has_any_problem(self.mw.current_block_idx, start_scan_idx):
                  self.string_selected_from_preview(start_scan_idx)
-
 
         self.mw.is_programmatically_changing_text = original_programmatic_state

@@ -26,6 +26,7 @@
 │   ├── base_handler.py
 │   ├── list_selection_handler.py
 │   ├── search_handler.py
+│   ├── string_settings_handler.py
 │   ├── text_autofix_logic.py
 │   └── text_operation_handler.py
 ├── plugins
@@ -52,6 +53,14 @@
 │   │   ├── tag_logic.py
 │   │   ├── tag_manager.py
 │   │   └── text_fixer.py
+│   ├── zelda_ww
+│   │   ├── fonts
+│   │   │   ├── CKingMain.json
+│   │   │   ├── CKingMainL.json
+│   │   │   └── CKingMsg.json
+│   │   ├── config.json
+│   │   ├── config.py
+│   │   └── rules.py
 │   ├── __init__.py
 │   └── base_game_rules.py
 ├── ui
@@ -60,6 +69,7 @@
 │   │   ├── base_ui_updater.py
 │   │   ├── block_list_updater.py
 │   │   ├── preview_updater.py
+│   │   ├── string_settings_updater.py
 │   │   └── title_status_bar_updater.py
 │   ├── __init__.py
 │   ├── settings_dialog.py
@@ -73,7 +83,7 @@
 │   ├── logging_utils.py
 │   ├── syntax_highlighter.py
 │   └── utils.py
-├── app_debug.log
+├── app_debug.txt
 ├── main.py
 ├── main_window_actions.py
 ├── main_window_block_handler.py

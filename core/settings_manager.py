@@ -82,6 +82,7 @@ class SettingsManager:
         plugin_config_path = self._get_plugin_config_path()
         defaults = {
             "display_name": "Unknown Plugin", "default_tag_mappings": {}, "block_names": {}, "block_color_markers": {},
+            "string_metadata": {}, "default_font_file": "",
             "newline_display_symbol": "↵", "newline_css": "color: #A020F0; font-weight: bold;",
             "tag_css": "color: #808080; font-style: italic;",
             "bracket_tag_color_hex": "#FF8C00",
@@ -98,12 +99,13 @@ class SettingsManager:
             "detection_enabled": DEFAULT_DETECTION_SETTINGS.copy()
         }
         for key, value in defaults.items():
-             if key not in ["block_names", "block_color_markers", "default_tag_mappings"]:
+             if key not in ["block_names", "block_color_markers", "default_tag_mappings", "string_metadata"]:
                 setattr(self.mw, key, value)
         
         if not hasattr(self.mw, 'block_names'): self.mw.block_names = {}
         if not hasattr(self.mw, 'block_color_markers'): self.mw.block_color_markers = {}
         if not hasattr(self.mw, 'default_tag_mappings'): self.mw.default_tag_mappings = {}
+        if not hasattr(self.mw, 'string_metadata'): self.mw.string_metadata = {}
         
         self.mw.search_history_to_save = []
 
@@ -119,8 +121,15 @@ class SettingsManager:
             self.mw.block_color_markers.update({k: set(v) for k, v in plugin_data.get("block_color_markers", {}).items()})
             self.mw.default_tag_mappings.update(plugin_data.get("default_tag_mappings", {}))
             
+            loaded_metadata_str_keys = plugin_data.get("string_metadata", {})
+            try:
+                self.mw.string_metadata = {eval(k): v for k, v in loaded_metadata_str_keys.items()}
+            except Exception as e:
+                log_debug(f"Error deserializing string_metadata keys: {e}. Metadata will be empty.")
+                self.mw.string_metadata = {}
+            
             for key, value in plugin_data.items():
-                if key in ["block_names", "block_color_markers", "default_tag_mappings"]:
+                if key in ["block_names", "block_color_markers", "default_tag_mappings", "string_metadata"]:
                     continue
                 if hasattr(self.mw, key):
                      setattr(self.mw, key, value)
@@ -205,6 +214,8 @@ class SettingsManager:
             "default_tag_mappings": self.mw.default_tag_mappings,
             "block_names": self.mw.block_names,
             "block_color_markers": {k: list(v) for k, v in self.mw.block_color_markers.items()},
+            "string_metadata": {str(k): v for k, v in self.mw.string_metadata.items()},
+            "default_font_file": self.mw.default_font_file,
             "newline_display_symbol": self.mw.newline_display_symbol,
             "newline_css": self.mw.newline_css,
             "tag_css": self.mw.tag_css,
@@ -290,15 +301,32 @@ class SettingsManager:
         except Exception as e:
             log_debug(f"Error loading unsaved session data: {e}")
 
+    def _parse_new_font_format(self, font_data):
+        """Парсить новий формат файлу шрифту і повертає font_map."""
+        font_map = {}
+        if not isinstance(font_data, dict) or "glyphs" not in font_data:
+            log_debug("New font format error: 'glyphs' key not found or data is not a dict.")
+            return font_map
+        
+        for glyph_info in font_data["glyphs"]:
+            char = glyph_info.get("char")
+            width_info = glyph_info.get("width")
+            if char and isinstance(width_info, dict) and "char" in width_info:
+                font_map[char] = {"width": width_info["char"]}
+        
+        return font_map
 
     def load_font_map(self):
         plugin_name = getattr(self.mw, 'active_game_plugin', None)
+        font_filename = getattr(self.mw, 'default_font_file', None)
         self.mw.font_map = {}
-        if not plugin_name:
+        
+        if not plugin_name or not font_filename:
+            log_debug("No active plugin or default_font_file specified. Character width calculations will use fallback.")
             return
 
-        font_map_path = os.path.join("plugins", plugin_name, "font_map.json")
-        log_debug(f"--> SettingsManager: Attempting to load font_map from plugin path: {font_map_path}")
+        font_map_path = os.path.join("plugins", plugin_name, "fonts", font_filename)
+        log_debug(f"--> SettingsManager: Attempting to load font_map from path: {font_map_path}")
         
         if not os.path.exists(font_map_path):
             log_debug(f"Font map file not found at '{font_map_path}'. Character width calculations will be disabled.")
@@ -306,8 +334,17 @@ class SettingsManager:
 
         try:
             with open(font_map_path, 'r', encoding='utf-8') as f:
-                self.mw.font_map = json.load(f)
-            log_debug(f"Successfully loaded font_map. Count: {len(self.mw.font_map)}")
+                raw_font_data = json.load(f)
+
+            if "signature" in raw_font_data and raw_font_data["signature"] == "FFNT":
+                log_debug("Detected new FFNT font format. Parsing...")
+                self.mw.font_map = self._parse_new_font_format(raw_font_data)
+            else:
+                # Стара логіка для зворотної сумісності
+                log_debug("Detected old font format.")
+                self.mw.font_map = raw_font_data
+
+            log_debug(f"Successfully loaded and parsed font_map. Count: {len(self.mw.font_map)}")
         except Exception as e:
-            log_debug(f"ERROR reading font map file '{font_map_path}': {e}.")
+            log_debug(f"ERROR reading or parsing font map file '{font_map_path}': {e}.")
             self.mw.font_map = {}

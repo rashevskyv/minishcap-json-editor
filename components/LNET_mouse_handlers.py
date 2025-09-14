@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu
+from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QInputDialog, QDialog, QVBoxLayout, QComboBox, QDialogButtonBox, QLabel, QSpinBox
 from PyQt5.QtGui import QTextCursor, QMouseEvent
 from PyQt5.QtCore import Qt, QPoint
 import re

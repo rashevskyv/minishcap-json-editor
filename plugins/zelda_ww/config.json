@@ -18,11 +18,11 @@
     "original_file_path": "D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message.kpx_orig.txt",
     "edited_file_path": "D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message.kpx_ua.txt",
     "last_selected_block_index": 0,
-    "last_selected_string_index": 14,
-    "last_cursor_position_in_edited": 47,
+    "last_selected_string_index": 8,
+    "last_cursor_position_in_edited": 38,
     "last_edited_text_edit_scroll_value_v": 0,
     "last_edited_text_edit_scroll_value_h": 0,
-    "last_preview_text_edit_scroll_value_v": 7,
+    "last_preview_text_edit_scroll_value_v": 0,
     "last_original_text_edit_scroll_value_v": 0,
     "last_original_text_edit_scroll_value_h": 0,
     "search_history": [],
@@ -39,5 +39,42 @@
         "PKFR_EMPTY_SUBLINE": true,
         "PKFR_SINGLE_WORD_SUBLINE": true,
         "PKFR_TAG_WARNING": true
+    },
+    "default_font_file": "CKingMsg.json",
+    "string_metadata": {
+        "(0, 6)": {
+            "font_file": "CKingMsg.json"
+        },
+        "(0, 4)": {
+            "font_file": "CKingMsg.json"
+        },
+        "(0, 7)": {
+            "font_file": "CKingMsg.json"
+        },
+        "(0, 0)": {
+            "font_file": "CKingMsg.json"
+        },
+        "(0, 1)": {
+            "font_file": "CKingMsg.json"
+        },
+        "(0, 2)": {
+            "font_file": "CKingMsg.json"
+        },
+        "(0, 3)": {
+            "font_file": "CKingMain.json",
+            "width": 243
+        },
+        "(0, 5)": {
+            "font_file": "CKingMsg.json"
+        },
+        "(0, 8)": {
+            "font_file": "CKingMsg.json"
+        },
+        "(0, 9)": {
+            "width": 50
+        },
+        "(0, 10)": {
+            "width": 245
+        }
     }
 }
