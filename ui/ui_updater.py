@@ -114,7 +114,6 @@ class UIUpdater:
             if self.mw.list_selection_handler._data_string_has_any_problem(block_idx, data_str_idx):
                 preview_edit.highlightManager.addProblemLineHighlight(data_str_idx)
 
-
     def populate_strings_for_block(self, block_idx):
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         original_edit = getattr(self.mw, 'original_text_edit', None)
@@ -149,20 +148,19 @@ class UIUpdater:
             preview_full_text = "\n".join(preview_lines)
             
             if preview_edit.toPlainText() != preview_full_text:
-                 preview_edit.setPlainText(preview_full_text)
+                preview_edit.setPlainText(preview_full_text)
 
             if self.mw.current_string_idx != -1 and \
-               hasattr(preview_edit, 'highlightManager') and \
-               0 <= self.mw.current_string_idx < preview_edit.document().blockCount(): 
-                preview_edit.highlightManager.setPreviewSelectedLineHighlight(self.mw.current_string_idx)
+            hasattr(preview_edit, 'highlightManager') and \
+            0 <= self.mw.current_string_idx < preview_edit.document().blockCount(): 
+                preview_edit.highlightManager.setPreviewSelectedLineHighlight([self.mw.current_string_idx])
 
             preview_edit.verticalScrollBar().setValue(old_preview_scrollbar_value)
         
         self.update_text_views() 
         self.synchronize_original_cursor() 
-        self.mw.is_programmatically_changing_text = False 
-
-
+        self.mw.is_programmatically_changing_text = False
+        
     def update_status_bar(self):
         if not hasattr(self.mw, 'edited_text_edit') or not self.mw.edited_text_edit or \
            not all(hasattr(self.mw, label_name) for label_name in ['status_label_part1', 'status_label_part2', 'status_label_part3']):

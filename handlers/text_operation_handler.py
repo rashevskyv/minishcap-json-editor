@@ -83,7 +83,7 @@ class TextOperationHandler(BaseHandler):
             self.ui_updater._apply_highlights_for_block(block_idx)
 
             if self.mw.current_string_idx != -1 and 0 <= self.mw.current_string_idx < preview_edit.document().blockCount():
-                preview_edit.highlightManager.setPreviewSelectedLineHighlight(self.mw.current_string_idx)
+                preview_edit.highlightManager.setPreviewSelectedLineHighlight([self.mw.current_string_idx])
             else:
                 preview_edit.highlightManager.clearPreviewSelectedLineHighlight()
 
@@ -92,8 +92,7 @@ class TextOperationHandler(BaseHandler):
             preview_edit.lineNumberArea.update()
 
         main_window_ref.is_programmatically_changing_text = was_programmatically_changing
-
-
+        
     def text_edited(self):
         if self.mw.is_programmatically_changing_text:
             return

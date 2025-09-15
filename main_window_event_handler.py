@@ -14,8 +14,12 @@ class MainWindowEventHandler:
         if hasattr(self.mw, 'block_list_widget'):
             self.mw.block_list_widget.currentItemChanged.connect(self.mw.list_selection_handler.block_selected)
             self.mw.block_list_widget.itemDoubleClicked.connect(self.mw.list_selection_handler.rename_block)
-        if hasattr(self.mw, 'preview_text_edit') and hasattr(self.mw.preview_text_edit, 'lineClicked'):
-            self.mw.preview_text_edit.lineClicked.connect(self.mw.list_selection_handler.string_selected_from_preview)
+        
+        if hasattr(self.mw, 'preview_text_edit'):
+            if hasattr(self.mw.preview_text_edit, 'lineClicked'):
+                self.mw.preview_text_edit.lineClicked.connect(self.mw.list_selection_handler.string_selected_from_preview)
+            self.mw.preview_text_edit.selectionChanged.connect(self.mw.list_selection_handler.handle_preview_selection_changed)
+
         if hasattr(self.mw, 'edited_text_edit'):
             self.mw.edited_text_edit.textChanged.connect(self.mw.editor_operation_handler.text_edited)
             self.mw.edited_text_edit.cursorPositionChanged.connect(self.handle_edited_cursor_position_changed)
@@ -62,7 +66,6 @@ class MainWindowEventHandler:
             self.mw.width_spinbox.valueChanged.connect(self.mw.string_settings_handler.on_width_changed)
         if hasattr(self.mw, 'apply_width_button'):
             self.mw.apply_width_button.clicked.connect(self.mw.string_settings_handler.apply_settings_change)
-
 
         log_debug("--> MainWindowEventHandler: connect_signals() finished")
 

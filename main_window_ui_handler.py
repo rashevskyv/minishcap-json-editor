@@ -118,15 +118,16 @@ class MainWindowUIHandler:
 
     def reconfigure_all_highlighters(self):
         log_debug("MainWindowUIHandler: Reconfiguring all highlighters.")
+        common_args = {
+            "newline_symbol": self.mw.newline_display_symbol,
+            "newline_css_str": self.mw.newline_css,
+            "tag_css_str": self.mw.tag_css,
+            "show_multiple_spaces_as_dots": self.mw.show_multiple_spaces_as_dots,
+            "space_dot_color_hex": self.mw.space_dot_color_hex,
+        }
         for editor in [self.mw.preview_text_edit, self.mw.original_text_edit, self.mw.edited_text_edit]:
             if editor and hasattr(editor, 'highlighter') and editor.highlighter:
-                editor.highlighter.newline_display_symbol = self.mw.newline_display_symbol
-                editor.highlighter.newline_css = self.mw.newline_css
-                editor.highlighter.tag_css = self.mw.tag_css
-                editor.highlighter.show_multiple_spaces_as_dots = self.mw.show_multiple_spaces_as_dots
-                editor.highlighter.space_dot_color_hex = self.mw.space_dot_color_hex
-                editor.highlighter.bracket_tag_color_hex = self.mw.bracket_tag_color_hex
-                editor.highlighter.rehighlight()
+                editor.highlighter.reconfigure_styles(**common_args)
 
     def force_focus(self):
         log_debug("MainWindowUIHandler: Forcing window focus.")

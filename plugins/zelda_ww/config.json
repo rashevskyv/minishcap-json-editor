@@ -7,8 +7,8 @@
     "block_color_markers": {},
     "newline_display_symbol": "↵",
     "newline_css": "color: #A020F0; font-weight: bold;",
-    "tag_css": "color: #808080; font-style: italic;",
-    "bracket_tag_color_hex": "#ffa500",
+    "tag_css": "color: rgba(128, 128, 128, 128); font-style: italic;",
+    "bracket_tag_color_hex": "#aa2e45",
     "show_multiple_spaces_as_dots": true,
     "space_dot_color_hex": "#808080",
     "preview_wrap_lines": false,
@@ -18,11 +18,11 @@
     "original_file_path": "D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message.kpx_orig.txt",
     "edited_file_path": "D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr\\message.kpx_orig_edited.txt",
     "last_selected_block_index": 0,
-    "last_selected_string_index": 413,
-    "last_cursor_position_in_edited": 10,
+    "last_selected_string_index": 8,
+    "last_cursor_position_in_edited": 43,
     "last_edited_text_edit_scroll_value_v": 0,
     "last_edited_text_edit_scroll_value_h": 0,
-    "last_preview_text_edit_scroll_value_v": 404,
+    "last_preview_text_edit_scroll_value_v": 1,
     "last_original_text_edit_scroll_value_v": 0,
     "last_original_text_edit_scroll_value_h": 0,
     "search_history": [],
@@ -54,9 +54,6 @@
     },
     "default_font_file": "CKingMainL.json",
     "string_metadata": {
-        "(0, 5)": {
-            "font_file": "CKingMain.json"
-        },
         "(0, 416)": {
             "font_file": "CKingMsg.json"
         }

@@ -137,14 +137,15 @@ class TextHighlightManager:
               self._linked_cursor_selections = []
               self.applyHighlights()
 
-    def setPreviewSelectedLineHighlight(self, line_number: int): 
+    def setPreviewSelectedLineHighlight(self, line_numbers: List[int]):
         new_selections = []
         doc = self.editor.document()
-        if line_number >= 0 and line_number < doc.blockCount():
-            block = doc.findBlockByNumber(line_number)
-            selection = self._create_block_background_selection(block, self.editor.preview_selected_line_color, use_full_width=True)
-            if selection: new_selections.append(selection)
-            
+        for line_number in line_numbers:
+            if line_number >= 0 and line_number < doc.blockCount():
+                block = doc.findBlockByNumber(line_number)
+                selection = self._create_block_background_selection(block, self.editor.preview_selected_line_color, use_full_width=True)
+                if selection:
+                    new_selections.append(selection)
         if list(self._preview_selected_line_selections) != list(new_selections):
             self._preview_selected_line_selections = new_selections
             self.applyHighlights()

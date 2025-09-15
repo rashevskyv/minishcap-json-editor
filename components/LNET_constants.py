@@ -4,12 +4,12 @@ from PyQt5.QtCore import Qt
 # --- Light Theme Colors ---
 LT_CURRENT_LINE_COLOR = QColor("#E8F2FE")
 LT_LINKED_CURSOR_BLOCK_COLOR = QColor("#F0F8FF")
-LT_PREVIEW_SELECTED_LINE_COLOR = QColor("#CDE8FF")
+LT_PREVIEW_SELECTED_LINE_COLOR = QColor("#AEC6E0")
 
 # --- Dark Theme Colors ---
 DT_CURRENT_LINE_COLOR = QColor("#3A3A3A")
 DT_LINKED_CURSOR_BLOCK_COLOR = QColor("#333333")
-DT_PREVIEW_SELECTED_LINE_COLOR = QColor("#004A7E")
+DT_PREVIEW_SELECTED_LINE_COLOR = QColor("#003E6B")
 
 
 # --- Common Colors (Alpha values can be used for blending) ---

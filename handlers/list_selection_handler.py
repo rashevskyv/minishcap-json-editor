@@ -108,7 +108,7 @@ class ListSelectionHandler(BaseHandler):
         if preview_edit and self.mw.current_string_idx != -1 and \
            0 <= self.mw.current_string_idx < preview_edit.document().blockCount():
             if hasattr(preview_edit, 'highlightManager'): 
-                preview_edit.highlightManager.setPreviewSelectedLineHighlight(self.mw.current_string_idx)
+                preview_edit.highlightManager.setPreviewSelectedLineHighlight([self.mw.current_string_idx])
             
             block_to_show = preview_edit.document().findBlockByNumber(self.mw.current_string_idx)
             if block_to_show.isValid():
@@ -225,4 +225,36 @@ class ListSelectionHandler(BaseHandler):
             if start_scan_idx != -1 and self._data_string_has_any_problem(self.mw.current_block_idx, start_scan_idx):
                  self.string_selected_from_preview(start_scan_idx)
 
-        self.mw.is_programmatically_changing_text = original_programmatic_state
+            self.mw.is_programmatically_changing_text = original_programmatic_state
+
+    def handle_preview_selection_changed(self):
+        preview_edit = getattr(self.mw, 'preview_text_edit', None)
+        if not preview_edit or not preview_edit.hasFocus():
+            return
+            
+        cursor = preview_edit.textCursor()
+        if not cursor.hasSelection():
+            if self.mw.current_string_idx != -1:
+                if hasattr(preview_edit, 'highlightManager'):
+                    preview_edit.highlightManager.setPreviewSelectedLineHighlight([self.mw.current_string_idx])
+            return
+
+        start_pos = cursor.selectionStart()
+        end_pos = cursor.selectionEnd()
+        
+        start_block = self.mw.preview_text_edit.document().findBlock(start_pos)
+        end_block = self.mw.preview_text_edit.document().findBlock(end_pos)
+        
+        start_line = start_block.blockNumber()
+        end_line = end_block.blockNumber()
+        
+        if end_pos > start_pos and end_pos == end_block.position() and start_block.blockNumber() != end_block.blockNumber():
+            end_line -= 1
+            
+        if end_line < start_line:
+            end_line = start_line
+
+        selected_lines = list(range(start_line, end_line + 1))
+        
+        if hasattr(preview_edit, 'highlightManager'):
+            preview_edit.highlightManager.setPreviewSelectedLineHighlight(selected_lines)

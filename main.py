@@ -144,7 +144,7 @@ class MainWindow(QMainWindow):
 
         self.newline_display_symbol = "↵"
         self.newline_css = "color: #A020F0; font-weight: bold;"
-        self.tag_css = "color: #808080; font-style: italic;"
+        self.tag_css = "color: rgba(128, 128, 128, 128); font-style: italic;"
         self.show_multiple_spaces_as_dots = True
         self.space_dot_color_hex = "#BBBBBB"
         self.preview_wrap_lines = True

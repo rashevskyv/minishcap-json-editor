@@ -108,8 +108,23 @@ class LNETMouseHandlers:
                     event.accept(); return
 
     def mousePressEvent(self, event: QMouseEvent):
-        self.editor.super_mousePressEvent(event) # Викликаємо батьківський метод з LineNumberedTextEdit
-        if event.button() == Qt.LeftButton:
-             cursor = self.editor.cursorForPosition(event.pos())
-             block_number = cursor.blockNumber()
-             self.editor.lineClicked.emit(block_number)
+        self.editor.super_mousePressEvent(event)
+        
+        cursor = self.editor.cursorForPosition(event.pos())
+        block_number = cursor.blockNumber()
+        
+        if self.editor.objectName() == "preview_text_edit":
+            if event.button() == Qt.LeftButton:
+                self.editor.lineClicked.emit(block_number)
+            elif event.button() == Qt.RightButton:
+                text_cursor = self.editor.textCursor()
+                is_in_selection = False
+                if text_cursor.hasSelection():
+                    start_pos = text_cursor.selectionStart()
+                    end_pos = text_cursor.selectionEnd()
+                    clicked_pos = cursor.position()
+                    if start_pos <= clicked_pos < end_pos:
+                        is_in_selection = True
+                
+                if not is_in_selection:
+                    self.editor.lineClicked.emit(block_number)
