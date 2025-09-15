@@ -124,6 +124,7 @@ class MainWindowUIHandler:
             "tag_css_str": self.mw.tag_css,
             "show_multiple_spaces_as_dots": self.mw.show_multiple_spaces_as_dots,
             "space_dot_color_hex": self.mw.space_dot_color_hex,
+            "bracket_tag_color_hex": self.mw.bracket_tag_color_hex,
         }
         for editor in [self.mw.preview_text_edit, self.mw.original_text_edit, self.mw.edited_text_edit]:
             if editor and hasattr(editor, 'highlighter') and editor.highlighter:

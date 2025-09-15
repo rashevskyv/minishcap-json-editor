@@ -14,30 +14,86 @@ class TagManager:
         # self.tag_patterns_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "tag_patterns.json") # Більше не потрібен
 
         self.curly_tag_format = QTextCharFormat()
-        self.curly_tag_format.setForeground(QColor("#808080"))
-        self.curly_tag_format.setFontItalic(True)
-
         self.bracket_tag_format = QTextCharFormat()
-        self.bracket_tag_format.setForeground(QColor("#FFA500"))
+        self.newline_symbol_format = QTextCharFormat()
+        self.literal_newline_format = QTextCharFormat()
+
+        self.color_red_format = QTextCharFormat()
+        self.color_green_format = QTextCharFormat()
+        self.color_blue_format = QTextCharFormat()
+        self.color_default_format = QTextCharFormat()
+
+        self.reconfigure_styles()
+
+    def _apply_css_to_format(self, fmt: QTextCharFormat, css_str: str):
+        if not css_str:
+            return
+        try:
+            for prop in css_str.split(';'):
+                prop = prop.strip()
+                if not prop:
+                    continue
+                if ':' not in prop:
+                    continue
+                key, val = [p.strip().lower() for p in prop.split(':', 1)]
+                if key == 'color':
+                    fmt.setForeground(QColor(val))
+                elif key == 'background-color':
+                    fmt.setBackground(QColor(val))
+                elif key == 'font-weight':
+                    if val == 'bold':
+                        fmt.setFontWeight(QFont.Bold)
+                    elif val == 'normal':
+                        fmt.setFontWeight(QFont.Normal)
+                    else:
+                        fmt.setFontWeight(int(val))
+                elif key == 'font-style':
+                    fmt.setFontItalic(val == 'italic')
+        except Exception as e:
+            log_debug(f"Zelda MC TagManager: error applying CSS '{prop}': {e}")
+
+    def reconfigure_styles(self):
+        # Base defaults
+        bracket_color = "#FFA500"
+        newline_color = "#A020F0"
+        literal_newline_color = "red"
+
+        # Override from settings if present
+        if self.mw and getattr(self.mw, 'bracket_tag_color_hex', None):
+            bracket_color = self.mw.bracket_tag_color_hex
+
+        # Curly tag style from Tag CSS
+        self.curly_tag_format = QTextCharFormat()
+        self._apply_css_to_format(self.curly_tag_format, getattr(self.mw, 'tag_css', None) if self.mw else None)
+        # Preserve italic by default if not explicitly set
+        if not self.curly_tag_format.fontItalic():
+            self.curly_tag_format.setFontItalic(True)
+
+        # Bracket tag style from setting
+        self.bracket_tag_format = QTextCharFormat()
+        try:
+            self.bracket_tag_format.setForeground(QColor(bracket_color))
+        except Exception:
+            self.bracket_tag_format.setForeground(QColor("#FFA500"))
         self.bracket_tag_format.setFontWeight(QFont.Bold)
 
+        # Newline markers
         self.newline_symbol_format = QTextCharFormat()
-        self.newline_symbol_format.setForeground(QColor("#A020F0"))
+        self.newline_symbol_format.setForeground(QColor(newline_color))
         self.newline_symbol_format.setFontWeight(QFont.Bold)
 
         self.literal_newline_format = QTextCharFormat()
-        self.literal_newline_format.setForeground(QColor("red"))
+        self.literal_newline_format.setForeground(QColor(literal_newline_color))
         self.literal_newline_format.setFontWeight(QFont.Bold)
 
-        self.color_red_format = QTextCharFormat()
+        # Color states
         self.color_red_format.setForeground(Qt.red)
-        self.color_green_format = QTextCharFormat()
         self.color_green_format.setForeground(Qt.darkGreen)
-        self.color_blue_format = QTextCharFormat()
         self.color_blue_format.setForeground(Qt.blue)
-        self.color_default_format = QTextCharFormat()
 
     def get_syntax_highlighting_rules(self) -> List[Tuple[str, QTextCharFormat]]:
+        # Ensure styles reflect current settings
+        self.reconfigure_styles()
         default_text_color_from_editor = QColor(Qt.black)
         if self.mw and hasattr(self.mw, 'preview_text_edit') and self.mw.preview_text_edit:
             palette = self.mw.preview_text_edit.palette()

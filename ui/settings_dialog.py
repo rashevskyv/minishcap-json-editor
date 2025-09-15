@@ -39,9 +39,11 @@ class ColorPickerButton(QPushButton):
         return "white" if bg_color.lightness() < 128 else "black"
 
     def pick_color(self):
-        dialog = QColorDialog(self._color, self)
-        if dialog.exec_():
-            self.setColor(dialog.selectedColor())
+        # Use a top-level dialog (parent as main window) to avoid inheriting
+        # this button's background-color stylesheet into the color dialog.
+        chosen = QColorDialog.getColor(self._color, self.window(), "Select Color")
+        if chosen.isValid():
+            self.setColor(chosen)
 
 class SettingsDialog(QDialog):
     def __init__(self, main_window):

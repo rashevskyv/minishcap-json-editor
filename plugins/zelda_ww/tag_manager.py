@@ -16,7 +16,11 @@ class TagManager:
         self.reconfigure_styles()
 
     def reconfigure_styles(self):
-        self.tag_format.setForeground(QColor("#FFA500"))
+        # Use configured bracket tag color if available
+        bracket_color = "#FFA500"
+        if self.mw and getattr(self.mw, 'bracket_tag_color_hex', None):
+            bracket_color = self.mw.bracket_tag_color_hex
+        self.tag_format.setForeground(QColor(bracket_color))
         self.tag_format.setFontWeight(QFont.Bold)
 
         self.newline_symbol_format.setForeground(QColor("#A020F0"))
