@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (
     QLabel, QAction, QStatusBar, QMenu, QPlainTextEdit, QToolBar,
     QStyle, QSpinBox, QPushButton, QSpacerItem, QSizePolicy, QComboBox
 )
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QSize
 import os
 from PyQt5.QtGui import QIcon, QFont, QFontMetrics, QKeySequence 
 from components.LineNumberedTextEdit import LineNumberedTextEdit
@@ -210,11 +210,9 @@ def setup_main_window_ui(main_window):
     undo_local = _icon_path('undo.svg')
     redo_local = _icon_path('redo.svg')
 
-    # Prefer themed icons if available; otherwise use bundled SVGs; finally fallback to arrows
-    _undo_theme = QIcon.fromTheme("edit-undo")
-    undo_icon = _undo_theme if not _undo_theme.isNull() else (QIcon(undo_local) if os.path.exists(undo_local) else style.standardIcon(QStyle.SP_ArrowBack))
-    _redo_theme = QIcon.fromTheme("edit-redo")
-    redo_icon = _redo_theme if not _redo_theme.isNull() else (QIcon(redo_local) if os.path.exists(redo_local) else style.standardIcon(QStyle.SP_ArrowForward))
+    # Prefer bundled Oxygen-like SVGs for consistent curved look; fallback to theme or arrows
+    undo_icon = QIcon(undo_local) if os.path.exists(undo_local) else QIcon.fromTheme("edit-undo", style.standardIcon(QStyle.SP_ArrowBack))
+    redo_icon = QIcon(redo_local) if os.path.exists(redo_local) else QIcon.fromTheme("edit-redo", style.standardIcon(QStyle.SP_ArrowForward))
     find_icon = style.standardIcon(QStyle.SP_FileDialogContentsView)
 
     main_window.undo_typing_action = QAction(undo_icon, '&Undo Typing', main_window)
@@ -253,6 +251,8 @@ def setup_main_window_ui(main_window):
 
     main_window.main_toolbar = QToolBar("Main Toolbar")
     main_window.addToolBar(main_window.main_toolbar)
+    # Slightly larger icon size for better readability
+    main_window.main_toolbar.setIconSize(QSize(24, 24))
 
     main_window.main_toolbar.addAction(main_window.open_action)
     main_window.main_toolbar.addAction(main_window.save_action)
