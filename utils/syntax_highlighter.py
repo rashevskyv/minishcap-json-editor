@@ -142,7 +142,16 @@ class JsonTagHighlighter(QSyntaxHighlighter):
         self.red_text_format.setForeground(QColor("#FF4C4C"))
         self.green_text_format.setForeground(QColor("#4CAF50"))
         self.blue_text_format.setForeground(QColor("#0958e0"))
-        self.yellow_text_format.setForeground(QColor("yellow"))
+        # Improve readability of Yellow in light theme
+        if current_theme == 'dark':
+            self.yellow_text_format.setForeground(QColor("yellow"))
+        else:
+            # Darker yellow text with a subtle amber background
+            self.yellow_text_format.setForeground(QColor("#b58900"))
+            try:
+                self.yellow_text_format.setBackground(QColor("#fff4c2"))
+            except Exception:
+                pass
         self.lblue_text_format.setForeground(QColor("#ADD8E6"))
         self.purple_text_format.setForeground(QColor("#800080"))
         self.silver_text_format.setForeground(QColor("#C0C0C0"))

@@ -199,8 +199,9 @@ def setup_main_window_ui(main_window):
     file_menu.addAction(main_window.exit_action)
 
     edit_menu = menubar.addMenu('&Edit')
-    undo_icon = style.standardIcon(QStyle.SP_ArrowBack)
-    redo_icon = style.standardIcon(QStyle.SP_ArrowForward)
+    # Prefer standard-themed undo/redo icons; fallback to arrows
+    undo_icon = QIcon.fromTheme("edit-undo", style.standardIcon(QStyle.SP_ArrowBack))
+    redo_icon = QIcon.fromTheme("edit-redo", style.standardIcon(QStyle.SP_ArrowForward))
     find_icon = style.standardIcon(QStyle.SP_FileDialogContentsView)
 
     main_window.undo_typing_action = QAction(undo_icon, '&Undo Typing', main_window)
