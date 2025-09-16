@@ -1,23 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+<svg width="100%" height="100%" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
   <defs>
-    <linearGradient id="gradBlue" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#7ec8ff"/>
-      <stop offset="50%" stop-color="#3fa2f5"/>
-      <stop offset="100%" stop-color="#1d6fd6"/>
+    <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7AC3FF" stop-opacity="1" />
+      <stop offset="100%" stop-color="#1E90FF" stop-opacity="1" />
     </linearGradient>
-    <linearGradient id="gradStroke" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#4a88c7"/>
-      <stop offset="100%" stop-color="#0c3d78"/>
-    </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="1" stdDeviation="1.2" flood-color="#000" flood-opacity="0.25"/>
-    </filter>
   </defs>
-  <!-- curved arrow body -->
-  <g filter="url(#shadow)">
-    <path d="M24 9 A 10 10 0 1 0 24 23" fill="none" stroke="url(#gradStroke)" stroke-width="4" stroke-linecap="round"/>
-    <path d="M24 9 A 10 10 0 1 0 24 23" fill="none" stroke="url(#gradBlue)" stroke-width="3" stroke-linecap="round"/>
-    <!-- arrowhead -->
-    <path d="M24 9 L 18.5 9 L 21 6 Z" fill="url(#gradBlue)" stroke="url(#gradStroke)" stroke-width="1"/>
-  </g>
+  <path fill="url(#arrowGradient)" d="M10,45 L45,20 L45,35 C85,35 85,55 45,55 L45,70 L10,45 Z" />
 </svg>
