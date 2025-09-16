@@ -89,6 +89,10 @@ class JsonTagHighlighter(QSyntaxHighlighter):
                 elif key == 'font-style':
                     if value == 'italic': char_format.setFontItalic(True)
                     elif value == 'normal': char_format.setFontItalic(False)
+                elif key == 'text-decoration':
+                    # basic underline support
+                    if 'underline' in value: char_format.setFontUnderline(True)
+                    else: char_format.setFontUnderline(False)
             except Exception as e: log_debug(f"  Error applying CSS property '{prop}': {e}")
 
     def reconfigure_styles(self, newline_symbol="↵",

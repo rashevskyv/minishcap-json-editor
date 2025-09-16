@@ -125,10 +125,18 @@ class MainWindowHelper:
 
     def reconfigure_all_highlighters(self):
         log_debug("MainWindowHelper: Reconfiguring all highlighters...")
+        # Compose newline CSS
+        nl_color = getattr(self.mw, 'newline_color_rgba', "#A020F0")
+        nl_css_parts = [f"color: {nl_color}"]
+        if getattr(self.mw, 'newline_bold', True): nl_css_parts.append("font-weight: bold")
+        if getattr(self.mw, 'newline_italic', False): nl_css_parts.append("font-style: italic")
+        if getattr(self.mw, 'newline_underline', False): nl_css_parts.append("text-decoration: underline")
+        newline_css_str = "; ".join(nl_css_parts) + ";"
+
         common_args = {
-            "newline_symbol": self.mw.newline_display_symbol, "newline_css_str": self.mw.newline_css,
-            "tag_css_str": self.mw.tag_css, "show_multiple_spaces_as_dots": self.mw.show_multiple_spaces_as_dots,
-            "space_dot_color_hex": self.mw.space_dot_color_hex, "bracket_tag_color_hex": self.mw.bracket_tag_color_hex
+            "newline_symbol": self.mw.newline_display_symbol, "newline_css_str": newline_css_str,
+            "tag_css_str": "", "show_multiple_spaces_as_dots": self.mw.show_multiple_spaces_as_dots,
+            "space_dot_color_hex": self.mw.space_dot_color_hex, "bracket_tag_color_hex": getattr(self.mw, 'tag_color_rgba', "#FF8C00")
         }
         text_edits_with_highlighters = []
         if hasattr(self.mw, 'preview_text_edit') and hasattr(self.mw.preview_text_edit, 'highlighter'): text_edits_with_highlighters.append(self.mw.preview_text_edit)

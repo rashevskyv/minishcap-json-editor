@@ -17,7 +17,11 @@ class ColorPickerButton(QPushButton):
     def __init__(self, initial_color=QColor("black"), parent=None):
         super().__init__(parent)
         self._color = QColor(initial_color)
-        self.setText(self._color.name())
+        # Show ARGB hex so alpha is visible if set
+        try:
+            self.setText(self._color.name(QColor.HexArgb))
+        except Exception:
+            self.setText(self._color.name())
         self.setToolTip("Click to choose a color")
         self.clicked.connect(self.pick_color)
         self._update_style()
@@ -28,7 +32,10 @@ class ColorPickerButton(QPushButton):
     def setColor(self, color: QColor):
         if self._color != color:
             self._color = color
-            self.setText(self._color.name())
+            try:
+                self.setText(self._color.name(QColor.HexArgb))
+            except Exception:
+                self.setText(self._color.name())
             self._update_style()
             self.colorChanged.emit(self._color)
 
@@ -41,7 +48,11 @@ class ColorPickerButton(QPushButton):
     def pick_color(self):
         # Use a top-level dialog (parent as main window) to avoid inheriting
         # this button's background-color stylesheet into the color dialog.
-        chosen = QColorDialog.getColor(self._color, self.window(), "Select Color")
+        try:
+            options = QColorDialog.ShowAlphaChannel
+        except Exception:
+            options = 0
+        chosen = QColorDialog.getColor(self._color, self.window(), "Select Color", options)
         if chosen.isValid():
             self.setColor(chosen)
 
@@ -186,12 +197,34 @@ class SettingsDialog(QDialog):
         layout.addRow(self.editors_wrap_checkbox)
         self.newline_symbol_edit = QLineEdit(self)
         layout.addRow("Newline Symbol:", self.newline_symbol_edit)
-        self.newline_css_edit = QLineEdit(self)
-        layout.addRow("Newline Symbol CSS:", self.newline_css_edit)
-        self.tag_css_edit = QLineEdit(self)
-        layout.addRow("Tag CSS:", self.tag_css_edit)
-        self.bracket_tag_color_picker = ColorPickerButton(parent=self)
-        layout.addRow("Bracket Tag Color:", self.bracket_tag_color_picker)
+
+        # Newline Style: color + bold/italic/underline
+        newline_style_row = QWidget(self)
+        nlr = QHBoxLayout(newline_style_row); nlr.setContentsMargins(0,0,0,0)
+        self.newline_color_picker = ColorPickerButton(parent=self)
+        self.newline_bold_chk = QCheckBox("Bold", self)
+        self.newline_italic_chk = QCheckBox("Italic", self)
+        self.newline_underline_chk = QCheckBox("Underline", self)
+        nlr.addWidget(self.newline_color_picker)
+        nlr.addWidget(self.newline_bold_chk)
+        nlr.addWidget(self.newline_italic_chk)
+        nlr.addWidget(self.newline_underline_chk)
+        nlr.addStretch(1)
+        layout.addRow("Newline Symbol Style:", newline_style_row)
+
+        # Tag Style: color + bold/italic/underline
+        tag_style_row = QWidget(self)
+        tsr = QHBoxLayout(tag_style_row); tsr.setContentsMargins(0,0,0,0)
+        self.tag_color_picker = ColorPickerButton(parent=self)
+        self.tag_bold_chk = QCheckBox("Bold", self)
+        self.tag_italic_chk = QCheckBox("Italic", self)
+        self.tag_underline_chk = QCheckBox("Underline", self)
+        tsr.addWidget(self.tag_color_picker)
+        tsr.addWidget(self.tag_bold_chk)
+        tsr.addWidget(self.tag_italic_chk)
+        tsr.addWidget(self.tag_underline_chk)
+        tsr.addStretch(1)
+        layout.addRow("Tag Style:", tag_style_row)
 
     def on_rules_changed(self):
         self.rules_changed_requires_rescan = True
@@ -324,9 +357,19 @@ class SettingsDialog(QDialog):
         self.preview_wrap_checkbox.setChecked(self.mw.preview_wrap_lines)
         self.editors_wrap_checkbox.setChecked(self.mw.editors_wrap_lines)
         self.newline_symbol_edit.setText(self.mw.newline_display_symbol)
-        self.newline_css_edit.setText(self.mw.newline_css)
-        self.tag_css_edit.setText(self.mw.tag_css)
-        self.bracket_tag_color_picker.setColor(QColor(self.mw.bracket_tag_color_hex))
+        # Load styles
+        # Newline
+        nl_color = getattr(self.mw, 'newline_color_rgba', '#A020F0')
+        self.newline_color_picker.setColor(QColor(nl_color))
+        self.newline_bold_chk.setChecked(getattr(self.mw, 'newline_bold', True))
+        self.newline_italic_chk.setChecked(getattr(self.mw, 'newline_italic', False))
+        self.newline_underline_chk.setChecked(getattr(self.mw, 'newline_underline', False))
+        # Tag
+        tag_color = getattr(self.mw, 'tag_color_rgba', getattr(self.mw, 'bracket_tag_color_hex', '#FF8C00'))
+        self.tag_color_picker.setColor(QColor(tag_color))
+        self.tag_bold_chk.setChecked(getattr(self.mw, 'tag_bold', True))
+        self.tag_italic_chk.setChecked(getattr(self.mw, 'tag_italic', False))
+        self.tag_underline_chk.setChecked(getattr(self.mw, 'tag_underline', False))
         self.game_dialog_width_spinbox.setValue(self.mw.game_dialog_max_width_pixels)
         self.width_warning_spinbox.setValue(self.mw.line_width_warning_threshold_pixels)
 
@@ -373,9 +416,16 @@ class SettingsDialog(QDialog):
             'preview_wrap_lines': self.preview_wrap_checkbox.isChecked(),
             'editors_wrap_lines': self.editors_wrap_checkbox.isChecked(),
             'newline_display_symbol': self.newline_symbol_edit.text(),
-            'newline_css': self.newline_css_edit.text(),
-            'tag_css': self.tag_css_edit.text(),
-            'bracket_tag_color_hex': self.bracket_tag_color_picker.color().name(),
+            # Newline style
+            'newline_color_rgba': self.newline_color_picker.color().name(QColor.HexArgb) if hasattr(QColor, 'HexArgb') else self.newline_color_picker.color().name(),
+            'newline_bold': self.newline_bold_chk.isChecked(),
+            'newline_italic': self.newline_italic_chk.isChecked(),
+            'newline_underline': self.newline_underline_chk.isChecked(),
+            # Tag style
+            'tag_color_rgba': self.tag_color_picker.color().name(QColor.HexArgb) if hasattr(QColor, 'HexArgb') else self.tag_color_picker.color().name(),
+            'tag_bold': self.tag_bold_chk.isChecked(),
+            'tag_italic': self.tag_italic_chk.isChecked(),
+            'tag_underline': self.tag_underline_chk.isChecked(),
             'game_dialog_max_width_pixels': self.game_dialog_width_spinbox.value(),
             'line_width_warning_threshold_pixels': self.width_warning_spinbox.value(),
             'autofix_enabled': autofix_settings,

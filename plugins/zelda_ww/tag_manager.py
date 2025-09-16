@@ -16,15 +16,18 @@ class TagManager:
         self.reconfigure_styles()
 
     def reconfigure_styles(self):
-        # Use configured bracket tag color if available
-        bracket_color = "#FFA500"
-        if self.mw and getattr(self.mw, 'bracket_tag_color_hex', None):
-            bracket_color = self.mw.bracket_tag_color_hex
-        self.tag_format.setForeground(QColor(bracket_color))
-        self.tag_format.setFontWeight(QFont.Bold)
+        # Use new Tag Style from settings
+        tag_color = getattr(self.mw, 'tag_color_rgba', "#FF8C00") if self.mw else "#FF8C00"
+        self.tag_format.setForeground(QColor(tag_color))
+        self.tag_format.setFontWeight(QFont.Bold if getattr(self.mw, 'tag_bold', True) else QFont.Normal)
+        self.tag_format.setFontItalic(getattr(self.mw, 'tag_italic', False))
+        self.tag_format.setFontUnderline(getattr(self.mw, 'tag_underline', False))
 
-        self.newline_symbol_format.setForeground(QColor("#A020F0"))
-        self.newline_symbol_format.setFontWeight(QFont.Bold)
+        nl_color = getattr(self.mw, 'newline_color_rgba', "#A020F0") if self.mw else "#A020F0"
+        self.newline_symbol_format.setForeground(QColor(nl_color))
+        self.newline_symbol_format.setFontWeight(QFont.Bold if getattr(self.mw, 'newline_bold', True) else QFont.Normal)
+        self.newline_symbol_format.setFontItalic(getattr(self.mw, 'newline_italic', False))
+        self.newline_symbol_format.setFontUnderline(getattr(self.mw, 'newline_underline', False))
 
         self.red_text_format.setForeground(QColor("#FF4C4C"))
         self.blue_text_format.setForeground(QColor("#0958e0"))

@@ -54,33 +54,35 @@ class TagManager:
 
     def reconfigure_styles(self):
         # Base defaults
-        bracket_color = "#FFA500"
-        newline_color = "#A020F0"
+        tag_color = getattr(self.mw, 'tag_color_rgba', "#FF8C00") if self.mw else "#FF8C00"
+        newline_color = getattr(self.mw, 'newline_color_rgba', "#A020F0") if self.mw else "#A020F0"
         literal_newline_color = "red"
 
-        # Override from settings if present
-        if self.mw and getattr(self.mw, 'bracket_tag_color_hex', None):
-            bracket_color = self.mw.bracket_tag_color_hex
-
-        # Curly tag style from Tag CSS
+        # Curly + Bracket tag style from Tag Style
         self.curly_tag_format = QTextCharFormat()
-        self._apply_css_to_format(self.curly_tag_format, getattr(self.mw, 'tag_css', None) if self.mw else None)
-        # Preserve italic by default if not explicitly set
-        if not self.curly_tag_format.fontItalic():
-            self.curly_tag_format.setFontItalic(True)
-
-        # Bracket tag style from setting
         self.bracket_tag_format = QTextCharFormat()
         try:
-            self.bracket_tag_format.setForeground(QColor(bracket_color))
+            self.curly_tag_format.setForeground(QColor(tag_color))
+            self.bracket_tag_format.setForeground(QColor(tag_color))
         except Exception:
-            self.bracket_tag_format.setForeground(QColor("#FFA500"))
-        self.bracket_tag_format.setFontWeight(QFont.Bold)
+            pass
+        if getattr(self.mw, 'tag_bold', True):
+            self.curly_tag_format.setFontWeight(QFont.Bold)
+            self.bracket_tag_format.setFontWeight(QFont.Bold)
+        if getattr(self.mw, 'tag_italic', False):
+            self.curly_tag_format.setFontItalic(True)
+            self.bracket_tag_format.setFontItalic(True)
+        if getattr(self.mw, 'tag_underline', False):
+            self.curly_tag_format.setFontUnderline(True)
+            self.bracket_tag_format.setFontUnderline(True)
 
         # Newline markers
         self.newline_symbol_format = QTextCharFormat()
-        self.newline_symbol_format.setForeground(QColor(newline_color))
-        self.newline_symbol_format.setFontWeight(QFont.Bold)
+        try: self.newline_symbol_format.setForeground(QColor(newline_color))
+        except Exception: pass
+        if getattr(self.mw, 'newline_bold', True): self.newline_symbol_format.setFontWeight(QFont.Bold)
+        if getattr(self.mw, 'newline_italic', False): self.newline_symbol_format.setFontItalic(True)
+        if getattr(self.mw, 'newline_underline', False): self.newline_symbol_format.setFontUnderline(True)
 
         self.literal_newline_format = QTextCharFormat()
         self.literal_newline_format.setForeground(QColor(literal_newline_color))

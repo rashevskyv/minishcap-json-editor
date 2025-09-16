@@ -101,6 +101,15 @@ class SettingsManager:
         for key, value in defaults.items():
              if key not in ["block_names", "block_color_markers", "default_tag_mappings", "string_metadata"]:
                 setattr(self.mw, key, value)
+        # Ensure new style fields exist
+        if not hasattr(self.mw, 'tag_color_rgba'): self.mw.tag_color_rgba = "#FF8C00"
+        if not hasattr(self.mw, 'tag_bold'): self.mw.tag_bold = True
+        if not hasattr(self.mw, 'tag_italic'): self.mw.tag_italic = False
+        if not hasattr(self.mw, 'tag_underline'): self.mw.tag_underline = False
+        if not hasattr(self.mw, 'newline_color_rgba'): self.mw.newline_color_rgba = "#A020F0"
+        if not hasattr(self.mw, 'newline_bold'): self.mw.newline_bold = True
+        if not hasattr(self.mw, 'newline_italic'): self.mw.newline_italic = False
+        if not hasattr(self.mw, 'newline_underline'): self.mw.newline_underline = False
         
         if not hasattr(self.mw, 'block_names'): self.mw.block_names = {}
         if not hasattr(self.mw, 'block_color_markers'): self.mw.block_color_markers = {}
@@ -133,6 +142,42 @@ class SettingsManager:
                     continue
                 if hasattr(self.mw, key):
                      setattr(self.mw, key, value)
+
+            # Migrate legacy CSS-based settings to new style fields if needed
+            if not hasattr(self.mw, 'tag_color_rgba') or not getattr(self.mw, 'tag_color_rgba', None):
+                legacy_color = plugin_data.get('bracket_tag_color_hex') or '#FF8C00'
+                self.mw.tag_color_rgba = legacy_color
+            if not hasattr(self.mw, 'tag_bold'):
+                # legacy: bracket tags were bold by default
+                self.mw.tag_bold = True
+            if not hasattr(self.mw, 'tag_italic'):
+                legacy_tag_css = plugin_data.get('tag_css', '')
+                self.mw.tag_italic = 'italic' in legacy_tag_css.lower() if isinstance(legacy_tag_css, str) else False
+            if not hasattr(self.mw, 'tag_underline'):
+                legacy_tag_css = plugin_data.get('tag_css', '')
+                self.mw.tag_underline = 'underline' in legacy_tag_css.lower() if isinstance(legacy_tag_css, str) else False
+
+            if not hasattr(self.mw, 'newline_color_rgba') or not getattr(self.mw, 'newline_color_rgba', None):
+                legacy_nl_css = plugin_data.get('newline_css', '')
+                # simple color extraction
+                nl_color = '#A020F0'
+                if isinstance(legacy_nl_css, str) and '#' in legacy_nl_css:
+                    try:
+                        hexpart = legacy_nl_css.split('#',1)[1].split(';',1)[0].strip()
+                        if len(hexpart) >= 6:
+                            nl_color = f"#{hexpart[:6]}"
+                    except Exception:
+                        pass
+                self.mw.newline_color_rgba = nl_color
+            if not hasattr(self.mw, 'newline_bold'):
+                legacy_nl_css = plugin_data.get('newline_css', '')
+                self.mw.newline_bold = 'bold' in legacy_nl_css.lower() if isinstance(legacy_nl_css, str) else True
+            if not hasattr(self.mw, 'newline_italic'):
+                legacy_nl_css = plugin_data.get('newline_css', '')
+                self.mw.newline_italic = 'italic' in legacy_nl_css.lower() if isinstance(legacy_nl_css, str) else False
+            if not hasattr(self.mw, 'newline_underline'):
+                legacy_nl_css = plugin_data.get('newline_css', '')
+                self.mw.newline_underline = 'underline' in legacy_nl_css.lower() if isinstance(legacy_nl_css, str) else False
             
             self.mw.search_history_to_save = plugin_data.get("search_history", [])
             
@@ -217,9 +262,15 @@ class SettingsManager:
             "string_metadata": {str(k): v for k, v in self.mw.string_metadata.items()},
             "default_font_file": self.mw.default_font_file,
             "newline_display_symbol": self.mw.newline_display_symbol,
-            "newline_css": self.mw.newline_css,
-            "tag_css": self.mw.tag_css,
-            "bracket_tag_color_hex": self.mw.bracket_tag_color_hex,
+            # New style fields
+            "tag_color_rgba": getattr(self.mw, 'tag_color_rgba', "#FF8C00"),
+            "tag_bold": getattr(self.mw, 'tag_bold', True),
+            "tag_italic": getattr(self.mw, 'tag_italic', False),
+            "tag_underline": getattr(self.mw, 'tag_underline', False),
+            "newline_color_rgba": getattr(self.mw, 'newline_color_rgba', "#A020F0"),
+            "newline_bold": getattr(self.mw, 'newline_bold', True),
+            "newline_italic": getattr(self.mw, 'newline_italic', False),
+            "newline_underline": getattr(self.mw, 'newline_underline', False),
             "preview_wrap_lines": self.mw.preview_wrap_lines,
             "editors_wrap_lines": self.mw.editors_wrap_lines,
             "game_dialog_max_width_pixels": self.mw.game_dialog_max_width_pixels,
