@@ -44,19 +44,20 @@ class CustomListWidget(QListWidget):
         item = self.itemAt(pos)
         if not item:
             return
-    
+
+        self.setCurrentItem(item)
         block_idx = item.data(Qt.UserRole)
         main_window = self.window()
-        block_name = item.text() 
+        block_name = item.text()
         if hasattr(main_window, 'block_names'):
-             block_name = main_window.block_names.get(str(block_idx), f"Block {block_idx}") 
-    
+            block_name = main_window.block_names.get(str(block_idx), f"Block {block_idx}")
+
         menu = QMenu(self)
-        
+
         rename_action = menu.addAction(f"Rename '{block_name}'")
         if hasattr(main_window, 'list_selection_handler') and hasattr(main_window.list_selection_handler, 'rename_block'):
             rename_action.triggered.connect(lambda checked=False, item_to_rename=item: main_window.list_selection_handler.rename_block(item_to_rename))
-        
+
         menu.addSeparator()
 
         current_markers = main_window.get_block_color_markers(block_idx)
@@ -66,15 +67,25 @@ class CustomListWidget(QListWidget):
             action.setChecked(color_name in current_markers)
             action.triggered.connect(lambda checked, b_idx=block_idx, c_name=color_name: main_window.toggle_block_color_marker(b_idx, c_name))
             menu.addAction(action)
-        
+
         menu.addSeparator()
 
         if hasattr(main_window, 'app_action_handler') and hasattr(main_window.app_action_handler, 'rescan_issues_for_single_block'):
             rescan_action = menu.addAction(f"Rescan Issues in '{block_name}'")
             rescan_action.triggered.connect(lambda checked=False, idx=block_idx: main_window.app_action_handler.rescan_issues_for_single_block(idx))
-            
+
         if hasattr(main_window, 'app_action_handler') and hasattr(main_window.app_action_handler, 'calculate_widths_for_block_action'):
             calc_widths_action = menu.addAction(f"Calculate Line Widths for Block '{block_name}'")
             calc_widths_action.triggered.connect(lambda checked=False, idx=block_idx: main_window.app_action_handler.calculate_widths_for_block_action(idx))
-        
+
+        translator = getattr(main_window, 'translation_handler', None)
+        if translator:
+            menu.addSeparator()
+            translate_block = menu.addAction(f"AI Translate Block '{block_name}' (UA)")
+            translate_block.triggered.connect(lambda checked=False, idx=block_idx: translator.translate_current_block(idx))
+            generate_glossary = menu.addAction(f"AI Build Glossary for '{block_name}'")
+            generate_glossary.triggered.connect(lambda checked=False, idx=block_idx: translator.generate_block_glossary(idx))
+            add_selection_glossary = menu.addAction("Add Selected Lines to Glossary")
+            add_selection_glossary.triggered.connect(lambda checked=False, idx=block_idx: translator.append_selection_to_glossary(idx))
+
         menu.exec_(self.mapToGlobal(pos))

@@ -153,123 +153,86 @@ class LineNumberedTextEdit(QPlainTextEdit):
         if not isinstance(main_window, QMainWindow):
             return
 
-        custom_actions_added_header = False
+        custom_actions_added = False
 
         if self.objectName() == "edited_text_edit" and not self.isReadOnly():
-            log_debug(f"LNET ({self.objectName()}): Adding actions for editable text.")
-            cursor = self.textCursor() 
+            cursor = self.textCursor()
             if cursor.hasSelection():
-                log_debug(f"LNET ({self.objectName()}): Has selection.")
-                if not custom_actions_added_header:
+                if not custom_actions_added:
                     menu.addSeparator()
-                    custom_actions_added_header = True
-                
+                    custom_actions_added = True
+
                 color_widget_action = QWidgetAction(menu)
-                color_palette_widget = QWidget(menu) 
+                color_palette_widget = QWidget(menu)
                 palette_layout = QHBoxLayout(color_palette_widget)
-                palette_layout.setContentsMargins(5, 3, 5, 3) 
+                palette_layout.setContentsMargins(5, 3, 5, 3)
                 palette_layout.setSpacing(4)
 
                 colors_map = {
                     "Red": "rgb(200,0,0)",
-                    "Green": "rgb(0,100,0)", 
+                    "Green": "rgb(0,100,0)",
                     "Blue": "rgb(0,0,200)"
                 }
-                
+
                 for color_name_str, color_rgb_str in colors_map.items():
                     color_button = self._create_color_button(color_palette_widget, color_name_str, color_rgb_str, menu)
                     palette_layout.addWidget(color_button)
-                
+
                 color_palette_widget.setLayout(palette_layout)
                 color_widget_action.setDefaultWidget(color_palette_widget)
                 menu.addAction(color_widget_action)
-            else:
-                log_debug(f"LNET ({self.objectName()}): No selection.")
+        
+        if self.objectName() == "preview_text_edit":
+            translator = getattr(main_window, 'translation_handler', None)
+            if translator:
+                cursor = self.textCursor()
+                has_selection = cursor.hasSelection()
+                if not custom_actions_added:
+                    menu.addSeparator()
+                    custom_actions_added = True
+                translate_action = menu.addAction("AI Translate Selected Lines (UA)")
+                translate_action.setEnabled(has_selection)
+                translate_action.triggered.connect(translator.translate_preview_selection)
+                glossary_action = menu.addAction("Add Selected Lines to Glossary")
+                glossary_action.setEnabled(has_selection)
+                glossary_action.triggered.connect(translator.append_selection_to_glossary)
 
-        elif self.objectName() == "preview_text_edit":
-            log_debug(f"LNET ({self.objectName()}): Adding actions for preview.")
-            
             cursor = self.textCursor()
             if cursor.hasSelection():
-                selection_start_pos = cursor.selectionStart()
-                selection_end_pos = cursor.selectionEnd()
+                start_pos = cursor.selectionStart()
+                end_pos = cursor.selectionEnd()
 
-                start_block = self.document().findBlock(selection_start_pos)
-                end_block = self.document().findBlock(selection_end_pos)
+                start_block = self.document().findBlock(start_pos)
+                end_block = self.document().findBlock(end_pos)
 
-                if start_block.blockNumber() != end_block.blockNumber() or \
-                   (selection_end_pos > selection_start_pos and selection_end_pos == end_block.position()):
-                    
+
+                if (
+                    start_block.blockNumber() != end_block.blockNumber()
+                    or (end_pos > start_pos and end_pos == end_block.position())
+                ):
                     start_line = start_block.blockNumber()
                     end_line = end_block.blockNumber()
 
-                    if selection_end_pos == end_block.position() and selection_end_pos > selection_start_pos:
+                    if end_pos == end_block.position() and end_pos > start_pos:
                         end_line -= 1
 
                     if end_line >= start_line:
-                        menu.addSeparator()
-                        set_font_action = menu.addAction(f"Set Font for Lines {start_line + 1}-{end_line + 1}...")
-                        set_font_action.triggered.connect(lambda: self.handle_mass_set_font(start_line, end_line))
-                        
-                        set_width_action = menu.addAction(f"Set Width for Lines {start_line + 1}-{end_line + 1}...")
-                        set_width_action.triggered.connect(lambda: self.handle_mass_set_width(start_line, end_line))
-                        custom_actions_added_header = True
-            
-            if hasattr(main_window, 'data_processor') and hasattr(main_window, 'editor_operation_handler'):
-                current_block_idx_data = main_window.current_block_idx
-                clicked_cursor_obj = self.cursorForPosition(position_in_widget_coords)
-                clicked_data_line_number = clicked_cursor_obj.blockNumber()
+                        if not custom_actions_added:
+                            menu.addSeparator()
+                            custom_actions_added = True
+                        set_font_action = menu.addAction(
+                            f"Set Font for Lines {start_line + 1}-{end_line + 1}..."
+                        )
+                        set_font_action.triggered.connect(
+                            lambda start=start_line, end=end_line: self.handle_mass_set_font(start, end)
+                        )
 
-                if current_block_idx_data >= 0 and clicked_data_line_number >= 0:
-                    if not custom_actions_added_header:
-                        menu.addSeparator()
-                        custom_actions_added_header = True 
-                    
-                    preview_actions_actually_added = False
-
-                    if hasattr(main_window, 'paste_block_action'):
-                        paste_block_action = menu.addAction("Paste Block Text Here")
-                        paste_block_action.triggered.connect(main_window.editor_operation_handler.paste_block_text)
-                        paste_block_action.setEnabled(QApplication.clipboard().text() != "")
-                        preview_actions_actually_added = True
-                    
-                    if hasattr(main_window, 'undo_paste_action'):
-                        undo_paste_action = menu.addAction("Undo Last Paste Block")
-                        undo_paste_action.triggered.connect(main_window.actions.trigger_undo_paste_action)
-                        undo_paste_action.setEnabled(main_window.can_undo_paste)
-                        preview_actions_actually_added = True
-                    
-                    if preview_actions_actually_added:
-                        menu.addSeparator()
-
-                    revert_line_action = menu.addAction(f"Revert Data Line {clicked_data_line_number + 1} to Original")
-                    if hasattr(main_window.editor_operation_handler, 'revert_single_line'):
-                        revert_line_action.triggered.connect(lambda checked=False, line=clicked_data_line_number: main_window.editor_operation_handler.revert_single_line(line))
-                        is_revertable = False
-                        original_text_for_revert_check = main_window.data_processor._get_string_from_source(current_block_idx_data, clicked_data_line_number, main_window.data, "original_for_revert_check")
-                        if original_text_for_revert_check is not None:
-                            current_text, _ = main_window.data_processor.get_current_string_text(current_block_idx_data, clicked_data_line_number)
-                            if current_text != original_text_for_revert_check:
-                                is_revertable = True
-                        revert_line_action.setEnabled(is_revertable)
-                    else:
-                        revert_line_action.setEnabled(False)
-
-                    calc_width_action = menu.addAction(f"Calculate Width for Data Line {clicked_data_line_number + 1}")
-                    if hasattr(main_window.editor_operation_handler, 'calculate_width_for_data_line_action'):
-                        calc_width_action.triggered.connect(lambda checked=False, line_idx=clicked_data_line_number: main_window.editor_operation_handler.calculate_width_for_data_line_action(line_idx))
-                    else:
-                        calc_width_action.setEnabled(False)
-
-        elif self.objectName() == "original_text_edit":
-            log_debug(f"LNET ({self.objectName()}): Adding actions for original.")
-            tag_text_curly, _, _ = self.mouse_handler.get_tag_at_cursor(self.cursorForPosition(position_in_widget_coords), r"\{[^}]*\}")
-            if tag_text_curly:
-                if not custom_actions_added_header:
-                    menu.addSeparator()
-                
-                copy_tag_action = menu.addAction(f"Copy Tag: {tag_text_curly}")
-                copy_tag_action.triggered.connect(lambda checked=False, tag=tag_text_curly: self.mouse_handler.copy_tag_to_clipboard(tag))
+                        set_width_action = menu.addAction(
+                            f"Set Width for Lines {start_line + 1}-{end_line + 1}..."
+                        )
+                        set_width_action.triggered.connect(
+                            lambda start=start_line, end=end_line: self.handle_mass_set_width(start, end)
+                        )
 
     def _update_auxiliary_widths(self):
         current_font_metrics = self.fontMetrics()

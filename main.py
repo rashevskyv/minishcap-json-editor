@@ -27,8 +27,11 @@ from handlers.text_operation_handler import TextOperationHandler
 from handlers.search_handler import SearchHandler
 from handlers.string_settings_handler import StringSettingsHandler
 
+from handlers.translation_handler import TranslationHandler
+
 from core.settings_manager import SettingsManager
 from core.data_state_processor import DataStateProcessor
+from core.translation.config import build_default_translation_config
 
 from plugins.base_game_rules import BaseGameRules
 
@@ -159,6 +162,7 @@ class MainWindow(QMainWindow):
         self.default_font_file = ""
         self.autofix_enabled = {}
         self.detection_enabled = {}
+        self.translation_config = build_default_translation_config()
 
         self.can_undo_paste = False
         self.before_paste_edited_data_snapshot = {}
@@ -181,6 +185,8 @@ class MainWindow(QMainWindow):
         self.auto_fix_action = None 
         self.main_vertical_layout = None
         self.auto_fix_button = None 
+        self.ai_translate_button = None
+        self.ai_variation_button = None
         self.font_combobox: QComboBox = None
         self.width_spinbox: QSpinBox = None
         self.apply_width_button: QPushButton = None
@@ -221,6 +227,7 @@ class MainWindow(QMainWindow):
         self.app_action_handler = AppActionHandler(self, self.data_processor, self.ui_updater, self.current_game_rules) 
         self.search_handler = SearchHandler(self, self.data_processor, self.ui_updater)
         self.string_settings_handler = StringSettingsHandler(self, self.data_processor, self.ui_updater)
+        self.translation_handler = TranslationHandler(self, self.data_processor, self.ui_updater)
 
 
         log_debug("MainWindow: Setting up UI...")

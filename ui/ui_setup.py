@@ -39,7 +39,18 @@ def setup_main_window_ui(main_window):
 
     bottom_left_panel = QWidget()
     bottom_left_layout = QVBoxLayout(bottom_left_panel)
-    bottom_left_layout.addWidget(QLabel("Original (Read-Only):"))
+
+    original_header_layout = QHBoxLayout()
+    original_label = QLabel("Original (Read-Only):")
+    original_header_layout.addWidget(original_label)
+    original_header_layout.addStretch(1)
+    bottom_left_layout.addLayout(original_header_layout)
+
+    main_window.original_editor_top_spacer = QWidget()
+    main_window.original_editor_top_spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+    main_window.original_editor_top_spacer.setFixedHeight(0)
+    bottom_left_layout.addWidget(main_window.original_editor_top_spacer)
+
     main_window.original_text_edit = LineNumberedTextEdit(main_window)
     main_window.original_text_edit.setObjectName("original_text_edit")
     main_window.original_text_edit.setReadOnly(True)
@@ -66,6 +77,14 @@ def setup_main_window_ui(main_window):
     main_window.navigate_down_button.setIcon(main_window.style().standardIcon(QStyle.SP_ArrowDown))
     main_window.navigate_down_button.setToolTip("Navigate to next problem string (Ctrl+Down)")
     editable_text_header_layout.addWidget(main_window.navigate_down_button)
+
+    main_window.ai_translate_button = QPushButton("AI Translate")
+    main_window.ai_translate_button.setToolTip("Перекласти поточний рядок українською за допомогою AI")
+    editable_text_header_layout.addWidget(main_window.ai_translate_button)
+
+    main_window.ai_variation_button = QPushButton("AI Variation")
+    main_window.ai_variation_button.setToolTip("Створити варіацію чинного перекладу поточного рядка")
+    editable_text_header_layout.addWidget(main_window.ai_variation_button)
 
     main_window.auto_fix_button = QPushButton("Auto-fix")
     main_window.auto_fix_button.setToolTip("Automatically fix issues in the current string (Ctrl+Shift+A)") 
@@ -103,6 +122,17 @@ def setup_main_window_ui(main_window):
     
     string_settings_layout.addStretch(1)
     bottom_right_layout.addWidget(string_settings_panel)
+
+    if hasattr(main_window, 'original_editor_top_spacer') and main_window.original_editor_top_spacer:
+        header_heights = [
+            main_window.ai_translate_button.sizeHint().height(),
+            main_window.ai_variation_button.sizeHint().height(),
+            main_window.navigate_up_button.sizeHint().height(),
+            main_window.navigate_down_button.sizeHint().height(),
+            main_window.auto_fix_button.sizeHint().height(),
+        ]
+        placeholder_height = max(header_heights) + string_settings_panel.sizeHint().height()
+        main_window.original_editor_top_spacer.setFixedHeight(placeholder_height)
 
     main_window.edited_text_edit = LineNumberedTextEdit(main_window)
     main_window.edited_text_edit.setObjectName("edited_text_edit")

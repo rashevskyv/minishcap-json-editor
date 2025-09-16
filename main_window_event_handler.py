@@ -50,6 +50,10 @@ class MainWindowEventHandler:
             self.mw.search_panel_widget.find_next_requested.connect(self.mw.helper.handle_panel_find_next)
             self.mw.search_panel_widget.find_previous_requested.connect(self.mw.helper.handle_panel_find_previous)
         
+        if hasattr(self.mw, 'ai_translate_button') and self.mw.ai_translate_button:
+            self.mw.ai_translate_button.clicked.connect(self.mw.translation_handler.translate_current_string)
+        if hasattr(self.mw, 'ai_variation_button') and self.mw.ai_variation_button:
+            self.mw.ai_variation_button.clicked.connect(self.mw.translation_handler.generate_variation_for_current_string)
         if hasattr(self.mw, 'auto_fix_button') and self.mw.auto_fix_button:
             self.mw.auto_fix_button.clicked.connect(self.mw.editor_operation_handler.auto_fix_current_string)
         if hasattr(self.mw, 'auto_fix_action') and self.mw.auto_fix_action: 

@@ -1,4 +1,4 @@
-import json
+﻿import json
 import os
 import base64
 from PyQt5.QtCore import QByteArray, QRect, QTimer
@@ -10,6 +10,7 @@ from utils.constants import (
     DEFAULT_LINE_WIDTH_WARNING_THRESHOLD
 )
 from plugins.pokemon_fr.config import DEFAULT_AUTOFIX_SETTINGS, DEFAULT_DETECTION_SETTINGS
+from core.translation.config import build_default_translation_config, merge_translation_config
 
 class SettingsManager:
     def __init__(self, main_window):
@@ -95,6 +96,7 @@ class SettingsManager:
             "last_edited_text_edit_scroll_value_h": 0, "last_preview_text_edit_scroll_value_v": 0,
             "last_original_text_edit_scroll_value_v": 0, "last_original_text_edit_scroll_value_h": 0,
             "search_history": [],
+            "translation_config": build_default_translation_config(),
             "autofix_enabled": DEFAULT_AUTOFIX_SETTINGS.copy(),
             "detection_enabled": DEFAULT_DETECTION_SETTINGS.copy()
         }
@@ -190,6 +192,14 @@ class SettingsManager:
             detection_settings = DEFAULT_DETECTION_SETTINGS.copy()
             detection_settings.update(loaded_detection)
             self.mw.detection_enabled = detection_settings
+
+            loaded_translation = plugin_data.get("translation_config", {})
+            if isinstance(loaded_translation, dict):
+                self.mw.translation_config = merge_translation_config(
+                    build_default_translation_config(), loaded_translation
+                )
+            else:
+                self.mw.translation_config = build_default_translation_config()
 
             log_debug(f"Plugin settings loaded from '{plugin_config_path}'.")
             log_debug(f"  [LOAD STATE] Loaded Block Idx: {self.mw.last_selected_block_index}, String Idx: {self.mw.last_selected_string_index}, Cursor Pos: {self.mw.last_cursor_position_in_edited}")
@@ -287,7 +297,8 @@ class SettingsManager:
             "last_original_text_edit_scroll_value_h": self.mw.last_original_text_edit_scroll_value_h,
             "search_history": self.mw.search_history_to_save,
             "autofix_enabled": self.mw.autofix_enabled,
-            "detection_enabled": self.mw.detection_enabled
+            "detection_enabled": self.mw.detection_enabled,
+            "translation_config": self.mw.translation_config
         }
         
         plugin_data.update(plugin_data_to_save)
@@ -412,3 +423,5 @@ class SettingsManager:
             log_debug(f"Default font file not found, using first available font as default: '{first_font}'.")
         else:
             log_debug("No font maps loaded for the plugin.")
+
+

@@ -4,12 +4,14 @@ from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QFormLayout, QComboBox,
     QDialogButtonBox, QWidget, QLabel, QTabWidget,
     QCheckBox, QLineEdit, QColorDialog, QPushButton,
-    QHBoxLayout, QFileDialog, QMessageBox
+    QHBoxLayout, QFileDialog, QMessageBox, QGroupBox,
+    QDoubleSpinBox, QSpinBox
 )
 from PyQt5.QtGui import QColor, QPalette
 from PyQt5.QtCore import pyqtSignal
 from utils.logging_utils import log_debug
 from components.labeled_spinbox import LabeledSpinBox
+from core.translation.config import build_default_translation_config, merge_translation_config
 
 class ColorPickerButton(QPushButton):
     colorChanged = pyqtSignal(QColor)
@@ -65,6 +67,7 @@ class SettingsDialog(QDialog):
         
         self.autofix_checkboxes = {}
         self.detection_checkboxes = {}
+        self.translation_config_snapshot = build_default_translation_config()
         self.plugin_changed_requires_restart = False
         self.theme_changed_requires_restart = False
         self.initial_plugin_name = self.mw.active_game_plugin
@@ -153,18 +156,21 @@ class SettingsDialog(QDialog):
         paths_tab = QWidget()
         display_tab = QWidget()
         rules_tab = QWidget()
+        translation_tab = QWidget()
         detection_tab = QWidget()
         autofix_tab = QWidget()
 
         self.plugin_tabs.addTab(paths_tab, "File Paths")
         self.plugin_tabs.addTab(display_tab, "Display")
         self.plugin_tabs.addTab(rules_tab, "Rules")
+        self.plugin_tabs.addTab(translation_tab, "AI Translation")
         self.plugin_tabs.addTab(detection_tab, "Detection")
         self.plugin_tabs.addTab(autofix_tab, "Auto-fix")
 
         self._setup_paths_subtab(paths_tab)
         self._setup_display_subtab(display_tab)
         self._setup_rules_subtab(rules_tab)
+        self._setup_translation_subtab(translation_tab)
         
         self.detection_checkboxes.clear()
         self.autofix_checkboxes.clear()
@@ -280,6 +286,79 @@ class SettingsDialog(QDialog):
         self._populate_checkbox_subtab(tab, self.autofix_checkboxes, "Enable/disable auto-fix for specific problems:")
 
 
+    def _setup_translation_subtab(self, tab):
+        layout = QVBoxLayout(tab)
+
+        provider_form = QFormLayout()
+        self.translation_provider_combo = QComboBox(self)
+        self.translation_provider_combo.addItem("Disabled", "disabled")
+        self.translation_provider_combo.addItem("OpenAI Chat Completions", "openai_chat")
+        self.translation_provider_combo.addItem("ChatMock (GPT-5 via ChatGPT)", "chatmock")
+        self.translation_provider_combo.addItem("Ollama Chat", "ollama_chat")
+        provider_form.addRow("Active Provider:", self.translation_provider_combo)
+        layout.addLayout(provider_form)
+
+        openai_group = QGroupBox("OpenAI-compatible chat completions", tab)
+        openai_layout = QFormLayout(openai_group)
+        self.openai_api_key_edit = QLineEdit(self)
+        self.openai_api_key_edit.setEchoMode(QLineEdit.Password)
+        self.openai_api_key_edit.setPlaceholderText("Bearer token")
+        openai_layout.addRow("API Key:", self.openai_api_key_edit)
+        self.openai_api_key_env_edit = QLineEdit(self)
+        self.openai_api_key_env_edit.setPlaceholderText("OPENAI_API_KEY")
+        openai_layout.addRow("API Key Env Var:", self.openai_api_key_env_edit)
+        self.openai_base_url_edit = QLineEdit(self)
+        self.openai_base_url_edit.setPlaceholderText("https://api.openai.com/v1")
+        openai_layout.addRow("Base URL:", self.openai_base_url_edit)
+        self.openai_model_edit = QLineEdit(self)
+        self.openai_model_edit.setPlaceholderText("gpt-4o-mini")
+        openai_layout.addRow("Model:", self.openai_model_edit)
+        self.openai_temperature_spin = QDoubleSpinBox(self)
+        self.openai_temperature_spin.setRange(0.0, 2.0)
+        self.openai_temperature_spin.setDecimals(2)
+        self.openai_temperature_spin.setSingleStep(0.05)
+        self.openai_temperature_spin.setValue(0.0)
+        openai_layout.addRow("Temperature:", self.openai_temperature_spin)
+        self.openai_max_tokens_spin = QSpinBox(self)
+        self.openai_max_tokens_spin.setRange(0, 200000)
+        self.openai_max_tokens_spin.setSingleStep(100)
+        self.openai_max_tokens_spin.setSpecialValueText("Provider default")
+        self.openai_max_tokens_spin.setValue(0)
+        openai_layout.addRow("Max Output Tokens:", self.openai_max_tokens_spin)
+        self.openai_timeout_spin = QSpinBox(self)
+        self.openai_timeout_spin.setRange(1, 600)
+        self.openai_timeout_spin.setSuffix(" s")
+        self.openai_timeout_spin.setValue(60)
+        openai_layout.addRow("Request Timeout:", self.openai_timeout_spin)
+        layout.addWidget(openai_group)
+
+        ollama_group = QGroupBox("Ollama chat API", tab)
+        ollama_layout = QFormLayout(ollama_group)
+        self.ollama_base_url_edit = QLineEdit(self)
+        self.ollama_base_url_edit.setPlaceholderText("http://localhost:11434")
+        ollama_layout.addRow("Base URL:", self.ollama_base_url_edit)
+        self.ollama_model_edit = QLineEdit(self)
+        self.ollama_model_edit.setPlaceholderText("llama3")
+        ollama_layout.addRow("Model:", self.ollama_model_edit)
+        self.ollama_temperature_spin = QDoubleSpinBox(self)
+        self.ollama_temperature_spin.setRange(0.0, 2.0)
+        self.ollama_temperature_spin.setDecimals(2)
+        self.ollama_temperature_spin.setSingleStep(0.05)
+        self.ollama_temperature_spin.setValue(0.0)
+        ollama_layout.addRow("Temperature:", self.ollama_temperature_spin)
+        self.ollama_timeout_spin = QSpinBox(self)
+        self.ollama_timeout_spin.setRange(1, 600)
+        self.ollama_timeout_spin.setSuffix(" s")
+        self.ollama_timeout_spin.setValue(120)
+        ollama_layout.addRow("Request Timeout:", self.ollama_timeout_spin)
+        self.ollama_keep_alive_edit = QLineEdit(self)
+        self.ollama_keep_alive_edit.setPlaceholderText("e.g. 5m or leave blank")
+        ollama_layout.addRow("Keep Alive:", self.ollama_keep_alive_edit)
+        layout.addWidget(ollama_group)
+
+        layout.addStretch(1)
+
+
     def find_plugins(self):
         plugins_dir = "plugins"
         found_plugins = {}
@@ -387,7 +466,52 @@ class SettingsDialog(QDialog):
         detection_settings = getattr(self.mw, 'detection_enabled', {})
         for problem_id, checkbox in self.detection_checkboxes.items():
             checkbox.setChecked(detection_settings.get(problem_id, True))
-        
+
+        self.translation_config_snapshot = merge_translation_config(
+            build_default_translation_config(),
+            getattr(self.mw, 'translation_config', {})
+        )
+        provider_key = self.translation_config_snapshot.get('provider', 'disabled')
+        provider_index = self.translation_provider_combo.findData(provider_key)
+        if provider_index != -1:
+            self.translation_provider_combo.setCurrentIndex(provider_index)
+        else:
+            self.translation_provider_combo.setCurrentIndex(0)
+
+        providers_cfg = self.translation_config_snapshot.get('providers', {}) if isinstance(self.translation_config_snapshot, dict) else {}
+        openai_cfg = providers_cfg.get('openai_chat', {}) if isinstance(providers_cfg, dict) else {}
+        chatmock_cfg = providers_cfg.get('chatmock', {}) if isinstance(providers_cfg, dict) else {}
+        active_openai_cfg = openai_cfg if provider_key != 'chatmock' else chatmock_cfg
+        self.openai_api_key_edit.setText(active_openai_cfg.get('api_key', ''))
+        self.openai_api_key_env_edit.setText(active_openai_cfg.get('api_key_env', ''))
+        self.openai_base_url_edit.setText(active_openai_cfg.get('base_url', ''))
+        self.openai_model_edit.setText(active_openai_cfg.get('model', ''))
+        try:
+            self.openai_temperature_spin.setValue(float(active_openai_cfg.get('temperature', 0.0)))
+        except (TypeError, ValueError):
+            self.openai_temperature_spin.setValue(0.0)
+        try:
+            self.openai_max_tokens_spin.setValue(int(active_openai_cfg.get('max_output_tokens', 0) or 0))
+        except (TypeError, ValueError):
+            self.openai_max_tokens_spin.setValue(0)
+        try:
+            self.openai_timeout_spin.setValue(int(active_openai_cfg.get('timeout', 60) or 60))
+        except (TypeError, ValueError):
+            self.openai_timeout_spin.setValue(60)
+
+        ollama_cfg = providers_cfg.get('ollama_chat', {}) if isinstance(providers_cfg, dict) else {}
+        self.ollama_base_url_edit.setText(ollama_cfg.get('base_url', ''))
+        self.ollama_model_edit.setText(ollama_cfg.get('model', ''))
+        try:
+            self.ollama_temperature_spin.setValue(float(ollama_cfg.get('temperature', 0.0)))
+        except (TypeError, ValueError):
+            self.ollama_temperature_spin.setValue(0.0)
+        try:
+            self.ollama_timeout_spin.setValue(int(ollama_cfg.get('timeout', 120) or 120))
+        except (TypeError, ValueError):
+            self.ollama_timeout_spin.setValue(120)
+        self.ollama_keep_alive_edit.setText(ollama_cfg.get('keep_alive', ''))
+
         self.rules_changed_requires_rescan = False
 
 
@@ -402,6 +526,47 @@ class SettingsDialog(QDialog):
         detection_settings = {}
         for problem_id, checkbox in self.detection_checkboxes.items():
             detection_settings[problem_id] = checkbox.isChecked()
+
+        translation_config_to_save = merge_translation_config(
+            build_default_translation_config(),
+            self.translation_config_snapshot
+        )
+        provider_key = self.translation_provider_combo.currentData() or 'disabled'
+        translation_config_to_save['provider'] = provider_key
+
+        providers_cfg = translation_config_to_save.setdefault('providers', {})
+        openai_cfg = dict(providers_cfg.get('openai_chat', {}))
+        openai_cfg.update({
+            'api_key': self.openai_api_key_edit.text().strip(),
+            'api_key_env': self.openai_api_key_env_edit.text().strip(),
+            'base_url': self.openai_base_url_edit.text().strip(),
+            'model': self.openai_model_edit.text().strip(),
+            'temperature': float(self.openai_temperature_spin.value()),
+            'max_output_tokens': int(self.openai_max_tokens_spin.value()),
+            'timeout': int(self.openai_timeout_spin.value())
+        })
+        providers_cfg['openai_chat'] = openai_cfg
+
+        ollama_cfg = dict(providers_cfg.get('ollama_chat', {}))
+        ollama_cfg.update({
+            'base_url': self.ollama_base_url_edit.text().strip(),
+            'model': self.ollama_model_edit.text().strip(),
+            'temperature': float(self.ollama_temperature_spin.value()),
+            'timeout': int(self.ollama_timeout_spin.value()),
+            'keep_alive': self.ollama_keep_alive_edit.text().strip()
+        })
+        providers_cfg['ollama_chat'] = ollama_cfg
+        chatmock_cfg = dict(providers_cfg.get('chatmock', {}))
+        if provider_key == 'chatmock':
+            chatmock_cfg.update({
+                'base_url': self.openai_base_url_edit.text().strip() or chatmock_cfg.get('base_url', ''),
+                'model': self.openai_model_edit.text().strip() or chatmock_cfg.get('model', ''),
+                'api_key': self.openai_api_key_edit.text().strip() or chatmock_cfg.get('api_key', 'chatmock-placeholder'),
+                'temperature': float(self.openai_temperature_spin.value()),
+                'timeout': int(self.openai_timeout_spin.value())
+            })
+        providers_cfg['chatmock'] = chatmock_cfg
+        self.translation_config_snapshot = translation_config_to_save
 
         return {
             'theme': self.theme_combo.currentText().lower(),
@@ -429,5 +594,6 @@ class SettingsDialog(QDialog):
             'game_dialog_max_width_pixels': self.game_dialog_width_spinbox.value(),
             'line_width_warning_threshold_pixels': self.width_warning_spinbox.value(),
             'autofix_enabled': autofix_settings,
+            'translation_config': translation_config_to_save,
             'detection_enabled': detection_settings
         }

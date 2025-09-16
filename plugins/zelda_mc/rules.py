@@ -86,7 +86,7 @@ class GameRules(BaseGameRules):
         return super().get_short_problem_name(problem_id)
 
     def get_plugin_actions(self) -> List[Dict[str, Any]]:
-        return [
+        actions = [
             {
                 'name': 'check_tags_mismatch',
                 'text': 'Check Tags Mismatch',
@@ -96,6 +96,37 @@ class GameRules(BaseGameRules):
                 'menu': 'Tools'
             }
         ]
+
+        translator = getattr(self.mw, 'translation_handler', None)
+        if translator:
+            actions.extend([
+                {
+                    'name': 'ai_translate_current_string',
+                    'text': 'AI Translate Current String (UA)',
+                    'tooltip': 'Translate the current string into Ukrainian with AI',
+                    'shortcut': 'Ctrl+Alt+T',
+                    'handler': translator.translate_current_string,
+                    'menu': 'Tools'
+                },
+                {
+                    'name': 'ai_translate_selected_lines',
+                    'text': 'AI Translate Selected Lines (UA)',
+                    'tooltip': 'Translate the selected lines of the current string into Ukrainian',
+                    'shortcut': 'Ctrl+Alt+L',
+                    'handler': translator.translate_selected_lines,
+                    'menu': 'Tools'
+                },
+                {
+                    'name': 'ai_translate_current_block',
+                    'text': 'AI Translate Entire Block (UA)',
+                    'tooltip': 'Translate every string in the current block into Ukrainian',
+                    'shortcut': 'Ctrl+Alt+B',
+                    'handler': translator.translate_current_block,
+                    'menu': 'Tools'
+                }
+            ])
+
+        return actions
     
     def get_text_representation_for_preview(self, data_string: str) -> str:
         newline_symbol = getattr(self.mw, "newline_display_symbol", "↵")
