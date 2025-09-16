@@ -5,7 +5,9 @@
       <stop offset="100%" stop-color="#1E90FF" stop-opacity="1" />
     </linearGradient>
   </defs>
+  <!-- Enter-style bent arrow (right), rounded corner, larger size -->
   <g transform="translate(100,0) scale(-1,1)">
-    <path fill="url(#arrowGradient)" d="M10,45 L45,20 L45,35 C85,35 85,55 45,55 L45,70 L10,45 Z" />
+    <path d="M88 40 H50 C40 40 38 42 38 50 V68" stroke="url(#arrowGradient)" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M38 78 L 28 64 L 48 64 Z" fill="url(#arrowGradient)"/>
   </g>
 </svg>
