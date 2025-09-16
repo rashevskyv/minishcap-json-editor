@@ -8,6 +8,7 @@
   <!-- Enter-style bent arrow (right), rounded corner, larger size -->
   <g transform="translate(100,0) scale(-1,1)">
     <path d="M88 40 H50 C40 40 38 42 38 50 V68" stroke="url(#arrowGradient)" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M38 78 L 28 64 L 48 64 Z" fill="url(#arrowGradient)"/>
+    <!-- side arrowhead on the horizontal segment (will mirror to point right) -->
+    <path d="M46 40 L 58 34 L 58 46 Z" fill="url(#arrowGradient)"/>
   </g>
 </svg>
