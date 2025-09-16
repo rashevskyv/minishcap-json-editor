@@ -1,14 +1,5 @@
-<svg width="100%" height="100%" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
-  <defs>
-    <linearGradient id="arrowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#7AC3FF" stop-opacity="1" />
-      <stop offset="100%" stop-color="#1E90FF" stop-opacity="1" />
-    </linearGradient>
-  </defs>
-  <!-- Enter-style bent arrow (right), rounded corner, larger size -->
-  <g transform="translate(100,0) scale(-1,1)">
-    <path d="M88 40 H50 C40 40 38 42 38 50 V68" stroke="url(#arrowGradient)" stroke-width="12" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-    <!-- side arrowhead on the horizontal segment (will mirror to point right) -->
-    <path d="M46 40 L 58 34 L 58 46 Z" fill="url(#arrowGradient)"/>
+<svg width="100%" height="100%" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+  <g transform="translate(24,0) scale(-1,1)">
+    <path d="M4 9V14H9M20 16C19.5026 11.5 16.6326 8 12 8C9.27084 8 6.07142 10.2681 4.70591 13.5" stroke="#1E90FF" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" fill="none"/>
   </g>
 </svg>
