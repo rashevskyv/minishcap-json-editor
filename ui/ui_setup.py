@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import (
     QStyle, QSpinBox, QPushButton, QSpacerItem, QSizePolicy, QComboBox
 )
 from PyQt5.QtCore import Qt
+import os
 from PyQt5.QtGui import QIcon, QFont, QFontMetrics, QKeySequence 
 from components.LineNumberedTextEdit import LineNumberedTextEdit
 from components.CustomListWidget import CustomListWidget
@@ -199,9 +200,21 @@ def setup_main_window_ui(main_window):
     file_menu.addAction(main_window.exit_action)
 
     edit_menu = menubar.addMenu('&Edit')
-    # Prefer standard-themed undo/redo icons; fallback to arrows
-    undo_icon = QIcon.fromTheme("edit-undo", style.standardIcon(QStyle.SP_ArrowBack))
-    redo_icon = QIcon.fromTheme("edit-redo", style.standardIcon(QStyle.SP_ArrowForward))
+
+    # Helper to load semicircular undo/redo icons reliably across platforms
+    def _icon_path(file_name: str) -> str:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        project_root = os.path.dirname(base_dir)
+        return os.path.join(project_root, 'resources', 'icons', file_name)
+
+    undo_local = _icon_path('undo.svg')
+    redo_local = _icon_path('redo.svg')
+
+    # Prefer themed icons if available; otherwise use bundled SVGs; finally fallback to arrows
+    _undo_theme = QIcon.fromTheme("edit-undo")
+    undo_icon = _undo_theme if not _undo_theme.isNull() else (QIcon(undo_local) if os.path.exists(undo_local) else style.standardIcon(QStyle.SP_ArrowBack))
+    _redo_theme = QIcon.fromTheme("edit-redo")
+    redo_icon = _redo_theme if not _redo_theme.isNull() else (QIcon(redo_local) if os.path.exists(redo_local) else style.standardIcon(QStyle.SP_ArrowForward))
     find_icon = style.standardIcon(QStyle.SP_FileDialogContentsView)
 
     main_window.undo_typing_action = QAction(undo_icon, '&Undo Typing', main_window)
