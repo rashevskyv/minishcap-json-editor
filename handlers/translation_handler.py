@@ -2,7 +2,7 @@
 import os
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QTextCursor
@@ -16,15 +16,17 @@ from core.translation.providers import (
     create_translation_provider,
 )
 from core.translation.session_manager import TranslationSessionManager
+from core.glossary_manager import GlossaryEntry, GlossaryManager, GlossaryOccurrence
 from components.translation_variations_dialog import TranslationVariationsDialog
+from components.glossary_dialog import GlossaryDialog
 from utils.logging_utils import log_debug
 from utils.utils import ALL_TAGS_PATTERN, convert_spaces_to_dots_for_display
 
 
 class TranslationHandler(BaseHandler):
-    _TAG_PLACEHOLDER_PREFIX = "⟪TAG"
-    _GLOSS_PLACEHOLDER_PREFIX = "⟪GLOS"
-    _PLACEHOLDER_SUFFIX = "⟫"
+    _TAG_PLACEHOLDER_PREFIX = "__TAG_"
+    _GLOSS_PLACEHOLDER_PREFIX = "__GLOS_"
+    _PLACEHOLDER_SUFFIX = "__"
     _MAX_LOG_EXCERPT = 160
 
     def __init__(self, main_window, data_processor, ui_updater):
@@ -35,6 +37,9 @@ class TranslationHandler(BaseHandler):
         self._active_provider_key: Optional[str] = None
         self._progress_dialog: Optional[QProgressDialog] = None
         self._reset_session_action: Optional[QAction] = None
+        self._open_glossary_action: Optional[QAction] = None
+        self._glossary_manager = GlossaryManager()
+        self._current_glossary_path: Optional[Path] = None
 
         QTimer.singleShot(0, self._install_menu_actions)
 
@@ -223,6 +228,38 @@ class TranslationHandler(BaseHandler):
         else:
             self._clear_status_message()
 
+    def show_glossary_dialog(self, initial_term: Optional[str] = None) -> None:
+        system_prompt, glossary_text = self._load_prompts()
+        if system_prompt is None:
+            return
+
+        if not self._glossary_manager.get_entries():
+            QMessageBox.information(
+                self.mw,
+                "Глосарій",
+                "Глосарій порожній або не завантажений.",
+            )
+            return
+
+        data_source = getattr(self.mw, 'data', None)
+        if not isinstance(data_source, list):
+            QMessageBox.information(self.mw, "Глосарій", "Немає завантажених даних для аналізу.")
+            return
+
+        occurrence_map = self._glossary_manager.build_occurrence_index(data_source)
+        entries = sorted(
+            self._glossary_manager.get_entries(),
+            key=lambda item: item.original.lower(),
+        )
+        dialog = GlossaryDialog(
+            parent=self.mw,
+            entries=entries,
+            occurrence_map=occurrence_map,
+            jump_callback=self._jump_to_occurrence,
+            initial_term=initial_term,
+        )
+        dialog.exec_()
+
     def reset_translation_session(self) -> None:
         self._session_manager.reset()
         self._cached_system_prompt = None
@@ -230,17 +267,39 @@ class TranslationHandler(BaseHandler):
         if self.mw.statusBar:
             self.mw.statusBar.showMessage("AI-сесію скинуто.", 4000)
 
-    def _install_menu_actions(self) -> None:
-        if self._reset_session_action is not None:
+    def _jump_to_occurrence(self, occurrence: GlossaryOccurrence) -> None:
+        if occurrence is None:
             return
+        entry = {
+            'block_idx': occurrence.block_idx,
+            'string_idx': occurrence.string_idx,
+            'line_idx': occurrence.line_idx,
+        }
+        self._activate_entry(entry)
+        if self.mw.statusBar:
+            self.mw.statusBar.showMessage(
+                f"Перехід до терміна: {occurrence.entry.original}",
+                4000,
+            )
+
+    def _install_menu_actions(self) -> None:
         tools_menu = getattr(self.mw, 'tools_menu', None)
         if not tools_menu:
             return
-        action = QAction('AI Reset Translation Session', self.mw)
-        action.setToolTip('Очистити поточну AI-сесію перекладу')
-        action.triggered.connect(self.reset_translation_session)
-        tools_menu.addAction(action)
-        self._reset_session_action = action
+
+        if self._open_glossary_action is None:
+            glossary_action = QAction('Open Glossary...', self.mw)
+            glossary_action.setToolTip('Переглянути глосарій та перейти до входжень')
+            glossary_action.triggered.connect(self.show_glossary_dialog)
+            tools_menu.addAction(glossary_action)
+            self._open_glossary_action = glossary_action
+
+        if self._reset_session_action is None:
+            reset_action = QAction('AI Reset Translation Session', self.mw)
+            reset_action.setToolTip('Очистити поточну AI-сесію перекладу')
+            reset_action.triggered.connect(self.reset_translation_session)
+            tools_menu.addAction(reset_action)
+            self._reset_session_action = reset_action
 
     def generate_block_glossary(self, block_idx: Optional[int] = None):
         target_block = block_idx if block_idx is not None else self.mw.current_block_idx
@@ -311,7 +370,7 @@ class TranslationHandler(BaseHandler):
         if not system_prompt:
             return
 
-        glossary_entries = self._parse_glossary_entries(glossary)
+        glossary_entries = self._glossary_manager.get_entries_sorted_by_length()
         prepared_source_text, placeholder_map = self._prepare_text_for_translation(
             source_text,
             glossary_entries,
@@ -380,31 +439,6 @@ class TranslationHandler(BaseHandler):
                 4000,
             )
 
-    def _parse_glossary_entries(self, glossary_text: str) -> List[Tuple[str, str]]:
-        if not glossary_text:
-            return []
-
-        entries: List[Tuple[str, str]] = []
-        for raw_line in glossary_text.splitlines():
-            line = raw_line.strip()
-            if not line or not line.startswith('|'):
-                continue
-            if line.startswith('|-'):
-                continue
-            parts = [part.strip() for part in line.split('|')]
-            if len(parts) < 4:
-                continue
-            original = parts[1]
-            translation = parts[2]
-            if not original or not translation:
-                continue
-            if original.lower() == 'оригінал' and translation.lower() == 'переклад':
-                continue
-            entries.append((original, translation))
-
-        entries.sort(key=lambda item: len(item[0]), reverse=True)
-        return entries
-
     def _request_variation_candidates(
         self,
         *,
@@ -420,7 +454,7 @@ class TranslationHandler(BaseHandler):
         if not system_prompt:
             return []
 
-        glossary_entries = self._parse_glossary_entries(glossary)
+        glossary_entries = self._glossary_manager.get_entries_sorted_by_length()
         prepared_source_text, placeholder_map = self._prepare_text_for_translation(
             source_text,
             glossary_entries,
@@ -495,7 +529,7 @@ class TranslationHandler(BaseHandler):
     def _prepare_text_for_translation(
         self,
         source_text: str,
-        glossary_entries: List[Tuple[str, str]],
+        glossary_entries: Sequence[GlossaryEntry],
     ) -> Tuple[str, Dict[str, Dict[str, str]]]:
         if source_text is None:
             return '', {}
@@ -532,7 +566,7 @@ class TranslationHandler(BaseHandler):
     def _inject_glossary_placeholders(
         self,
         text: str,
-        glossary_entries: List[Tuple[str, str]],
+        glossary_entries: Sequence[GlossaryEntry],
     ) -> Tuple[str, Dict[str, Dict[str, str]]]:
         if not text:
             return '', {}
@@ -541,8 +575,12 @@ class TranslationHandler(BaseHandler):
         counter = 0
         working_text = text
 
-        for original, translation in glossary_entries:
-            pattern = self._build_glossary_regex(original)
+        for entry in glossary_entries:
+            if not entry.original:
+                continue
+            pattern = self._glossary_manager.get_compiled_pattern(entry)
+            if not pattern:
+                continue
 
             def _replace(match: re.Match) -> str:
                 nonlocal counter
@@ -551,8 +589,8 @@ class TranslationHandler(BaseHandler):
                 )
                 placeholder_map[placeholder] = {
                     'type': 'glossary',
-                    'value': translation,
-                    'original': original,
+                    'value': entry.translation,
+                    'original': entry.original,
                 }
                 counter += 1
                 return placeholder
@@ -560,21 +598,10 @@ class TranslationHandler(BaseHandler):
             working_text, replaced = pattern.subn(_replace, working_text)
             if replaced:
                 log_debug(
-                    f"TranslationHandler: замінено {replaced} входжень глосарного терміна '{original}' плейсхолдерами."
+                    f"TranslationHandler: замінено {replaced} входжень глосарного терміна '{entry.original}' плейсхолдерами."
                 )
 
         return working_text, placeholder_map
-
-    def _build_glossary_regex(self, term: str) -> re.Pattern[str]:
-        escaped = re.escape(term)
-        prefix = r''
-        suffix = r''
-        if term and term[0].isalnum():
-            prefix = r'(?<!\w)'
-        if term and term[-1].isalnum():
-            suffix = r'(?!\w)'
-        pattern = f"{prefix}{escaped}{suffix}"
-        return re.compile(pattern, re.IGNORECASE)
 
     def _restore_placeholders(
         self,
@@ -915,6 +942,14 @@ class TranslationHandler(BaseHandler):
                 "Глосарій відсутній; переклад може бути непослідовним.",
             )
 
+        self._current_glossary_path = glossary_path
+        self._glossary_manager.load_from_text(
+            plugin_name=plugin_name,
+            glossary_path=glossary_path,
+            raw_text=glossary_text,
+        )
+        self._update_glossary_highlighting()
+
         self._cached_system_prompt = system_prompt
         self._cached_glossary = glossary_text
         return system_prompt, glossary_text
@@ -1081,9 +1116,33 @@ class TranslationHandler(BaseHandler):
             )
             return
 
+        try:
+            updated_text = glossary_path.read_text(encoding='utf-8')
+        except Exception as exc:  # noqa: BLE001
+            QMessageBox.warning(
+                self.mw,
+                "AI-переклад",
+                f"Не вдалося перечитати оновлений glossary.md:\n{exc}",
+            )
+            updated_text = ''
+
+        self._current_glossary_path = glossary_path
+        self._glossary_manager.load_from_text(
+            plugin_name=plugin_name,
+            glossary_path=glossary_path,
+            raw_text=updated_text,
+        )
+        self._session_manager.reset()
         self._cached_glossary = None  # наступне завантаження перечитає файл
+        self._update_glossary_highlighting()
         if self.mw.statusBar:
             self.mw.statusBar.showMessage("Глосарій оновлено.", 5000)
+
+    def _update_glossary_highlighting(self) -> None:
+        manager = self._glossary_manager if self._glossary_manager.get_entries() else None
+        editor = getattr(self.mw, 'original_text_edit', None)
+        if editor and hasattr(editor, 'set_glossary_manager'):
+            editor.set_glossary_manager(manager)
 
     def _clean_model_output(self, raw_output: Union[str, ProviderResponse]) -> str:
         if isinstance(raw_output, ProviderResponse):
@@ -1176,6 +1235,47 @@ class TranslationHandler(BaseHandler):
             getattr(self.mw, 'data', None),
             'original_for_translation',
         )
+
+    def _activate_entry(self, entry: Dict[str, object]) -> None:
+        block = entry.get('block_idx')
+        string = entry.get('string_idx')
+        line_idx = entry.get('line_idx')
+        if block is None or string is None:
+            return
+
+        try:
+            block_idx = int(block)
+            string_idx = int(string)
+        except (TypeError, ValueError):
+            return
+
+        line_number = None
+        if line_idx is not None:
+            try:
+                line_number = int(line_idx)
+            except (TypeError, ValueError):
+                line_number = None
+
+        block_widget = getattr(self.mw, 'block_list_widget', None)
+        if block_widget and 0 <= block_idx < block_widget.count():
+            block_widget.setCurrentRow(block_idx)
+
+        if hasattr(self.mw, 'list_selection_handler'):
+            self.mw.list_selection_handler.string_selected_from_preview(string_idx)
+        else:
+            self.mw.current_block_idx = block_idx
+            self.mw.current_string_idx = string_idx
+            self.ui_updater.populate_strings_for_block(block_idx)
+            self.mw.ui_updater.update_text_views()
+
+        original_editor = getattr(self.mw, 'original_text_edit', None)
+        if original_editor and line_number is not None:
+            block_obj = original_editor.document().findBlockByNumber(line_number)
+            if block_obj.isValid():
+                cursor = original_editor.textCursor()
+                cursor.setPosition(block_obj.position())
+                original_editor.setTextCursor(cursor)
+                original_editor.ensureCursorVisible()
 
     def _get_original_block(self, block_idx: int) -> List[str]:
         data_source = getattr(self.mw, 'data', None)

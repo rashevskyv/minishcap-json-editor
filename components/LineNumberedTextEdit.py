@@ -1,14 +1,16 @@
-from PyQt5.QtWidgets import (QPlainTextEdit, QMainWindow, QMenu, QApplication, QAction, 
+from PyQt5.QtWidgets import (QPlainTextEdit, QMainWindow, QMenu, QApplication, QAction,
                              QWidget, QHBoxLayout, QPushButton, QWidgetAction, QDialog,
-                             QVBoxLayout, QComboBox, QDialogButtonBox, QLabel, QSpinBox) 
+                             QVBoxLayout, QComboBox, QDialogButtonBox, QLabel, QSpinBox, QToolTip)
 from PyQt5.QtGui import (QPainter, QFont, QPaintEvent, QKeyEvent, QKeySequence, QMouseEvent, QIcon, QPixmap, QColor, QTextLine, QTextCursor) 
 from PyQt5.QtCore import Qt, QRect, QSize, QRectF, pyqtSignal
+from typing import Optional
 import os
 
 from .LineNumberArea import LineNumberArea
 from .TextHighlightManager import TextHighlightManager
 from utils.logging_utils import log_debug
 from utils.syntax_highlighter import JsonTagHighlighter
+from core.glossary_manager import GlossaryEntry
 from utils.utils import SPACE_DOT_SYMBOL
 from utils.constants import (
     EDITOR_PLAYER_TAG as EDITOR_PLAYER_TAG_CONST,
@@ -85,6 +87,10 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.setFont(initial_font)
 
         self.highlighter = JsonTagHighlighter(self.document(), main_window_ref=main_window_ref)
+        self._current_glossary_tooltip: Optional[str] = None
+        self._hovered_glossary_entry: Optional[GlossaryEntry] = None
+        self._glossary_manager = None
+        self.setMouseTracking(True)
         self.ensurePolished()
 
         self.character_limit_line_position = CHARACTER_LIMIT_LINE_POSITION
@@ -97,6 +103,53 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.width_threshold_line_width = WIDTH_THRESHOLD_LINE_WIDTH
 
         self._update_auxiliary_widths()
+
+    def set_glossary_manager(self, manager) -> None:
+        self._glossary_manager = manager
+        if hasattr(self, 'highlighter') and self.highlighter:
+            self.highlighter.set_glossary_manager(manager)
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        entry = self._find_glossary_entry_at(event.pos())
+        tooltip_text = None
+        if entry:
+            lines = [f"{entry.original} → {entry.translation}"]
+            if entry.notes:
+                lines.append(entry.notes)
+            tooltip_text = "\n".join(lines)
+
+        if tooltip_text and tooltip_text != self._current_glossary_tooltip:
+            QToolTip.showText(self.mapToGlobal(event.pos()), tooltip_text, self)
+            self._current_glossary_tooltip = tooltip_text
+        elif not tooltip_text and self._current_glossary_tooltip:
+            QToolTip.hideText()
+            self._current_glossary_tooltip = None
+
+        self._hovered_glossary_entry = entry
+
+        super().mouseMoveEvent(event)
+
+    def leaveEvent(self, event) -> None:
+        if self._current_glossary_tooltip:
+            QToolTip.hideText()
+            self._current_glossary_tooltip = None
+        self._hovered_glossary_entry = None
+        super().leaveEvent(event)
+
+    def _find_glossary_entry_at(self, pos) -> Optional[GlossaryEntry]:
+        cursor = self.cursorForPosition(pos)
+        block = cursor.block()
+        if not block.isValid():
+            return None
+        data = block.userData()
+        matches = getattr(data, 'matches', None)
+        if not matches:
+            return None
+        relative_pos = cursor.position() - block.position()
+        for match in matches:
+            if match.start <= relative_pos < match.end:
+                return match.entry
+        return None
 
     def _set_theme_colors(self, main_window_ref):
         theme = 'light'
@@ -154,6 +207,24 @@ class LineNumberedTextEdit(QPlainTextEdit):
             return
 
         custom_actions_added = False
+
+        glossary_entry = None
+        if self.objectName() == "original_text_edit":
+            glossary_entry = self._find_glossary_entry_at(position_in_widget_coords)
+            if glossary_entry:
+                term_value = glossary_entry.original
+                show_action = menu.addAction(
+                    f"Show Glossary Entry for \"{term_value}\""
+                )
+                translator = getattr(main_window, 'translation_handler', None)
+                if translator:
+                    show_action.triggered.connect(
+                        lambda checked=False, term=term_value: translator.show_glossary_dialog(term)
+                    )
+                else:
+                    show_action.setEnabled(False)
+                custom_actions_added = True
+                menu.addSeparator()
 
         if self.objectName() == "edited_text_edit" and not self.isReadOnly():
             cursor = self.textCursor()

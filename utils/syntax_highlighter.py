@@ -1,15 +1,30 @@
 
 import sys
 import re
+from typing import Iterable, List, Optional
 from PyQt5.QtCore import QRegExp, Qt
-from PyQt5.QtGui import QSyntaxHighlighter, QTextCharFormat, QColor, QFont, QPen, QTextDocument
+from PyQt5.QtGui import (
+    QSyntaxHighlighter,
+    QTextBlockUserData,
+    QTextCharFormat,
+    QColor,
+    QFont,
+    QPen,
+    QTextDocument,
+)
 from PyQt5.QtWidgets import QWidget, QMainWindow
 
 from .logging_utils import log_debug
 from .utils import SPACE_DOT_SYMBOL
 from plugins.pokemon_fr.config import P_NEWLINE_MARKER, L_NEWLINE_MARKER, P_VISUAL_EDITOR_MARKER, L_VISUAL_EDITOR_MARKER
+from core.glossary_manager import GlossaryManager, GlossaryMatch
 
 class JsonTagHighlighter(QSyntaxHighlighter):
+    class GlossaryBlockData(QTextBlockUserData):
+        def __init__(self, matches: List[GlossaryMatch]) -> None:
+            super().__init__()
+            self.matches = matches
+
     STATE_DEFAULT = 0
     STATE_RED = 1
     STATE_GREEN = 2
@@ -25,7 +40,10 @@ class JsonTagHighlighter(QSyntaxHighlighter):
         super().__init__(parent)
         log_debug("JsonTagHighlighter initialized.")
         self.mw = main_window_ref
-        
+        self._glossary_manager: Optional[GlossaryManager] = None
+        self._glossary_enabled = False
+        self._glossary_format = QTextCharFormat()
+
         self.default_text_color = QColor(Qt.black)
         
         current_theme = getattr(self.mw, 'theme', 'auto')
@@ -65,6 +83,11 @@ class JsonTagHighlighter(QSyntaxHighlighter):
         self.reconfigure_styles()
         
     def on_contents_change(self, position, chars_removed, chars_added):
+        self.rehighlight()
+
+    def set_glossary_manager(self, manager: Optional[GlossaryManager]) -> None:
+        self._glossary_manager = manager
+        self._glossary_enabled = bool(manager and manager.get_entries())
         self.rehighlight()
 
     def _apply_css_to_format(self, char_format, css_str, base_color=None):
@@ -161,6 +184,15 @@ class JsonTagHighlighter(QSyntaxHighlighter):
         self.silver_text_format.setForeground(QColor("#C0C0C0"))
         self.orange_text_format.setForeground(QColor("#FFA500"))
 
+        self._glossary_format = QTextCharFormat()
+        self._glossary_format.setFontUnderline(True)
+        self._glossary_format.setUnderlineStyle(QTextCharFormat.SingleUnderline)
+        underline_color = QColor("#1a73e8") if current_theme != 'dark' else QColor("#8ab4f8")
+        try:
+            self._glossary_format.setUnderlineColor(underline_color)
+        except Exception:
+            pass
+
         self.newline_char = newline_symbol
         if self.document():
              self.rehighlight()
@@ -244,5 +276,23 @@ class JsonTagHighlighter(QSyntaxHighlighter):
                     self.setFormat(match.start(), match.end() - match.start(), fmt)
             except Exception as e:
                 log_debug(f"Error applying syntax rule (pattern: '{pattern_str}'): {e}")
+
+        glossary_matches: List[GlossaryMatch] = []
+        if self._glossary_enabled and self._glossary_manager:
+            try:
+                glossary_matches = self._glossary_manager.find_matches(text)
+            except Exception as exc:
+                log_debug(f"Glossary highlight error: {exc}")
+                glossary_matches = []
+            for match in glossary_matches:
+                length = match.end - match.start
+                if length <= 0:
+                    continue
+                self.setFormat(match.start, length, self._glossary_format)
+
+        if glossary_matches:
+            self.setCurrentBlockUserData(self.GlossaryBlockData(glossary_matches))
+        else:
+            self.setCurrentBlockUserData(None)
 
         self.setCurrentBlockState(current_block_color_state)
