@@ -77,7 +77,8 @@ class GlossaryManager:
         """Populate glossary from text buffer."""
         self._plugin_name = plugin_name
         self._glossary_path = glossary_path
-        self._raw_text = raw_text or ""
+        sanitized_text = (raw_text or "").replace('\ufeff', '')
+        self._raw_text = sanitized_text
         self._entries = self._parse_markdown(self._raw_text)
         self._build_pattern_cache()
         log_debug(

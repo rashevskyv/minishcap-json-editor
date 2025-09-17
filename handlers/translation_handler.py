@@ -40,6 +40,7 @@ class TranslationHandler(BaseHandler):
         self._open_glossary_action: Optional[QAction] = None
         self._glossary_manager = GlossaryManager()
         self._current_glossary_path: Optional[Path] = None
+        self._current_plugin_name: Optional[str] = None
 
         QTimer.singleShot(0, self._install_menu_actions)
 
@@ -883,6 +884,11 @@ class TranslationHandler(BaseHandler):
 
     def _load_prompts(self) -> Tuple[Optional[str], Optional[str]]:
         if self._cached_system_prompt and self._cached_glossary is not None:
+            self._ensure_glossary_loaded(
+                glossary_text=self._cached_glossary,
+                plugin_name=self._current_plugin_name,
+                glossary_path=self._current_glossary_path,
+            )
             return self._cached_system_prompt, self._cached_glossary
 
         plugin_name = getattr(self.mw, 'active_game_plugin', None)
@@ -943,6 +949,7 @@ class TranslationHandler(BaseHandler):
             )
 
         self._current_glossary_path = glossary_path
+        self._current_plugin_name = plugin_name
         self._glossary_manager.load_from_text(
             plugin_name=plugin_name,
             glossary_path=glossary_path,
@@ -1143,6 +1150,22 @@ class TranslationHandler(BaseHandler):
         editor = getattr(self.mw, 'original_text_edit', None)
         if editor and hasattr(editor, 'set_glossary_manager'):
             editor.set_glossary_manager(manager)
+
+    def _ensure_glossary_loaded(
+        self,
+        *,
+        glossary_text: Optional[str],
+        plugin_name: Optional[str],
+        glossary_path: Optional[Path],
+    ) -> None:
+        if glossary_text is None:
+            return
+        self._glossary_manager.load_from_text(
+            plugin_name=plugin_name,
+            glossary_path=glossary_path,
+            raw_text=glossary_text,
+        )
+        self._update_glossary_highlighting()
 
     def _clean_model_output(self, raw_output: Union[str, ProviderResponse]) -> str:
         if isinstance(raw_output, ProviderResponse):
