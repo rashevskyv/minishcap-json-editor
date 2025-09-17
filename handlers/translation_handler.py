@@ -257,6 +257,7 @@ class TranslationHandler(BaseHandler):
             entries=entries,
             occurrence_map=occurrence_map,
             jump_callback=self._jump_to_occurrence,
+            update_callback=self._handle_glossary_entry_update,
             initial_term=initial_term,
         )
         dialog.exec_()
@@ -1150,6 +1151,37 @@ class TranslationHandler(BaseHandler):
         editor = getattr(self.mw, 'original_text_edit', None)
         if editor and hasattr(editor, 'set_glossary_manager'):
             editor.set_glossary_manager(manager)
+
+    def _handle_glossary_entry_update(
+        self,
+        original: str,
+        translation: str,
+        notes: str,
+    ) -> Optional[Tuple[Sequence[GlossaryEntry], Dict[str, List[GlossaryOccurrence]]]]:
+        updated_entry = self._glossary_manager.update_entry(original, translation, notes)
+        if not updated_entry:
+            QMessageBox.warning(
+                self.mw,
+                "Глосарій",
+                f"Не вдалося оновити термін '{original}'.",
+            )
+            return None
+
+        data_source = getattr(self.mw, 'data', None)
+        dataset = data_source if isinstance(data_source, list) else []
+        occurrence_map = self._glossary_manager.build_occurrence_index(dataset)
+        entries = sorted(
+            self._glossary_manager.get_entries(),
+            key=lambda entry: entry.original.lower(),
+        )
+        self._session_manager.reset()
+        self._update_glossary_highlighting()
+        if self.mw.statusBar:
+            self.mw.statusBar.showMessage(
+                f"Оновлено глосарій: {original}",
+                4000,
+            )
+        return entries, occurrence_map
 
     def _ensure_glossary_loaded(
         self,
