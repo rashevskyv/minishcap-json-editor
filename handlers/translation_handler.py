@@ -1,26 +1,42 @@
-﻿import os
+﻿import json
+import os
+import re
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QTextCursor
-from PyQt5.QtWidgets import QApplication, QMessageBox
+from PyQt5.QtWidgets import QAction, QApplication, QMessageBox, QProgressDialog
 
 from handlers.base_handler import BaseHandler
 from core.translation.config import build_default_translation_config
 from core.translation.providers import (
+    ProviderResponse,
     TranslationProviderError,
     create_translation_provider,
 )
+from core.translation.session_manager import TranslationSessionManager
+from components.translation_variations_dialog import TranslationVariationsDialog
 from utils.logging_utils import log_debug
-from utils.utils import convert_spaces_to_dots_for_display
+from utils.utils import ALL_TAGS_PATTERN, convert_spaces_to_dots_for_display
 
 
 class TranslationHandler(BaseHandler):
+    _TAG_PLACEHOLDER_PREFIX = "⟪TAG"
+    _GLOSS_PLACEHOLDER_PREFIX = "⟪GLOS"
+    _PLACEHOLDER_SUFFIX = "⟫"
+    _MAX_LOG_EXCERPT = 160
+
     def __init__(self, main_window, data_processor, ui_updater):
         super().__init__(main_window, data_processor, ui_updater)
         self._cached_system_prompt: Optional[str] = None
         self._cached_glossary: Optional[str] = None
+        self._session_manager = TranslationSessionManager()
+        self._active_provider_key: Optional[str] = None
+        self._progress_dialog: Optional[QProgressDialog] = None
+        self._reset_session_action: Optional[QAction] = None
+
+        QTimer.singleShot(0, self._install_menu_actions)
 
     # ------------------------------------------------------------------
     # Public API
@@ -180,15 +196,51 @@ class TranslationHandler(BaseHandler):
             QMessageBox.information(self.mw, "AI-переклад", "Немає поточного перекладу для варіації.")
             return
 
-        self._translate_and_apply(
+        expected_lines = len(str(original_text).split("\n"))
+        variations = self._request_variation_candidates(
             source_text=str(original_text),
-            expected_lines=len(str(original_text).split("\n")),
-            mode_description="варіація поточного перекладу",
-            block_idx=self.mw.current_block_idx,
-            string_idx=self.mw.current_string_idx,
-            request_type="variation",
             current_translation=str(current_translation),
+            expected_lines=expected_lines,
         )
+
+        if not variations:
+            QMessageBox.information(
+                self.mw,
+                "AI-переклад",
+                "Не вдалося отримати варіанти перекладу.",
+            )
+            self._clear_status_message()
+            return
+
+        self._update_status_message("AI: виберіть один із запропонованих варіантів", persistent=False)
+        dialog = TranslationVariationsDialog(self.mw, variations)
+        if dialog.exec_() == dialog.Accepted:
+            chosen = dialog.selected_translation
+            if chosen:
+                self._apply_full_translation(chosen)
+                if self.mw.statusBar:
+                    self.mw.statusBar.showMessage("AI-варіація застосована.", 5000)
+        else:
+            self._clear_status_message()
+
+    def reset_translation_session(self) -> None:
+        self._session_manager.reset()
+        self._cached_system_prompt = None
+        self._cached_glossary = None
+        if self.mw.statusBar:
+            self.mw.statusBar.showMessage("AI-сесію скинуто.", 4000)
+
+    def _install_menu_actions(self) -> None:
+        if self._reset_session_action is not None:
+            return
+        tools_menu = getattr(self.mw, 'tools_menu', None)
+        if not tools_menu:
+            return
+        action = QAction('AI Reset Translation Session', self.mw)
+        action.setToolTip('Очистити поточну AI-сесію перекладу')
+        action.triggered.connect(self.reset_translation_session)
+        tools_menu.addAction(action)
+        self._reset_session_action = action
 
     def generate_block_glossary(self, block_idx: Optional[int] = None):
         target_block = block_idx if block_idx is not None else self.mw.current_block_idx
@@ -259,16 +311,24 @@ class TranslationHandler(BaseHandler):
         if not system_prompt:
             return
 
-        messages = self._compose_messages(
+        glossary_entries = self._parse_glossary_entries(glossary)
+        prepared_source_text, placeholder_map = self._prepare_text_for_translation(
+            source_text,
+            glossary_entries,
+        )
+        placeholder_tokens = list(placeholder_map.keys())
+
+        combined_system, user_content = self._compose_messages(
             system_prompt,
             glossary,
-            source_text,
+            prepared_source_text,
             block_idx=block_idx,
             string_idx=string_idx,
             expected_lines=expected_lines,
             mode_description=mode_description,
             request_type=request_type,
             current_translation=current_translation,
+            placeholder_tokens=placeholder_tokens,
         )
 
         log_debug(
@@ -276,31 +336,425 @@ class TranslationHandler(BaseHandler):
         )
         try:
             QApplication.setOverrideCursor(Qt.WaitCursor)
-            raw_translation = provider.translate(messages)
+            response = self._send_provider_request(
+                provider,
+                combined_system,
+                user_content,
+                request_label=f"{mode_description}: запит",
+                placeholder_count=len(placeholder_map),
+                expected_lines=expected_lines,
+            )
         except TranslationProviderError as exc:
             QMessageBox.critical(self.mw, "AI-переклад", str(exc))
+            self._clear_status_message()
             return
         except Exception as exc:  # noqa: BLE001
             QMessageBox.critical(self.mw, "AI-переклад", f"Несподівана помилка: {exc}")
+            self._clear_status_message()
             return
         finally:
             QApplication.restoreOverrideCursor()
 
-        cleaned_translation = self._clean_model_output(raw_translation)
+        cleaned_translation = self._clean_model_output(response)
+        restored_translation = self._restore_placeholders(
+            cleaned_translation,
+            placeholder_map,
+        )
         if not self._confirm_line_count(
             expected_lines,
-            cleaned_translation,
+            restored_translation,
             strict=False,
             mode_label=mode_description,
         ):
             return
 
-        self._apply_full_translation(cleaned_translation)
+        normalized_translation = self._normalize_line_count(
+            restored_translation,
+            expected_lines,
+            mode_description,
+        )
+        self._apply_full_translation(normalized_translation)
         if self.mw.statusBar:
             self.mw.statusBar.showMessage(
                 "AI-переклад застосовано.",
                 4000,
             )
+
+    def _parse_glossary_entries(self, glossary_text: str) -> List[Tuple[str, str]]:
+        if not glossary_text:
+            return []
+
+        entries: List[Tuple[str, str]] = []
+        for raw_line in glossary_text.splitlines():
+            line = raw_line.strip()
+            if not line or not line.startswith('|'):
+                continue
+            if line.startswith('|-'):
+                continue
+            parts = [part.strip() for part in line.split('|')]
+            if len(parts) < 4:
+                continue
+            original = parts[1]
+            translation = parts[2]
+            if not original or not translation:
+                continue
+            if original.lower() == 'оригінал' and translation.lower() == 'переклад':
+                continue
+            entries.append((original, translation))
+
+        entries.sort(key=lambda item: len(item[0]), reverse=True)
+        return entries
+
+    def _request_variation_candidates(
+        self,
+        *,
+        source_text: str,
+        current_translation: str,
+        expected_lines: int,
+    ) -> List[str]:
+        provider = self._prepare_provider()
+        if not provider:
+            return []
+
+        system_prompt, glossary = self._load_prompts()
+        if not system_prompt:
+            return []
+
+        glossary_entries = self._parse_glossary_entries(glossary)
+        prepared_source_text, placeholder_map = self._prepare_text_for_translation(
+            source_text,
+            glossary_entries,
+        )
+        combined_system, user_content = self._compose_messages(
+            system_prompt,
+            glossary,
+            prepared_source_text,
+            block_idx=self.mw.current_block_idx,
+            string_idx=self.mw.current_string_idx,
+            expected_lines=expected_lines,
+            mode_description="варіації перекладу",
+            request_type="variation_list",
+            current_translation=current_translation,
+            placeholder_tokens=list(placeholder_map.keys()),
+        )
+
+        try:
+            QApplication.setOverrideCursor(Qt.WaitCursor)
+            response = self._send_provider_request(
+                provider,
+                combined_system,
+                user_content,
+                request_label="генерація варіацій",
+                placeholder_count=len(placeholder_map),
+                expected_lines=expected_lines,
+            )
+        except TranslationProviderError as exc:
+            QMessageBox.critical(self.mw, "AI-переклад", str(exc))
+            self._clear_status_message()
+            return []
+        except Exception as exc:  # noqa: BLE001
+            QMessageBox.critical(self.mw, "AI-переклад", f"Несподівана помилка: {exc}")
+            self._clear_status_message()
+            return []
+        finally:
+            QApplication.restoreOverrideCursor()
+
+        cleaned = self._clean_model_output(response)
+        variants_raw = self._parse_variation_payload(cleaned)
+        if not variants_raw:
+            log_debug(
+                f"TranslationHandler: AI не повернув жодної валідної варіації. Відповідь: {cleaned[:self._MAX_LOG_EXCERPT]}"
+            )
+            return []
+
+        restored_variants: List[str] = []
+        for idx, variant in enumerate(variants_raw):
+            restored = self._restore_placeholders(variant, placeholder_map)
+            lines = restored.split('\n') if restored else []
+            if len(lines) != expected_lines:
+                log_debug(
+                    f"TranslationHandler: варіація #{idx + 1} має {len(lines)} рядків замість {expected_lines}, пропускаю."
+                )
+                continue
+            restored_variants.append(restored)
+
+        deduped: List[str] = []
+        seen: set = set()
+        for variant in restored_variants:
+            if variant not in seen:
+                deduped.append(variant)
+                seen.add(variant)
+
+        restored_variants = deduped
+
+        if len(restored_variants) > 10:
+            restored_variants = restored_variants[:10]
+
+        return restored_variants
+
+    def _prepare_text_for_translation(
+        self,
+        source_text: str,
+        glossary_entries: List[Tuple[str, str]],
+    ) -> Tuple[str, Dict[str, Dict[str, str]]]:
+        if source_text is None:
+            return '', {}
+
+        placeholder_map: Dict[str, Dict[str, str]] = {}
+        tag_index = 0
+
+        def _replace_tag(match: re.Match) -> str:
+            nonlocal tag_index
+            placeholder = (
+                f"{self._TAG_PLACEHOLDER_PREFIX}{tag_index}{self._PLACEHOLDER_SUFFIX}"
+            )
+            placeholder_map[placeholder] = {
+                'type': 'tag',
+                'value': match.group(0),
+            }
+            tag_index += 1
+            return placeholder
+
+        tagged_text = ALL_TAGS_PATTERN.sub(_replace_tag, source_text)
+
+        prepared_text, glossary_placeholders = self._inject_glossary_placeholders(
+            tagged_text,
+            glossary_entries,
+        )
+        placeholder_map.update(glossary_placeholders)
+
+        if placeholder_map:
+            log_debug(
+                f"TranslationHandler: підготовлено {len(placeholder_map)} плейсхолдерів перед перекладом."
+            )
+        return prepared_text, placeholder_map
+
+    def _inject_glossary_placeholders(
+        self,
+        text: str,
+        glossary_entries: List[Tuple[str, str]],
+    ) -> Tuple[str, Dict[str, Dict[str, str]]]:
+        if not text:
+            return '', {}
+
+        placeholder_map: Dict[str, Dict[str, str]] = {}
+        counter = 0
+        working_text = text
+
+        for original, translation in glossary_entries:
+            pattern = self._build_glossary_regex(original)
+
+            def _replace(match: re.Match) -> str:
+                nonlocal counter
+                placeholder = (
+                    f"{self._GLOSS_PLACEHOLDER_PREFIX}{counter}{self._PLACEHOLDER_SUFFIX}"
+                )
+                placeholder_map[placeholder] = {
+                    'type': 'glossary',
+                    'value': translation,
+                    'original': original,
+                }
+                counter += 1
+                return placeholder
+
+            working_text, replaced = pattern.subn(_replace, working_text)
+            if replaced:
+                log_debug(
+                    f"TranslationHandler: замінено {replaced} входжень глосарного терміна '{original}' плейсхолдерами."
+                )
+
+        return working_text, placeholder_map
+
+    def _build_glossary_regex(self, term: str) -> re.Pattern[str]:
+        escaped = re.escape(term)
+        prefix = r''
+        suffix = r''
+        if term and term[0].isalnum():
+            prefix = r'(?<!\w)'
+        if term and term[-1].isalnum():
+            suffix = r'(?!\w)'
+        pattern = f"{prefix}{escaped}{suffix}"
+        return re.compile(pattern, re.IGNORECASE)
+
+    def _restore_placeholders(
+        self,
+        translated_text: str,
+        placeholder_map: Dict[str, Dict[str, str]],
+    ) -> str:
+        if not placeholder_map:
+            return translated_text or ''
+
+        restored = translated_text or ''
+        for placeholder, info in placeholder_map.items():
+            replacement = info.get('value', '')
+            if placeholder not in restored:
+                log_debug(
+                    f"TranslationHandler: плейсхолдер '{placeholder}' відсутній у відповіді, залишаю значення без змін."
+                )
+                continue
+            restored = restored.replace(placeholder, replacement)
+        return restored
+
+    def _parse_variation_payload(self, raw_text: str) -> List[str]:
+        text = (raw_text or '').strip()
+        if not text:
+            return []
+
+        try:
+            parsed = json.loads(text)
+            variants: List[str] = []
+            if isinstance(parsed, list):
+                for item in parsed:
+                    if isinstance(item, str):
+                        variants.append(item)
+                    elif isinstance(item, dict) and 'text' in item:
+                        variants.append(str(item['text']))
+            if variants:
+                return variants
+        except json.JSONDecodeError:
+            pass
+
+        numbered_pattern = re.compile(r'^\s*(\d+)[\).:-]\s*', re.MULTILINE)
+        entries: List[str] = []
+        if numbered_pattern.search(text):
+            current: List[str] = []
+            for line in text.splitlines():
+                if numbered_pattern.match(line):
+                    if current:
+                        entries.append('\n'.join(current).strip())
+                        current = []
+                    current.append(numbered_pattern.sub('', line, count=1))
+                else:
+                    current.append(line)
+            if current:
+                entries.append('\n'.join(current).strip())
+        else:
+            for chunk in text.split('\n\n'):
+                chunk = chunk.strip()
+                if chunk:
+                    entries.append(chunk)
+
+        return [entry for entry in entries if entry][:10]
+
+    def _normalize_line_count(
+        self,
+        translation: str,
+        expected_lines: int,
+        mode_label: str,
+    ) -> str:
+        text = translation or ''
+        lines = text.split('\n') if text else []
+        actual = len(lines)
+        if actual == expected_lines:
+            return text
+
+        if actual < expected_lines:
+            log_debug(
+                f"TranslationHandler: переклад повернув менше рядків ({actual} < {expected_lines}) для {mode_label}, доповнюю порожніми."
+            )
+            lines.extend([''] * (expected_lines - actual))
+            return '\n'.join(lines)
+
+        log_debug(
+            f"TranslationHandler: переклад повернув більше рядків ({actual} > {expected_lines}) для {mode_label}, обрізаю зайві."
+        )
+        return '\n'.join(lines[:expected_lines])
+
+    def _log_provider_response(
+        self,
+        response: ProviderResponse,
+        placeholder_count: int,
+        expected_lines: int,
+    ) -> None:
+        text_excerpt = (response.text or '')[: self._MAX_LOG_EXCERPT]
+        payload = response.raw_payload
+        try:
+            payload_snippet = json.dumps(payload)[: self._MAX_LOG_EXCERPT] if isinstance(payload, dict) else str(payload)
+        except Exception:  # noqa: BLE001
+            payload_snippet = str(payload)
+
+        log_debug(
+            "TranslationHandler: provider response "
+            f"id={getattr(response, 'message_id', None)}, "
+            f"placeholders={placeholder_count}, expected_lines={expected_lines}, "
+            f"text='{text_excerpt}', payload='{payload_snippet}'"
+        )
+
+    def _send_provider_request(
+        self,
+        provider,
+        combined_system: str,
+        user_content: str,
+        *,
+        request_label: str,
+        placeholder_count: int,
+        expected_lines: int,
+    ):
+        messages: List[Dict[str, str]] = [
+            {"role": "system", "content": combined_system},
+            {"role": "user", "content": user_content},
+        ]
+        session_payload = None
+        state = None
+        supports_sessions = getattr(provider, 'supports_sessions', False)
+        if supports_sessions and self._active_provider_key:
+            state = self._session_manager.ensure_session(
+                provider_key=self._active_provider_key,
+                system_content=combined_system,
+                supports_sessions=True,
+            )
+            if state:
+                messages, session_payload = state.prepare_request(
+                    {"role": "user", "content": user_content}
+                )
+
+        self._update_status_message(f"AI: {request_label}")
+        self._show_progress_indicator(f"{request_label.capitalize()}…")
+
+        try:
+            response = provider.translate(messages, session=session_payload)
+            if isinstance(response, ProviderResponse):
+                self._log_provider_response(response, placeholder_count, expected_lines)
+                if state:
+                    state.record_exchange(
+                        user_content=user_content,
+                        assistant_content=response.text or '',
+                        conversation_id=response.conversation_id,
+                    )
+            self._update_status_message("AI: відповідь отримано, обробка…")
+            return response
+        finally:
+            self._hide_progress_indicator()
+
+    def _update_status_message(self, message: str, *, persistent: bool = True) -> None:
+        log_debug(f"TranslationHandler статус: {message}")
+        if self.mw.statusBar:
+            self.mw.statusBar.showMessage(message, 0 if persistent else 4000)
+        QApplication.processEvents()
+
+    def _clear_status_message(self) -> None:
+        if self.mw.statusBar:
+            self.mw.statusBar.clearMessage()
+        QApplication.processEvents()
+
+    def _show_progress_indicator(self, message: str) -> None:
+        if self._progress_dialog is None:
+            dialog = QProgressDialog(self.mw)
+            dialog.setWindowTitle("AI-переклад")
+            dialog.setModal(True)
+            dialog.setCancelButton(None)
+            dialog.setRange(0, 0)
+            dialog.setMinimumDuration(0)
+            dialog.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
+            self._progress_dialog = dialog
+        self._progress_dialog.setLabelText(message)
+        self._progress_dialog.show()
+        QApplication.processEvents()
+
+    def _hide_progress_indicator(self) -> None:
+        if self._progress_dialog and self._progress_dialog.isVisible():
+            self._progress_dialog.hide()
+            QApplication.processEvents()
 
     def _translate_segment(
         self,
@@ -322,7 +776,7 @@ class TranslationHandler(BaseHandler):
             return
 
         expected_lines = len(source_lines)
-        messages = self._compose_messages(
+        combined_system, user_content = self._compose_messages(
             system_prompt,
             glossary,
             "\n".join(source_lines),
@@ -334,17 +788,26 @@ class TranslationHandler(BaseHandler):
 
         try:
             QApplication.setOverrideCursor(Qt.WaitCursor)
-            raw_translation = provider.translate(messages)
+            response = self._send_provider_request(
+                provider,
+                combined_system,
+                user_content,
+                request_label=f"{mode_description}: запит",
+                placeholder_count=0,
+                expected_lines=expected_lines,
+            )
         except TranslationProviderError as exc:
             QMessageBox.critical(self.mw, "AI-переклад", str(exc))
+            self._clear_status_message()
             return
         except Exception as exc:  # noqa: BLE001
             QMessageBox.critical(self.mw, "AI-переклад", f"Несподівана помилка: {exc}")
+            self._clear_status_message()
             return
         finally:
             QApplication.restoreOverrideCursor()
 
-        cleaned_translation = self._clean_model_output(raw_translation)
+        cleaned_translation = self._clean_model_output(response)
         if not self._confirm_line_count(
             expected_lines,
             cleaned_translation,
@@ -379,7 +842,11 @@ class TranslationHandler(BaseHandler):
             return None
 
         try:
-            return create_translation_provider(provider_key, provider_settings)
+            provider = create_translation_provider(provider_key, provider_settings)
+            if self._active_provider_key != provider_key:
+                self._session_manager.reset()
+            self._active_provider_key = provider_key
+            return provider
         except TranslationProviderError as exc:
             QMessageBox.critical(self.mw, "AI-переклад", str(exc))
             return None
@@ -464,7 +931,8 @@ class TranslationHandler(BaseHandler):
         mode_description: str,
         request_type: str = "translation",
         current_translation: Optional[str] = None,
-    ) -> List[Dict[str, str]]:
+        placeholder_tokens: Optional[List[str]] = None,
+    ) -> Tuple[str, str]:
         combined_system = system_prompt.strip()
         if glossary_text:
             combined_system = (
@@ -492,6 +960,14 @@ class TranslationHandler(BaseHandler):
                 "Варіація має відрізнятися від наявного перекладу, але зміст повинен залишатися точним.",
                 "Не додавай коментарів чи службового тексту, поверни лише переклад.",
             ]
+        elif request_type == "variation_list":
+            instructions = [
+                "Згенеруй 10 різних альтернативних перекладів українською мовою для наведеного тексту.",
+                f"Кожен варіант має містити рівно {expected_lines} рядків (включно з порожніми) у тому самому порядку.",
+                "Збережи всі теги, плейсхолдери, розмітку, пробіли та пунктуацію на тих самих позиціях.",
+                "Дотримуйся глосарію та стилю оригіналу.",
+                "Поверни відповідь як JSON-масив із 10 рядків без додаткового тексту чи коментарів.",
+            ]
         else:
             instructions = [
                 "Переклади текст українською без зміни змісту.",
@@ -501,19 +977,27 @@ class TranslationHandler(BaseHandler):
                 "Не додавай пояснень чи службового тексту, поверни лише переклад.",
             ]
 
+        if placeholder_tokens:
+            sample_tokens = placeholder_tokens[:4]
+            sample_display = ', '.join(sample_tokens)
+            if len(placeholder_tokens) > 4:
+                sample_display += ', …'
+            instructions.append(
+                (
+                    "Залиши маркери "
+                    f"{sample_display} без змін — вони будуть автоматично підмінені після перекладу."
+                )
+            )
+
         user_sections = ["\n".join(context_lines), "\n".join(instructions)]
-        if request_type == "variation" and current_translation:
+        if request_type in {"variation", "variation_list"} and current_translation:
             user_sections.append("Чинний переклад:")
             user_sections.append(str(current_translation))
         user_sections.append("Оригінал:")
         user_sections.append(source_text)
 
         user_content = "\n\n".join([section for section in user_sections if section])
-
-        return [
-            {"role": "system", "content": combined_system},
-            {"role": "user", "content": user_content},
-        ]
+        return combined_system, user_content
 
     def _request_glossary_rows(self, *, source_lines: List[str], context_label: str) -> Optional[str]:
         provider = self._prepare_provider()
@@ -601,10 +1085,13 @@ class TranslationHandler(BaseHandler):
         if self.mw.statusBar:
             self.mw.statusBar.showMessage("Глосарій оновлено.", 5000)
 
-    def _clean_model_output(self, raw_output: str) -> str:
-        if raw_output is None:
-            return ''
-        text = str(raw_output)
+    def _clean_model_output(self, raw_output: Union[str, ProviderResponse]) -> str:
+        if isinstance(raw_output, ProviderResponse):
+            text = raw_output.text or ''
+        elif raw_output is None:
+            text = ''
+        else:
+            text = str(raw_output)
         trimmed_left = text.lstrip()
         if trimmed_left.startswith('```'):
             trimmed = trimmed_left.strip()
