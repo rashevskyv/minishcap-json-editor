@@ -34,6 +34,7 @@ from core.translation.session_manager import TranslationSessionManager
 from core.glossary_manager import GlossaryEntry, GlossaryManager, GlossaryOccurrence
 from components.translation_variations_dialog import TranslationVariationsDialog
 from components.glossary_dialog import GlossaryDialog
+from components.session_bootstrap_dialog import SessionBootstrapDialog
 from utils.logging_utils import log_debug
 from utils.utils import ALL_TAGS_PATTERN, convert_spaces_to_dots_for_display
 
@@ -73,6 +74,8 @@ class TranslationHandler(BaseHandler):
         self._cached_system_prompt: Optional[str] = None
         self._cached_glossary: Optional[str] = None
         self._session_manager = TranslationSessionManager()
+        self._session_mode: str = 'auto'
+        self._provider_supports_sessions: bool = False
         self._active_provider_key: Optional[str] = None
         self._progress_dialog: Optional[QProgressDialog] = None
         self._reset_session_action: Optional[QAction] = None
@@ -450,6 +453,9 @@ class TranslationHandler(BaseHandler):
                 placeholder_count=len(placeholder_map),
                 expected_lines=expected_lines,
             )
+            if response is None:
+                self._clear_status_message()
+                return
         except TranslationProviderError as exc:
             QMessageBox.critical(self.mw, "AI Translation", str(exc))
             self._clear_status_message()
@@ -529,6 +535,9 @@ class TranslationHandler(BaseHandler):
                 placeholder_count=len(placeholder_map),
                 expected_lines=expected_lines,
             )
+            if response is None:
+                self._clear_status_message()
+                return []
         except TranslationProviderError as exc:
             QMessageBox.critical(self.mw, "AI Translation", str(exc))
             self._clear_status_message()
@@ -764,23 +773,51 @@ class TranslationHandler(BaseHandler):
         placeholder_count: int,
         expected_lines: int,
     ):
-        messages: List[Dict[str, str]] = [
-            {"role": "system", "content": combined_system},
-            {"role": "user", "content": user_content},
-        ]
+        effective_user_content = user_content
+        messages: List[Dict[str, str]] = []
         session_payload = None
         state = None
-        supports_sessions = getattr(provider, 'supports_sessions', False)
-        if supports_sessions and self._active_provider_key:
+        can_use_sessions = (
+            self._provider_supports_sessions
+            and self._session_mode != 'static'
+            and bool(self._active_provider_key)
+        )
+        if can_use_sessions:
             state = self._session_manager.ensure_session(
-                provider_key=self._active_provider_key,
+                provider_key=self._active_provider_key or '',
                 system_content=combined_system,
                 supports_sessions=True,
             )
             if state:
+                if not state.bootstrap_viewed:
+                    restored_cursor = False
+                    try:
+                        if QApplication.overrideCursor():
+                            QApplication.restoreOverrideCursor()
+                            restored_cursor = True
+                        instructions = self._prompt_session_bootstrap(combined_system)
+                    finally:
+                        if restored_cursor:
+                            QApplication.setOverrideCursor(Qt.WaitCursor)
+                    if instructions is None:
+                        self._update_status_message('AI: сесію скасовано користувачем', persistent=False)
+                        return None
+                    state.set_instructions(instructions)
+                    state.bootstrap_viewed = True
+                if state.session_instructions:
+                    effective_user_content = self._merge_session_instructions(
+                        state.session_instructions,
+                        user_content,
+                    )
                 messages, session_payload = state.prepare_request(
-                    {"role": "user", "content": user_content}
+                    {"role": "user", "content": effective_user_content}
                 )
+        if not state:
+            effective_user_content = user_content
+            messages = [
+                {"role": "system", "content": combined_system},
+                {"role": "user", "content": effective_user_content},
+            ]
 
         self._update_status_message(f"AI: {request_label}")
         self._show_progress_indicator(f"{request_label.capitalize()}...")
@@ -791,7 +828,7 @@ class TranslationHandler(BaseHandler):
                 self._log_provider_response(response, placeholder_count, expected_lines)
                 if state:
                     state.record_exchange(
-                        user_content=user_content,
+                        user_content=effective_user_content,
                         assistant_content=response.text or '',
                         conversation_id=response.conversation_id,
                     )
@@ -799,6 +836,21 @@ class TranslationHandler(BaseHandler):
             return response
         finally:
             self._hide_progress_indicator()
+
+    @staticmethod
+    def _merge_session_instructions(instructions: str, message: str) -> str:
+        instructions_clean = (instructions or '').strip()
+        if not instructions_clean:
+            return message
+        if not message:
+            return instructions_clean
+        return f"{instructions_clean}\n\n{message}"
+
+    def _prompt_session_bootstrap(self, system_prompt: str) -> Optional[str]:
+        dialog = SessionBootstrapDialog(self.mw, system_prompt)
+        if dialog.exec_() != dialog.Accepted:
+            return None
+        return dialog.get_instructions()
 
     def _update_status_message(self, message: str, *, persistent: bool = True) -> None:
         log_debug(f"TranslationHandler status: {message}")
@@ -870,6 +922,9 @@ class TranslationHandler(BaseHandler):
                 placeholder_count=0,
                 expected_lines=expected_lines,
             )
+            if response is None:
+                self._clear_status_message()
+                return
         except TranslationProviderError as exc:
             QMessageBox.critical(self.mw, "AI Translation", str(exc))
             self._clear_status_message()
@@ -915,10 +970,22 @@ class TranslationHandler(BaseHandler):
             )
             return None
 
+        self._provider_supports_sessions = False
         try:
             provider = create_translation_provider(provider_key, provider_settings)
-            if self._active_provider_key != provider_key:
+            previous_provider = self._active_provider_key
+            previous_mode = self._session_mode
+            supports_sessions = bool(getattr(provider, 'supports_sessions', False))
+            session_mode_value = provider_settings.get('session_mode', config.get('session_mode', 'auto'))
+            session_mode = str(session_mode_value or 'auto').lower()
+            if session_mode not in {'auto', 'static'}:
+                session_mode = 'auto'
+            if not supports_sessions:
+                session_mode = 'static'
+            self._provider_supports_sessions = supports_sessions
+            if previous_provider != provider_key or previous_mode != session_mode or session_mode == 'static':
                 self._session_manager.reset()
+            self._session_mode = session_mode
             self._active_provider_key = provider_key
             return provider
         except TranslationProviderError as exc:
