@@ -73,6 +73,9 @@ class MainWindowPluginHandler:
         except Exception as e:
             log_debug(f"    ERROR: Unexpected error loading game plugin {module_path}: {e}")
             self._load_fallback_rules()
+        if hasattr(self.mw, 'translation_handler'):
+            self.mw.translation_handler.initialize_glossary_highlighting()
+
         log_debug("<-- MainWindowPluginHandler: load_game_plugin finished.")
 
     def _load_fallback_rules(self):

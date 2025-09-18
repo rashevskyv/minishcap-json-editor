@@ -34,6 +34,14 @@ from utils.logging_utils import log_debug
 from utils.utils import ALL_TAGS_PATTERN, convert_spaces_to_dots_for_display
 
 
+_DEFAULT_GLOSSARY_PROMPT = (
+    "You are a Ukrainian localization editor working on the video game {game_name}. "
+    "Given a source term, propose a natural Ukrainian translation and a concise usage note. "
+    "Always respond strictly in JSON with two keys: \"translation\" and \"notes\". "
+    "Keep both values in Ukrainian; the notes field may be an empty string if no comment is needed."
+)
+
+
 class _ReturnToAcceptFilter(QObject):
     """Convert Return/Enter key presses into dialog acceptance."""
 
@@ -68,6 +76,8 @@ class TranslationHandler(BaseHandler):
         self._glossary_manager = GlossaryManager()
         self._current_glossary_path: Optional[Path] = None
         self._current_plugin_name: Optional[str] = None
+        self._cached_glossary_prompt_template: Optional[str] = None
+        self._cached_glossary_prompt_plugin: Optional[str] = None
 
         QTimer.singleShot(0, self._install_menu_actions)
 
@@ -1206,7 +1216,50 @@ class TranslationHandler(BaseHandler):
             glossary_path=glossary_path,
         )
 
-    def _prompt_new_glossary_entry(self, original: str) -> Optional[Tuple[str, str]]:
+    def _load_glossary_prompt_template(self) -> str:
+        plugin_name = getattr(self.mw, 'active_game_plugin', None)
+        game_name = (
+            self.mw.current_game_rules.get_display_name()
+            if getattr(self.mw, 'current_game_rules', None)
+            else (plugin_name or "the game")
+        )
+        if (
+            self._cached_glossary_prompt_template is not None
+            and self._cached_glossary_prompt_plugin == plugin_name
+        ):
+            return self._cached_glossary_prompt_template
+
+        template_text = None
+        candidates = []
+        if plugin_name:
+            candidates.append(Path('plugins') / plugin_name / 'translation_prompts' / 'glossary_prompt.md')
+        candidates.append(Path('translation_prompts') / 'glossary_prompt.md')
+        for candidate in candidates:
+            if candidate.exists():
+                try:
+                    template_text = candidate.read_text(encoding='utf-8').strip()
+                    break
+                except Exception as exc:
+                    log_debug(f"Glossary prompt read error ({candidate}): {exc}")
+
+        if not template_text:
+            template_text = _DEFAULT_GLOSSARY_PROMPT.format(game_name=game_name)
+        else:
+            template_text = (
+                template_text.replace('{{GAME_NAME}}', game_name)
+                .replace('{{game_name}}', game_name)
+            )
+
+        self._cached_glossary_prompt_template = template_text
+        self._cached_glossary_prompt_plugin = plugin_name
+        return template_text
+
+    def _prompt_new_glossary_entry(
+        self,
+        original: str,
+        suggested_translation: str = '',
+        suggested_notes: str = '',
+    ) -> Optional[Tuple[str, str]]:
         dialog = QDialog(self.mw)
         dialog.setWindowTitle("Add Glossary Term")
         layout = QVBoxLayout(dialog)
@@ -1217,10 +1270,14 @@ class TranslationHandler(BaseHandler):
 
         translation_edit = QLineEdit(dialog)
         translation_edit.setPlaceholderText("Translation")
+        if suggested_translation:
+            translation_edit.setText(suggested_translation)
         layout.addWidget(translation_edit)
 
         notes_edit = QPlainTextEdit(dialog)
         notes_edit.setPlaceholderText("Notes (Shift+Enter for newline)")
+        if suggested_notes:
+            notes_edit.setPlainText(suggested_notes)
         layout.addWidget(notes_edit)
 
         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, parent=dialog)
@@ -1248,7 +1305,17 @@ class TranslationHandler(BaseHandler):
             QMessageBox.information(self.mw, 'Glossary', 'Select text to add to the glossary.')
             return
 
-        result = self._prompt_new_glossary_entry(original_value)
+        suggested_translation = ''
+        suggested_notes = ''
+        suggestion = self._request_glossary_suggestion(original_value)
+        if suggestion:
+            suggested_translation, suggested_notes = suggestion
+
+        result = self._prompt_new_glossary_entry(
+            original_value,
+            suggested_translation=suggested_translation,
+            suggested_notes=suggested_notes,
+        )
         if not result:
             return
         translation, notes = result
@@ -1262,6 +1329,74 @@ class TranslationHandler(BaseHandler):
         self._update_glossary_highlighting()
         if self.mw.statusBar:
             self.mw.statusBar.showMessage(f'Added to glossary: {original_value}', 4000)
+
+    def _request_glossary_suggestion(
+        self,
+        term: str,
+    ) -> Optional[Tuple[str, str]]:
+        provider = self._prepare_provider()
+        if not provider:
+            return None
+
+        template = self._load_glossary_prompt_template()
+        plugin_name = getattr(self.mw, 'active_game_plugin', None)
+        game_name = (
+            self.mw.current_game_rules.get_display_name()
+            if getattr(self.mw, 'current_game_rules', None)
+            else (plugin_name or "the game")
+        )
+
+        system_prompt = template
+        user_sections = [
+            f"Game: {game_name}",
+            f"Source term: {term}",
+            "Provide Ukrainian strings only.",
+            "Return JSON with keys \"translation\" and \"notes\".",
+            "Use \"notes\" for a short usage comment; leave it empty if unnecessary.",
+        ]
+        user_content = "\n".join(user_sections)
+
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_content},
+        ]
+
+        self._update_status_message("AI: generating glossary suggestion", persistent=False)
+        self._show_progress_indicator("Generating glossary suggestion...")
+
+        try:
+            response = provider.translate(messages)
+        except TranslationProviderError as exc:
+            log_debug(f"Glossary suggestion provider error: {exc}")
+            self._clear_status_message()
+            return None
+        except Exception as exc:  # noqa: BLE001
+            log_debug(f"Unexpected glossary suggestion error: {exc}")
+            self._clear_status_message()
+            return None
+        finally:
+            self._hide_progress_indicator()
+
+        cleaned = self._clean_model_output(response)
+        self._clear_status_message()
+
+        try:
+            suggestion_data = json.loads(cleaned)
+        except json.JSONDecodeError:
+            log_debug("Glossary suggestion response is not valid JSON")
+            return None
+
+        if isinstance(suggestion_data, list) and suggestion_data:
+            suggestion_data = suggestion_data[0]
+
+        if not isinstance(suggestion_data, dict):
+            return None
+
+        translation = str(suggestion_data.get('translation', '')).strip()
+        notes = str(suggestion_data.get('notes', '')).strip()
+        if not translation:
+            return None
+        return translation, notes
 
     def _handle_glossary_entry_update(
         self,

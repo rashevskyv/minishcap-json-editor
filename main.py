@@ -28,6 +28,7 @@ from handlers.search_handler import SearchHandler
 from handlers.string_settings_handler import StringSettingsHandler
 
 from handlers.translation_handler import TranslationHandler
+from handlers.text_analysis_handler import TextAnalysisHandler
 
 from core.settings_manager import SettingsManager
 from core.data_state_processor import DataStateProcessor
@@ -228,10 +229,21 @@ class MainWindow(QMainWindow):
         self.search_handler = SearchHandler(self, self.data_processor, self.ui_updater)
         self.string_settings_handler = StringSettingsHandler(self, self.data_processor, self.ui_updater)
         self.translation_handler = TranslationHandler(self, self.data_processor, self.ui_updater)
+        self.text_analysis_handler = TextAnalysisHandler(self, self.data_processor, self.ui_updater)
 
 
         log_debug("MainWindow: Setting up UI...")
         setup_main_window_ui(self)
+
+        if hasattr(self, 'open_glossary_button'):
+            self.open_glossary_button.clicked.connect(self.translation_handler.show_glossary_dialog)
+
+        if hasattr(self, 'translation_handler'):
+            self.translation_handler.initialize_glossary_highlighting()
+
+        # Menu has been created, now register the text analysis action
+        if hasattr(self, 'text_analysis_handler'):
+            self.text_analysis_handler.ensure_menu_action()
 
         log_debug("MainWindow: Initializing Handlers and dynamic UI from plugin (Post-UI setup)...")
         self.setup_plugin_ui()

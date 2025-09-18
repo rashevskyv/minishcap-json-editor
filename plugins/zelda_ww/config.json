@@ -8,21 +8,21 @@
     "newline_display_symbol": "↵",
     "newline_css": "color: #A020F0; font-weight: bold;",
     "tag_css": "color: rgba(128, 128, 128, 128); font-style: italic;",
-    "bracket_tag_color_hex": "#aa2e45",
+    "bracket_tag_color_hex": "#8da3b4",
     "show_multiple_spaces_as_dots": true,
     "space_dot_color_hex": "#808080",
     "preview_wrap_lines": false,
     "editors_wrap_lines": false,
     "game_dialog_max_width_pixels": 1000,
     "line_width_warning_threshold_pixels": 1000,
-    "original_file_path": "D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message.kpx_orig.txt",
-    "edited_file_path": "D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr\\message.kpx_orig_edited.txt",
+    "original_file_path": "D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt",
+    "edited_file_path": "D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt",
     "last_selected_block_index": 0,
-    "last_selected_string_index": 8,
-    "last_cursor_position_in_edited": 43,
+    "last_selected_string_index": 319,
+    "last_cursor_position_in_edited": 0,
     "last_edited_text_edit_scroll_value_v": 0,
     "last_edited_text_edit_scroll_value_h": 0,
-    "last_preview_text_edit_scroll_value_v": 1,
+    "last_preview_text_edit_scroll_value_v": 315,
     "last_original_text_edit_scroll_value_v": 0,
     "last_original_text_edit_scroll_value_h": 0,
     "search_history": [],
@@ -56,6 +56,47 @@
     "string_metadata": {
         "(0, 416)": {
             "font_file": "CKingMsg.json"
+        }
+    },
+    "tag_color_rgba": "#ffa7a7b6",
+    "tag_bold": false,
+    "tag_italic": false,
+    "tag_underline": false,
+    "newline_color_rgba": "#ffa020f0",
+    "newline_bold": true,
+    "newline_italic": false,
+    "newline_underline": false,
+    "translation_config": {
+        "provider": "chatmock",
+        "providers": {
+            "openai_chat": {
+                "api_key": "",
+                "api_key_env": "OPENAI_API_KEY",
+                "base_url": "http://127.0.0.1:8000",
+                "model": "gpt-5",
+                "temperature": 0.0,
+                "max_output_tokens": 0,
+                "timeout": 60,
+                "extra_headers": {}
+            },
+            "ollama_chat": {
+                "base_url": "http://localhost:11434",
+                "model": "llama3",
+                "temperature": 0.0,
+                "timeout": 120,
+                "keep_alive": "",
+                "extra_headers": {}
+            },
+            "chatmock": {
+                "base_url": "http://127.0.0.1:8000",
+                "model": "gpt-5",
+                "api_key": "chatmock-placeholder",
+                "temperature": 0.0,
+                "timeout": 60,
+                "reasoning_effort": "medium",
+                "reasoning_summary": "auto",
+                "extra_headers": {}
+            }
         }
     }
 }

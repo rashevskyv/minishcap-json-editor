@@ -123,6 +123,14 @@ class GameRules(BaseGameRules):
                     'shortcut': 'Ctrl+Alt+B',
                     'handler': translator.translate_current_block,
                     'menu': 'Tools'
+                },
+                {
+                    'name': 'ai_reset_translation_session',
+                    'text': 'AI Reset Translation Session',
+                    'tooltip': 'Очистити поточну AI-сесію перекладу',
+                    'shortcut': None,
+                    'handler': translator.reset_translation_session,
+                    'menu': 'Tools'
                 }
             ])
 

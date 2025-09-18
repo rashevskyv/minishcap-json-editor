@@ -1,437 +1,103 @@
-# Глосарій The Legend of Zelda: The Wind Waker
+### Персонажі, Раси та Істоти
 
-> Базовий список створено за матеріалами глосарію Minish Cap; поступово адаптуйте переклади під особливості The Wind Waker.
-
-[Name]	[green]Лінк[/c]	
-A History of Masks	Історія Масок	
-A Hyrulean Bestiary	Гайрульський Бестіарій	
-abbey	абатство	
-Acro-Bandits	Акро-Банда	
-adventurer's spring	джерело авантюристів.	
-Anju	Анджу	
-Ankle	Дінґл	
-Anton	Антон	
-Armos	Армос	
-Arrow Quiver 300 Rupees	Колчан 300 Рупій	
-At Lon Lon Ranch	На Ранчо Лон Лон	
-Ball /0F/0D Chain Soldier	Солдат з ланцюгом	
-Baris	Баріс	
-Beedle	Бідл	
-Beetle	Жук	
-Belari	Іскрик	
-Berry	Беррі	
-Big Blue Chuchu	Великий Синій Чучу	
-Big Bomb Bag	Велика сумка для бомб	
-Big Bomb Bag (Increased Size)	Велика сумка для бомб (Збільшена)	
-Big Green Chuchu	Великий Зелений Чучу	
-Big Key	Великий Ключ	
-Big Octorok	Великий Окторок	
-Big Quiver	Великий колчан	
-Big Wallet	Великий гаманець	
-Big Wallet (Increased Size)	Великий гаманець (Збільшений)	
-Biggoron	Біґґорон	
-Bindle	Біндл	
-Black Knight	Чорний Лицар	
-Blade Brothers	Брати-Мечники	
-Blue Bottom Piece	Синя Нижня Частина	
-Blue Picolyte	Синій Піколіт	
-Blue Potion	Синє зілля	
-Blue Top Piece	Синя Верхня Частина	
-Bob-omb	Боб-омб	
-Bomb Bag	Сумка для Бомб	
-Bombarossa	Бомбаросса	
-Bombs	Бомби	
-Boomerang	Бумеранг	
-Borlov	Борлов	
-bottle	банка	
-Boulder	Валун	
-Bow	Лук	
-Bow Moblin	Моблін-Лучник	
-Bremor	Бремор	
-Brent	Брент	
-Breve	Бреве	
-brioche	булочка	
-Brocco	Брокко	
-Broken Picori Blade	Уламки Меча Пікорі	
-Broken Picori Sword	Уламки Меча Пікорі	
-Brown Cucco	Коричневий Кукко	
-buissness Scrub	Скраб-крамар	
-Business Scrub	Скраб-крамар	
-Butter	Масло	
-Candy	Кенді	
-Cane of Pacci	Тростина Паччі	
-Capless Link	[green]Лінк[/c] без Капелюха	
-Caprice	Примха (жінка)	
-Carlov	Карлов	
-Carlov Medal	Медаль Карлова	
-Castle Servant	Слуга Замку	
-Castor Wilds	Боброві Болота	
-Cave of Flames	Печера Полум'я	
-Chai	Чай	
-Chaser	Шукач	
-Chuchu	Чучу	
-Cloud Piranha	Небесна Піранья	
-Cloud Tops	Вершини Хмар	
-compass	компас	
-Crenel Hermit	Пустельник	
-Crenel Mines	Шахти Кренель	
-Croissant	круасан	
-Crow /0F/0D Takkuri	Ворона та Таккурі	
-Cucco	Кукко	
-Cucco Chick	Курча Кукко	
-Cucco!	Кукко!	
-curse	прокляття	
-Daltus	Далтус	
-Dampé	Дампе	
-Dark Hyrule Castle	Темний Замок Гайрул	
-Dark Nut	Темний Лицар	
-Dash Attack	Атака Ривком	
-Dash Attack	Атака Ривком	
-David Jr.	Девід Молодший	
-Deepwood Shrine	Святилище Лісу	
-Din	Дін	
-Din's Charm	Зілля Дін	
-Dina	Діна	
-Dog Food	Собачий корм	
-Door Mimic	Двері-Мімік	
-Dottie	Дотті	
-Down Thrust	Удар Згори	
-Down Thrust	Удар Згори	
-Doyle	Дойл	
-Dr. Left	Доктор Лів	
-dungeon map	мапа підземелля	
-Earth Element	Елемент Землі	
-Eastern Hills	Східні Пагорби	
-Edmond	Едмонд	
-Eenie	Еник	
-Eenie /0F/0D Meenie	Еник та Беник	
-elder	старійшина	
-Element	елемент	
-Elemental Sanctuary	Святилище Стихій	
-Elsie	Елсі	
-Emma	Емма	
-Empty Bottle	Порожня банка	
-Epona	Епона	
-Erik	Ерік	
-Eyegore	Окоґор	
-Eyegore Statue	Статуя Окоґора	
-Ezlo (Cap)	Езло (Капелюх)	
-Ezlo and Link	Езло та [green]Лінк[/c]	
-fairy	фея	
-Farore	Фарор	
-Farore's Charm	Зілля Фарор	
-Festari	Фестарі	
-Fifi	Фіфі	
-Figurine Ticket	Квиток на Фігурку	
-Fire Element	Елемент Вогню	
-Fire Rod	Вогняний Жезл	
-Fire Wizzrobe	Вогняний Чаромант	
-Flame Lantern	Масляний Ліхтар	
-flippers	ласти	
-Floormaster	Хапач	
-Flurris	Бриза (жінка)	
-Forest Minish	Лісовий Мініш	
-Forest Picori	Лісовий Пікорі	
-Fortress of Winds	Фортеця Вітрів	
-Four Sword	Меч Чотирьох	
-Funday School	Школа грай(й)моти	
-Gale	Віхола (дівчина)	
-Gentari	Корінь	
-Gepper	Геппер	
-Ghini	Ґіні	
-Gibdo	Ґібдо	
-Gina	Джина	
-Gleerok	Ґліскель	
-Golden Bomb	Золота Бомба	
-Golden Octorok	Золотий Восьмініс	
-Golden Rope	Золотий Мотуз	
-Golden Tektite	Золотий Тектит	
-Gorman	Ґорман	
-Goron	Ґорон	
-Goron Merchant	Ґорон-Крамар	
-graveyard key	ключ від цвинтаря	
-Grayblade	Димчак	
-Grayblade Possession technique	Техніка Одержимості Димчака	
-Great Butterfly Fairy	Велика Фея Метеликів	
-Great Dragonfly Fairy	Велика Фея Бабок	
-Great Mayfly Fairy	Велика Фея Одноденок	
-Great Spin Attack	Велика Обертова Атака	
-Great Spin Attack	Велика Обертова Атака	
-Greatblade	Буревій	
-Green Picolyte	Зелений Піколіт	
-Green Top Piece	Зелена Верхня Частина	
-Gregal	Вітрило (дід)	
-Gregal /0F/0D the Ghost	Вітрило та Привид	
-Gregal the Great	Вітрило Великий	
-Grimblade	Пугач	
-Grimblade Possession technique	Техніка Одержимості Пугача	
-Grip Ring	Чіпкий Перстень	
-Growler	Гаркун	
-Gust Jar	Глек Подиху	
-Gustaf, Royal Spirit	Ґустаф, Дух Короля	
-Guts	Ґатс	
-Gyorg Pair	Пара Ґйорґ	
-Hagen	Гаґен	
-Hailey	Зливка (дівчина)	
-Happy Hearth Inn	Корчма "Біля Вогнища"	
-Harrison	Гаррісон	
-Heart	Серце	
-Heart Container	Серце-контейнер	
-Helmasaur	Шлемозавр	
-Herb	Пуер	
-Hurdy-Gurdy Man	Шарманщик	
-Hyrule	Гайрул	
-Hyrule Castle Garden	Сад Замку Гайрул	
-Ice Wizzrobe	Крижаний Чаромант	
-Jabber Nut	Горіх-тлумач	
-Jasmine	Жасмін	
-Jim	Джим	
-Joe	Джо	
-Joel	Джоел	
-Joy Butterfly	Метелик Радості	
-Julietta	Джульєтта	
-June	Джун	
-Keaton	Кітон	
-Keeley	Кілі	
-Keese	Кііс	
-King Daltus	Король Далтус	
-Kinstone bag	сумка для Дивокамнів	
-Kinstone Bag	Сумка для Дивокамнів	
-Kinstone Fusion	Злиття Дивокамнів	
-Kinstone piece	уламок Дивокамня	
-Kinstone Piece	Уламок Дивокамня	
-Kinstones	Дивокамні	
-Klaus	Клаус	
-Knuckle	Мінґл	
-Labrynna	Лабрінна	
-Lake Hylia	Озеро Гілія	
-Lakeside Cabin	Приозерна Хатина	
-Lakitu	Лакіту	
-Leever	Лівер	
-Legend of the Picori	Легенда про Пікорі	
-Leila	Лейла	
-Librari	Бібларі	
-Library	Бібліотека	
-Library Minish	Бібліотечний Мініш	
-life energy	рівень здоров'я, здоров'я	
-Light Arrow	Стріла Світла	
-light force	Світла Сила	
-Like Like	Щітоїд	
-Lolly	Лоллі	
-Lon Lon Milk	Молоко Лон Лон	
-Lon Lon Milk (1/2)	Молоко Лон Лон (1/2)	
-Lon Lon Ranch key	ключ від Ранчо Лон Лон	
-Mack	Мак	
-Madderpillar	Люта Гусінь	
-Maggie	Меґґі	
-Magical Boomerang	Магічний Бумеранг	
-Malon	Малон	
-Mama	Мама	
-Mama's Cafe	Кафе "У Мами"	
-map of Hyrule	мапа Гайрулу	
-Marcy	Марсі	
-Marshall	Маршалл	
-Martin	Мартін	
-Master Smith	Майстер Коваль	
-Match	Меч	
-Mayor Hagen	Мер Гаґен	
-Mazaal	Мазаал	
-Meenie	Беник	
-Melari	Кремінь	
-Melari's Mines	Шахти Меларі	
-Minish Berries	Ягоди Мінішів	
-Minish Ezlo	Мініш Езло	
-Minish Vaati	Мініш Вааті	
-Minish Village	Селище Мінішів	
-Minish Woods	Ліс Мінішів	
-Minister Potho	Міністр Пото	
-Mirror Shield	Дзеркальний Щит	
-Moblin	Моблін	
-Moldorm	Вихурка	
-Moldworm	Піщаний Черв'як	
-Mole Mitts	Кротові Кігті	
-Monster Lady	Пані-Монстр	
-Monty	Монті	
-Mountain Minish	Гірський Мініш	
-Mountain Picori	Гірський Пікорі	
-Mt. Crenel	Гора Кренель	
-Mt. Crenel Mineral Water	Кренельська Мінеральна Вода	
-Mt. Crenel's Base	Підніжжя Гори Кренель	
-Mulldozer	Гниляк	
-Mutoh	Мутох	
-Mysterious Cloud	Таємнича Хмара	
-Mysterious Shell	Загадкова Мушля	
-Mysterious Shells	Загадкові мушлі	
-Mysterious Statue	Таємнича Статуя	
-Mysterious Wall	Таємнича Стіна	
-Nayru	Найру	
-Nayru's Charm	Зілля Найру	
-North Hyrule Field	Північне Поле Гайрулу	
-Ocarina of Wind	Окарина Вітру	
-Octorok	Восьмініс	
-Orange Picolyte	Оранжевий Піколіт	
-Paige	Пейдж	
-Palace of Winds	Палац Вітрів	
-Peaceful Hyrule 1	Мирний Гайрул 1	
-Peaceful Hyrule 2	Мирний Гайрул 2	
-Peaceful Hyrule 3	Мирний Гайрул 3	
-Peahat	Листовинт	
-Pegasus Boots	Черевики Пегаса	
-Percy	Персі	
-Peril Beam	Промінь Відчаю	
-Peril Beam	Промінь Відчаю	
-Pesto	Ґедзь	
-Pico Blooms	Піко-квіти	
-Picolyte	Піколіт (Червоний, Оранжевий, Жовтий, Зелений, Синій, Білий)	
-Piece of Heart	Частинка Серця	
-Pieces of Heart	Частинки Серця	
-Pina	Піна	
-Pita	Кондітта	
-Postbox	Поштова Скринька	
-Postman	Листоноша	
-Potho	Пото	
-Power Bracelets	Браслети Сили	
-Power Wrist	Браслет Сили	
-Princess Zelda	Принцеса Зельда	
-Puffstool	Споровик	
-Punch Mutoh	Взривний Мутох	
-Punch Mutoh	Взривний Мутох	
-Purry	Мурчик	
-Quest Status screen	екран Статистики	
-Quiver	колчан	
-Red Bottom Piece	Червона Нижня Частина	
-Red Dark Nut	Червоний Темний Лицар	
-Red Picolyte	Червоний Піколіт	
-Red Potion	Червоне зілля	
-Red Top Piece	Червона Верхня Частина	
-Rem	Рем	
-Remote Bomb	Дистанційна Бомба	
-Remote Bombs	Дистанційні Бомби	
-Roc's Cape	Плащ Рух	
-Rock Breaker	Каменелом	
-Rock Breaker	Ломання Каменів	
-Rock Chuchu	Броньований Чучу	
-Rolf	Рольф	
-Roll Attack	Атака Перекидом	
-Roll Attack	Атака Перекидом	
-Rollobite	Кулебіт	
-Romio	Ромео	
-Rope	Мотуз	
-Royal Crypt	Крипта Королів	
-Royal Valley	Королівська Долина	
-Rupee Like	Рупях	
-Rupee/Rupees	Рупія/Рупій	
-Satchel	Сатчел	
-Scarblade	Терновик	
-Scissors Beetle	Жук-Ножиці	
-Scratcher	Дряпун	
-Sheila	Шейла	
-shells	мушлі	
-Shield 40 Rupees	Щит 40 Рупій	
-shrine	святилище	
-Silver Bomb	Срібна Бомба	
-Simon	Саймон	
-Siroc	Буря (жінка)	
-Slice of Cake	Шматочок торта	
-Slice of Pie	Шматочок пирога	
-Sluggula	Слимак	
-small key	малий ключ	
-Small Key	Малий ключ	
-small shield	маленький щит	
-Smee	Ковальчук	
-Smith	Коваль	
-Smith's Blade	Клинок Коваля	
-Smith's Sword	Меч Коваля	
-Soldier	Солдат	
-Soldier Captain	Капітан Солдатів	
-Sorcerer Vaati	Чаклун Вааті	
-Source of the Flow	Джерело Потоку	
-South Hyrule Field	Південне Поле Гайрулу	
-Spark	Іскра	
-Spear Moblin	Моблін зі списом	
-Spekter	Хрипун	
-Spiked Beetle	Шипастий Жук	
-Spin Attack	Обертова Атака	
-Spiny Beetle	Колючий Жук	
-Spiny Chuchu	Колючий Чучу	
-Split Gauge	Шкала Роздвоєння	
-Split Gauge	Шкала Роздвоєння	
-Splitblade	Розсікач	
-Spookter	Скрипун	
-Spookter /0F/0D Spekter	Скрипун та Хрипун	
-Spooky Possession technique	Техніка Одержимості Примари	
-Stalfos	Сталфос	
-Stamp	Штамп	
-Stockwell	Крамник	
-Stranger	Незнайомець	
-Strato	Буран (чоловік)	
-Sturgeon	Осетр	
-surprise-filled bread	сюрприз-хлібчик	
-Swiftblade	Вихор	
-Swiftblade I	Вітролом	
-Swiftblade Possession technique	Техніка Одержимості Вітролома	
-Swiftblade School	Школа Вихора	
-Swiftblade the First	Вітролом	
-Swiftblade the First, Spirit of the Swordsman	Вітролом, Дух Мечника	
-Sword Beam	Промінь Меча	
-Sword Beam	Промінь Меча	
-Syrup	Сироп	
-Talon	Талон	
-Tektite	Тектайт	
-Temple of Droplets	Храм Крапель	
-The Carpenters	Теслі	
-The Wind Tribe	Плем'я Вітрів	
-Tiger Scrolls	Тигрові Сувої	
-Tina	Тіна	
-Tingle	Тінґл	
-Tingle Siblings?	Родичі Тінґла?	
-Tingle Trophy	Трофей Тінґла	
-Town Minish	Міський Мініш	
-Town Picori	Міський Пікорі	
-Trap	Пастка	
-Trilby Highlands	Пагорби Трілбі	
-Vaati Reborn	Відроджений Вааті	
-Vaati Transfigured	Перетворений Вааті	
-Vaati's Wrath	Лють Вааті	
-Vassals	Васали	
-Veil Falls	Серпанковий Водоспад	
-Veil Springs	Серпанкові Джерела	
-Verona	Верона	
-Village Minish	Сільський Мініш	
-wake-up mushroom	гриб-будильник	
-Wallet	гаманець	
-Wallet 300 Rupees	Гаманець 300 Рупій	
-Wallmaster	Падун	
-Water	Вода	
-Water Element	Елемент Води	
-Waveblade	Водограй	
-Waveblade Possession technique	Техніка Одержимості Бурана	
-Western Wood	Західний Ліс	
-Wheaton	Крумель	
-Wheaton /0F/0D Pita	Крумель та Кондітта	
-White Picolyte	Білий Піколіт	
-White Sword	Білий Меч	
-White Sword (Three Elements)	Білий Меч (Три Елементи)	
-White Sword (Two Elements)	Білий Меч (Два Елементи)	
-Wind Element	Елемент Вітру	
-Wind Ruins	Руїни Вітру	
-Wisp	Блукач	
-Wizzrobe	Чаромант	
-Young Couple	Молода Пара	
-Zelda /0F/0D Link	Зельда та [green]Лінк[/c]	
-Zill	Зілл	
-Zill and Friends	Зілл та Друзі	
-
-## Блок Block 0 (#0)
-
-| Оригінал | Переклад | Примітки |
-|----------|----------|----------|
-| Wind Waker | Пробуджувач Вітру | Батон-кондуктор для керування вітром; назва предмета. |
-| Swift Sail | Швидке Вітрило | Покращене вітрило; збільшує швидкість і ставить попутний вітер. |
-| Sail | Вітрило | Звичайне вітрило човна. |
-| Joy Pendant | Підвіска Радості | Трофей для мішка здобичі; збирається для квестів. |
-| Tingle Bottle | Пляшка Тінґла | Онлайнова пляшка для повідомлень; бренд «Тінґл». |
-| Picto Box | Піктобокс | Камера для піктографів; зберігає знімки. |
-| Deluxe Picto Box | Делюкс Піктобокс | Модель, що робить кольорові знімки. |
-| Hero's Bow | Лук Героя | Основна зброя для стріл; сумісний зі стихійними стрілами. |
-| Triforce Shard | Уламок Трифорси | Один із восьми фрагментів Трифорси Хоробрості. |
+| Original | Translation | Notes |
+|----------|-------------|-------|
+| Aryll | Арілл | Молодша сестра головного героя, яку викрадає гігантський птах. |
+| Miss Tetra | Панна Тетра | Лідерка піратів, смілива та рішуча дівчина, яка відіграє ключову роль у сюжеті. |
+| Orca | Орка (Косатка) | Майстер меча на Початковому острові, який навчає героя бойовим прийомам. |
+| Sturgeon | Осетер | Мудрий старший брат Орки, який присвятив своє життя науці. |
+| Grandma | Бабуся | Бабуся головного героя та Арілл, що готує цілющий суп. |
+| Postman | Листоноша | Персонаж з племені Ріто, який доставляє листи між островами. |
+| Ganon | Ганон | Головний антагоніст гри, король зла. |
+| Valoo | Валу | Великий дракон, дух небес, що живе на Острові Драконячого Сідала. |
+| Great Deku Tree | Велике Дерево Деку | Дух-охоронець лісу у вигляді велетенського дерева. |
+| Jabun | Джабун | Великий дух води у вигляді риби. |
+| Medli | Медлі | Дівчина з племені Ріто, яка допомагає герою. |
+| Makar | Макар | Маленький Корок (дух лісу), який допомагає герою. |
+| King of Red Lions | Король Червоних Левів | Магічний червоний човен, що вміє розмовляти і є провідником героя. |
+| Hero of Time | Герой Часу | Легендарна постать з минулого, яка, згідно з переказами, врятувала королівство Хайрул. |
+| Fairy | фея | Магічна істота, яка може відновити здоров'я героя. |
+| Rito tribe | Плем'я Ріто | Раса людиноподібних птахів, що мешкає на Острові Драконячого Сідала. |
+| Koroks | Короки | Духи лісу у вигляді маленьких дерев'яних істот. |
+| Pirates | Пірати | Команда моряків на чолі з Тетрою. |
+| The gods | Боги / Богині | Божественні істоти (Дін, Фарор, Найру), яким люди молилися в давнину. |
+| Wild pig | Дика свиня | Тварина на Початковому острові, яку можна використовувати для пошуку скарбів. |
+| Beedle | Бідл | Мандрівний крамар, який плаває на своєму човні-крамниці. |
+| Komali | Комалі | Син вождя племені Ріто. |
+| Maggie | Меґґі | Дівчина, яку врятували з Покинутої Фортеці. |
+| Tingle | Тінґл | Дивакуватий персонаж у зеленому костюмі, який допомагає з розшифровкою мап. |
+| Hero's Sword | Меч Героя | Перший меч, який герой отримує від Орки. |
+| Master Sword | Майстер-меч | Легендарний меч, що має силу перемагати зло. |
+| Hero's Shield | Щит Героя | Щит, що є родинною реліквією. |
+| Mirror Shield | Дзеркальний Щит | Особливий щит, що може відбивати світло та певні магічні атаки. |
+| Hero's Clothes | Вбрання Героя | Традиційний зелений одяг, який герой отримує на свій день народження. |
+| Wind Waker | Диригент Вітрів | Магічна диригентська паличка для керування вітром та іншими силами. |
+| Telescope | Телескоп | Подарунок від Арілл, який дозволяє дивитися на віддалені об'єкти. |
+| Sail / boat's sail | Вітрило / човнове вітрило | Ключовий предмет для плавання на Королі Червоних Левів. |
+| Swift Sail | Швидке Вітрило | Покращене вітрило, що збільшує швидкість човна і автоматично змінює напрям вітру. |
+| Bombs | Бомби | Вибухові пристрої для знищення ворогів та перешкод. На човні перетворюються на гармату. |
+| Boomerang | Бумеранг | Зброя, що повертається. Може вражати до п'яти цілей одночасно. |
+| Hero's Bow | Лук Героя | Зброя для ураження віддалених цілей стрілами. |
+| Fire and Ice Arrows | Вогняні та Крижані Стріли | Магічні стріли з елементальними властивостями. |
+| Light Arrow | Стріла Світла | Священні стріли, що здатні пробивати чисте зло. |
+| Grappling Hook | Гакустріл | Пристрій для перетинання прірв та витягування скарбів з моря. |
+| Hookshot | Крюкшот | Пристрій, що притягує героя до певних поверхонь або об'єктів. |
+| Deku Leaf | Листок Деку | Великий листок, що дозволяє планерувати та створювати пориви вітру. |
+| Skull Hammer | Молот-Череп | Важкий молот для руйнування перешкод та оглушення ворогів. |
+| Iron Boots | Залізні Чоботи | Важкі чоботи, що дозволяють протистояти сильному вітру та ходити по дну. |
+| Power Bracelets | Браслети Сили | Надають силу піднімати надзвичайно важкі об'єкти. |
+| Magic Armor | Магічна Броня | Створює захисний бар'єр, що поглинає шкоду в обмін на рупії. |
+| Picto Box | Пікто-скринька | Камера для створення чорно-білих знімків (піктографів). |
+| Deluxe Picto Box | Делюкс Пікто-скринька | Покращена версія камери, що робить кольорові знімки. |
+| Spoils Bag | Сумка для Трофеїв | Сумка для зберігання колекційних предметів, що випадають з ворогів (намиста, желе, герби). |
+| Bait Bag | Сумка для Приманок | Сумка для зберігання різних видів приманок. |
+| Delivery Bag | Сумка Кур'єра | Сумка для зберігання листів та предметів для доставки. |
+| Tingle Bottle | Пляшка Тінґла | Пляшка для надсилання повідомлень через сервіс Miiverse (у версії HD). |
+| Piece of Heart | Частинка Серця | Зібравши чотири таких частинки, герой отримує додатковий контейнер здоров'я. |
+| Heart Container | Серце-контейнер | Повністю відновлює здоров'я та назавжди збільшує його максимальний запас на одне серце. |
+| Din's/Farore's/Nayru's Pearl | Перлина Дін/Фарор/Найру | Три священні перлини, необхідні для підняття Вежі Богів з моря. |
+| Triforce Shard | Уламок Трифорсу | Один з восьми уламків, які разом утворюють Трифорс Мужності. |
+| Triforce of Courage | Трифорс Мужності | Священний артефакт, що дарує герою силу для фінальної битви. |
+| Joy Pendant | Підвіска Радості | Колекційний предмет, що випадає з певних ворогів. |
+| Knight's Crest | Лицарський герб | Колекційний предмет. Зібравши 10, можна вивчити нову техніку бою. |
+| small key | малий ключ | Відкриває замкнені двері всередині підземелля. |
+| Big Key | Великий Ключ | Відкриває двері до кімнати боса підземелля. |
+| Compass | Компас | Показує на мапі підземелля розташування скарбів, ключів та боса. |
+| Skull Necklace | Намисто з черепів | Трофей, що випадає з Моблінів. |
+| Boko Baba Seed | Насіння Боко Баби | Трофей, що випадає з рослин-монстрів Боко Баба. |
+| Golden Feather | Золоте Перо | Трофей, що випадає з певних ворогів. Дуже цінується плем'ям Ріто. |
+| Tingle Statue | Статуя Тінґла | Секретний колекційний предмет, захований у кожному підземеллі (у версії HD). |
+| Dungeon Map | мапа підземелля | Показує план усіх кімнат у підземеллі. |
+| Sea Chart | Морська карта | Карта Великого моря, що показує острови та допомагає в навігації. |
+| Treasure Chart | Мапа Скарбів | Вказує на місцезнаходження затонулих скарбів у Великому морі. |
+| Triforce Chart | Мапа Трифорсу | Зашифрована мапа, що вказує на місцезнаходження Уламка Трифорсу. |
+| IN-credible Chart | НЕ-ймовірна Мапа | Особлива мапа від Тінґла, що показує розташування всіх Мап Трифорсу та Уламків Трифорсу. |
+| Ghost Ship Chart | Мапа Корабля-Привида | Показує поточне місцезнаходження Корабля-Привида в залежності від фази місяця. |
+| Various Charts | Різні мапи | Включає мапи підводних човнів, крамниць Бідла, таємних печер, Великих Фей тощо. |
+| Letters / Deed / ID / Coupon | Листи / Документ / ID / Купон | Різні предмети для квестів, що зберігаються у Сумці Кур'єра. |
+| Rupee | Рупія (Зелена, Синя тощо) | Грошова одиниця Гайрулу. Різні кольори мають різну вартість. |
+| Empty bottle | Порожня банка | Предмет для зберігання рідин, фей та інших речей. |
+| Potion | Червоне/Зелене/Синє зілля | Відновлює здоров'я, магічну силу або і те, й інше. |
+| Elixir Soup | Еліксир-Суп | Особливий суп від бабусі, що відновлює все здоров'я та магію, а також подвоює силу атаки. |
+| All-Purpose Bait | Універсальна Приманка | Приманка для різних тварин. |
+| Hyoi Pear | Груша Хьой | Особлива приманка, що дозволяє тимчасово керувати чайками. |
+| Outset Island | Початковий острів | Рідний острів головного героя. |
+| Forsaken Fortress | Покинута Фортеця | Лігво Ганона, куди відвезли Арілл. |
+| Dragon Roost Island | Острів Драконячого Сідала | Острів, де мешкає плем'я Ріто та дракон Валу. |
+| Forest Haven | Лісовий Притулок | Священне місце, де росте Велике Дерево Деку. |
+| Windfall Island | Острів Щасливого Вітру | Великий торговий острів з багатьма жителями. |
+| Tower of the Gods | Вежа Богів | Велична вежа, що служить випробуванням для героя. |
+| Hyrule Castle | Замок Гайрул | Затоплений замок стародавнього королівства. |
+| Ganon's Tower | Вежа Ганона | Фінальне підземелля. |
+| Tingle Island | Острів Тінґла | Дім персонажа Тінґла, де можна розшифровувати мапи. |
+| Greatfish Isle | Острів Великої Риби | Колишній дім Джабуна, зруйнований Ганоном. |
+| Fairy Fountain | Фонтан Фей | Священне місце, де живуть Великі Феї. |
+| Life energy | Рівень здоров'я, здоров'я | Позначає запас здоров'я героя, відображений у вигляді сердець. |
+| Magic power | Магічна сила | Ресурс, що витрачається на використання певних предметів та технік. |
+| Targeting | Націлювання | Ігрова механіка (`<ZL>`), що дозволяє зафіксувати камеру на цілі. |
+| Spin Attack | Обертова Атака | Потужний удар мечем по колу. |
+| Hurricane Spin | Ураганний оберт | Посилена версія Обертової Атаки, що витрачає магічну силу. |
+| Parry attack | Парирувальна атака | Спеціальна контратака. |
+| Roll Attack | Атака Перекидом | Дія, що виконується натисканням `(A)` під час бігу. |
+| Warp | Телепортація | Миттєве переміщення до ключових локацій за допомогою "Балади Шквалів". |
+| Map Screen | Екран Мапи | Інтерфейс на Wii U GamePad, де відображаються Морська карта та мапи підземель. |

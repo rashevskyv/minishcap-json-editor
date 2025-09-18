@@ -14,5 +14,15 @@
     "show_multiple_spaces_as_dots": true,
     "space_dot_color_hex": "#808080",
     "theme": "auto",
-    "restore_unsaved_on_startup": false
+    "restore_unsaved_on_startup": false,
+    "glossary_dialog_state": {
+        "geometry": {
+            "x": 739,
+            "y": 209,
+            "width": 1593,
+            "height": 1181
+        },
+        "is_fullscreen": false,
+        "is_maximized": false
+    }
 }
