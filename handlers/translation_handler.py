@@ -2,7 +2,7 @@ import json
 import os
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 from PyQt5.QtCore import Qt, QTimer, QObject, QEvent
 from PyQt5.QtGui import QTextCursor
@@ -11,11 +11,15 @@ from PyQt5.QtWidgets import (
     QApplication,
     QDialog,
     QDialogButtonBox,
+    QHBoxLayout,
+    QListWidget,
+    QListWidgetItem,
     QLabel,
     QLineEdit,
     QMessageBox,
     QPlainTextEdit,
     QProgressDialog,
+    QPushButton,
     QVBoxLayout,
 )
 
@@ -35,10 +39,10 @@ from utils.utils import ALL_TAGS_PATTERN, convert_spaces_to_dots_for_display
 
 
 _DEFAULT_GLOSSARY_PROMPT = (
-    "You are a Ukrainian localization editor working on the video game {game_name}. "
-    "Given a source term, propose a natural Ukrainian translation and a concise usage note. "
-    "Always respond strictly in JSON with two keys: \"translation\" and \"notes\". "
-    "Keep both values in Ukrainian; the notes field may be an empty string if no comment is needed."
+    "You are the creative Ukrainian localization lead for {game_name}. "
+    "When given a source term (and optional context line), craft a vivid Ukrainian translation that matches the game's universe, tone, and established terminology. "
+    "Describe the in-game meaning in one short note – explain what the term represents or how it is used, without grammar labels, part-of-speech hints, or plural/singular remarks. "
+    "Respond strictly in JSON with keys \"translation\" and \"notes\"; keep both values in Ukrainian."
 )
 
 
@@ -1257,8 +1261,8 @@ class TranslationHandler(BaseHandler):
     def _prompt_new_glossary_entry(
         self,
         original: str,
-        suggested_translation: str = '',
-        suggested_notes: str = '',
+        suggestion_provider: Optional[Callable[[], Optional[Tuple[str, str]]]] = None,
+        variation_provider: Optional[Callable[[], Optional[List[Tuple[str, str]]]]] = None,
     ) -> Optional[Tuple[str, str]]:
         dialog = QDialog(self.mw)
         dialog.setWindowTitle("Add Glossary Term")
@@ -1270,15 +1274,101 @@ class TranslationHandler(BaseHandler):
 
         translation_edit = QLineEdit(dialog)
         translation_edit.setPlaceholderText("Translation")
-        if suggested_translation:
-            translation_edit.setText(suggested_translation)
         layout.addWidget(translation_edit)
 
         notes_edit = QPlainTextEdit(dialog)
         notes_edit.setPlaceholderText("Notes (Shift+Enter for newline)")
-        if suggested_notes:
-            notes_edit.setPlainText(suggested_notes)
         layout.addWidget(notes_edit)
+
+        controls_layout: Optional[QHBoxLayout] = None
+        if suggestion_provider or variation_provider:
+            controls_layout = QHBoxLayout()
+            controls_layout.addStretch(1)
+
+        if suggestion_provider:
+            suggest_button = QPushButton("AI Suggest", dialog)
+
+            def on_suggest_clicked() -> None:
+                suggest_button.setEnabled(False)
+                try:
+                    suggestion = suggestion_provider()
+                finally:
+                    suggest_button.setEnabled(True)
+                if not suggestion:
+                    QMessageBox.information(
+                        dialog,
+                        "AI Suggestion",
+                        "No suggestion could be generated.",
+                    )
+                    return
+                suggested_translation, suggested_notes = suggestion
+                translation_edit.setText(suggested_translation)
+                notes_edit.setPlainText(suggested_notes)
+                translation_edit.selectAll()
+                translation_edit.setFocus()
+
+            suggest_button.clicked.connect(on_suggest_clicked)
+            controls_layout.addWidget(suggest_button)
+
+        if variation_provider:
+            variations_button = QPushButton("AI Variations", dialog)
+
+            def on_variations_clicked() -> None:
+                variations_button.setEnabled(False)
+                try:
+                    variants = variation_provider() or []
+                finally:
+                    variations_button.setEnabled(True)
+                if not variants:
+                    QMessageBox.information(
+                        dialog,
+                        "AI Variations",
+                        "No variations could be generated.",
+                    )
+                    return
+
+                chooser = QDialog(dialog)
+                chooser.setWindowTitle("Select AI Variation")
+                chooser_layout = QVBoxLayout(chooser)
+                list_widget = QListWidget(chooser)
+                for translation, notes in variants:
+                    display = translation
+                    if notes:
+                        display = f"{translation}\n{notes}"
+                    item = QListWidgetItem(display)
+                    item.setData(Qt.UserRole, (translation, notes))
+                    list_widget.addItem(item)
+                if list_widget.count() > 0:
+                    list_widget.setCurrentRow(0)
+
+                chooser_layout.addWidget(list_widget)
+                chooser_buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, parent=chooser)
+                chooser_layout.addWidget(chooser_buttons)
+
+                def accept_current() -> None:
+                    chooser.accept()
+
+                list_widget.itemDoubleClicked.connect(lambda _: accept_current())
+                chooser_buttons.accepted.connect(chooser.accept)
+                chooser_buttons.rejected.connect(chooser.reject)
+
+                if chooser.exec_() != QDialog.Accepted:
+                    return
+
+                current_item = list_widget.currentItem()
+                if not current_item:
+                    return
+                translation, notes = current_item.data(Qt.UserRole)
+                translation_edit.setText(translation)
+                notes_edit.setPlainText(notes)
+                translation_edit.selectAll()
+                translation_edit.setFocus()
+
+            variations_button.clicked.connect(on_variations_clicked)
+            controls_layout.addWidget(variations_button)
+
+        if controls_layout and controls_layout.count() > 1:
+            layout.addLayout(controls_layout)
 
         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, parent=dialog)
         button_box.accepted.connect(dialog.accept)
@@ -1299,22 +1389,27 @@ class TranslationHandler(BaseHandler):
         notes = notes_edit.toPlainText().strip()
         return translation, notes
 
-    def add_glossary_entry(self, original: str) -> None:
-        original_value = (original or '').strip()
+    def add_glossary_entry(self, original: str, context: Optional[str] = None) -> None:
+        original_value = ' '.join((original or '').splitlines()).strip()
+        while '  ' in original_value:
+            original_value = original_value.replace('  ', ' ')
         if not original_value:
             QMessageBox.information(self.mw, 'Glossary', 'Select text to add to the glossary.')
             return
 
-        suggested_translation = ''
-        suggested_notes = ''
-        suggestion = self._request_glossary_suggestion(original_value)
-        if suggestion:
-            suggested_translation, suggested_notes = suggestion
+        context_line = ' '.join((context or '').splitlines()).strip() if context else ''
+
+        if context_line:
+            suggestion_provider = lambda: self._request_glossary_suggestion(original_value, context_line)
+            variation_provider = lambda: self._request_glossary_variations(original_value, context_line)
+        else:
+            suggestion_provider = lambda: self._request_glossary_suggestion(original_value, None)
+            variation_provider = lambda: self._request_glossary_variations(original_value, None)
 
         result = self._prompt_new_glossary_entry(
             original_value,
-            suggested_translation=suggested_translation,
-            suggested_notes=suggested_notes,
+            suggestion_provider=suggestion_provider,
+            variation_provider=variation_provider,
         )
         if not result:
             return
@@ -1333,6 +1428,7 @@ class TranslationHandler(BaseHandler):
     def _request_glossary_suggestion(
         self,
         term: str,
+        context_line: Optional[str],
     ) -> Optional[Tuple[str, str]]:
         provider = self._prepare_provider()
         if not provider:
@@ -1350,10 +1446,14 @@ class TranslationHandler(BaseHandler):
         user_sections = [
             f"Game: {game_name}",
             f"Source term: {term}",
+        ]
+        if context_line:
+            user_sections.append(f"Context line: {context_line}")
+        user_sections.extend([
             "Provide Ukrainian strings only.",
             "Return JSON with keys \"translation\" and \"notes\".",
             "Use \"notes\" for a short usage comment; leave it empty if unnecessary.",
-        ]
+        ])
         user_content = "\n".join(user_sections)
 
         messages = [
@@ -1397,6 +1497,85 @@ class TranslationHandler(BaseHandler):
         if not translation:
             return None
         return translation, notes
+
+    def _request_glossary_variations(
+        self,
+        term: str,
+        context_line: Optional[str],
+    ) -> Optional[List[Tuple[str, str]]]:
+        provider = self._prepare_provider()
+        if not provider:
+            return None
+
+        template = self._load_glossary_prompt_template()
+        plugin_name = getattr(self.mw, 'active_game_plugin', None)
+        game_name = (
+            self.mw.current_game_rules.get_display_name()
+            if getattr(self.mw, 'current_game_rules', None)
+            else (plugin_name or "the game")
+        )
+
+        system_prompt = template
+        user_sections = [
+            f"Game: {game_name}",
+            f"Source term: {term}",
+        ]
+        if context_line:
+            user_sections.append(f"Context line: {context_line}")
+        user_sections.extend([
+            "Provide 3-5 creative Ukrainian translation options.",
+            "Respond strictly as a JSON array where each item is an object with keys \"translation\" and \"notes\".",
+            "Keep notes short (<= 120 characters) and focused on in-game meaning only.",
+        ])
+        user_content = "\n".join(user_sections)
+
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_content},
+        ]
+
+        self._update_status_message("AI: generating glossary variations", persistent=False)
+        self._show_progress_indicator("Generating glossary variations...")
+
+        try:
+            response = provider.translate(messages)
+        except TranslationProviderError as exc:
+            log_debug(f"Glossary variation provider error: {exc}")
+            self._clear_status_message()
+            return None
+        except Exception as exc:  # noqa: BLE001
+            log_debug(f"Unexpected glossary variation error: {exc}")
+            self._clear_status_message()
+            return None
+        finally:
+            self._hide_progress_indicator()
+
+        cleaned = self._clean_model_output(response)
+        self._clear_status_message()
+
+        try:
+            payload = json.loads(cleaned)
+        except json.JSONDecodeError:
+            log_debug("Glossary variation response is not valid JSON")
+            return None
+
+        if isinstance(payload, dict) and 'variations' in payload:
+            payload = payload['variations']
+
+        if not isinstance(payload, list):
+            return None
+
+        results: List[Tuple[str, str]] = []
+        for item in payload:
+            if isinstance(item, dict):
+                translation = str(item.get('translation', '')).strip()
+                notes = str(item.get('notes', '')).strip()
+                if translation:
+                    results.append((translation, notes))
+            elif isinstance(item, str):
+                results.append((item.strip(), ''))
+
+        return results or None
 
     def _handle_glossary_entry_update(
         self,

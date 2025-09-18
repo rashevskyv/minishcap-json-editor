@@ -211,19 +211,24 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
         glossary_entry = None
         if self.objectName() == "original_text_edit":
-            selection_text = self.textCursor().selectedText().replace('\u2029', '\r\n').strip()
+            cursor = self.textCursor()
+            selection_text = cursor.selectedText().replace('\u2029', '\r\n').strip()
             if selection_text:
                 add_term_candidate = selection_text
+                context_line = cursor.block().text().replace('\u2029', ' ').strip()
             else:
                 cursor_at_pos = self.cursorForPosition(position_in_widget_coords)
                 cursor_at_pos.select(QTextCursor.WordUnderCursor)
                 add_term_candidate = cursor_at_pos.selectedText().replace('\u2029', '\r\n').strip()
+                context_line = cursor_at_pos.block().text().replace('\u2029', ' ').strip()
+
+            context_line = context_line or ''
 
             add_action = menu.addAction("Add to Glossary…")
             add_action.setEnabled(bool(add_term_candidate) and translator is not None)
             if translator is not None and add_term_candidate:
                 add_action.triggered.connect(
-                    lambda checked=False, term=add_term_candidate: translator.add_glossary_entry(term)
+                    lambda checked=False, term=add_term_candidate, ctx=context_line: translator.add_glossary_entry(term, ctx)
                 )
             custom_actions_added = True
 
