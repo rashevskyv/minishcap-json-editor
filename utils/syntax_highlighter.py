@@ -1,7 +1,7 @@
 
 import sys
 import re
-from typing import Iterable, List, Optional
+from typing import Dict, Iterable, List, Optional, Tuple
 from PyQt5.QtCore import QRegExp, Qt
 from PyQt5.QtGui import (
     QSyntaxHighlighter,
@@ -43,6 +43,8 @@ class JsonTagHighlighter(QSyntaxHighlighter):
         self._glossary_manager: Optional[GlossaryManager] = None
         self._glossary_enabled = False
         self._glossary_format = QTextCharFormat()
+        self._glossary_matches_cache: Dict[int, List[Tuple[int, int, GlossaryMatch]]] = {}
+        self._glossary_cache_revision: Optional[int] = None
 
         self.default_text_color = QColor(Qt.black)
         
@@ -88,6 +90,8 @@ class JsonTagHighlighter(QSyntaxHighlighter):
     def set_glossary_manager(self, manager: Optional[GlossaryManager]) -> None:
         self._glossary_manager = manager
         self._glossary_enabled = bool(manager and manager.get_entries())
+        self._glossary_matches_cache.clear()
+        self._glossary_cache_revision = None
         self.rehighlight()
 
     def _apply_css_to_format(self, char_format, css_str, base_color=None):
@@ -194,8 +198,59 @@ class JsonTagHighlighter(QSyntaxHighlighter):
             pass
 
         self.newline_char = newline_symbol
+        self._glossary_matches_cache.clear()
+        self._glossary_cache_revision = None
         if self.document():
              self.rehighlight()
+
+    def _rebuild_glossary_cache(self) -> None:
+        doc = self.document()
+        if not doc:
+            self._glossary_matches_cache.clear()
+            self._glossary_cache_revision = None
+            return
+        revision = doc.revision()
+        if self._glossary_cache_revision == revision:
+            return
+
+        self._glossary_cache_revision = revision
+        self._glossary_matches_cache.clear()
+
+        if not (self._glossary_enabled and self._glossary_manager):
+            return
+
+        full_text = doc.toPlainText()
+        try:
+            matches = self._glossary_manager.find_matches(full_text)
+        except Exception as exc:
+            log_debug(f"Glossary highlight error: {exc}")
+            matches = []
+
+        for match in matches:
+            start = match.start
+            end = match.end
+            if end <= start:
+                continue
+            block = doc.findBlock(start)
+            if not block.isValid():
+                continue
+            while block.isValid() and start < end:
+                block_start = block.position()
+                block_length = block.length()
+                block_end = block_start + block_length
+                overlap_start = max(start, block_start)
+                overlap_end = min(end, block_end)
+                if overlap_end > overlap_start:
+                    local_start = overlap_start - block_start
+                    local_length = overlap_end - overlap_start
+                    self._glossary_matches_cache.setdefault(block.blockNumber(), []).append(
+                        (local_start, local_length, match)
+                    )
+                if block_end >= end:
+                    break
+                block = block.next()
+                if not block.isValid():
+                    break
 
     def highlightBlock(self, text):
         previous_color_state = self.previousBlockState()
@@ -277,21 +332,40 @@ class JsonTagHighlighter(QSyntaxHighlighter):
             except Exception as e:
                 log_debug(f"Error applying syntax rule (pattern: '{pattern_str}'): {e}")
 
-        glossary_matches: List[GlossaryMatch] = []
+        glossary_matches_for_block: List[Tuple[int, int, GlossaryMatch]] = []
         if self._glossary_enabled and self._glossary_manager:
-            try:
-                glossary_matches = self._glossary_manager.find_matches(text)
-            except Exception as exc:
-                log_debug(f"Glossary highlight error: {exc}")
-                glossary_matches = []
-            for match in glossary_matches:
-                length = match.end - match.start
-                if length <= 0:
+            self._rebuild_glossary_cache()
+            glossary_matches_for_block = self._glossary_matches_cache.get(
+                self.currentBlock().blockNumber(), []
+            )
+            underline_style = self._glossary_format.underlineStyle()
+            underline_color = self._glossary_format.underlineColor()
+            has_custom_color = underline_color.isValid()
+            for local_start, local_length, match in glossary_matches_for_block:
+                if local_length <= 0:
                     continue
-                self.setFormat(match.start, length, self._glossary_format)
+                for offset in range(local_length):
+                    index = local_start + offset
+                    if index >= len(text):
+                        break
+                    existing_format = self.format(index)
+                    existing_format.setFontUnderline(True)
+                    existing_format.setUnderlineStyle(underline_style)
+                    if has_custom_color:
+                        existing_format.setUnderlineColor(underline_color)
+                    self.setFormat(index, 1, existing_format)
 
-        if glossary_matches:
-            self.setCurrentBlockUserData(self.GlossaryBlockData(glossary_matches))
+        if glossary_matches_for_block:
+            block_matches = [
+                GlossaryMatch(
+                    entry=match.entry,
+                    start=local_start,
+                    end=local_start + local_length,
+                )
+                for local_start, local_length, match in glossary_matches_for_block
+                if local_length > 0
+            ]
+            self.setCurrentBlockUserData(self.GlossaryBlockData(block_matches))
         else:
             self.setCurrentBlockUserData(None)
 

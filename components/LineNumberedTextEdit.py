@@ -206,24 +206,40 @@ class LineNumberedTextEdit(QPlainTextEdit):
         if not isinstance(main_window, QMainWindow):
             return
 
+        translator = getattr(main_window, 'translation_handler', None)
         custom_actions_added = False
 
         glossary_entry = None
         if self.objectName() == "original_text_edit":
+            selection_text = self.textCursor().selectedText().replace('\u2029', '\r\n').strip()
+            if selection_text:
+                add_term_candidate = selection_text
+            else:
+                cursor_at_pos = self.cursorForPosition(position_in_widget_coords)
+                cursor_at_pos.select(QTextCursor.WordUnderCursor)
+                add_term_candidate = cursor_at_pos.selectedText().replace('\u2029', '\r\n').strip()
+
+            add_action = menu.addAction("Add to Glossary…")
+            add_action.setEnabled(bool(add_term_candidate) and translator is not None)
+            if translator is not None and add_term_candidate:
+                add_action.triggered.connect(
+                    lambda checked=False, term=add_term_candidate: translator.add_glossary_entry(term)
+                )
+            custom_actions_added = True
+
             glossary_entry = self._find_glossary_entry_at(position_in_widget_coords)
             if glossary_entry:
+                menu.addSeparator()
                 term_value = glossary_entry.original
                 show_action = menu.addAction(
                     f"Show Glossary Entry for \"{term_value}\""
                 )
-                translator = getattr(main_window, 'translation_handler', None)
                 if translator:
                     show_action.triggered.connect(
                         lambda checked=False, term=term_value: translator.show_glossary_dialog(term)
                     )
                 else:
                     show_action.setEnabled(False)
-                custom_actions_added = True
                 menu.addSeparator()
 
         if self.objectName() == "edited_text_edit" and not self.isReadOnly():

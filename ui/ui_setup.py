@@ -22,7 +22,11 @@ def setup_main_window_ui(main_window):
     left_layout.addWidget(QLabel("Blocks (double-click to rename):"))
     main_window.block_list_widget = CustomListWidget(main_window)
     left_layout.addWidget(main_window.block_list_widget)
-
+    left_layout.addWidget(main_window.block_list_widget)
+    left_layout.addSpacing(8)
+    main_window.open_glossary_button = QPushButton('Glossary…')
+    main_window.open_glossary_button.setToolTip('Open glossary')
+    left_layout.addWidget(main_window.open_glossary_button)
     main_window.right_splitter = QSplitter(Qt.Vertical)
 
     top_right_panel = QWidget()
@@ -79,15 +83,15 @@ def setup_main_window_ui(main_window):
     editable_text_header_layout.addWidget(main_window.navigate_down_button)
 
     main_window.ai_translate_button = QPushButton("AI Translate")
-    main_window.ai_translate_button.setToolTip("Перекласти поточний рядок українською за допомогою AI")
+    main_window.ai_translate_button = QPushButton('AI Translate')
     editable_text_header_layout.addWidget(main_window.ai_translate_button)
 
     main_window.ai_variation_button = QPushButton("AI Variation")
-    main_window.ai_variation_button.setToolTip("Створити варіацію чинного перекладу поточного рядка")
+    main_window.ai_variation_button = QPushButton('AI Variation')
     editable_text_header_layout.addWidget(main_window.ai_variation_button)
 
     main_window.auto_fix_button = QPushButton("Auto-fix")
-    main_window.auto_fix_button.setToolTip("Automatically fix issues in the current string (Ctrl+Shift+A)") 
+    main_window.auto_fix_button = QPushButton('Auto-fix')
     editable_text_header_layout.addWidget(main_window.auto_fix_button)
     
     bottom_right_layout.addLayout(editable_text_header_layout)
@@ -230,6 +234,11 @@ def setup_main_window_ui(main_window):
     file_menu.addAction(main_window.exit_action)
 
     edit_menu = menubar.addMenu('&Edit')
+    edit_menu.setObjectName('&Edit')
+
+    tools_menu = menubar.addMenu('&Tools')
+    tools_menu.setObjectName('&Tools')
+    main_window.tools_menu = tools_menu
 
     # Helper to load semicircular undo/redo icons reliably across platforms
     def _icon_path(file_name: str) -> str:

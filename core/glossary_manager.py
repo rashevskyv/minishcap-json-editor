@@ -79,7 +79,7 @@ class GlossaryManager:
         """Populate glossary from text buffer."""
         self._plugin_name = plugin_name
         self._glossary_path = glossary_path
-        sanitized_text = (raw_text or "").replace('\ufeff', '')
+        sanitized_text = (raw_text or "").replace('\uFEFF', '')
         self._raw_text = sanitized_text
         self._entries = self._parse_markdown(self._raw_text)
         self._build_pattern_cache()
@@ -97,7 +97,7 @@ class GlossaryManager:
                 raw_text=text,
             )
         else:
-            # No glossary file — reset cache to empty
+            # No glossary file - reset cache to empty
             self.load_from_text(
                 plugin_name=self._plugin_name,
                 glossary_path=self._glossary_path,
@@ -179,6 +179,26 @@ class GlossaryManager:
     def get_occurrence_map(self) -> Dict[str, List[GlossaryOccurrence]]:
         return {key: list(value) for key, value in self._occurrence_index.items()}
 
+    def add_entry(self, original: str, translation: str, notes: str, section: Optional[str] = None) -> Optional[GlossaryEntry]:
+        original_key = (original or '').strip()
+        if not original_key:
+            return None
+        existing = next((entry for entry in self._entries if entry.original == original_key), None)
+        if existing:
+            return self.update_entry(original_key, translation, notes)
+        new_entry = GlossaryEntry(
+            original=original_key,
+            translation=translation.strip(),
+            notes=notes.strip(),
+            section=section,
+        )
+        new_entries = list(self._entries)
+        new_entries.append(new_entry)
+        self._entries = new_entries
+        self._occurrence_index = {}
+        self._persist()
+        return new_entry
+
     def update_entry(self, original: str, translation: str, notes: str) -> Optional[GlossaryEntry]:
         original_key = (original or '').strip()
         updated_translation = translation.strip()
@@ -201,6 +221,20 @@ class GlossaryManager:
                 self._persist()
                 return updated_entry
         return None
+
+    def delete_entry(self, original: str) -> bool:
+        original_key = (original or '').strip()
+        if not original_key:
+            return False
+        index = next((idx for idx, entry in enumerate(self._entries) if entry.original == original_key), None)
+        if index is None:
+            return False
+        new_entries = list(self._entries)
+        del new_entries[index]
+        self._entries = new_entries
+        self._occurrence_index = {}
+        self._persist()
+        return True
 
     def save_to_disk(self) -> None:
         self._persist(write_only=True)
@@ -247,7 +281,7 @@ class GlossaryManager:
                 if len(parts) < 3:
                     continue
                 header_check = [p.lower() for p in parts[:3]]
-                if header_check[0] in {'оригінал', 'original'} and header_check[1] in {'переклад', 'translation'}:
+                if header_check[0] in {'\u043e\u0440\u0438\u0433\u0456\u043d\u0430\u043b', 'original'} and header_check[1] in {'\u043f\u0435\u0440\u0435\u043a\u043b\u0430\u0434', 'translation'}:
                     continue
                 original, translation = parts[0], parts[1]
                 notes = parts[2] if len(parts) >= 3 else ""
@@ -269,7 +303,7 @@ class GlossaryManager:
         return entries
 
     def _table_lines(self, entries: Sequence[GlossaryEntry]) -> List[str]:
-        lines = ['| Оригінал | Переклад | Примітки |', '|----------|----------|----------|']
+        lines = ['| Original | Translation | Notes |', '|----------|-------------|-------|']
         for entry in entries:
             lines.append(f"| {entry.original} | {entry.translation} | {entry.notes} |")
         return lines
@@ -303,7 +337,7 @@ class GlossaryManager:
             lines.append('')
 
         markdown_lines = [line.rstrip() for line in lines if line is not None]
-        markdown = "\\n".join(markdown_lines).strip("\\n") + "\\n"
+        markdown = "\n".join(markdown_lines).strip("\n") + "\n"
         return markdown
 
     def _persist(self, write_only: bool = False) -> None:
@@ -337,14 +371,25 @@ class GlossaryManager:
 
     @classmethod
     def _build_regex(cls, term: str) -> re.Pattern[str]:
-        escaped = re.escape(term)
-        # Allow flexible whitespace matching inside the term
-        escaped = escaped.replace(r"\ ", r"\s+")
+        if not term:
+            return re.compile(r"(?!x)x")
+
+        separator_pattern = r"(?:\s+|[\u2028\u2029\u200B\u200C\u200D]|<[^>]+>|\{[^}]+\}|\[[^\]]+\])*?"
+        pieces: List[str] = []
+        for idx, char in enumerate(term):
+            if char.isspace():
+                pieces.append(r"\s+")
+            else:
+                pieces.append(re.escape(char))
+            if idx < len(term) - 1:
+                pieces.append(separator_pattern)
+
+        pattern_body = "".join(pieces)
         prefix = ''
         suffix = ''
         if term and term[0].isalnum():
             prefix = r'(?<!\w)'
         if term and term[-1].isalnum():
             suffix = r'(?!\w)'
-        pattern = f"{prefix}{escaped}{suffix}"
+        pattern = f"{prefix}{pattern_body}{suffix}"
         return re.compile(pattern, re.IGNORECASE)
