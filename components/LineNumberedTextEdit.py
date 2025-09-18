@@ -224,15 +224,28 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
             context_line = context_line or ''
 
-            add_action = menu.addAction("Add to Glossary…")
-            add_action.setEnabled(bool(add_term_candidate) and translator is not None)
-            if translator is not None and add_term_candidate:
-                add_action.triggered.connect(
-                    lambda checked=False, term=add_term_candidate, ctx=context_line: translator.add_glossary_entry(term, ctx)
-                )
-            custom_actions_added = True
-
             glossary_entry = self._find_glossary_entry_at(position_in_widget_coords)
+            existing_entry = None
+            if glossary_entry and translator is not None:
+                existing_entry = glossary_entry
+            elif translator is not None and add_term_candidate:
+                existing_entry = translator.get_glossary_entry(add_term_candidate)
+
+            if existing_entry and translator is not None:
+                action = menu.addAction("Edit Glossary Entry…")
+                action.setEnabled(True)
+                action.triggered.connect(
+                    lambda checked=False, term=existing_entry.original: translator.edit_glossary_entry(term)
+                )
+            else:
+                action = menu.addAction("Add to Glossary…")
+                action_enabled = bool(add_term_candidate) and translator is not None
+                action.setEnabled(action_enabled)
+                if action_enabled:
+                    action.triggered.connect(
+                        lambda checked=False, term=add_term_candidate, ctx=context_line: translator.add_glossary_entry(term, ctx)
+                    )
+            custom_actions_added = True
             if glossary_entry:
                 menu.addSeparator()
                 term_value = glossary_entry.original

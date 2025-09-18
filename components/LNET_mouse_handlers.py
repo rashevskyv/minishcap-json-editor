@@ -71,6 +71,14 @@ class LNETMouseHandlers:
             if not isinstance(actual_main_window, QMainWindow): return
 
             if self.editor.isReadOnly() and hasattr(actual_main_window, 'original_text_edit') and self.editor == actual_main_window.original_text_edit:
+                translator = getattr(actual_main_window, 'translation_handler', None)
+                if event.modifiers() & Qt.ControlModifier:
+                    finder = getattr(self.editor, '_find_glossary_entry_at', None)
+                    glossary_entry = finder(event.pos()) if callable(finder) else None
+                    if glossary_entry and translator and hasattr(translator, 'edit_glossary_entry'):
+                        log_debug(f'LNETMouseHandlers: Ctrl+Click edit glossary for "{glossary_entry.original}".')
+                        translator.edit_glossary_entry(glossary_entry.original)
+                        event.accept(); return
                 tag_text_curly, tag_start, tag_end = self.get_tag_at_cursor(text_cursor_at_click, r"\{[^}]*\}")
                 if tag_text_curly:
                     self.copy_tag_to_clipboard(tag_text_curly)

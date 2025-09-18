@@ -1263,9 +1263,13 @@ class TranslationHandler(BaseHandler):
         original: str,
         suggestion_provider: Optional[Callable[[], Optional[Tuple[str, str]]]] = None,
         variation_provider: Optional[Callable[[], Optional[List[Tuple[str, str]]]]] = None,
+        *,
+        dialog_title: str = "Add Glossary Term",
+        initial_translation: str = "",
+        initial_notes: str = "",
     ) -> Optional[Tuple[str, str]]:
         dialog = QDialog(self.mw)
-        dialog.setWindowTitle("Add Glossary Term")
+        dialog.setWindowTitle(dialog_title)
         layout = QVBoxLayout(dialog)
 
         prompt_label = QLabel(f'Original: "{original}"', dialog)
@@ -1274,10 +1278,12 @@ class TranslationHandler(BaseHandler):
 
         translation_edit = QLineEdit(dialog)
         translation_edit.setPlaceholderText("Translation")
+        translation_edit.setText(initial_translation)
         layout.addWidget(translation_edit)
 
         notes_edit = QPlainTextEdit(dialog)
         notes_edit.setPlaceholderText("Notes (Shift+Enter for newline)")
+        notes_edit.setPlainText(initial_notes)
         layout.addWidget(notes_edit)
 
         controls_layout: Optional[QHBoxLayout] = None
@@ -1389,6 +1395,13 @@ class TranslationHandler(BaseHandler):
         notes = notes_edit.toPlainText().strip()
         return translation, notes
 
+    def get_glossary_entry(self, original: str) -> Optional[GlossaryEntry]:
+        normalized = (original or '').strip()
+        if not normalized:
+            return None
+        return next((entry for entry in self._glossary_manager.get_entries() if entry.original == normalized), None)
+
+
     def add_glossary_entry(self, original: str, context: Optional[str] = None) -> None:
         original_value = ' '.join((original or '').splitlines()).strip()
         while '  ' in original_value:
@@ -1424,6 +1437,47 @@ class TranslationHandler(BaseHandler):
         self._update_glossary_highlighting()
         if self.mw.statusBar:
             self.mw.statusBar.showMessage(f'Added to glossary: {original_value}', 4000)
+
+    def edit_glossary_entry(self, original: str) -> None:
+        original_value = (original or '').strip()
+        if not original_value:
+            QMessageBox.information(self.mw, 'Glossary', 'Glossary term is empty.')
+            return
+
+        existing_entry = self.get_glossary_entry(original_value)
+        if not existing_entry:
+            QMessageBox.information(self.mw, 'Glossary', f'Glossary term "{original_value}" was not found.')
+            return
+
+        suggestion_provider = lambda: self._request_glossary_suggestion(original_value, None)
+        variation_provider = lambda: self._request_glossary_variations(original_value, None)
+
+        result = self._prompt_new_glossary_entry(
+            original_value,
+            suggestion_provider=suggestion_provider,
+            variation_provider=variation_provider,
+            dialog_title="Edit Glossary Term",
+            initial_translation=existing_entry.translation,
+            initial_notes=existing_entry.notes,
+        )
+        if not result:
+            return
+        translation, notes = result
+        stripped_translation = translation.strip()
+        if not stripped_translation:
+            QMessageBox.warning(self.mw, 'Glossary', 'Translation cannot be empty.')
+            return
+
+        updated_entry = self._glossary_manager.update_entry(original_value, stripped_translation, notes)
+        if not updated_entry:
+            QMessageBox.warning(self.mw, 'Glossary', 'Failed to update the glossary entry.')
+            return
+
+        self._cached_glossary = self._glossary_manager.get_raw_text()
+        self._session_manager.reset()
+        self._update_glossary_highlighting()
+        if self.mw.statusBar:
+            self.mw.statusBar.showMessage(f'Updated glossary entry: {original_value}', 4000)
 
     def _request_glossary_suggestion(
         self,
