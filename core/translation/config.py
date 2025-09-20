@@ -3,6 +3,7 @@ from typing import Any, Dict
 
 DEFAULT_TRANSLATION_CONFIG: Dict[str, Any] = {
     "provider": "disabled",
+    "session_mode": "auto",
     "providers": {
         "openai_chat": {
             "api_key": "",

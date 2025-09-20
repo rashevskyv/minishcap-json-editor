@@ -2,13 +2,45 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QInputDialog, QDia
 from PyQt5.QtGui import QTextCursor, QMouseEvent
 from PyQt5.QtCore import Qt, QPoint
 import re
-from typing import Optional, Tuple
+from typing import Optional, Tuple, List
 
 from utils.logging_utils import log_debug
 
 class LNETMouseHandlers:
     def __init__(self, editor): # editor - це LineNumberedTextEdit
         self.editor = editor
+
+    def _get_icon_sequences(self) -> List[str]:
+        main_window = self.editor.window()
+        if isinstance(main_window, QMainWindow):
+            sequences = getattr(main_window, 'icon_sequences', None)
+            if isinstance(sequences, list):
+                return sequences
+        return []
+
+    def _find_icon_sequence_hit(self, cursor: QTextCursor, sequences: List[str]):
+        if not sequences:
+            return None
+        block = cursor.block()
+        if not block.isValid():
+            return None
+        block_text = block.text()
+        position_in_block = cursor.position() - block.position()
+        for token in sequences:
+            start = block_text.find(token)
+            while start != -1:
+                end = start + len(token)
+                if start <= position_in_block < end:
+                    return block, start, end, token
+                start = block_text.find(token, start + 1)
+        return None
+
+    def _move_cursor_to_icon_sequence_end(self, block, start_in_block: int, end_in_block: int, token: str):
+        final_cursor = QTextCursor(block)
+        final_cursor.setPosition(block.position() + end_in_block)
+        self.editor.setTextCursor(final_cursor)
+        if token:
+            self.editor._momentary_highlight_tag(block, start_in_block, len(token))
 
     def _wrap_selection_with_color(self, color_name: str):
         cursor = self.editor.textCursor()
@@ -69,6 +101,15 @@ class LNETMouseHandlers:
             text_cursor_at_click = self.editor.cursorForPosition(event.pos())
             actual_main_window = self.editor.window()
             if not isinstance(actual_main_window, QMainWindow): return
+
+            icon_sequences = self._get_icon_sequences()
+            if (icon_sequences and event.modifiers() == Qt.NoModifier
+                    and not self.editor.textCursor().hasSelection()):
+                icon_hit = self._find_icon_sequence_hit(text_cursor_at_click, icon_sequences)
+                if icon_hit:
+                    block, start, end, token = icon_hit
+                    self._move_cursor_to_icon_sequence_end(block, start, end, token)
+                    event.accept(); return
 
             if self.editor.isReadOnly() and hasattr(actual_main_window, 'original_text_edit') and self.editor == actual_main_window.original_text_edit:
                 translator = getattr(actual_main_window, 'translation_handler', None)

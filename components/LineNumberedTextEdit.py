@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (QPlainTextEdit, QMainWindow, QMenu, QApplication, Q
                              QVBoxLayout, QComboBox, QDialogButtonBox, QLabel, QSpinBox, QToolTip)
 from PyQt5.QtGui import (QPainter, QFont, QPaintEvent, QKeyEvent, QKeySequence, QMouseEvent, QIcon, QPixmap, QColor, QTextLine, QTextCursor) 
 from PyQt5.QtCore import Qt, QRect, QSize, QRectF, pyqtSignal
-from typing import Optional
+from typing import Optional, List, Tuple
 import os
 
 from .LineNumberArea import LineNumberArea
@@ -419,6 +419,12 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
         super().keyPressEvent(event)
 
+        if (event.key() in (Qt.Key_Left, Qt.Key_Right) and event.modifiers() == Qt.NoModifier
+                and not self.isReadOnly() and not self.textCursor().hasSelection()):
+            move_right = event.key() == Qt.Key_Right
+            if self._snap_cursor_out_of_icon_sequences(move_right):
+                return
+
     def setReadOnly(self, ro):
         super().setReadOnly(ro)
         self.highlightManager.clearAllHighlights()
@@ -485,6 +491,52 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
     def super_mouseReleaseEvent(self, event: QMouseEvent):
         super().mouseReleaseEvent(event)
+
+    def _get_icon_sequences(self) -> List[str]:
+        if self.objectName() == 'preview_text_edit':
+            return []
+        main_window = self.window()
+        if isinstance(main_window, QMainWindow):
+            sequences = getattr(main_window, 'icon_sequences', None)
+            if isinstance(sequences, list):
+                return sequences
+        return []
+
+    def _find_icon_sequence_in_block(self, block_text: str, sequences: List[str], position_in_block: int) -> Optional[Tuple[int, int, str]]:
+        if not block_text or not sequences:
+            return None
+        for token in sequences:
+            start = block_text.find(token)
+            while start != -1:
+                end = start + len(token)
+                if start <= position_in_block < end:
+                    return start, end, token
+                start = block_text.find(token, start + 1)
+        return None
+
+    def _snap_cursor_out_of_icon_sequences(self, move_right: bool) -> bool:
+        cursor = self.textCursor()
+        block = cursor.block()
+        if not block.isValid():
+            return False
+        sequences = self._get_icon_sequences()
+        if not sequences:
+            return False
+        position_in_block = cursor.position() - block.position()
+        match = self._find_icon_sequence_in_block(block.text(), sequences, position_in_block)
+        if not match:
+            return False
+        start, end, token = match
+        target = end if move_right else start
+        if move_right and position_in_block >= end:
+            return False
+        if not move_right and position_in_block <= start:
+            return False
+        new_cursor = QTextCursor(block)
+        new_cursor.setPosition(block.position() + target)
+        self.setTextCursor(new_cursor)
+        self._momentary_highlight_tag(block, start, len(token))
+        return True
 
     def _momentary_highlight_tag(self, block, start_in_block, length):
         self.highlight_interface._momentary_highlight_tag(block, start_in_block, length)

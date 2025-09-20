@@ -1,6 +1,7 @@
-﻿import json
+import json
 import os
 import base64
+from typing import Dict, Optional, List
 from PyQt5.QtCore import QByteArray, QRect, QTimer
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QFont
@@ -84,7 +85,7 @@ class SettingsManager:
         defaults = {
             "display_name": "Unknown Plugin", "default_tag_mappings": {}, "block_names": {}, "block_color_markers": {},
             "string_metadata": {}, "default_font_file": "",
-            "newline_display_symbol": "↵", "newline_css": "color: #A020F0; font-weight: bold;",
+            "newline_display_symbol": "в†µ", "newline_css": "color: #A020F0; font-weight: bold;",
             "tag_css": "color: #808080; font-style: italic;",
             "bracket_tag_color_hex": "#FF8C00",
             "preview_wrap_lines": True, "editors_wrap_lines": False,
@@ -364,7 +365,7 @@ class SettingsManager:
             log_debug(f"Error loading unsaved session data: {e}")
 
     def _parse_new_font_format(self, font_data):
-        """Парсить новий формат файлу шрифту і повертає font_map."""
+        """РџР°СЂСЃРёС‚СЊ РЅРѕРІРёР№ С„РѕСЂРјР°С‚ С„Р°Р№Р»Сѓ С€СЂРёС„С‚Сѓ С– РїРѕРІРµСЂС‚Р°С” font_map."""
         font_map = {}
         if not isinstance(font_data, dict) or "glyphs" not in font_data:
             log_debug("New font format error: 'glyphs' key not found or data is not a dict.")
@@ -382,6 +383,8 @@ class SettingsManager:
         plugin_name = getattr(self.mw, 'active_game_plugin', None)
         self.mw.font_map = {}
         self.mw.all_font_maps = {}
+        self.mw.font_map_overrides = {}
+        self.mw.icon_sequences = []
 
         if not plugin_name:
             log_debug("No active plugin. Character width calculations will use fallback.")
@@ -390,6 +393,7 @@ class SettingsManager:
         fonts_dir = os.path.join("plugins", plugin_name, "fonts")
         if not os.path.isdir(fonts_dir):
             log_debug(f"Fonts directory not found at '{fonts_dir}'.")
+            self.mw.icon_sequences = []
             return
         
         log_debug(f"--> SettingsManager: Loading all font maps from: {fonts_dir}")
@@ -424,4 +428,88 @@ class SettingsManager:
         else:
             log_debug("No font maps loaded for the plugin.")
 
+        overrides = self._load_font_overrides(plugin_name)
+        if overrides:
+            self._apply_font_overrides(overrides)
+        self._update_icon_sequences_cache()
+        self._refresh_icon_highlighting()
+
+
+    def _load_font_overrides(self, plugin_name: Optional[str]) -> Dict[str, dict]:
+        overrides: Dict[str, dict] = {}
+        if not plugin_name:
+            return overrides
+
+        override_path = os.path.join('plugins', plugin_name, 'font_map.json')
+        if not os.path.isfile(override_path):
+            return overrides
+
+        try:
+            with open(override_path, 'r', encoding='utf-8') as f:
+                raw_data = json.load(f)
+        except Exception as exc:
+            log_debug(f"Failed to read font override map '{override_path}': {exc}")
+            return overrides
+
+        if not isinstance(raw_data, dict):
+            log_debug(f"Font override map '{override_path}' is not a dict. Skipping.")
+            return overrides
+
+        for key, value in raw_data.items():
+            if not isinstance(key, str) or not isinstance(value, dict):
+                continue
+            width = value.get('width')
+            if isinstance(width, (int, float)):
+                overrides[key] = {'width': int(width)}
+        log_debug(f"Loaded {len(overrides)} font override entries from '{override_path}'.")
+        return overrides
+
+    def _apply_font_overrides(self, overrides: Dict[str, dict]) -> None:
+        if not overrides:
+            return
+        if not hasattr(self.mw, 'font_map') or self.mw.font_map is None:
+            self.mw.font_map = {}
+
+        for font_name, font_map in self.mw.all_font_maps.items():
+            if not isinstance(font_map, dict):
+                continue
+            for key, data in overrides.items():
+                font_map[key] = dict(data)
+
+        for key, data in overrides.items():
+            self.mw.font_map[key] = dict(data)
+
+        setattr(self.mw, 'font_map_overrides', overrides)
+        self._update_icon_sequences_cache()
+        self._refresh_icon_highlighting()
+        log_debug(f"Applied {len(overrides)} font override entries.")
+
+
+
+
+
+    def _refresh_icon_highlighting(self) -> None:
+        editors = []
+        for attr in ('original_text_edit', 'edited_text_edit', 'preview_text_edit'):
+            editor = getattr(self.mw, attr, None)
+            if editor and hasattr(editor, 'highlighter') and editor.highlighter:
+                editors.append(editor.highlighter)
+        for highlighter in editors:
+            if hasattr(highlighter, '_invalidate_icon_cache'):
+                highlighter._invalidate_icon_cache()
+            highlighter.rehighlight()
+
+    def _update_icon_sequences_cache(self) -> None:
+        sequences = set()
+        all_maps = getattr(self.mw, 'all_font_maps', {}) or {}
+        if isinstance(all_maps, dict):
+            for font_map in all_maps.values():
+                if not isinstance(font_map, dict):
+                    continue
+                for key, value in font_map.items():
+                    if not isinstance(key, str) or len(key) <= 1:
+                        continue
+                    if isinstance(value, dict) and 'width' in value:
+                        sequences.add(key)
+        self.mw.icon_sequences = sorted(sequences, key=len, reverse=True)
 

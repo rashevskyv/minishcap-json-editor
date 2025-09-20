@@ -18,9 +18,9 @@
     "glossary_dialog_state": {
         "geometry": {
             "x": 739,
-            "y": 209,
+            "y": 208,
             "width": 1593,
-            "height": 1181
+            "height": 1182
         },
         "is_fullscreen": false,
         "is_maximized": false

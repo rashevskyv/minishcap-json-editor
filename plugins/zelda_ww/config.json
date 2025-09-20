@@ -13,16 +13,16 @@
     "space_dot_color_hex": "#808080",
     "preview_wrap_lines": false,
     "editors_wrap_lines": false,
-    "game_dialog_max_width_pixels": 1000,
-    "line_width_warning_threshold_pixels": 1000,
+    "game_dialog_max_width_pixels": 869,
+    "line_width_warning_threshold_pixels": 869,
     "original_file_path": "D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt",
     "edited_file_path": "D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt",
     "last_selected_block_index": 0,
-    "last_selected_string_index": 319,
-    "last_cursor_position_in_edited": 0,
+    "last_selected_string_index": 69,
+    "last_cursor_position_in_edited": 213,
     "last_edited_text_edit_scroll_value_v": 0,
     "last_edited_text_edit_scroll_value_h": 0,
-    "last_preview_text_edit_scroll_value_v": 315,
+    "last_preview_text_edit_scroll_value_v": 62,
     "last_original_text_edit_scroll_value_v": 0,
     "last_original_text_edit_scroll_value_h": 0,
     "search_history": [],
@@ -52,7 +52,7 @@
         "ZWW_SINGLE_WORD_SUBLINE": true,
         "ZWW_SHORT_LINE": true
     },
-    "default_font_file": "CKingMainL.json",
+    "default_font_file": "CKingMsg.json",
     "string_metadata": {
         "(0, 416)": {
             "font_file": "CKingMsg.json"
@@ -68,15 +68,16 @@
     "newline_underline": false,
     "translation_config": {
         "provider": "chatmock",
+        "session_mode": "auto",
         "providers": {
             "openai_chat": {
-                "api_key": "",
-                "api_key_env": "OPENAI_API_KEY",
+                "api_key": "chatmock-placeholder",
+                "api_key_env": "",
                 "base_url": "http://127.0.0.1:8000",
-                "model": "gpt-5",
+                "model": "gpt-4o",
                 "temperature": 0.0,
                 "max_output_tokens": 0,
-                "timeout": 60,
+                "timeout": 120,
                 "extra_headers": {}
             },
             "ollama_chat": {
@@ -89,10 +90,10 @@
             },
             "chatmock": {
                 "base_url": "http://127.0.0.1:8000",
-                "model": "gpt-5",
+                "model": "gpt-4o",
                 "api_key": "chatmock-placeholder",
                 "temperature": 0.0,
-                "timeout": 60,
+                "timeout": 120,
                 "reasoning_effort": "medium",
                 "reasoning_summary": "auto",
                 "extra_headers": {}

@@ -2,6 +2,7 @@
 │   ├── __init__.py
 │   ├── CustomListItemDelegate.py
 │   ├── CustomListWidget.py
+│   ├── glossary_dialog.py
 │   ├── labeled_spinbox.py
 │   ├── LineNumberArea.py
 │   ├── LineNumberedTextEdit.py
@@ -12,23 +13,39 @@
 │   ├── LNET_paint_event_logic.py
 │   ├── LNET_paint_handlers.py
 │   ├── LNET_paint_helpers.py
+│   ├── original_text_analysis_dialog.py
 │   ├── search_panel.py
-│   └── TextHighlightManager.py
+│   ├── session_bootstrap_dialog.py
+│   ├── TextHighlightManager.py
+│   └── translation_variations_dialog.py
 ├── core
+│   ├── translation
+│   │   ├── __init__.py
+│   │   ├── __init__.pyc
+│   │   ├── config.py
+│   │   ├── providers.py
+│   │   └── session_manager.py
 │   ├── __init__.py
+│   ├── __init__.pyc
 │   ├── data_manager.py
 │   ├── data_state_processor.py
+│   ├── glossary_manager.py
 │   ├── settings_manager.py
 │   └── tag_utils.py
+├── docs
+│   └── chatmock_setup.md
 ├── handlers
 │   ├── __init__.py
+│   ├── __init__.pyc
 │   ├── app_action_handler.py
 │   ├── base_handler.py
 │   ├── list_selection_handler.py
 │   ├── search_handler.py
 │   ├── string_settings_handler.py
+│   ├── text_analysis_handler.py
 │   ├── text_autofix_logic.py
-│   └── text_operation_handler.py
+│   ├── text_operation_handler.py
+│   └── translation_handler.py
 ├── plugins
 │   ├── import_plugins
 │   │   ├── kruptar_format
@@ -44,6 +61,9 @@
 │   │   ├── tag_manager.py
 │   │   └── text_fixer.py
 │   ├── zelda_mc
+│   │   ├── translation_prompts
+│   │   │   ├── glossary.md
+│   │   │   └── system_prompt.md
 │   │   ├── config.json
 │   │   ├── config.py
 │   │   ├── font_map.json
@@ -58,11 +78,28 @@
 │   │   │   ├── CKingMain.json
 │   │   │   ├── CKingMainL.json
 │   │   │   └── CKingMsg.json
+│   │   ├── translation_prompts
+│   │   │   ├── glossary.md
+│   │   │   ├── glossary_prompt.md
+│   │   │   └── system_prompt.md
 │   │   ├── config.json
 │   │   ├── config.py
-│   │   └── rules.py
+│   │   ├── font_map.json
+│   │   ├── problem_analyzer.py
+│   │   ├── rules.py
+│   │   ├── tag_logic.py
+│   │   ├── tag_manager.py
+│   │   └── text_fixer.py
 │   ├── __init__.py
 │   └── base_game_rules.py
+├── resources
+│   └── icons
+│       ├── redo.svg
+│       └── undo.svg
+├── translation_prompts
+│   ├── glossary.md
+│   ├── glossary_prompt.md
+│   └── system_prompt.md
 ├── ui
 │   ├── updaters
 │   │   ├── __init__.py
@@ -79,12 +116,14 @@
 │   └── ui_updater.py
 ├── utils
 │   ├── __init__.py
+│   ├── __init__.pyc
 │   ├── constants.py
 │   ├── logging_utils.py
 │   ├── syntax_highlighter.py
 │   └── utils.py
 ├── app_debug.txt
 ├── main.py
+├── main_unix.txt
 ├── main_window_actions.py
 ├── main_window_block_handler.py
 ├── main_window_event_handler.py
