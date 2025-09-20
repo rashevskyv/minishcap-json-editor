@@ -1,269 +1,199 @@
-﻿import os
+﻿# core/translation/providers.py
+import json
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 import requests
+from requests import Timeout
+import os
+
+from utils.logging_utils import log_debug
 
 class TranslationProviderError(Exception):
-    """Raised when the translation provider fails to return a valid response."""
-
+    """Custom exception for provider-related errors."""
+    pass
 
 @dataclass
 class ProviderResponse:
-    """Контейнер для результату провайдера разом з метаданими сесії."""
-
-    text: str
-    conversation_id: Optional[str] = None
+    """Standardized response from a translation provider."""
+    text: Optional[str] = None
+    raw_payload: Any = None
     message_id: Optional[str] = None
-    raw_payload: Optional[Dict[str, Any]] = None
-
+    conversation_id: Optional[str] = None
 
 class BaseTranslationProvider:
-    supports_sessions: bool = False
+    """Abstract base class for all translation providers."""
+    def __init__(self, settings: Dict[str, Any]) -> None:
+        self.settings = settings
 
-    def translate(
-        self,
-        messages: List[Dict[str, str]],
-        *,
-        session: Optional[Dict[str, str]] = None,
-    ) -> ProviderResponse:
+    def translate(self, messages: List[Dict[str, str]], session: Optional[dict] = None) -> ProviderResponse:
+        """Translate text using the provider's API."""
         raise NotImplementedError
 
-
 class OpenAIChatProvider(BaseTranslationProvider):
-    def __init__(
-        self,
-        api_key: str,
-        base_url: Optional[str],
-        model: str,
-        temperature: float,
-        max_output_tokens: Optional[int],
-        timeout: float,
-        extra_headers: Optional[Dict[str, str]] = None,
-        extra_payload: Optional[Dict[str, Any]] = None,
-        supports_sessions: bool = False,
-        conversation_arguments: Optional[List[str]] = None,
-    ) -> None:
-        if not api_key:
-            raise TranslationProviderError("OpenAI Chat provider requires an API key.")
-        self.api_key = api_key
-        base = (base_url or "https://api.openai.com/v1").rstrip("/")
-        if not base.endswith("/v1"):
-            base = f"{base}/v1"
-        self.base_url = base
-        self.model = model
-        self.temperature = temperature
-        self.max_output_tokens = max_output_tokens if max_output_tokens and max_output_tokens > 0 else None
-        self.timeout = timeout
-        self.extra_headers = extra_headers or {}
-        self.extra_payload = {k: v for k, v in (extra_payload or {}).items() if v not in (None, "")}
-        self.supports_sessions = supports_sessions
-        self._conversation_arguments = list(conversation_arguments or [])
+    """Provider for OpenAI-compatible chat completion APIs."""
+    def __init__(self, settings: Dict[str, Any]) -> None:
+        super().__init__(settings)
+        self.api_key = self.settings.get('api_key') or os.getenv(str(self.settings.get('api_key_env')))
+        self.base_url = (self.settings.get('base_url') or "https://api.openai.com/v1").rstrip('/')
+        self.model = self.settings.get('model')
+        if not self.api_key:
+            raise TranslationProviderError("OpenAI API key is not set.")
+        if not self.model:
+            raise TranslationProviderError("OpenAI model is not set.")
 
-    def _extract_conversation_id(self, payload: Dict[str, Any]) -> Optional[str]:
-        for key in ("conversation_id", "conversationId", "conversation"):
-            value = payload.get(key)
-            if isinstance(value, str) and value:
-                return value
-            if isinstance(value, dict):
-                nested = value.get("id") or value.get("conversation_id")
-                if isinstance(nested, str) and nested:
-                    return nested
-        session_payload = payload.get("session")
-        if isinstance(session_payload, dict):
-            for key in ("conversation_id", "id"):
-                value = session_payload.get(key)
-                if isinstance(value, str) and value:
-                    return value
-        choices = payload.get("choices")
-        if isinstance(choices, list) and choices:
-            first = choices[0]
-            if isinstance(first, dict):
-                message = first.get("message")
-                if isinstance(message, dict):
-                    for key in ("conversation_id", "conversationId"):
-                        value = message.get(key)
-                        if isinstance(value, str) and value:
-                            return value
-                    conv = message.get("conversation")
-                    if isinstance(conv, dict):
-                        nested = conv.get("id") or conv.get("conversation_id")
-                        if isinstance(nested, str) and nested:
-                            return nested
-        return None
-
-    def translate(
-        self,
-        messages: List[Dict[str, str]],
-        *,
-        session: Optional[Dict[str, str]] = None,
-    ) -> ProviderResponse:
-        url = f"{self.base_url}/chat/completions"
-        payload: Dict[str, Any] = {
-            "model": self.model,
-            "temperature": self.temperature,
-            "messages": messages,
-            "n": 1,
-        }
-        if self.max_output_tokens:
-            payload["max_tokens"] = self.max_output_tokens
-        if self.extra_payload:
-            payload.update(self.extra_payload)
-        if self.supports_sessions and session:
-            conversation_id = session.get("conversation_id")
-            if conversation_id:
-                for key in self._conversation_arguments:
-                    payload[key] = conversation_id
-
+    def translate(self, messages: List[Dict[str, str]], session: Optional[dict] = None) -> ProviderResponse:
+        endpoint = f"{self.base_url}/chat/completions"
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
-        headers.update(self.extra_headers)
+        extra_headers = self.settings.get('extra_headers')
+        if isinstance(extra_headers, dict):
+            headers.update(extra_headers)
+
+        body: Dict[str, Any] = {"model": self.model, "messages": messages}
+        if isinstance(self.settings.get('temperature'), (float, int)):
+            body['temperature'] = self.settings['temperature']
+        if isinstance(self.settings.get('max_output_tokens'), int) and self.settings['max_output_tokens'] > 0:
+            body['max_tokens'] = self.settings['max_output_tokens']
+        
+        timeout = 60
+        if isinstance(self.settings.get('timeout'), int) and self.settings['timeout'] > 0:
+            timeout = self.settings['timeout']
 
         try:
-            response = requests.post(url, json=payload, headers=headers, timeout=self.timeout)
-        except requests.RequestException as exc:
-            raise TranslationProviderError(f"Помилка мережі під час звернення до OpenAI: {exc}") from exc
-
-        if response.status_code >= 400:
-            try:
-                error_data = response.json()
-                message = error_data.get("error", {}).get("message") or error_data
-            except ValueError:
-                message = response.text
-            raise TranslationProviderError(f"OpenAI повернув помилку {response.status_code}: {message}")
-
-        try:
-            payload = response.json()
-        except ValueError as exc:
-            raise TranslationProviderError("OpenAI повернув невалідний JSON.") from exc
-
-        try:
-            message = payload["choices"][0]["message"]["content"]
-        except (KeyError, IndexError, TypeError) as exc:
-            raise TranslationProviderError("Відповідь OpenAI не містить тексту перекладу.") from exc
-
-        return ProviderResponse(
-            text=message,
-            conversation_id=self._extract_conversation_id(payload) if self.supports_sessions else None,
-            message_id=payload.get("id"),
-            raw_payload=payload,
-        )
-
+            response = requests.post(endpoint, headers=headers, json=body, timeout=timeout)
+            response.raise_for_status()
+            data = response.json()
+            text = data['choices'][0]['message']['content'] if data.get('choices') else None
+            return ProviderResponse(text=text, raw_payload=data)
+        except Timeout:
+            raise TranslationProviderError(f"Request timed out after {timeout} seconds.")
+        except requests.RequestException as e:
+            raise TranslationProviderError(f"API request failed: {e}")
 
 class OllamaChatProvider(BaseTranslationProvider):
-    def __init__(
-        self,
-        base_url: Optional[str],
-        model: str,
-        temperature: float,
-        timeout: float,
-        keep_alive: Optional[str] = None,
-        extra_headers: Optional[Dict[str, str]] = None,
-    ) -> None:
-        self.base_url = (base_url or "http://localhost:11434").rstrip("/")
-        self.model = model
-        self.temperature = temperature
-        self.timeout = timeout
-        self.keep_alive = keep_alive or ""
-        self.extra_headers = extra_headers or {}
+    """Provider for Ollama chat APIs."""
+    def __init__(self, settings: Dict[str, Any]) -> None:
+        super().__init__(settings)
+        self.base_url = (self.settings.get('base_url') or "http://localhost:11434").rstrip('/')
+        self.model = self.settings.get('model')
+        if not self.model:
+            raise TranslationProviderError("Ollama model is not set.")
 
-    def translate(
-        self,
-        messages: List[Dict[str, str]],
-        *,
-        session: Optional[Dict[str, str]] = None,
-    ) -> ProviderResponse:
-        url = f"{self.base_url}/api/chat"
-        payload: Dict[str, Any] = {
-            "model": self.model,
-            "messages": messages,
-            "stream": False,
-        }
-        options: Dict[str, Any] = {}
-        if self.temperature is not None:
-            options["temperature"] = self.temperature
-        if options:
-            payload["options"] = options
-        if self.keep_alive:
-            payload["keep_alive"] = self.keep_alive
-
+    def translate(self, messages: List[Dict[str, str]], session: Optional[dict] = None) -> ProviderResponse:
+        endpoint = f"{self.base_url}/api/chat"
         headers = {"Content-Type": "application/json"}
-        headers.update(self.extra_headers)
+        extra_headers = self.settings.get('extra_headers')
+        if isinstance(extra_headers, dict):
+            headers.update(extra_headers)
+        
+        system_prompt = next((m['content'] for m in messages if m['role'] == 'system'), None)
+        user_prompts = [m for m in messages if m['role'] != 'system']
+
+        body: Dict[str, Any] = {"model": self.model, "messages": user_prompts, "stream": False}
+        if system_prompt:
+            body['system'] = system_prompt
+        
+        options: Dict[str, Any] = {}
+        if isinstance(self.settings.get('temperature'), (float, int)):
+            options['temperature'] = self.settings['temperature']
+        if options:
+            body['options'] = options
+        
+        if self.settings.get('keep_alive'):
+            body['keep_alive'] = self.settings['keep_alive']
+
+        timeout = 120
+        if isinstance(self.settings.get('timeout'), int) and self.settings['timeout'] > 0:
+            timeout = self.settings['timeout']
 
         try:
-            response = requests.post(url, json=payload, headers=headers, timeout=self.timeout)
-        except requests.RequestException as exc:
-            raise TranslationProviderError(f"Помилка мережі під час звернення до Ollama: {exc}") from exc
+            response = requests.post(endpoint, headers=headers, json=body, timeout=timeout)
+            response.raise_for_status()
+            data = response.json()
+            text = data['message']['content'] if data.get('message') else None
+            return ProviderResponse(text=text, raw_payload=data)
+        except Timeout:
+            raise TranslationProviderError(f"Request timed out after {timeout} seconds.")
+        except requests.RequestException as e:
+            raise TranslationProviderError(f"API request failed: {e}")
 
-        if response.status_code >= 400:
+class ChatMockProvider(OpenAIChatProvider):
+    """Provider for the ChatMock development server."""
+    supports_sessions = True
+
+class DeepLProvider(BaseTranslationProvider):
+    def translate(self, messages: list, session: Optional[dict] = None) -> ProviderResponse:
+        raise NotImplementedError("DeepL provider is not yet implemented.")
+
+class GeminiProvider(BaseTranslationProvider):
+    """Provider for Google Gemini API."""
+    BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
+
+    def __init__(self, settings: Dict[str, Any]) -> None:
+        super().__init__(settings)
+        self.api_key = self.settings.get('api_key') or os.getenv(str(self.settings.get('api_key_env')))
+        self.model = self.settings.get('model')
+        if not self.api_key:
+            raise TranslationProviderError("Gemini API key is not set.")
+        if not self.model:
+            raise TranslationProviderError("Gemini model is not set.")
+
+    def translate(self, messages: List[Dict[str, str]], session: Optional[dict] = None) -> ProviderResponse:
+        endpoint = f"{self.BASE_URL}/{self.model}:generateContent?key={self.api_key}"
+        headers = {"Content-Type": "application/json"}
+
+        system_prompt = next((m['content'] for m in messages if m['role'] == 'system'), "")
+        user_prompt = next((m['content'] for m in messages if m['role'] == 'user'), "")
+        
+        full_prompt = f"{system_prompt}\n\n{user_prompt}".strip()
+
+        contents = [{"role": "user", "parts": [{"text": full_prompt}]}]
+        body: Dict[str, Any] = {"contents": contents}
+        
+        generation_config = {}
+        if isinstance(self.settings.get('temperature'), (float, int)):
+            generation_config['temperature'] = self.settings['temperature']
+        if generation_config:
+            body['generationConfig'] = generation_config
+
+        timeout = 120
+        if isinstance(self.settings.get('timeout'), int) and self.settings['timeout'] > 0:
+            timeout = self.settings['timeout']
+
+        try:
+            response = requests.post(endpoint, headers=headers, json=body, timeout=timeout)
+            response.raise_for_status()
+            data = response.json()
+            
+            text = None
+            if data.get('candidates'):
+                first_candidate = data['candidates'][0]
+                if first_candidate.get('content', {}).get('parts'):
+                    text = first_candidate['content']['parts'][0].get('text')
+            
+            return ProviderResponse(text=text, raw_payload=data)
+        except Timeout:
+            raise TranslationProviderError(f"Request timed out after {timeout} seconds.")
+        except requests.RequestException as e:
+            error_details = ""
             try:
-                error_data = response.json()
-                message = error_data.get("error") or error_data
-            except ValueError:
-                message = response.text
-            raise TranslationProviderError(f"Ollama повернула помилку {response.status_code}: {message}")
+                error_details = e.response.json()
+            except Exception:
+                 error_details = e.response.text if e.response else "No response body"
+            raise TranslationProviderError(f"API request failed: {e}\nDetails: {error_details}")
 
-        try:
-            payload = response.json()
-        except ValueError as exc:
-            raise TranslationProviderError("Ollama повернула невалідний JSON.") from exc
-
-        if "error" in payload:
-            raise TranslationProviderError(f"Ollama повідомила про помилку: {payload['error']}")
-
-        try:
-            message = payload["message"]["content"]
-        except (KeyError, TypeError) as exc:
-            raise TranslationProviderError("Відповідь Ollama не містить тексту перекладу.") from exc
-        return ProviderResponse(text=message, raw_payload=payload)
-
-
-def _parse_int(value: Any) -> Optional[int]:
-    try:
-        parsed = int(value)
-        return parsed if parsed > 0 else None
-    except (TypeError, ValueError):
-        return None
-
-
-def create_translation_provider(provider_name: str, config: Dict[str, Any]) -> BaseTranslationProvider:
-    key = (provider_name or "").strip().lower()
-    if key in ("openai", "openai_chat", "chatmock"):
-        api_key = config.get("api_key") or ""
-        if not api_key and config.get("api_key_env"):
-            api_key = os.environ.get(str(config.get("api_key_env"))) or ""
-        if not api_key and key == "chatmock":
-            api_key = "chatmock-placeholder"
-        extra_payload: Dict[str, Any] = {}
-        for field in ("reasoning_effort", "reasoning_summary", "reasoning_compat"):
-            value = config.get(field)
-            if value:
-                extra_payload[field] = value
-        custom_extra = config.get("extra_payload")
-        if isinstance(custom_extra, dict):
-            extra_payload.update(custom_extra)
-        supports_sessions = key == "chatmock"
-        conversation_arguments = ["conversation", "conversation_id"] if supports_sessions else []
-        return OpenAIChatProvider(
-            api_key=api_key,
-            base_url=config.get("base_url"),
-            model=str(config.get("model", "gpt-4o-mini")),
-            temperature=float(config.get("temperature", 0.0)),
-            max_output_tokens=_parse_int(config.get("max_output_tokens")),
-            timeout=float(config.get("timeout", 60)),
-            extra_headers=config.get("extra_headers"),
-            extra_payload=extra_payload or None,
-            supports_sessions=supports_sessions,
-            conversation_arguments=conversation_arguments,
-        )
-    if key in ("ollama", "ollama_chat"):
-        return OllamaChatProvider(
-            base_url=config.get("base_url"),
-            model=str(config.get("model", "llama3")),
-            temperature=float(config.get("temperature", 0.0)),
-            timeout=float(config.get("timeout", 60)),
-            keep_alive=config.get("keep_alive"),
-            extra_headers=config.get("extra_headers"),
-        )
-    raise TranslationProviderError(f"Невідомий провайдер AI-перекладу: {provider_name}")
+def create_translation_provider(provider_key: str, settings: Dict[str, Any]) -> BaseTranslationProvider:
+    """Factory function to create a translation provider instance."""
+    if provider_key == 'openai_chat':
+        return OpenAIChatProvider(settings)
+    if provider_key == 'ollama_chat':
+        return OllamaChatProvider(settings)
+    if provider_key == 'chatmock':
+        return ChatMockProvider(settings)
+    if provider_key == 'deepl':
+        return DeepLProvider(settings)
+    if provider_key == 'gemini':
+        return GeminiProvider(settings)
+    raise TranslationProviderError(f"Unknown provider key: {provider_key}")

@@ -358,7 +358,7 @@ class MainWindow(QMainWindow):
 
     def _reconfigure_all_highlighters(self):
         self.ui_handler.reconfigure_all_highlighters()
-
+ 
 
     def closeEvent(self, event):
         self.event_handler.closeEvent(event)
