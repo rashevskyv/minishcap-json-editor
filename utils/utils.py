@@ -1,5 +1,6 @@
 import datetime
 import re
+from typing import Optional, List
 import os
 from plugins.pokemon_fr.config import P_VISUAL_EDITOR_MARKER, L_VISUAL_EDITOR_MARKER
 from .logging_utils import log_debug
@@ -14,38 +15,53 @@ def remove_all_tags(text: str) -> str:
         return ""
     return ALL_TAGS_PATTERN.sub("", text)
 
-def calculate_string_width(text: str, font_map: dict, default_char_width: int = DEFAULT_CHAR_WIDTH_FALLBACK) -> int:
-    if text is None or not font_map:
-        return 0
-
-    # Патерн для розділення рядка за тегами, зберігаючи самі теги
-    tag_split_pattern = re.compile(r'(\{[^}]*\}|\[[^\]]*\])')
-
+def calculate_string_width(text: str, font_map: dict, default_char_width: int = 8, icon_sequences: Optional[List[str]] = None) -> int:
     total_width = 0
-    parts = tag_split_pattern.split(text)
+    i = 0
+    text_len = len(text)
+    
+    # Сортуємо послідовності від найдовшої до найкоротшої, щоб уникнути неправильного визначення
+    # наприклад, [L] замість [L-Stick]
+    sequences_to_use = sorted(icon_sequences, key=len, reverse=True) if icon_sequences else []
 
-    for part in parts:
-        if not part:
+    while i < text_len:
+        # 1. Найвищий пріоритет: перевірка на icon_sequence
+        matched_sequence = None
+        for seq in sequences_to_use:
+            if text.startswith(seq, i):
+                matched_sequence = seq
+                break
+        
+        if matched_sequence:
+            # Якщо знайдено icon_sequence, додаємо її ширину і переходимо далі
+            total_width += font_map.get(matched_sequence, {}).get('width', default_char_width * len(matched_sequence))
+            i += len(matched_sequence)
             continue
 
-        is_tag = (part.startswith('{') and part.endswith('}')) or \
-                 (part.startswith('[') and part.endswith(']'))
+        # 2. Якщо це не icon_sequence, перевіряємо на загальний тег
+        char = text[i]
+        if char == '[':
+            end_index = text.find(']', i)
+            if end_index != -1:
+                # Знайдено загальний тег [], його ширина 0. Пропускаємо його.
+                i = end_index + 1
+                continue
+        
+        if char == '{':
+            end_index = text.find('}', i)
+            if end_index != -1:
+                # Знайдено загальний тег {}, його ширина 0. Пропускаємо його.
+                i = end_index + 1
+                continue
 
-        if is_tag:
-            # Перевіряємо, чи є для цього конкретного тега запис у font_map
-            tag_data = font_map.get(part)
-            if tag_data and isinstance(tag_data, dict) and 'width' in tag_data:
-                total_width += tag_data['width']
-        else:
-            # Ця частина є звичайним текстом, розраховуємо її ширину посимвольно
-            for char_code in part:
-                char_data = font_map.get(char_code)
-                if char_data and isinstance(char_data, dict) and 'width' in char_data:
-                    total_width += char_data['width']
-                else:
-                    total_width += default_char_width
-                    
+        # 3. Якщо це не іконка і не тег, обробляємо як звичайний символ
+        total_width += font_map.get(char, {}).get('width', default_char_width)
+        i += 1
+        
     return total_width
+
+
+
 
 def convert_spaces_to_dots_for_display(text: str, enable_conversion: bool) -> str:
     if not enable_conversion or text is None:

@@ -45,6 +45,9 @@ class JsonTagHighlighter(QSyntaxHighlighter):
         self._glossary_format = QTextCharFormat()
         self._glossary_matches_cache: Dict[int, List[Tuple[int, int, GlossaryMatch]]] = {}
         self._glossary_cache_revision: Optional[int] = None
+        self._icon_sequences_cache: Dict[int, List[Tuple[int, int]]] = {}
+        self._icon_cache_revision: Optional[int] = None
+        self._icon_sequences_snapshot: Tuple[str, ...] = ()
 
         self.default_text_color = QColor(Qt.black)
         
@@ -76,6 +79,7 @@ class JsonTagHighlighter(QSyntaxHighlighter):
         self.purple_text_format = QTextCharFormat()
         self.silver_text_format = QTextCharFormat()
         self.orange_text_format = QTextCharFormat()
+        self.icon_sequence_format = QTextCharFormat()
         
         self.color_default_format = QTextCharFormat()
         self.color_default_format.setForeground(self.default_text_color)
@@ -85,6 +89,7 @@ class JsonTagHighlighter(QSyntaxHighlighter):
         self.reconfigure_styles()
         
     def on_contents_change(self, position, chars_removed, chars_added):
+        self._invalidate_icon_cache()
         self.rehighlight()
 
     def set_glossary_manager(self, manager: Optional[GlossaryManager]) -> None:
@@ -166,6 +171,14 @@ class JsonTagHighlighter(QSyntaxHighlighter):
         self.l_marker_format.setForeground(QColor("orange"))
         self.l_marker_format.setFontWeight(QFont.Bold)
 
+        self.icon_sequence_format = QTextCharFormat()
+        icon_bg = QColor("#C8E6C9")
+        try:
+            icon_bg.setAlpha(180)
+        except Exception:
+            pass
+        self.icon_sequence_format.setBackground(icon_bg)
+        self.icon_sequence_format.setFontWeight(QFont.Bold)
 
         try: self.space_dot_format.setForeground(QColor(space_dot_color_hex))
         except Exception: self.space_dot_format.setForeground(QColor(Qt.lightGray))
@@ -202,6 +215,11 @@ class JsonTagHighlighter(QSyntaxHighlighter):
         self._glossary_cache_revision = None
         if self.document():
              self.rehighlight()
+
+    def _invalidate_icon_cache(self) -> None:
+        self._icon_sequences_cache.clear()
+        self._icon_cache_revision = None
+        self._icon_sequences_snapshot = ()
 
     def _rebuild_glossary_cache(self) -> None:
         doc = self.document()
@@ -251,6 +269,92 @@ class JsonTagHighlighter(QSyntaxHighlighter):
                 block = block.next()
                 if not block.isValid():
                     break
+
+    def _ensure_icon_cache(self, sequences: List[str]) -> None:
+        if not self._should_highlight_icons():
+            self._icon_sequences_cache.clear()
+            self._icon_cache_revision = None
+            self._icon_sequences_snapshot = ()
+            return
+
+        doc = self.document()
+        if not doc:
+            self._icon_sequences_cache.clear()
+            self._icon_cache_revision = None
+            self._icon_sequences_snapshot = ()
+            return
+
+        revision = doc.revision()
+        snapshot = tuple(sequences)
+        if (self._icon_cache_revision == revision
+                and self._icon_sequences_snapshot == snapshot):
+            return
+
+        self._icon_cache_revision = revision
+        self._icon_sequences_snapshot = snapshot
+        self._icon_sequences_cache.clear()
+
+        if not sequences:
+            return
+
+        first_char_map: Dict[str, List[str]] = {}
+        for token in sequences:
+            if not token:
+                continue
+            first_char_map.setdefault(token[0], []).append(token)
+        for token_list in first_char_map.values():
+            token_list.sort(key=len, reverse=True)
+
+        block = doc.firstBlock()
+        while block.isValid():
+            block_text = block.text()
+            matches: List[Tuple[int, int]] = []
+            index = 0
+            text_length = len(block_text)
+            while index < text_length:
+                char = block_text[index]
+                candidates = first_char_map.get(char)
+                matched = False
+                if candidates:
+                    for token in candidates:
+                        token_len = len(token)
+                        if token_len <= 0 or index + token_len > text_length:
+                            continue
+                        if block_text.startswith(token, index):
+                            matches.append((index, token_len))
+                            index += token_len
+                            matched = True
+                            break
+                if not matched:
+                    index += 1
+            if matches:
+                self._icon_sequences_cache[block.blockNumber()] = matches
+            block = block.next()
+
+    def _get_icon_matches_for_block(self, sequences: List[str]) -> List[Tuple[int, int]]:
+        if not sequences:
+            return []
+        self._ensure_icon_cache(sequences)
+        block_number = self.currentBlock().blockNumber()
+        return self._icon_sequences_cache.get(block_number, [])
+
+
+    def _get_icon_sequences(self) -> List[str]:
+        main_window = self.mw
+        sequences = getattr(main_window, 'icon_sequences', None) if main_window else None
+        if isinstance(sequences, list):
+            return sequences
+        return []
+
+    def _should_highlight_icons(self) -> bool:
+        doc = self.document()
+        if not doc:
+            return False
+        editor_widget = doc.parent()
+        if hasattr(editor_widget, 'objectName') and editor_widget.objectName() == 'preview_text_edit':
+            return False
+        return True
+
 
     def highlightBlock(self, text):
         previous_color_state = self.previousBlockState()
@@ -315,7 +419,17 @@ class JsonTagHighlighter(QSyntaxHighlighter):
             final_format = format_map.get(current_block_color_state, self.color_default_format)
             self.setFormat(last_pos, len(text) - last_pos, final_format)
 
-        all_rules = self.custom_rules + [
+        # Застосовуємо кастомні правила з плагіну гри
+        rules_to_apply = self.custom_rules
+        
+        # Performance optimization for the preview window by not highlighting bracket tags (controller buttons)
+        doc = self.document()
+        if doc:
+            editor_widget = doc.parent()
+            if hasattr(editor_widget, 'objectName') and editor_widget.objectName() == 'preview_text_edit':
+                rules_to_apply = [rule for rule in self.custom_rules if r"(\[\s*[^\]]*?\s*\])" not in rule[0]]
+
+        all_rules = rules_to_apply + [
             (r"(\\n)", self.literal_newline_format),
             (re.escape(self.newline_char), self.newline_symbol_format),
             (re.escape(SPACE_DOT_SYMBOL), self.space_dot_format),
@@ -331,6 +445,19 @@ class JsonTagHighlighter(QSyntaxHighlighter):
                     self.setFormat(match.start(), match.end() - match.start(), fmt)
             except Exception as e:
                 log_debug(f"Error applying syntax rule (pattern: '{pattern_str}'): {e}")
+
+        icon_sequences = self._get_icon_sequences()
+        if icon_sequences and self._should_highlight_icons():
+            matches = self._get_icon_matches_for_block(icon_sequences)
+            for start, length in matches:
+                existing_format = self.format(start)
+                combined_format = QTextCharFormat(existing_format)
+                icon_bg = self.icon_sequence_format.background()
+                if icon_bg.style() != Qt.NoBrush:
+                    combined_format.setBackground(icon_bg)
+                if self.icon_sequence_format.fontWeight() != QFont.Normal:
+                    combined_format.setFontWeight(self.icon_sequence_format.fontWeight())
+                self.setFormat(start, length, combined_format)
 
         glossary_matches_for_block: List[Tuple[int, int, GlossaryMatch]] = []
         if self._glossary_enabled and self._glossary_manager:
