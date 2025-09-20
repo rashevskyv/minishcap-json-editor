@@ -1,3 +1,4 @@
+# --- START OF FILE ui/ui_setup.py ---
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QSplitter,
     QLabel, QAction, QStatusBar, QMenu, QPlainTextEdit, QToolBar,

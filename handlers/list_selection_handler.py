@@ -1,3 +1,4 @@
+# --- START OF FILE handlers/list_selection_handler.py ---
 from PyQt5.QtWidgets import QInputDialog, QTextEdit 
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QTextCursor, QTextBlockFormat, QColor, QTextBlock 

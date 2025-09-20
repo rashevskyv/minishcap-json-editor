@@ -1,4 +1,5 @@
-﻿# -*- coding: utf-8 -*-
+# --- START OF FILE core/translation/session_manager.py ---
+
 """Session manager for chat-based translation providers."""
 from __future__ import annotations
 

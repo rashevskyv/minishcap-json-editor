@@ -35,6 +35,11 @@
 ├── docs
 │   └── chatmock_setup.md
 ├── handlers
+│   ├── translation
+│   │   ├── ai_prompt_composer.py
+│   │   ├── base_translation_handler.py
+│   │   ├── glossary_handler.py
+│   │   └── translation_ui_handler.py
 │   ├── __init__.py
 │   ├── __init__.pyc
 │   ├── app_action_handler.py
@@ -122,6 +127,7 @@
 │   ├── syntax_highlighter.py
 │   └── utils.py
 ├── app_debug.txt
+├── GEMINI.md
 ├── main.py
 ├── main_unix.txt
 ├── main_window_actions.py

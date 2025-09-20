@@ -1,3 +1,4 @@
+# --- START OF FILE ui/updaters/title_status_bar_updater.py ---
 import os
 from utils.utils import log_debug
 from .base_ui_updater import BaseUIUpdater

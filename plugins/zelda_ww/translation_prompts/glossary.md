@@ -1,4 +1,4 @@
-### Персонажі, Раси та Істоти
+# --- START OF FILE plugins/zelda_ww/translation_prompts/glossary.md ---
 
 | Original | Translation | Notes |
 |----------|-------------|-------|

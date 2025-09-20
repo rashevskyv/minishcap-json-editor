@@ -1,3 +1,4 @@
+# --- START OF FILE main_window_plugin_handler.py ---
 import sys
 import importlib
 from PyQt5.QtWidgets import QAction, QMenu

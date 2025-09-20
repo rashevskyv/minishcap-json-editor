@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# --- START OF FILE components/translation_variations_dialog.py ---
 """Dialog for choosing among AI translation variations."""
 from __future__ import annotations
 

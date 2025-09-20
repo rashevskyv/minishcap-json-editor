@@ -1,3 +1,4 @@
+# --- START OF FILE core/tag_utils.py ---
 import re
 from utils.logging_utils import log_debug
 

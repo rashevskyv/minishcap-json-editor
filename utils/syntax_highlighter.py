@@ -1,3 +1,4 @@
+# --- START OF FILE utils/syntax_highlighter.py ---
 
 import sys
 import re

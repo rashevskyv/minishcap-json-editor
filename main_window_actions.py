@@ -1,3 +1,4 @@
+# --- START OF FILE main_window_actions.py ---
 from PyQt5.QtWidgets import QApplication, QMessageBox
 from utils.logging_utils import log_debug
 import copy

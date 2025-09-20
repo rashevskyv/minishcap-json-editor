@@ -1,4 +1,5 @@
-﻿# core/translation/config.py
+# --- START OF FILE core/translation/config.py ---
+
 from typing import Dict
 
 def merge_translation_config(base: Dict, custom: Dict) -> Dict:

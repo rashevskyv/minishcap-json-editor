@@ -1,5 +1,6 @@
+# --- START OF FILE components/LineNumberArea.py ---
 from PyQt5.QtWidgets import QWidget
-from PyQt5.QtGui import QPainter, QColor, QPen
+from PyQt5.QtGui import QPainter, QColor, QPen, QMouseEvent
 from PyQt5.QtCore import Qt, QRect, QSize
 
 class LineNumberArea(QWidget):
@@ -27,3 +28,8 @@ class LineNumberArea(QWidget):
 
     def paintEvent(self, event):
         self.codeEditor.lineNumberAreaPaintEvent(event, painter_device=self)
+
+    def mousePressEvent(self, event: QMouseEvent):
+        if event.button() == Qt.LeftButton:
+            self.codeEditor.handle_line_number_click(event.pos().y())
+        super().mousePressEvent(event)

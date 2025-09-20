@@ -1,4 +1,4 @@
-# d:\git\dev\zeldamc\jsonreader\utils\constants.py
+# --- START OF FILE utils/constants.py ---
 
 # Player tags
 EDITOR_PLAYER_TAG = "player"

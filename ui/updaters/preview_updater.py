@@ -1,3 +1,4 @@
+# --- START OF FILE ui/updaters/preview_updater.py ---
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtGui import QTextCursor
 from utils.utils import log_debug, convert_spaces_to_dots_for_display

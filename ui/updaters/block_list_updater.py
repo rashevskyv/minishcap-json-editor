@@ -1,3 +1,4 @@
+# --- START OF FILE ui/updaters/block_list_updater.py ---
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
 from utils.utils import log_debug

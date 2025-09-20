@@ -1,3 +1,4 @@
+# --- START OF FILE main.py ---
 import sys
 import os
 import json
@@ -241,7 +242,6 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'translation_handler'):
             self.translation_handler.initialize_glossary_highlighting()
 
-        # Menu has been created, now register the text analysis action
         if hasattr(self, 'text_analysis_handler'):
             self.text_analysis_handler.ensure_menu_action()
 
@@ -358,7 +358,7 @@ class MainWindow(QMainWindow):
 
     def _reconfigure_all_highlighters(self):
         self.ui_handler.reconfigure_all_highlighters()
- 
+
 
     def closeEvent(self, event):
         self.event_handler.closeEvent(event)

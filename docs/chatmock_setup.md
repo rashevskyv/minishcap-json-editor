@@ -1,4 +1,5 @@
-﻿# Налаштування ChatMock для GPT-5
+# --- START OF FILE docs/chatmock_setup.md ---
+# Налаштування ChatMock для GPT-5
 
 ChatMock надає локальний сервер з OpenAI/Ollama-сумісним API, що пересилає запити до твого акаунта ChatGPT (потрібна передплата Plus/Pro). Нижче наведено кроки запуску у Python-режимі, сумісні з нашою системою AI-перекладу.
 

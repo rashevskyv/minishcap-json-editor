@@ -1,3 +1,4 @@
+# --- START OF FILE handlers/base_handler.py ---
 from utils.logging_utils import log_debug
 
 class BaseHandler:

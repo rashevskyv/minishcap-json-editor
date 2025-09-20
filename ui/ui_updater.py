@@ -1,3 +1,4 @@
+# --- START OF FILE ui/ui_updater.py ---
 import os
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QBrush, QTextCursor

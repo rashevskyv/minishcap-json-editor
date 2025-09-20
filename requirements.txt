@@ -1,4 +1,3 @@
-# requirements.txt
 PyQt5
 requests
 google-generativeai

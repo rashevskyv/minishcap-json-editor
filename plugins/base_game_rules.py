@@ -1,3 +1,4 @@
+# --- START OF FILE plugins/base_game_rules.py ---
 from typing import List, Tuple, Dict, Optional, Any, Set
 from PyQt5.QtGui import QTextCharFormat
 import json

@@ -1,3 +1,4 @@
+# --- START OF FILE plugins/zelda_mc/problem_analyzer.py ---
 from typing import Optional, Set, Dict, Any
 import re
 

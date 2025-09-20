@@ -1,3 +1,4 @@
+# --- START OF FILE components/labeled_spinbox.py ---
 from PyQt5.QtWidgets import QWidget, QHBoxLayout, QLabel, QSpinBox, QSizePolicy
 from PyQt5.QtGui import QFontMetrics
 

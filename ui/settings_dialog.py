@@ -1,4 +1,4 @@
-# ui/settings_dialog.py
+# --- START OF FILE ui/settings_dialog.py ---
 import os
 import json
 from PyQt5.QtWidgets import (

@@ -1,4 +1,5 @@
-﻿# Інструкція для перекладача
+# --- START OF FILE plugins/zelda_ww/translation_prompts/system_prompt.md ---
+# Інструкція для перекладача
 
 Ти локалізуєш **The Legend of Zelda: The Wind Waker** українською. Пам’ятай:
 

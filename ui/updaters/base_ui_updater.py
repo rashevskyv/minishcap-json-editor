@@ -1,3 +1,4 @@
+# --- START OF FILE ui/updaters/base_ui_updater.py ---
 from utils.utils import log_debug
 
 class BaseUIUpdater:

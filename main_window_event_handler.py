@@ -1,3 +1,4 @@
+# --- START OF FILE main_window_event_handler.py ---
 from PyQt5.QtGui import QTextCursor, QKeyEvent
 from PyQt5.QtCore import Qt
 from utils.logging_utils import log_debug

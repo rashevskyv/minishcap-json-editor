@@ -1,3 +1,4 @@
+# --- START OF FILE core/data_state_processor.py ---
 import json
 import os
 from PyQt5.QtWidgets import QMessageBox

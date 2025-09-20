@@ -1,3 +1,4 @@
+# --- START OF FILE handlers/app_action_handler.py ---
 import os
 from typing import Optional 
 from PyQt5.QtWidgets import QMessageBox, QFileDialog, QProgressDialog, QPlainTextEdit

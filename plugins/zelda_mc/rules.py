@@ -1,3 +1,4 @@
+# --- START OF FILE plugins/zelda_mc/rules.py ---
 from PyQt5.QtGui import QColor, QTextCharFormat, QFont
 from PyQt5.QtCore import Qt
 from typing import Optional, Set, Dict, Any, Tuple, List

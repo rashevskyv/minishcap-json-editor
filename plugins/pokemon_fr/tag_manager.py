@@ -1,3 +1,4 @@
+# --- START OF FILE plugins/pokemon_fr/tag_manager.py ---
 from typing import Set, List, Tuple
 from PyQt5.QtGui import QTextCharFormat, QColor, QFont
 import re

@@ -1,3 +1,4 @@
+# --- START OF FILE main_window_block_handler.py ---
 from utils.logging_utils import log_debug
 
 class MainWindowBlockHandler:

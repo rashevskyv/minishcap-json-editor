@@ -1,3 +1,4 @@
+# --- START OF FILE components/LNET_paint_event_logic.py ---
 import re
 from PyQt5.QtGui import QPainter, QColor, QPen, QPaintEvent, QTextLine
 from PyQt5.QtCore import Qt
@@ -57,13 +58,11 @@ class LNETPaintEventLogic:
                 if block_rect.bottom() > self.editor.viewport().height(): 
                      break 
                 block = block.next()
-
+        
         if self.editor.objectName() == "edited_text_edit" and hasattr(self.editor, 'highlightManager'):
             if self.editor.highlightManager:
                 self.editor.highlightManager._width_exceed_char_selections = [] 
 
-        self.editor.super_paintEvent(event) 
-        
         main_window = self.editor.window()
         if not isinstance(main_window, QMainWindow):
             return

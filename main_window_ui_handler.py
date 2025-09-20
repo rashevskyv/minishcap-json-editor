@@ -1,3 +1,4 @@
+# --- START OF FILE main_window_ui_handler.py ---
 from PyQt5.QtWidgets import QWidget, QApplication, QLabel
 from PyQt5.QtGui import QFont, QPalette, QColor, QTextOption
 from PyQt5.QtCore import Qt

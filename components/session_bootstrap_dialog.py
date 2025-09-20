@@ -1,4 +1,5 @@
-﻿from PyQt5.QtWidgets import (
+# --- START OF FILE components/session_bootstrap_dialog.py ---
+from PyQt5.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QLabel,

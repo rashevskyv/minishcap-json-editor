@@ -1,3 +1,4 @@
+# --- START OF FILE components/LNET_mouse_handlers.py ---
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QInputDialog, QDialog, QVBoxLayout, QComboBox, QDialogButtonBox, QLabel, QSpinBox
 from PyQt5.QtGui import QTextCursor, QMouseEvent
 from PyQt5.QtCore import Qt, QPoint

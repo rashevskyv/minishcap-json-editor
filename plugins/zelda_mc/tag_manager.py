@@ -1,3 +1,4 @@
+# --- START OF FILE plugins/zelda_mc/tag_manager.py ---
 import re
 import json
 import os

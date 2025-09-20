@@ -1,3 +1,4 @@
+# --- START OF FILE handlers/string_settings_handler.py ---
 from .base_handler import BaseHandler
 from utils.utils import log_debug
 

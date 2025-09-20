@@ -1,3 +1,4 @@
+# --- START OF FILE plugins/pokemon_fr/problem_analyzer.py ---
 from typing import Optional, Set, List, Tuple
 import re
 

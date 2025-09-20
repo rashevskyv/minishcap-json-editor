@@ -1,8 +1,9 @@
+# --- START OF FILE components/LineNumberedTextEdit.py ---
 from PyQt5.QtWidgets import (QPlainTextEdit, QMainWindow, QMenu, QApplication, QAction,
                              QWidget, QHBoxLayout, QPushButton, QWidgetAction, QDialog,
                              QVBoxLayout, QComboBox, QDialogButtonBox, QLabel, QSpinBox, QToolTip)
 from PyQt5.QtGui import (QPainter, QFont, QPaintEvent, QKeyEvent, QKeySequence, QMouseEvent, QIcon, QPixmap, QColor, QTextLine, QTextCursor) 
-from PyQt5.QtCore import Qt, QRect, QSize, QRectF, pyqtSignal
+from PyQt5.QtCore import Qt, QRect, QSize, QRectF, pyqtSignal, QPoint
 from typing import Optional, List, Tuple
 import os
 
@@ -30,7 +31,9 @@ from .LNET_constants import (
 )
 from .LNET_mouse_handlers import LNETMouseHandlers
 from .LNET_highlight_interface import LNETHighlightInterface
-from .LNET_paint_handlers import LNETPaintHandlers
+from .LNET_paint_helpers import LNETPaintHelpers
+from .LNET_paint_event_logic import LNETPaintEventLogic
+from .LNET_line_number_area_paint_logic import LNETLineNumberAreaPaintLogic
 
 class LineNumberedTextEdit(QPlainTextEdit):
     lineClicked = pyqtSignal(int)
@@ -63,7 +66,10 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.highlightManager = TextHighlightManager(self)
         self.mouse_handler = LNETMouseHandlers(self) 
         self.highlight_interface = LNETHighlightInterface(self)
-        self.paint_handler = LNETPaintHandlers(self)
+        
+        self.paint_helpers = LNETPaintHelpers(self)
+        self.paint_event_logic = LNETPaintEventLogic(self, self.paint_helpers)
+        self.lineNumberArea.paint_logic = LNETLineNumberAreaPaintLogic(self, self.paint_helpers, main_window_ref)
 
         self.blockCountChanged.connect(self.updateLineNumberAreaWidth)
         self.updateRequest.connect(self.updateLineNumberArea)
@@ -103,6 +109,27 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.width_threshold_line_width = WIDTH_THRESHOLD_LINE_WIDTH
 
         self._update_auxiliary_widths()
+
+    def handle_line_number_click(self, y_pos: int):
+        cursor = self.cursorForPosition(QPoint(5, y_pos))
+        if cursor.isNull():
+            return
+
+        block = cursor.block()
+        if not block.isValid():
+            return
+            
+        if self.objectName() == "preview_text_edit":
+            self.lineClicked.emit(block.blockNumber())
+        else:
+            scroll_value = self.horizontalScrollBar().value()
+            
+            selection_cursor = QTextCursor(block)
+            selection_cursor.select(QTextCursor.BlockUnderCursor)
+            self.setTextCursor(selection_cursor)
+            
+            self.horizontalScrollBar().setValue(scroll_value)
+            self.setFocus()
 
     def set_glossary_manager(self, manager) -> None:
         self._glossary_manager = manager
@@ -262,7 +289,17 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
         if self.objectName() == "edited_text_edit" and not self.isReadOnly():
             cursor = self.textCursor()
-            if cursor.hasSelection():
+            has_selection = cursor.hasSelection()
+
+            if translator and has_selection:
+                if not custom_actions_added:
+                    menu.addSeparator()
+                    custom_actions_added = True
+                
+                variation_action = menu.addAction("AI Variations for Selected")
+                variation_action.triggered.connect(translator.generate_variation_for_selection)
+
+            if has_selection:
                 if not custom_actions_added:
                     menu.addSeparator()
                     custom_actions_added = True
@@ -356,11 +393,8 @@ class LineNumberedTextEdit(QPlainTextEdit):
         max_preview_indicators = getattr(self.lineNumberArea, 'max_problem_indicators', 5) 
         num_indicators_to_display = min(num_indicators_to_display, max_preview_indicators)
 
-        # Резервуємо місце під 1 маркер метаданих + до 3 маркерів проблем
         indicator_area_width = 0
-        # 1 маркер метаданих
         indicator_area_width += self.lineNumberArea.preview_indicator_width + self.lineNumberArea.preview_indicator_spacing
-        # до 3 маркерів проблем
         if num_indicators_to_display > 0:
             indicator_area_width += (self.lineNumberArea.preview_indicator_width * num_indicators_to_display) + \
                                     (self.lineNumberArea.preview_indicator_spacing * num_indicators_to_display)
@@ -468,17 +502,13 @@ class LineNumberedTextEdit(QPlainTextEdit):
             self.viewport().update()
 
     def paintEvent(self, event: QPaintEvent):
-        if hasattr(self, 'paint_handler') and self.paint_handler: 
-            self.paint_handler.paintEvent(event)
-        else:
-            super().paintEvent(event) 
-
-    def super_paintEvent(self, event: QPaintEvent):
         super().paintEvent(event)
+        if hasattr(self, 'paint_event_logic'): 
+            self.paint_event_logic.execute_paint_event(event)
 
     def lineNumberAreaPaintEvent(self, event, painter_device):
-        if hasattr(self, 'paint_handler') and self.paint_handler: 
-            self.paint_handler.lineNumberAreaPaintEvent(event, painter_device)
+        if hasattr(self.lineNumberArea, 'paint_logic'):
+            self.lineNumberArea.paint_logic.execute_paint_event(event, painter_device)
 
     def mousePressEvent(self, event: QMouseEvent):
         self.mouse_handler.mousePressEvent(event) 

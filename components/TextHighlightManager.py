@@ -1,3 +1,4 @@
+# --- START OF FILE components/TextHighlightManager.py ---
 from PyQt5.QtWidgets import QTextEdit
 from PyQt5.QtGui import QColor, QTextBlockFormat, QTextFormat, QTextCursor, QTextBlock, QTextCharFormat
 from PyQt5.QtCore import QTimer

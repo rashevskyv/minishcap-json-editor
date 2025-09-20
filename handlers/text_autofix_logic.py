@@ -1,3 +1,4 @@
+# --- START OF FILE handlers/text_autofix_logic.py ---
 import re
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QTextCursor

@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# --- START OF FILE components/glossary_dialog.py ---
 """Dialog for viewing glossary entries and navigating to occurrences."""
 from __future__ import annotations
 import json

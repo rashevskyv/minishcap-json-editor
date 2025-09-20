@@ -1,4 +1,4 @@
-# This file makes the 'utils' directory a Python package.
+# --- START OF FILE utils/__init__.py ---
 
 # Import functions/classes from other modules within this package
 # to make them available when 'utils' is imported.

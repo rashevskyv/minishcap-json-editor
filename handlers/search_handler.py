@@ -1,3 +1,4 @@
+# --- START OF FILE handlers/search_handler.py ---
 from .base_handler import BaseHandler
 from utils.logging_utils import log_debug
 from utils.utils import convert_spaces_to_dots_for_display, remove_curly_tags, convert_raw_to_display_text, prepare_text_for_tagless_search

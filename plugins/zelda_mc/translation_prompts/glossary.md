@@ -1,6 +1,7 @@
+# --- START OF FILE plugins/zelda_mc/translation_prompts/glossary.md ---
 | Оригінал | Переклад | Примітки |
 |----------|----------|----------|
-| ﻿[LINK] | [green]Лінк[/c] |  |
+| [LINK] | [green]Лінк[/c] |  |
 | A History of Masks | Історія Масок |  |
 | A Hyrulean Bestiary | Гайрульський Бестіарій |  |
 | abbey | абатство |  |

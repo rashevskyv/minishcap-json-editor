@@ -1,3 +1,4 @@
+# --- START OF FILE core/settings_manager.py ---
 import json
 import os
 import base64

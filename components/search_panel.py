@@ -1,3 +1,4 @@
+# --- START OF FILE components/search_panel.py ---
 from PyQt5.QtWidgets import (
     QWidget, QHBoxLayout, QVBoxLayout, QComboBox, QPushButton,
     QCheckBox, QLabel, QSpacerItem, QSizePolicy

@@ -1,4 +1,3 @@
-#!/bin/bash
 
 VENV_DIR=".venv"
 REQUIREMENTS_FILE="requirements.txt"

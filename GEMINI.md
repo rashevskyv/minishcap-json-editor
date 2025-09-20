@@ -1,4 +1,4 @@
-# Gemini Code Assistant Context
+# --- START OF FILE GEMINI.md ---
 
 This document provides context for the Gemini Code Assistant to understand the project structure, conventions, and tasks.
 

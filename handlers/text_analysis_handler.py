@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# --- START OF FILE handlers/text_analysis_handler.py ---
 """Handler for original text width analysis tool."""
 from __future__ import annotations
 

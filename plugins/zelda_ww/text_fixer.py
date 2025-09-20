@@ -1,3 +1,4 @@
+# --- START OF FILE plugins/zelda_ww/text_fixer.py ---
 from typing import Optional, Set, Dict, Any, Tuple
 import re
 
