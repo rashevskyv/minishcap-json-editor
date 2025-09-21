@@ -133,7 +133,8 @@ class LNETLineNumberAreaPaintLogic:
                         q_block_text_raw_dots_paint_text = current_q_block.text()
                         q_block_text_spaces_paint_text = convert_dots_to_spaces_from_editor(q_block_text_raw_dots_paint_text)
                         
-                        pixel_width = calculate_string_width(q_block_text_spaces_paint_text.rstrip(), font_map_for_line)
+                        icon_sequences = getattr(self.mw, 'icon_sequences', [])
+                        pixel_width = calculate_string_width(q_block_text_spaces_paint_text.rstrip(), font_map_for_line, icon_sequences=icon_sequences)
                         width_str_text = str(pixel_width)
                         
                         text_color_for_extra_part = QColor(Qt.darkGray) if theme == 'light' else QColor(Qt.darkGray).darker(120)

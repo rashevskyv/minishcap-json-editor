@@ -1,4 +1,4 @@
-# --- START OF FILE main_window_event_handler.py ---
+# --- START OF FILE handlers/main_window_event_handler.py ---
 from PyQt5.QtGui import QTextCursor, QKeyEvent
 from PyQt5.QtCore import Qt
 from utils.logging_utils import log_debug
@@ -99,6 +99,9 @@ class MainWindowEventHandler:
 
         editor = self.mw.edited_text_edit
         cursor = editor.textCursor()
+        current_pos = cursor.position()
+        last_pos = self.mw.previous_cursor_pos
+        moved_right = current_pos > last_pos
 
         if not cursor.hasSelection():
             self.mw.is_adjusting_cursor = True
@@ -110,12 +113,17 @@ class MainWindowEventHandler:
             for match in ALL_TAGS_PATTERN.finditer(block_text):
                 tag_start, tag_end = match.span()
                 if tag_start < pos_in_block < tag_end:
-                    new_cursor_pos_abs = current_block.position() + tag_end
+                    if moved_right or abs(current_pos - last_pos) > 1: # Moved right or jumped (e.g., click)
+                        new_cursor_pos_abs = current_block.position() + tag_end
+                    else: # Moved left
+                        new_cursor_pos_abs = current_block.position() + tag_start
+                    
                     cursor.setPosition(new_cursor_pos_abs)
                     editor.setTextCursor(cursor)
                     break 
             self.mw.is_adjusting_cursor = False
         
+        self.mw.previous_cursor_pos = editor.textCursor().position()
         self.mw.ui_updater.update_status_bar()
 
     def handle_edited_selection_changed(self):

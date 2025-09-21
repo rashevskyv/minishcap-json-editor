@@ -5,7 +5,7 @@ import json
 from html import escape
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
-from PyQt5.QtCore import Qt, QRect, QSize
+from PyQt5.QtCore import Qt, QRect, QSize, QTimer
 from PyQt5.QtWidgets import (
     QDialog,
     QDialogButtonBox,
@@ -198,12 +198,12 @@ class GlossaryDialog(QDialog):
         self._update_editor_enabled_state()
         self._load_dialog_state()
         self._populate_entries(self._filtered_entries)
+
         if initial_term:
-            self._select_initial_term(initial_term)
-        else:
-            if self._filtered_entries:
-                self._entry_table.selectRow(0)
-                self._show_entry_for_row(0)
+            QTimer.singleShot(0, lambda: self._select_initial_term(initial_term))
+        elif self._filtered_entries:
+            self._entry_table.selectRow(0)
+            self._show_entry_for_row(0)
     # ------------------------------------------------------------------
     # UI population
     # ------------------------------------------------------------------
@@ -235,13 +235,21 @@ class GlossaryDialog(QDialog):
         self._entry_table.blockSignals(False)
         self._is_populating = False
     def _select_initial_term(self, term: str) -> None:
-        term_lower = term.lower()
-        for row, entry in enumerate(self._filtered_entries):
-            if entry.original.lower() == term_lower:
+        if not term:
+            return
+        
+        term_to_find = term.strip()
+
+        for row in range(self._entry_table.rowCount()):
+            item = self._entry_table.item(row, 0)
+            if not item: continue
+            
+            entry = item.data(Qt.UserRole)
+            if isinstance(entry, GlossaryEntry) and entry.original.strip() == term_to_find:
                 self._entry_table.selectRow(row)
-                self._entry_table.scrollToItem(self._entry_table.item(row, 0))
+                self._entry_table.scrollToItem(item, QTableWidget.ScrollHint.PositionAtCenter)
                 self._show_entry_for_row(row)
-                break
+                return
     def _show_entry_for_row(self, row: int) -> None:
         if row < 0:
             self._clear_entry_details()

@@ -135,7 +135,8 @@ class GameRules(BaseGameRules):
         )
 
     def calculate_string_width_override(self, text: str, font_map: dict, default_char_width: int = 6) -> Optional[int]:
-        return calculate_string_width(text, font_map, default_char_width)
+        icon_sequences = getattr(self.mw, 'icon_sequences', [])
+        return calculate_string_width(text, font_map, default_char_width, icon_sequences=icon_sequences)
         
     def get_short_problem_name(self, problem_id: str) -> str:
         if problem_id == PROBLEM_WIDTH_EXCEEDED: return "Width"

@@ -135,6 +135,7 @@ class MainWindow(QMainWindow):
         self.last_selected_block_index = -1
         self.last_selected_string_index = -1
         self.last_cursor_position_in_edited = 0
+        self.previous_cursor_pos = 0
         self.last_edited_text_edit_scroll_value_v = 0
         self.last_edited_text_edit_scroll_value_h = 0
         self.last_preview_text_edit_scroll_value_v = 0

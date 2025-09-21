@@ -110,6 +110,16 @@ class GlossaryManager:
     def get_entries(self) -> Sequence[GlossaryEntry]:
         return list(self._entries)
 
+    def get_entry(self, term: str) -> Optional[GlossaryEntry]:
+        """Find a glossary entry by its original term, ignoring case and spacing."""
+        if not term:
+            return None
+        normalized_term = self.normalize_term(term)
+        for entry in self._entries:
+            if self.normalize_term(entry.original) == normalized_term:
+                return entry
+        return None
+
     def get_entries_sorted_by_length(self) -> Sequence[GlossaryEntry]:
         return sorted(self._entries, key=lambda item: len(item.original or ""), reverse=True)
 

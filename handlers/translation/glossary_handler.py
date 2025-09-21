@@ -4,7 +4,9 @@ import json
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
-from PyQt5.QtWidgets import QAction, QMessageBox, QDialog, QVBoxLayout, QLabel, QLineEdit, QPlainTextEdit, QHBoxLayout, QPushButton, QDialogButtonBox, QListWidget, QListWidgetItem
+from PyQt5.QtWidgets import (QAction, QMessageBox, QDialog, QVBoxLayout, QLabel, 
+                             QLineEdit, QPlainTextEdit, QHBoxLayout, QPushButton, 
+                             QDialogButtonBox, QListWidget, QListWidgetItem, QWidget)
 from PyQt5.QtCore import Qt, QObject, QEvent
 
 from .base_translation_handler import BaseTranslationHandler
@@ -33,6 +35,52 @@ class _ReturnToAcceptFilter(QObject):
                 self._dialog.accept()
                 return True
         return super().eventFilter(obj, event)
+
+class _EditEntryDialog(QDialog):
+    """Simple dialog for editing a glossary entry."""
+    def __init__(
+        self,
+        parent: QWidget,
+        term: str,
+        entry: Optional[GlossaryEntry] = None,
+        context: Optional[str] = None,
+    ) -> None:
+        super().__init__(parent)
+        self.setWindowTitle("Edit Glossary Entry")
+
+        layout = QVBoxLayout(self)
+        self.setLayout(layout)
+
+        form_layout = QVBoxLayout()
+        form_layout.addWidget(QLabel(f"<b>Term:</b> {term}"))
+        if context:
+            form_layout.addWidget(QLabel(f"<b>Context:</b> <i>{context}</i>"))
+
+        form_layout.addWidget(QLabel("Translation:"))
+        self._translation_edit = QLineEdit(self)
+        self._translation_edit.installEventFilter(_ReturnToAcceptFilter(self))
+        form_layout.addWidget(self._translation_edit)
+
+        form_layout.addWidget(QLabel("Notes:"))
+        self._notes_edit = QPlainTextEdit(self)
+        self._notes_edit.setMinimumHeight(80)
+        form_layout.addWidget(self._notes_edit)
+
+        if entry:
+            self._translation_edit.setText(entry.translation)
+            self._notes_edit.setPlainText(entry.notes)
+
+        layout.addLayout(form_layout)
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+    def get_values(self) -> Tuple[str, str]:
+        return (
+            self._translation_edit.text().strip(),
+            self._notes_edit.toPlainText().strip(),
+        )
 
 class GlossaryHandler(BaseTranslationHandler):
     def __init__(self, main_handler):
@@ -107,6 +155,41 @@ class GlossaryHandler(BaseTranslationHandler):
             initial_term=initial_term,
         )
         dialog.exec_()
+
+    def add_glossary_entry(self, term: str, context: Optional[str] = None) -> None:
+        self.edit_glossary_entry(term, is_new=True, context=context)
+
+    def edit_glossary_entry(self, term: str, is_new: bool = False, context: Optional[str] = None) -> None:
+        provider = self.main_handler._prepare_provider()
+        if not provider:
+            return
+        
+        entry = self.glossary_manager.get_entry(term) if not is_new else None
+        
+        dialog = self._create_edit_dialog(term, entry, context)
+        if dialog.exec_() != QDialog.Accepted:
+            return
+            
+        new_translation, new_notes = dialog.get_values()
+        if not new_translation:
+            if entry and new_notes != entry.notes:
+                if self.glossary_manager.update_entry(term, entry.translation, new_notes):
+                    self.glossary_manager.save_to_disk()
+                    self.main_handler._cached_glossary = self.glossary_manager.get_raw_text()
+                    self._update_glossary_highlighting()
+            return
+            
+        if is_new:
+            self.glossary_manager.add_entry(term, new_translation, new_notes)
+        else:
+            self.glossary_manager.update_entry(term, new_translation, new_notes)
+        
+        self.glossary_manager.save_to_disk()
+        self.main_handler._cached_glossary = self.glossary_manager.get_raw_text()
+        self._update_glossary_highlighting()
+
+    def _create_edit_dialog(self, term: str, entry: Optional[GlossaryEntry], context: Optional[str]) -> QDialog:
+        return _EditEntryDialog(self.mw, term, entry, context)
 
     def load_prompts(self) -> Tuple[Optional[str], Optional[str]]:
         main_h = self.main_handler

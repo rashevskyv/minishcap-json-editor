@@ -415,7 +415,14 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
     def keyPressEvent(self, event: QKeyEvent):
         main_window = self.window()
-        
+
+        is_arrow_key = event.key() in (Qt.Key_Left, Qt.Key_Right)
+        if is_arrow_key and event.modifiers() == Qt.NoModifier and not self.isReadOnly():
+            move_right = event.key() == Qt.Key_Right
+            if self._snap_cursor_out_of_icon_sequences(move_right):
+                event.accept()
+                return
+
         if not self.isReadOnly() and event.key() == Qt.Key_Space and getattr(main_window, 'show_multiple_spaces_as_dots', False):
             cursor = self.textCursor()
             block_text = cursor.block().text()
@@ -452,12 +459,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
                     return
 
         super().keyPressEvent(event)
-
-        if (event.key() in (Qt.Key_Left, Qt.Key_Right) and event.modifiers() == Qt.NoModifier
-                and not self.isReadOnly() and not self.textCursor().hasSelection()):
-            move_right = event.key() == Qt.Key_Right
-            if self._snap_cursor_out_of_icon_sequences(move_right):
-                return
 
     def setReadOnly(self, ro):
         super().setReadOnly(ro)
@@ -535,38 +536,68 @@ class LineNumberedTextEdit(QPlainTextEdit):
     def _find_icon_sequence_in_block(self, block_text: str, sequences: List[str], position_in_block: int) -> Optional[Tuple[int, int, str]]:
         if not block_text or not sequences:
             return None
+        
         for token in sequences:
-            start = block_text.find(token)
-            while start != -1:
+            start = -1
+            while True:
+                start = block_text.find(token, start + 1)
+                if start == -1:
+                    break
                 end = start + len(token)
                 if start <= position_in_block < end:
                     return start, end, token
-                start = block_text.find(token, start + 1)
         return None
 
     def _snap_cursor_out_of_icon_sequences(self, move_right: bool) -> bool:
         cursor = self.textCursor()
+        if cursor.hasSelection(): return False
+        
         block = cursor.block()
-        if not block.isValid():
-            return False
+        if not block.isValid(): return False
+
         sequences = self._get_icon_sequences()
-        if not sequences:
-            return False
-        position_in_block = cursor.position() - block.position()
-        match = self._find_icon_sequence_in_block(block.text(), sequences, position_in_block)
-        if not match:
-            return False
-        start, end, token = match
-        target = end if move_right else start
-        if move_right and position_in_block >= end:
-            return False
-        if not move_right and position_in_block <= start:
-            return False
-        new_cursor = QTextCursor(block)
-        new_cursor.setPosition(block.position() + target)
-        self.setTextCursor(new_cursor)
-        self._momentary_highlight_tag(block, start, len(token))
-        return True
+        if not sequences: return False
+
+        pos_in_block = cursor.positionInBlock()
+        block_text = block.text()
+        
+        # Find all icon occurrences in the line
+        all_matches = []
+        for token in sequences:
+            start = -1
+            while True:
+                start = block_text.find(token, start + 1)
+                if start == -1: break
+                all_matches.append((start, start + len(token), token))
+        
+        if not all_matches: return False
+
+        # Check if cursor is inside or adjacent to any icon
+        for start, end, token in all_matches:
+            # Inside
+            if start < pos_in_block < end:
+                new_pos = end if move_right else start
+                new_cursor = QTextCursor(block)
+                new_cursor.setPosition(block.position() + new_pos)
+                self.setTextCursor(new_cursor)
+                self._momentary_highlight_tag(block, start, len(token))
+                return True
+            # At left boundary, moving right
+            elif move_right and pos_in_block == start:
+                new_cursor = QTextCursor(block)
+                new_cursor.setPosition(block.position() + end)
+                self.setTextCursor(new_cursor)
+                self._momentary_highlight_tag(block, start, len(token))
+                return True
+            # At right boundary, moving left
+            elif not move_right and pos_in_block == end:
+                new_cursor = QTextCursor(block)
+                new_cursor.setPosition(block.position() + start)
+                self.setTextCursor(new_cursor)
+                self._momentary_highlight_tag(block, start, len(token))
+                return True
+                
+        return False
 
     def _momentary_highlight_tag(self, block, start_in_block, length):
         self.highlight_interface._momentary_highlight_tag(block, start_in_block, length)

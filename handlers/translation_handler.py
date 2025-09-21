@@ -8,6 +8,7 @@ from typing import Dict, List, Optional, Tuple, Union
 from PyQt5.QtCore import QTimer, Qt
 from PyQt5.QtWidgets import QMessageBox, QApplication
 from .base_handler import BaseHandler
+from core.glossary_manager import GlossaryEntry
 from core.translation.config import build_default_translation_config
 from core.translation.providers import (
     ProviderResponse,
@@ -47,6 +48,15 @@ class TranslationHandler(BaseHandler):
 
     def show_glossary_dialog(self, initial_term: Optional[str] = None) -> None:
         self.glossary_handler.show_glossary_dialog(initial_term)
+
+    def get_glossary_entry(self, term: str) -> Optional[GlossaryEntry]:
+        return self.glossary_handler.glossary_manager.get_entry(term)
+
+    def add_glossary_entry(self, term: str, context: Optional[str] = None) -> None:
+        self.glossary_handler.add_glossary_entry(term, context)
+
+    def edit_glossary_entry(self, term: str) -> None:
+        self.glossary_handler.edit_glossary_entry(term)
 
     def reset_translation_session(self) -> None:
         self._session_manager.reset()
@@ -498,3 +508,11 @@ class TranslationHandler(BaseHandler):
         self.ui_handler.apply_partial_translation(cleaned_translation, start_line, end_line)
         if self.mw.statusBar:
             self.mw.statusBar.showMessage("AI translation applied to the selected rows.", 4000)
+
+    def get_glossary_entry_for_term(self, term: str) -> Optional[GlossaryEntry]:
+        """Public method to get a glossary entry by term."""
+        return self.glossary_handler.get_entry_for_term(term)
+
+    def append_selection_to_glossary(self) -> None:
+        """Append selected lines from preview/original to the glossary file."""
+        self.glossary_handler.append_selection_to_glossary()
