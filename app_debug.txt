@@ -1,69 +1,69 @@
-2025-09-22 22:48:21,385 - DEBUG - logging_utils - log_debug - ================= Application Start =================
-2025-09-22 22:48:21,394 - DEBUG - logging_utils - log_debug - Applied Light Theme.
-2025-09-22 22:48:21,395 - DEBUG - logging_utils - log_debug - ++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++
-2025-09-22 22:48:21,395 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Core Components...
-2025-09-22 22:48:21,395 - DEBUG - logging_utils - log_debug - --> SettingsManager: load_settings from settings.json
-2025-09-22 22:48:21,395 - DEBUG - logging_utils - log_debug - Global settings loaded.
-2025-09-22 22:48:21,396 - DEBUG - logging_utils - log_debug - Plugin settings loaded from 'plugins\zelda_ww\config.json'.
-2025-09-22 22:48:21,396 - DEBUG - logging_utils - log_debug -   [LOAD STATE] Loaded Block Idx: 0, String Idx: 38, Cursor Pos: 44
-2025-09-22 22:48:21,396 - DEBUG - logging_utils - log_debug - --> SettingsManager: Loading all font maps from: plugins\zelda_ww\fonts
-2025-09-22 22:48:21,397 - DEBUG - logging_utils - log_debug -   Successfully loaded and parsed font map 'CKingMain.json'. Count: 386
-2025-09-22 22:48:21,397 - DEBUG - logging_utils - log_debug -   Successfully loaded and parsed font map 'CKingMainL.json'. Count: 268
-2025-09-22 22:48:21,400 - DEBUG - logging_utils - log_debug -   Successfully loaded and parsed font map 'CKingMsg.json'. Count: 1830
-2025-09-22 22:48:21,400 - DEBUG - logging_utils - log_debug - Set default font_map to 'CKingMsg.json'.
-2025-09-22 22:48:21,401 - DEBUG - logging_utils - log_debug - Loaded 27 font override entries from 'plugins\zelda_ww\font_map.json'.
-2025-09-22 22:48:21,401 - DEBUG - logging_utils - log_debug - Applied 27 font override entries.
-2025-09-22 22:48:21,401 - DEBUG - logging_utils - log_debug - <-- SettingsManager: load_settings finished
-2025-09-22 22:48:21,401 - DEBUG - logging_utils - log_debug - Updater 'StringSettingsUpdater' initialized.
-2025-09-22 22:48:21,401 - DEBUG - logging_utils - log_debug - UIHandler 'MainWindowUIHandler' initialized.
-2025-09-22 22:48:21,401 - DEBUG - logging_utils - log_debug - PluginHandler 'MainWindowPluginHandler' initialized.
-2025-09-22 22:48:21,401 - DEBUG - logging_utils - log_debug - EventHandler 'MainWindowEventHandler' initialized.
-2025-09-22 22:48:21,401 - DEBUG - logging_utils - log_debug - BlockHandler 'MainWindowBlockHandler' initialized.
-2025-09-22 22:48:21,401 - DEBUG - logging_utils - log_debug - MainWindow: Loading game plugin...
-2025-09-22 22:48:21,401 - DEBUG - logging_utils - log_debug - --> MainWindowPluginHandler: load_game_plugin called.
-2025-09-22 22:48:21,402 - DEBUG - logging_utils - log_debug -     Attempting to load plugin: 'zelda_ww'
-2025-09-22 22:48:21,402 - DEBUG - logging_utils - log_debug -     Importing module: plugins.zelda_ww.rules
-2025-09-22 22:48:21,403 - DEBUG - logging_utils - log_debug -     Successfully loaded and instantiated game rules: GameRules from plugins.zelda_ww.rules
-2025-09-22 22:48:21,403 - DEBUG - logging_utils - log_debug - <-- MainWindowPluginHandler: load_game_plugin finished.
-2025-09-22 22:48:21,403 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Handlers (Pre-UI setup)...
-2025-09-22 22:48:21,403 - DEBUG - logging_utils - log_debug - Handler 'ListSelectionHandler' initialized.
-2025-09-22 22:48:21,403 - DEBUG - logging_utils - log_debug - Handler 'TextOperationHandler' initialized.
-2025-09-22 22:48:21,404 - DEBUG - logging_utils - log_debug - Handler 'AppActionHandler' initialized.
-2025-09-22 22:48:21,404 - DEBUG - logging_utils - log_debug - Handler 'SearchHandler' initialized.
-2025-09-22 22:48:21,404 - DEBUG - logging_utils - log_debug - Handler 'StringSettingsHandler' initialized.
-2025-09-22 22:48:21,404 - DEBUG - logging_utils - log_debug - Handler 'TranslationHandler' initialized.
-2025-09-22 22:48:21,404 - DEBUG - logging_utils - log_debug - Handler 'TextAnalysisHandler' initialized.
-2025-09-22 22:48:21,404 - DEBUG - logging_utils - log_debug - MainWindow: Setting up UI...
-2025-09-22 22:48:21,404 - DEBUG - logging_utils - log_debug - setup_main_window_ui: Starting UI setup.
-2025-09-22 22:48:21,405 - DEBUG - logging_utils - log_debug - CustomListWidget INITIALIZED, parent: <__main__.MainWindow object at 0x0000027BE8CD6330>
-2025-09-22 22:48:21,405 - DEBUG - logging_utils - log_debug - CustomListWidget: Item delegate set to <components.CustomListItemDelegate.CustomListItemDelegate object at 0x0000027BE8CD6D50>
-2025-09-22 22:48:21,410 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
-2025-09-22 22:48:21,410 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-2025-09-22 22:48:21,410 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
-2025-09-22 22:48:21,410 - DEBUG - logging_utils - log_debug - Loaded 2 syntax highlighting rules from game plugin.
-2025-09-22 22:48:21,516 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
-2025-09-22 22:48:21,517 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-2025-09-22 22:48:21,517 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
-2025-09-22 22:48:21,517 - DEBUG - logging_utils - log_debug - Loaded 2 syntax highlighting rules from game plugin.
-2025-09-22 22:48:21,523 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
-2025-09-22 22:48:21,523 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-2025-09-22 22:48:21,523 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
-2025-09-22 22:48:21,524 - DEBUG - logging_utils - log_debug - Loaded 2 syntax highlighting rules from game plugin.
-2025-09-22 22:48:21,532 - DEBUG - logging_utils - log_debug - setup_main_window_ui: UI setup complete.
-2025-09-22 22:48:21,573 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 101 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
-2025-09-22 22:48:21,574 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Handlers and dynamic UI from plugin (Post-UI setup)...
-2025-09-22 22:48:21,574 - DEBUG - logging_utils - log_debug - MainWindow: Connecting Signals...
-2025-09-22 22:48:21,574 - DEBUG - logging_utils - log_debug - --> MainWindowEventHandler: connect_signals() started
-2025-09-22 22:48:21,575 - DEBUG - logging_utils - log_debug - --> MainWindowEventHandler: connect_signals() finished
-2025-09-22 22:48:21,575 - DEBUG - logging_utils - log_debug - MainWindowHelper: restore_state_after_settings_load called.
-2025-09-22 22:48:21,575 - DEBUG - logging_utils - log_debug - Restored window geometry from settings: {'x': 340, 'y': 53, 'width': 1681, 'height': 1277}
-2025-09-22 22:48:21,576 - DEBUG - logging_utils - log_debug - MainWindowHelper: Attempting to load initial file from settings: D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt
-2025-09-22 22:48:21,576 - DEBUG - logging_utils - log_debug - --> AppActionHandler: load_all_data_for_path START. Original: 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt', Manual Edit Path: 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt', InitialLoad: True
-2025-09-22 22:48:21,576 - DEBUG - logging_utils - log_debug - load_text_file: Attempting to load 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt'
-2025-09-22 22:48:21,576 - DEBUG - logging_utils - log_debug - load_text_file: UTF-8 decoding failed for 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt'. Trying UTF-16.
-2025-09-22 22:48:21,577 - DEBUG - logging_utils - log_debug - load_text_file: Successfully loaded 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt' with UTF-16.
-2025-09-22 22:48:21,577 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Starting load_data_from_json_obj. Input type: <class 'str'>
-2025-09-22 22:48:21,577 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: File content (first 200 chars): Now saving...
+2025-09-23 00:07:44,353 - DEBUG - logging_utils - log_debug - ================= Application Start =================
+2025-09-23 00:07:44,363 - DEBUG - logging_utils - log_debug - Applied Light Theme.
+2025-09-23 00:07:44,363 - DEBUG - logging_utils - log_debug - ++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++
+2025-09-23 00:07:44,363 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Core Components...
+2025-09-23 00:07:44,363 - DEBUG - logging_utils - log_debug - --> SettingsManager: load_settings from settings.json
+2025-09-23 00:07:44,364 - DEBUG - logging_utils - log_debug - Global settings loaded.
+2025-09-23 00:07:44,364 - DEBUG - logging_utils - log_debug - Plugin settings loaded from 'plugins\zelda_ww\config.json'.
+2025-09-23 00:07:44,364 - DEBUG - logging_utils - log_debug -   [LOAD STATE] Loaded Block Idx: 0, String Idx: 39, Cursor Pos: 380
+2025-09-23 00:07:44,364 - DEBUG - logging_utils - log_debug - --> SettingsManager: Loading all font maps from: plugins\zelda_ww\fonts
+2025-09-23 00:07:44,365 - DEBUG - logging_utils - log_debug -   Successfully loaded and parsed font map 'CKingMain.json'. Count: 386
+2025-09-23 00:07:44,366 - DEBUG - logging_utils - log_debug -   Successfully loaded and parsed font map 'CKingMainL.json'. Count: 268
+2025-09-23 00:07:44,369 - DEBUG - logging_utils - log_debug -   Successfully loaded and parsed font map 'CKingMsg.json'. Count: 1830
+2025-09-23 00:07:44,369 - DEBUG - logging_utils - log_debug - Set default font_map to 'CKingMsg.json'.
+2025-09-23 00:07:44,369 - DEBUG - logging_utils - log_debug - Loaded 27 font override entries from 'plugins\zelda_ww\font_map.json'.
+2025-09-23 00:07:44,369 - DEBUG - logging_utils - log_debug - Applied 27 font override entries.
+2025-09-23 00:07:44,370 - DEBUG - logging_utils - log_debug - <-- SettingsManager: load_settings finished
+2025-09-23 00:07:44,370 - DEBUG - logging_utils - log_debug - Updater 'StringSettingsUpdater' initialized.
+2025-09-23 00:07:44,370 - DEBUG - logging_utils - log_debug - UIHandler 'MainWindowUIHandler' initialized.
+2025-09-23 00:07:44,370 - DEBUG - logging_utils - log_debug - PluginHandler 'MainWindowPluginHandler' initialized.
+2025-09-23 00:07:44,370 - DEBUG - logging_utils - log_debug - EventHandler 'MainWindowEventHandler' initialized.
+2025-09-23 00:07:44,370 - DEBUG - logging_utils - log_debug - BlockHandler 'MainWindowBlockHandler' initialized.
+2025-09-23 00:07:44,370 - DEBUG - logging_utils - log_debug - MainWindow: Loading game plugin...
+2025-09-23 00:07:44,370 - DEBUG - logging_utils - log_debug - --> MainWindowPluginHandler: load_game_plugin called.
+2025-09-23 00:07:44,371 - DEBUG - logging_utils - log_debug -     Attempting to load plugin: 'zelda_ww'
+2025-09-23 00:07:44,371 - DEBUG - logging_utils - log_debug -     Importing module: plugins.zelda_ww.rules
+2025-09-23 00:07:44,372 - DEBUG - logging_utils - log_debug -     Successfully loaded and instantiated game rules: GameRules from plugins.zelda_ww.rules
+2025-09-23 00:07:44,372 - DEBUG - logging_utils - log_debug - <-- MainWindowPluginHandler: load_game_plugin finished.
+2025-09-23 00:07:44,372 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Handlers (Pre-UI setup)...
+2025-09-23 00:07:44,373 - DEBUG - logging_utils - log_debug - Handler 'ListSelectionHandler' initialized.
+2025-09-23 00:07:44,373 - DEBUG - logging_utils - log_debug - Handler 'TextOperationHandler' initialized.
+2025-09-23 00:07:44,373 - DEBUG - logging_utils - log_debug - Handler 'AppActionHandler' initialized.
+2025-09-23 00:07:44,373 - DEBUG - logging_utils - log_debug - Handler 'SearchHandler' initialized.
+2025-09-23 00:07:44,373 - DEBUG - logging_utils - log_debug - Handler 'StringSettingsHandler' initialized.
+2025-09-23 00:07:44,373 - DEBUG - logging_utils - log_debug - Handler 'TranslationHandler' initialized.
+2025-09-23 00:07:44,373 - DEBUG - logging_utils - log_debug - Handler 'TextAnalysisHandler' initialized.
+2025-09-23 00:07:44,373 - DEBUG - logging_utils - log_debug - MainWindow: Setting up UI...
+2025-09-23 00:07:44,373 - DEBUG - logging_utils - log_debug - setup_main_window_ui: Starting UI setup.
+2025-09-23 00:07:44,374 - DEBUG - logging_utils - log_debug - CustomListWidget INITIALIZED, parent: <__main__.MainWindow object at 0x000001838861A330>
+2025-09-23 00:07:44,374 - DEBUG - logging_utils - log_debug - CustomListWidget: Item delegate set to <components.CustomListItemDelegate.CustomListItemDelegate object at 0x000001838861AD50>
+2025-09-23 00:07:44,379 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
+2025-09-23 00:07:44,380 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+2025-09-23 00:07:44,380 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
+2025-09-23 00:07:44,380 - DEBUG - logging_utils - log_debug - Loaded 2 syntax highlighting rules from game plugin.
+2025-09-23 00:07:44,493 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
+2025-09-23 00:07:44,493 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+2025-09-23 00:07:44,493 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
+2025-09-23 00:07:44,493 - DEBUG - logging_utils - log_debug - Loaded 2 syntax highlighting rules from game plugin.
+2025-09-23 00:07:44,500 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
+2025-09-23 00:07:44,500 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+2025-09-23 00:07:44,500 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
+2025-09-23 00:07:44,500 - DEBUG - logging_utils - log_debug - Loaded 2 syntax highlighting rules from game plugin.
+2025-09-23 00:07:44,507 - DEBUG - logging_utils - log_debug - setup_main_window_ui: UI setup complete.
+2025-09-23 00:07:44,550 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 101 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
+2025-09-23 00:07:44,550 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Handlers and dynamic UI from plugin (Post-UI setup)...
+2025-09-23 00:07:44,551 - DEBUG - logging_utils - log_debug - MainWindow: Connecting Signals...
+2025-09-23 00:07:44,551 - DEBUG - logging_utils - log_debug - --> MainWindowEventHandler: connect_signals() started
+2025-09-23 00:07:44,551 - DEBUG - logging_utils - log_debug - --> MainWindowEventHandler: connect_signals() finished
+2025-09-23 00:07:44,551 - DEBUG - logging_utils - log_debug - MainWindowHelper: restore_state_after_settings_load called.
+2025-09-23 00:07:44,551 - DEBUG - logging_utils - log_debug - Restored window geometry from settings: {'x': 340, 'y': 53, 'width': 1681, 'height': 1277}
+2025-09-23 00:07:44,551 - DEBUG - logging_utils - log_debug - MainWindowHelper: Attempting to load initial file from settings: D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt
+2025-09-23 00:07:44,552 - DEBUG - logging_utils - log_debug - --> AppActionHandler: load_all_data_for_path START. Original: 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt', Manual Edit Path: 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt', InitialLoad: True
+2025-09-23 00:07:44,552 - DEBUG - logging_utils - log_debug - load_text_file: Attempting to load 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt'
+2025-09-23 00:07:44,552 - DEBUG - logging_utils - log_debug - load_text_file: UTF-8 decoding failed for 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt'. Trying UTF-16.
+2025-09-23 00:07:44,553 - DEBUG - logging_utils - log_debug - load_text_file: Successfully loaded 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt' with UTF-16.
+2025-09-23 00:07:44,553 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Starting load_data_from_json_obj. Input type: <class 'str'>
+2025-09-23 00:07:44,553 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: File content (first 200 chars): Now saving...
 Do not touch the Memory Card or
 the POWER Button.
 {END}
@@ -76,16 +76,16 @@ Fairy Island[/C][White]?[/C]
 {END}
 
 Warp to [Red]Tingle Island[/C][Whit
-2025-09-22 22:48:21,578 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Split by '{END}' resulted in 1003 segments.
-2025-09-22 22:48:21,578 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Popping last empty segment. Original last segment: '
+2025-09-23 00:07:44,553 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Split by '{END}' resulted in 1003 segments.
+2025-09-23 00:07:44,553 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Popping last empty segment. Original last segment: '
 '
-2025-09-22 22:48:21,578 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: After processing, 1002 strings remain.
-2025-09-22 22:48:21,578 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Loaded 1002 strings from TXT file into one block named 'Block 0'.
-2025-09-22 22:48:21,578 - DEBUG - logging_utils - log_debug - load_text_file: Attempting to load 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt'
-2025-09-22 22:48:21,579 - DEBUG - logging_utils - log_debug - load_text_file: UTF-8 decoding failed for 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt'. Trying UTF-16.
-2025-09-22 22:48:21,579 - DEBUG - logging_utils - log_debug - load_text_file: Successfully loaded 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt' with UTF-16.
-2025-09-22 22:48:21,579 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Starting load_data_from_json_obj. Input type: <class 'str'>
-2025-09-22 22:48:21,579 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: File content (first 200 chars): Now saving...
+2025-09-23 00:07:44,554 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: After processing, 1002 strings remain.
+2025-09-23 00:07:44,554 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Loaded 1002 strings from TXT file into one block named 'Block 0'.
+2025-09-23 00:07:44,554 - DEBUG - logging_utils - log_debug - load_text_file: Attempting to load 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt'
+2025-09-23 00:07:44,554 - DEBUG - logging_utils - log_debug - load_text_file: UTF-8 decoding failed for 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt'. Trying UTF-16.
+2025-09-23 00:07:44,554 - DEBUG - logging_utils - log_debug - load_text_file: Successfully loaded 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt' with UTF-16.
+2025-09-23 00:07:44,554 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Starting load_data_from_json_obj. Input type: <class 'str'>
+2025-09-23 00:07:44,554 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: File content (first 200 chars): Now saving...
 Do not touch the Memory Card or
 the POWER Button.
 {END}
@@ -98,230 +98,189 @@ Fairy Island[/C][White]?[/C]
 {END}
 
 Warp to [Red]Tingle Island[/C][Whit
-2025-09-22 22:48:21,580 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Split by '{END}' resulted in 1003 segments.
-2025-09-22 22:48:21,580 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Popping last empty segment. Original last segment: '
+2025-09-23 00:07:44,555 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Split by '{END}' resulted in 1003 segments.
+2025-09-23 00:07:44,555 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Popping last empty segment. Original last segment: '
 '
-2025-09-22 22:48:21,580 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: After processing, 1002 strings remain.
-2025-09-22 22:48:21,580 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Loaded 1002 strings from TXT file into one block named 'message_orig.txt'.
-2025-09-22 22:48:21,580 - DEBUG - logging_utils - log_debug - Performing initial silent scan for all issues...
-2025-09-22 22:48:21,694 - DEBUG - logging_utils - log_debug - Initial scan complete. Found problems in 1545 sublines.
-2025-09-22 22:48:21,695 - DEBUG - logging_utils - log_debug - <-- AppActionHandler: load_all_data_for_path FINISHED (Success)
-2025-09-22 22:48:21,695 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Attempting restore with Block Idx: 0, String Idx: 38
-2025-09-22 22:48:21,695 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Block index 0 is valid. Setting current row...
-2025-09-22 22:48:21,695 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Manually calling block_selected for item 'Block 0 (277 EmptyOddL, 16 1Word, 1255 Short)'
-2025-09-22 22:48:21,868 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] String index 38 is valid. Calling string_selected_from_preview...
-2025-09-22 22:48:21,991 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Setting cursor position. Target: 44 (from saved 44, doc len: 250)
-2025-09-22 22:48:21,991 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Cursor position set. Actual final position: 49
-2025-09-22 22:48:21,991 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Setting scollbars. Edited V/H: 0/0, Preview V: 35, Original V/H: 0/0
-2025-09-22 22:48:21,991 - DEBUG - logging_utils - log_debug - MainWindowHelper: Restored selection to block 0, string 38, cursor 44
-2025-09-22 22:48:21,991 - DEBUG - logging_utils - log_debug - MainWindowHelper: Search history loaded into panel. Last query (if any) set in SearchHandler: 
-2025-09-22 22:48:21,991 - DEBUG - logging_utils - log_debug - MainWindowUIHandler: Applying font. General: Family='Segoe UI', Editor: Family='Consolas', Size=13
-2025-09-22 22:48:22,035 - DEBUG - logging_utils - log_debug - ListSelectionHandler.block_selected: current_item is None. Attempting to restore selection to 0.
-2025-09-22 22:48:22,272 - DEBUG - logging_utils - log_debug - Applying text wrap settings: Preview wrap: False, Editors wrap: False
-2025-09-22 22:48:22,274 - DEBUG - logging_utils - log_debug - Rebuilt unsaved_block_indices: set()
-2025-09-22 22:48:22,275 - DEBUG - logging_utils - log_debug - ++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++
-2025-09-22 22:48:22,426 - DEBUG - logging_utils - log_debug - Starting Qt event loop...
-2025-09-22 22:48:22,427 - DEBUG - logging_utils - log_debug - MainWindowUIHandler: Forcing window focus.
-2025-09-22 22:48:31,919 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 101 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
-2025-09-22 22:48:31,920 - DEBUG - logging_utils - log_debug - AIPromptComposer: prepared 15 placeholders before translation.
-2025-09-22 22:48:31,920 - DEBUG - logging_utils - log_debug - AI translate (translation) block=0, string=38, mode=current row
-2025-09-22 22:48:36,902 - DEBUG - logging_utils - log_debug - TranslationHandler: provider response id=None, placeholders=15, expected_lines=7, text='__TAG_0__Ти отримав __TAG_1__Сумку для Приманок__TAG_2____TAG_3__!__TAG_4__  
-__TAG_5__Ти можеш зберігати багато приманки в цій  
-зручній сумці!  
-
-Вона має __T'
-2025-09-22 22:48:36,905 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Unsaved changes status changed to True
-2025-09-22 22:48:38,324 - DEBUG - logging_utils - log_debug - LNETMouseHandlers: showContextMenu for editor: original_text_edit at pos PyQt5.QtCore.QPoint(257, 19)
-2025-09-22 22:48:38,324 - DEBUG - logging_utils - log_debug - LNET (original_text_edit): populateContextMenu called.
-2025-09-22 22:48:38,324 - DEBUG - logging_utils - log_debug - LNETMouseHandlers: Executing menu for original_text_edit.
-2025-09-22 22:48:47,427 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 101 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
-2025-09-22 22:48:49,323 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 101 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
-2025-09-22 22:48:49,324 - DEBUG - logging_utils - log_debug - AIPromptComposer: prepared 15 placeholders before translation.
-2025-09-22 22:48:49,324 - DEBUG - logging_utils - log_debug - AI translate (translation) block=0, string=38, mode=current row
-2025-09-22 22:48:52,957 - DEBUG - logging_utils - log_debug - TranslationHandler: provider response id=None, placeholders=15, expected_lines=7, text='__TAG_0__Ти отримав __TAG_1__Сумку для Жопи__TAG_2____TAG_3__!__TAG_4__  
-__TAG_5__Ти можеш зберігати багато приманки в цій  
-зручній сумці!  
-
-Вона має __TAG_6'
-2025-09-22 22:48:55,615 - DEBUG - logging_utils - log_debug - LNETMouseHandlers: showContextMenu for editor: original_text_edit at pos PyQt5.QtCore.QPoint(271, 7)
-2025-09-22 22:48:55,615 - DEBUG - logging_utils - log_debug - LNET (original_text_edit): populateContextMenu called.
-2025-09-22 22:48:55,615 - DEBUG - logging_utils - log_debug - LNETMouseHandlers: Executing menu for original_text_edit.
-2025-09-22 22:48:59,171 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 101 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
-2025-09-22 22:48:59,975 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 101 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
-2025-09-22 22:48:59,977 - DEBUG - logging_utils - log_debug - AIPromptComposer: prepared 15 placeholders before translation.
-2025-09-22 22:48:59,977 - DEBUG - logging_utils - log_debug - AI translate (translation) block=0, string=38, mode=current row
-2025-09-22 22:49:04,372 - DEBUG - logging_utils - log_debug - TranslationHandler: provider response id=None, placeholders=15, expected_lines=7, text='__TAG_0__Ти отримав __TAG_1__Сумку для Приманок__TAG_2____TAG_3__!__TAG_4__  
-__TAG_5__Ти можеш зберігати багато приманки в цій  
-зручній сумці!  
-
-Вона має __T'
-2025-09-22 22:49:05,445 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 101 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
-2025-09-22 22:49:05,447 - DEBUG - logging_utils - log_debug - AIPromptComposer: prepared 15 placeholders before translation.
-2025-09-22 22:49:32,153 - DEBUG - logging_utils - log_debug - TranslationHandler: provider response id=None, placeholders=15, expected_lines=7, text='```json
+2025-09-23 00:07:44,555 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: After processing, 1002 strings remain.
+2025-09-23 00:07:44,556 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Loaded 1002 strings from TXT file into one block named 'message_orig.txt'.
+2025-09-23 00:07:44,556 - DEBUG - logging_utils - log_debug - Performing initial silent scan for all issues...
+2025-09-23 00:07:44,671 - DEBUG - logging_utils - log_debug - Initial scan complete. Found problems in 1545 sublines.
+2025-09-23 00:07:44,672 - DEBUG - logging_utils - log_debug - <-- AppActionHandler: load_all_data_for_path FINISHED (Success)
+2025-09-23 00:07:44,672 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Attempting restore with Block Idx: 0, String Idx: 39
+2025-09-23 00:07:44,672 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Block index 0 is valid. Setting current row...
+2025-09-23 00:07:44,672 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Manually calling block_selected for item 'Block 0 (277 EmptyOddL, 16 1Word, 1255 Short)'
+2025-09-23 00:07:44,846 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] String index 39 is valid. Calling string_selected_from_preview...
+2025-09-23 00:07:44,969 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Setting cursor position. Target: 380 (from saved 380, doc len: 380)
+2025-09-23 00:07:44,970 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Cursor position set. Actual final position: 380
+2025-09-23 00:07:44,970 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Setting scollbars. Edited V/H: 0/0, Preview V: 35, Original V/H: 0/0
+2025-09-23 00:07:44,970 - DEBUG - logging_utils - log_debug - MainWindowHelper: Restored selection to block 0, string 39, cursor 380
+2025-09-23 00:07:44,971 - DEBUG - logging_utils - log_debug - MainWindowHelper: Search history loaded into panel. Last query (if any) set in SearchHandler: 
+2025-09-23 00:07:44,971 - DEBUG - logging_utils - log_debug - MainWindowUIHandler: Applying font. General: Family='Segoe UI', Editor: Family='Consolas', Size=13
+2025-09-23 00:07:45,013 - DEBUG - logging_utils - log_debug - ListSelectionHandler.block_selected: current_item is None. Attempting to restore selection to 0.
+2025-09-23 00:07:45,253 - DEBUG - logging_utils - log_debug - Applying text wrap settings: Preview wrap: False, Editors wrap: False
+2025-09-23 00:07:45,258 - DEBUG - logging_utils - log_debug - Rebuilt unsaved_block_indices: set()
+2025-09-23 00:07:45,258 - DEBUG - logging_utils - log_debug - ++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++
+2025-09-23 00:07:45,408 - DEBUG - logging_utils - log_debug - Starting Qt event loop...
+2025-09-23 00:07:45,410 - DEBUG - logging_utils - log_debug - MainWindowUIHandler: Forcing window focus.
+2025-09-23 00:07:46,723 - DEBUG - logging_utils - log_debug - <<<<<<<<<< ACTION: Open Settings Dialog Triggered >>>>>>>>>>
+2025-09-23 00:07:46,732 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-09-23 00:07:46,732 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-09-23 00:07:46,733 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-09-23 00:07:46,733 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-09-23 00:07:46,733 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-09-23 00:07:46,733 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-09-23 00:07:46,734 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-09-23 00:07:46,734 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-09-23 00:07:46,734 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-09-23 00:07:46,734 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-09-23 00:07:46,734 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-09-23 00:07:46,734 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-09-23 00:08:00,754 - DEBUG - logging_utils - log_debug - Settings changed without restart. Applying settings.
+2025-09-23 00:08:00,754 - DEBUG - logging_utils - log_debug - Saving all settings...
+2025-09-23 00:08:00,755 - DEBUG - logging_utils - log_debug - Global settings saved.
+2025-09-23 00:08:00,755 - DEBUG - logging_utils - log_debug -   [SAVE STATE TO DICT] Block Idx: 0, String Idx: 39, Cursor Pos: 380
+2025-09-23 00:08:00,756 - DEBUG - logging_utils - log_debug - Plugin settings saved to 'plugins\zelda_ww\config.json'.
+2025-09-23 00:08:00,756 - DEBUG - logging_utils - log_debug - MainWindowUIHandler: Applying font. General: Family='Segoe UI', Editor: Family='Consolas', Size=13
+2025-09-23 00:08:00,807 - DEBUG - logging_utils - log_debug - ListSelectionHandler.block_selected: current_item is None. Attempting to restore selection to 0.
+2025-09-23 00:08:01,050 - DEBUG - logging_utils - log_debug - MainWindowHelper: Reconfiguring all highlighters...
+2025-09-23 00:08:01,050 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
+2025-09-23 00:08:01,050 - DEBUG - logging_utils - log_debug - Loaded 2 syntax highlighting rules from game plugin.
+2025-09-23 00:08:01,139 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
+2025-09-23 00:08:01,139 - DEBUG - logging_utils - log_debug - Loaded 2 syntax highlighting rules from game plugin.
+2025-09-23 00:08:01,141 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
+2025-09-23 00:08:01,141 - DEBUG - logging_utils - log_debug - Loaded 2 syntax highlighting rules from game plugin.
+2025-09-23 00:08:01,144 - DEBUG - logging_utils - log_debug - MainWindowHelper: Highlighter reconfiguration attempt complete.
+2025-09-23 00:08:01,144 - DEBUG - logging_utils - log_debug - Applying text wrap settings: Preview wrap: False, Editors wrap: False
+2025-09-23 00:08:01,144 - DEBUG - logging_utils - log_debug - MainWindowUIHandler: Updating editor rule properties (e.g., width thresholds).
+2025-09-23 00:08:01,144 - DEBUG - logging_utils - log_debug - MainWindowUIHandler: Editor rule properties updated.
+2025-09-23 00:08:03,728 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 101 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
+2025-09-23 00:08:03,765 - DEBUG - logging_utils - log_debug - AIPromptComposer: prepared 24 placeholders before translation.
+2025-09-23 00:08:03,765 - DEBUG - logging_utils - log_debug - AIPromptComposer: prepared 24 placeholders before translation.
+2025-09-23 00:08:03,766 - DEBUG - logging_utils - log_debug - Composed single-string request for AI. System prompt size: 10514, User content size: 1600
+2025-09-23 00:08:08,814 - DEBUG - logging_utils - log_debug - <<<<<<<<<< ACTION: Open Settings Dialog Triggered >>>>>>>>>>
+2025-09-23 00:08:08,820 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-09-23 00:08:08,821 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-09-23 00:08:08,821 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-09-23 00:08:08,821 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-09-23 00:08:08,821 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-09-23 00:08:08,821 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-09-23 00:08:08,821 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-09-23 00:08:08,822 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-09-23 00:08:08,822 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-09-23 00:08:08,822 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-09-23 00:08:08,822 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-09-23 00:08:08,823 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-09-23 00:08:18,398 - DEBUG - logging_utils - log_debug - Settings changed without restart. Applying settings.
+2025-09-23 00:08:18,399 - DEBUG - logging_utils - log_debug - Saving all settings...
+2025-09-23 00:08:18,399 - DEBUG - logging_utils - log_debug - Global settings saved.
+2025-09-23 00:08:18,399 - DEBUG - logging_utils - log_debug -   [SAVE STATE TO DICT] Block Idx: 0, String Idx: 39, Cursor Pos: 380
+2025-09-23 00:08:18,400 - DEBUG - logging_utils - log_debug - Plugin settings saved to 'plugins\zelda_ww\config.json'.
+2025-09-23 00:08:18,400 - DEBUG - logging_utils - log_debug - MainWindowUIHandler: Applying font. General: Family='Segoe UI', Editor: Family='Consolas', Size=13
+2025-09-23 00:08:18,450 - DEBUG - logging_utils - log_debug - ListSelectionHandler.block_selected: current_item is None. Attempting to restore selection to 0.
+2025-09-23 00:08:18,693 - DEBUG - logging_utils - log_debug - MainWindowHelper: Reconfiguring all highlighters...
+2025-09-23 00:08:18,693 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
+2025-09-23 00:08:18,694 - DEBUG - logging_utils - log_debug - Loaded 2 syntax highlighting rules from game plugin.
+2025-09-23 00:08:18,780 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
+2025-09-23 00:08:18,780 - DEBUG - logging_utils - log_debug - Loaded 2 syntax highlighting rules from game plugin.
+2025-09-23 00:08:18,782 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
+2025-09-23 00:08:18,782 - DEBUG - logging_utils - log_debug - Loaded 2 syntax highlighting rules from game plugin.
+2025-09-23 00:08:18,785 - DEBUG - logging_utils - log_debug - MainWindowHelper: Highlighter reconfiguration attempt complete.
+2025-09-23 00:08:18,785 - DEBUG - logging_utils - log_debug - Applying text wrap settings: Preview wrap: False, Editors wrap: False
+2025-09-23 00:08:18,785 - DEBUG - logging_utils - log_debug - MainWindowUIHandler: Updating editor rule properties (e.g., width thresholds).
+2025-09-23 00:08:18,785 - DEBUG - logging_utils - log_debug - MainWindowUIHandler: Editor rule properties updated.
+2025-09-23 00:08:20,059 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 101 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
+2025-09-23 00:08:20,070 - DEBUG - logging_utils - log_debug - AIPromptComposer: prepared 24 placeholders before translation.
+2025-09-23 00:08:20,071 - DEBUG - logging_utils - log_debug - AIPromptComposer: prepared 24 placeholders before translation.
+2025-09-23 00:08:20,071 - DEBUG - logging_utils - log_debug - Composed single-string request for AI. System prompt size: 10514, User content size: 1600
+2025-09-23 00:09:02,604 - DEBUG - logging_utils - log_debug - TranslationHandler: provider response id=None, placeholders=24, expected_lines=10, FULL_TEXT='```json
 [
-    "[ChM1]Ти отримав [Red]Сумку для Приманок[/C][White]![ChM2]\n[02_184]У цій зручній сумці ти можеш зберігати багато приманки!\n\nВона має [/C][Red]'
-2025-09-22 22:49:32,153 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_0__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,154 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_1__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,154 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_2__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,154 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_3__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,154 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_4__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,154 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_5__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,154 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_6__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,154 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_7__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,154 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_8__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,154 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_9__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,154 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_10__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,154 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_11__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,154 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_12__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,154 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_13__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,154 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_14__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,154 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_0__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,154 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_1__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,155 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_2__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,155 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_3__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,155 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_4__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,155 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_5__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,155 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_6__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,155 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_7__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,155 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_8__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,155 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_9__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,155 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_10__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,155 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_11__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,155 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_12__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,155 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_13__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,155 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_14__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,155 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_0__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,155 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_1__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,155 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_2__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,155 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_3__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,155 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_4__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,155 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_5__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,155 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_6__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,155 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_7__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,156 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_8__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,156 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_9__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,156 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_10__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,156 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_11__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,156 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_12__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,156 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_13__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,156 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_14__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,156 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_0__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,156 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_1__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,156 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_2__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,156 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_3__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,156 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_4__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,156 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_5__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,156 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_6__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,156 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_7__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,156 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_8__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,156 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_9__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,156 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_10__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,156 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_11__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,156 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_12__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,156 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_13__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,156 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_14__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,156 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_0__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,156 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_1__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,157 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_2__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,157 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_3__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,157 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_4__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,157 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_5__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,157 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_6__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,157 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_7__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,157 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_8__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,157 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_9__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,157 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_10__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,157 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_11__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,157 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_12__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,157 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_13__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,157 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_14__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,157 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_0__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,157 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_1__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,157 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_2__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,157 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_3__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,157 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_4__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,157 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_5__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,157 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_6__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,157 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_7__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,157 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_8__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,158 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_9__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,158 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_10__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,158 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_11__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,158 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_12__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,158 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_13__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,158 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_14__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,158 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_0__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,158 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_1__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,158 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_2__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,158 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_3__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,158 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_4__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,158 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_5__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,158 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_6__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,158 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_7__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,158 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_8__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,158 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_9__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,158 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_10__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,158 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_11__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,158 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_12__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,159 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_13__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,159 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_14__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,159 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_0__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,159 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_1__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,159 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_2__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,159 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_3__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,159 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_4__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,159 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_5__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,159 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_6__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,159 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_7__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,159 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_8__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,159 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_9__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,159 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_10__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,159 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_11__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,159 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_12__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,159 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_13__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,160 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_14__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,160 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_0__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,160 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_1__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,160 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_2__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,160 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_3__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,160 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_4__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,160 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_5__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,160 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_6__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,160 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_7__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,160 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_8__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,160 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_9__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,160 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_10__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,160 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_11__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,160 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_12__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,160 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_13__' missing in response; leaving value unchanged.
-2025-09-22 22:49:32,160 - DEBUG - logging_utils - log_debug - AIPromptComposer: placeholder '__TAG_14__' missing in response; leaving value unchanged.
-2025-09-22 22:49:42,155 - DEBUG - logging_utils - log_debug - LNETMouseHandlers: showContextMenu for editor: edited_text_edit at pos PyQt5.QtCore.QPoint(38, 139)
-2025-09-22 22:49:42,155 - DEBUG - logging_utils - log_debug - LNET (edited_text_edit): populateContextMenu called.
-2025-09-22 22:49:42,162 - DEBUG - logging_utils - log_debug - LNETMouseHandlers: Executing menu for edited_text_edit.
-2025-09-22 22:49:43,148 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 101 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
-2025-09-22 22:49:46,470 - DEBUG - logging_utils - log_debug - TranslationHandler: provider response id=None, placeholders=0, expected_lines=1, text='```json
+    "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь за допомогою\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, тримаючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__",
+    
+    "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь, використовуючи\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, утримуючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__",
+    
+    "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь, натискаючи\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, тримаючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__",
+    
+    "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь, використовуючи\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, утримуючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__",
+    
+    "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь, натискаючи\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, тримаючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__",
+    
+    "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь, використовуючи\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, утримуючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__",
+    
+    "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь, натискаючи\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, тримаючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__",
+    
+    "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь, використовуючи\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, утримуючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__",
+    
+    "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь, натискаючи\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, тримаючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__"
+]
+```'
+2025-09-23 00:09:02,605 - DEBUG - logging_utils - log_debug - Variation request: Full AI response after cleaning: '[
+    "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь за допомогою\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, тримаючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__",
+    
+    "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь, використовуючи\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, утримуючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__",
+    
+    "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь, натискаючи\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, тримаючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__",
+    
+    "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь, використовуючи\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, утримуючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__",
+    
+    "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь, натискаючи\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, тримаючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__",
+    
+    "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь, використовуючи\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, утримуючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__",
+    
+    "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь, натискаючи\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, тримаючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__",
+    
+    "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь, використовуючи\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, утримуючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__",
+    
+    "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь, натискаючи\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, тримаючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__"
+]'
+2025-09-23 00:09:02,606 - DEBUG - logging_utils - log_debug - Variation request: Parsed variations (with placeholders): ["__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь за допомогою\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, тримаючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__", "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь, використовуючи\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, утримуючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__", "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь, натискаючи\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, тримаючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__", "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь, використовуючи\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, утримуючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__", "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь, натискаючи\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, тримаючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__", "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь, використовуючи\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, утримуючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__", "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь, натискаючи\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, тримаючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__", "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь, використовуючи\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, утримуючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__", "__TAG_0__Ти отримав __TAG_1__Бумеранг__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Встанови його і кинь, натискаючи\n(Y), __TAG_6__(X)__TAG_7__, або __TAG_8__<R>__TAG_9__.\n\nНацілюйся на конкретні об'єкти, тримаючи\nкнопку, яку ти встановив, і націлюючись\nна щось, поки __TAG_10____TAG_11__червоний курсор націлювання__TAG_12____TAG_13__не зміниться на __TAG_14____TAG_15____TAG_16____TAG_17____TAG_18__.\nТи можеш націлюватися на __TAG_19____TAG_20__до п'яти об'єктів __TAG_21____TAG_22__одразу.__TAG_23__"]
+2025-09-23 00:09:02,618 - DEBUG - logging_utils - log_debug - Variation request: Found 9 variations after restoring placeholders.
+2025-09-23 00:09:08,200 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Unsaved changes status changed to True
+2025-09-23 00:09:47,938 - DEBUG - logging_utils - log_debug - LNETMouseHandlers: showContextMenu for editor: edited_text_edit at pos PyQt5.QtCore.QPoint(316, 107)
+2025-09-23 00:09:47,939 - DEBUG - logging_utils - log_debug - LNET (edited_text_edit): populateContextMenu called.
+2025-09-23 00:09:47,939 - DEBUG - logging_utils - log_debug - LNETMouseHandlers: Executing menu for edited_text_edit.
+2025-09-23 00:09:48,947 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 101 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
+2025-09-23 00:09:48,964 - DEBUG - logging_utils - log_debug - Composed single-string request for AI. System prompt size: 10514, User content size: 1044
+2025-09-23 00:10:04,165 - DEBUG - logging_utils - log_debug - TranslationHandler: provider response id=None, placeholders=0, expected_lines=1, FULL_TEXT='```json
 [
-    "в середині",
-    "внутрішньо",
-    "внутрі",
-    "всередині сумки",
-    "всередині цього",
-    "всередині приманки",
-    "всередині відділень",
- '
-2025-09-22 22:49:54,080 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 101 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
-2025-09-22 22:49:54,080 - DEBUG - logging_utils - log_debug - AIPromptComposer: prepared 7 placeholders before translation.
-2025-09-22 22:50:12,181 - DEBUG - logging_utils - log_debug - TranslationHandler: provider response id=None, placeholders=7, expected_lines=3, text='```json
+    "Націлюйся на певні об'єкти, утримуючи кнопку, яку ти встановив, і націлюючись на щось, поки [/C][Red]червоний курсор націлювання[/C][White]не зміниться на [/C][Yellow][flash][/C][White].",
+    "Націлюйся на вибрані об'єкти, утримуючи кнопку, яку ти встановив, і націлюючись на щось, поки [/C][Red]червоний курсор націлювання[/C][White]не зміниться на [/C][Yellow][flash][/C][White].",
+    "Націлюйся на конкретні цілі, утримуючи кнопку, яку ти встановив, і націлюючись на щось, поки [/C][Red]червоний курсор націлювання[/C][White]не зміниться на [/C][Yellow][flash][/C][White].",
+    "Націлюйся на обрані об'єкти, утримуючи кнопку, яку ти встановив, і націлюючись на щось, поки [/C][Red]червоний курсор націлювання[/C][White]не зміниться на [/C][Yellow][flash][/C][White].",
+    "Націлюйся на конкретні предмети, утримуючи кнопку, яку ти встановив, і націлюючись на щось, поки [/C][Red]червоний курсор націлювання[/C][White]не зміниться на [/C][Yellow][flash][/C][White].",
+    "Націлюйся на визначені об'єкти, утримуючи кнопку, яку ти встановив, і націлюючись на щось, поки [/C][Red]червоний курсор націлювання[/C][White]не зміниться на [/C][Yellow][flash][/C][White].",
+    "Націлюйся на конкретні цілі, тримаючи кнопку, яку ти встановив, і націлюючись на щось, поки [/C][Red]червоний курсор націлювання[/C][White]не зміниться на [/C][Yellow][flash][/C][White].",
+    "Націлюйся на певні предмети, утримуючи кнопку, яку ти встановив, і націлюючись на щось, поки [/C][Red]червоний курсор націлювання[/C][White]не зміниться на [/C][Yellow][flash][/C][White].",
+    "Націлюйся на конкретні об'єкти, тримаючи кнопку, яку ти встановив, і націлюючись на щось, поки [/C][Red]червоний курсор націлювання[/C][White]не зміниться на [/C][Yellow][flash][/C][White].",
+    "Націлюйся на вибрані цілі, утримуючи кнопку, яку ти встановив, і націлюючись на щось, поки [/C][Red]червоний курсор націлювання[/C][White]не зміниться на [/C][Yellow][flash][/C][White]."
+]
+```'
+2025-09-23 00:10:24,032 - DEBUG - logging_utils - log_debug - LNETMouseHandlers: showContextMenu for editor: edited_text_edit at pos PyQt5.QtCore.QPoint(36, 110)
+2025-09-23 00:10:24,032 - DEBUG - logging_utils - log_debug - LNET (edited_text_edit): populateContextMenu called.
+2025-09-23 00:10:24,032 - DEBUG - logging_utils - log_debug - LNETMouseHandlers: Executing menu for edited_text_edit.
+2025-09-23 00:10:24,930 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 101 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
+2025-09-23 00:10:24,946 - DEBUG - logging_utils - log_debug - Composed single-string request for AI. System prompt size: 10514, User content size: 875
+2025-09-23 00:10:29,216 - DEBUG - logging_utils - log_debug - TranslationHandler: provider response id=None, placeholders=0, expected_lines=1, FULL_TEXT='```json
 [
-    "__TAG_0__Ти отримав __TAG_1__Вбрання Героя__TAG_2____TAG_3__!__TAG_4__\n__TAG_5__Виглядає так, ніби воно трохи\nтепле для цієї погоди...__TAG_6__'
-2025-09-22 22:50:34,387 - DEBUG - logging_utils - log_debug - --> MainWindowEventHandler: closeEvent received.
-2025-09-22 22:50:34,387 - DEBUG - logging_utils - log_debug - MainWindowHelper: prepare_to_close called.
-2025-09-22 22:50:34,388 - DEBUG - logging_utils - log_debug -   [SAVE STATE] Block Idx: 0, String Idx: 43
-2025-09-22 22:50:34,388 - DEBUG - logging_utils - log_debug -   [SAVE STATE] Cursor Pos: 130, Scroll V/H: 0/0
-2025-09-22 22:50:34,388 - DEBUG - logging_utils - log_debug - MainWindowHelper: Updated search_history_to_save: 0 items
-2025-09-22 22:50:34,388 - DEBUG - logging_utils - log_debug - --> AppActionHandler: handle_close_event called.
-2025-09-22 22:50:35,630 - DEBUG - logging_utils - log_debug - <-- AppActionHandler: handle_close_event finished.
-2025-09-22 22:50:35,630 - DEBUG - logging_utils - log_debug - Close accepted. Settings save skipped due to unsaved changes (handled by dialog) or restart in progress.
-2025-09-22 22:50:35,631 - DEBUG - logging_utils - log_debug - <-- MainWindowEventHandler: closeEvent finished.
-2025-09-22 22:50:35,641 - DEBUG - logging_utils - log_debug - Qt event loop finished with exit code: 0
-2025-09-22 22:50:35,641 - DEBUG - logging_utils - log_debug - ================= Application End =================
+    "і націлюючись на щось",
+    "і націлюючись на певний об'єкт",
+    "і націлюючись на якийсь предмет",
+    "і націлюючись на конкретну ціль",
+    "і націлюючись на об'єкт",
+    "і націлюючись на щось конкретне",
+    "і націлюючись на вибраний об'єкт",
+    "і націлюючись на щось особливе",
+    "і націлюючись на ціль",
+    "і націлюючись на щось визначене"
+]
+```'
+2025-09-23 00:10:36,572 - DEBUG - logging_utils - log_debug - --> MainWindowEventHandler: closeEvent received.
+2025-09-23 00:10:36,572 - DEBUG - logging_utils - log_debug - MainWindowHelper: prepare_to_close called.
+2025-09-23 00:10:36,572 - DEBUG - logging_utils - log_debug -   [SAVE STATE] Block Idx: 0, String Idx: 39
+2025-09-23 00:10:36,572 - DEBUG - logging_utils - log_debug -   [SAVE STATE] Cursor Pos: 230, Scroll V/H: 0/0
+2025-09-23 00:10:36,572 - DEBUG - logging_utils - log_debug - MainWindowHelper: Updated search_history_to_save: 0 items
+2025-09-23 00:10:36,572 - DEBUG - logging_utils - log_debug - --> AppActionHandler: handle_close_event called.
+2025-09-23 00:10:37,820 - DEBUG - logging_utils - log_debug - <-- AppActionHandler: handle_close_event finished.
+2025-09-23 00:10:37,820 - DEBUG - logging_utils - log_debug - Close accepted. Settings save skipped due to unsaved changes (handled by dialog) or restart in progress.
+2025-09-23 00:10:37,821 - DEBUG - logging_utils - log_debug - <-- MainWindowEventHandler: closeEvent finished.
+2025-09-23 00:10:37,837 - DEBUG - logging_utils - log_debug - Qt event loop finished with exit code: 0
+2025-09-23 00:10:37,838 - DEBUG - logging_utils - log_debug - ================= Application End =================

@@ -3,19 +3,20 @@ import json
 import re
 from typing import Dict, List, Optional, Tuple
 
-from PyQt5.QtWidgets import QMessageBox, QProgressDialog, QApplication
+from PyQt5.QtWidgets import QMessageBox, QApplication
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QTextCursor
 
 from .base_translation_handler import BaseTranslationHandler
 from components.translation_variations_dialog import TranslationVariationsDialog
 from components.session_bootstrap_dialog import SessionBootstrapDialog
+from components.ai_status_dialog import AIStatusDialog
 from utils.utils import convert_spaces_to_dots_for_display
 
 class TranslationUIHandler(BaseTranslationHandler):
     def __init__(self, main_handler):
         super().__init__(main_handler)
-        self._progress_dialog: Optional[QProgressDialog] = None
+        self._status_dialog: Optional[AIStatusDialog] = None
 
     def show_variations_dialog(self, variations: List[str]) -> Optional[str]:
         self.update_status_message("AI: choose one of the suggested options", persistent=False)
@@ -126,27 +127,21 @@ class TranslationUIHandler(BaseTranslationHandler):
     def clear_status_message(self) -> None:
         if self.mw.statusBar: self.mw.statusBar.clearMessage()
     
-    def show_progress_indicator(self, message: str) -> None:
-        if self._progress_dialog is None:
-            self._progress_dialog = QProgressDialog(self.mw)
-            self._progress_dialog.setWindowTitle("AI Translation")
-            self._progress_dialog.setModal(True)
-            self._progress_dialog.setCancelButton(None)
-            self._progress_dialog.setRange(0, 0)
-        self._progress_dialog.setLabelText(message)
-        self._progress_dialog.setValue(0)
-        self._progress_dialog.show()
+    def start_ai_operation(self, title: str):
+        if self._status_dialog is None:
+            self._status_dialog = AIStatusDialog(self.mw)
+        self._status_dialog.start(title)
         QApplication.processEvents()
 
-    def update_progress_message(self, message: str) -> None:
-        if self._progress_dialog:
-            self._progress_dialog.setLabelText(message)
+    def update_ai_operation_step(self, step_index: int, text: str, status: int):
+        if self._status_dialog:
+            self._status_dialog.update_step(step_index, text, status)
             QApplication.processEvents()
 
-    def hide_progress_indicator(self) -> None:
-        if self._progress_dialog:
-            self._progress_dialog.hide()
-    
+    def finish_ai_operation(self):
+        if self._status_dialog:
+            self._status_dialog.finish()
+
     def merge_session_instructions(self, instructions: str, message: str) -> str:
         instructions_clean = (instructions or '').strip()
         return f"{instructions_clean}\n\n{message}" if instructions_clean and message else instructions_clean or message

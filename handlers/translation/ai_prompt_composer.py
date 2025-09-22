@@ -134,7 +134,7 @@ class AIPromptComposer(BaseTranslationHandler):
         json_payload_for_ai = {
             "strings_to_translate": payload_strings,
             "placeholder_map": {
-                k: v for k, v in full_placeholder_map.items() if v['type'] == 'glossary'
+                k: v for k, v in full_placeholder_map.items()
             }
         }
         
@@ -185,6 +185,8 @@ class AIPromptComposer(BaseTranslationHandler):
         ]
         user_content = "\n\n".join(user_sections)
 
+        log_debug(f"Composed batch request for AI. System prompt size: {len(combined_system)}, User content size: {len(user_content)}")
+        log_debug(f"Full JSON payload sent to AI:\n{json.dumps(json_payload_for_ai, indent=2, ensure_ascii=False)}")
         return combined_system, user_content, full_placeholder_map
     
     def compose_messages(
@@ -282,4 +284,5 @@ class AIPromptComposer(BaseTranslationHandler):
 
 
         user_content = "\n\n".join([section for section in user_sections if section])
+        log_debug(f"Composed single-string request for AI. System prompt size: {len(combined_system)}, User content size: {len(user_content)}")
         return combined_system, user_content

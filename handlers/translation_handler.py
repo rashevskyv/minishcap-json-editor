@@ -129,10 +129,13 @@ class TranslationHandler(BaseHandler):
         
         max_retries = 4
         last_error = "No response from AI."
+        operation_title = f"AI Translation (Lines {start_line + 1}-{end_line + 1})" if start_line != end_line else f"AI Translation (Line {start_line + 1})"
+        
+        self.ui_handler.start_ai_operation(operation_title)
 
         for attempt in range(1, max_retries + 1):
             is_retry = attempt > 1
-            self.ui_handler.show_progress_indicator(f"AI Translation: Preparing request (Attempt {attempt}/{max_retries})...")
+            self.ui_handler.update_ai_operation_step(0, self.ui_handler._status_dialog.steps[0], self.ui_handler._status_dialog.STATUS_IN_PROGRESS)
 
             combined_system, user_content, placeholder_map = self.prompt_composer.compose_batch_request(
                 system_prompt, glossary, source_items,
@@ -142,7 +145,8 @@ class TranslationHandler(BaseHandler):
                 retry_reason=last_error
             )
             
-            self.ui_handler.update_progress_message(f"AI Translation: Sending request (Attempt {attempt}/{max_retries})...")
+            step_text = f"Надсилання до ШІ... (спроба {attempt}/{max_retries})"
+            self.ui_handler.update_ai_operation_step(1, step_text, self.ui_handler._status_dialog.STATUS_IN_PROGRESS)
             response = self._send_provider_request(
                 provider, combined_system, user_content,
                 request_label=f"batch translation (attempt {attempt})",
@@ -151,10 +155,10 @@ class TranslationHandler(BaseHandler):
             )
 
             if response is None:
-                self.ui_handler.hide_progress_indicator()
+                self.ui_handler.finish_ai_operation()
                 return
             
-            self.ui_handler.update_progress_message(f"AI Translation: Validating response (Attempt {attempt}/{max_retries})...")
+            self.ui_handler.update_ai_operation_step(3, self.ui_handler._status_dialog.steps[3], self.ui_handler._status_dialog.STATUS_IN_PROGRESS)
             cleaned_text = self._clean_model_output(response)
             
             try:
@@ -173,7 +177,7 @@ class TranslationHandler(BaseHandler):
                     if not isinstance(item, dict) or "id" not in item or "translation" not in item:
                         raise ValueError("An item in 'translated_strings' has incorrect structure.")
 
-                self.ui_handler.update_progress_message("AI Translation: Applying changes...")
+                self.ui_handler.update_ai_operation_step(4, self.ui_handler._status_dialog.steps[4], self.ui_handler._status_dialog.STATUS_IN_PROGRESS)
                 
                 for item in translated_strings:
                     string_idx = item["id"]
@@ -187,7 +191,7 @@ class TranslationHandler(BaseHandler):
 
                     self.data_processor.update_edited_data(block_idx, string_idx, final_text)
 
-                self.ui_handler.hide_progress_indicator()
+                self.ui_handler.finish_ai_operation()
                 self.ui_updater.populate_strings_for_block(block_idx)
                 self.ui_updater.update_text_views()
                 if hasattr(self.mw, 'app_action_handler'):
@@ -200,11 +204,12 @@ class TranslationHandler(BaseHandler):
                 last_error = f"Validation failed: {e}. Raw response: {cleaned_text[:100]}..."
                 log_debug(f"Attempt {attempt} failed. Reason: {last_error}")
                 if attempt == max_retries:
-                    self.ui_handler.hide_progress_indicator()
+                    self.ui_handler.update_ai_operation_step(3, "Validation Failed", self.ui_handler._status_dialog.STATUS_ERROR)
+                    QTimer.singleShot(2000, self.ui_handler.finish_ai_operation)
                     QMessageBox.critical(self.mw, "AI Translation Failed", f"Failed to get a valid response from the AI after {max_retries} attempts.\n\nLast error: {last_error}")
                     return
         
-        self.ui_handler.hide_progress_indicator()
+        self.ui_handler.finish_ai_operation()
 
     def translate_selected_lines(self):
         selection = self.glossary_handler._resolve_selection_from_original()
@@ -320,7 +325,6 @@ class TranslationHandler(BaseHandler):
         )
 
         if not variations:
-            QMessageBox.information(self.mw, "AI Translation", "Failed to obtain translation variations.")
             self.ui_handler.clear_status_message()
             return
 
@@ -369,6 +373,9 @@ class TranslationHandler(BaseHandler):
 
         system_prompt, glossary = self.glossary_handler.load_prompts()
         if not system_prompt: return
+        
+        self.ui_handler.start_ai_operation("AI Translation")
+        self.ui_handler.update_ai_operation_step(0, self.ui_handler._status_dialog.steps[0], self.ui_handler._status_dialog.STATUS_IN_PROGRESS)
 
         glossary_entries = self._glossary_manager.get_entries_sorted_by_length()
         prepared_source_text, placeholder_map = self.prompt_composer.prepare_text_for_translation(source_text, glossary_entries)
@@ -379,32 +386,31 @@ class TranslationHandler(BaseHandler):
             mode_description=mode_description, request_type=request_type,
             current_translation=current_translation, placeholder_tokens=list(placeholder_map.keys()),
         )
-
-        log_debug(f"AI translate ({request_type}) block={block_idx}, string={string_idx}, mode={mode_description}")
         
-        try:
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-            response = self._send_provider_request(
-                provider, combined_system, user_content,
-                request_label=f"{mode_description}: request",
-                placeholder_count=len(placeholder_map), expected_lines=expected_lines,
-            )
-            if response is None:
-                self.ui_handler.clear_status_message()
-                return
-        finally:
-            QApplication.restoreOverrideCursor()
+        self.ui_handler.update_ai_operation_step(1, self.ui_handler._status_dialog.steps[1], self.ui_handler._status_dialog.STATUS_IN_PROGRESS)
+        response = self._send_provider_request(
+            provider, combined_system, user_content,
+            request_label=f"{mode_description}: request",
+            placeholder_count=len(placeholder_map), expected_lines=expected_lines,
+        )
+        if response is None:
+            self.ui_handler.finish_ai_operation()
+            return
 
+        self.ui_handler.update_ai_operation_step(3, self.ui_handler._status_dialog.steps[3], self.ui_handler._status_dialog.STATUS_IN_PROGRESS)
         cleaned_translation = self._clean_model_output(response)
         restored_translation = self.prompt_composer.restore_placeholders(cleaned_translation, placeholder_map)
         restored_translation_trimmed = self._trim_trailing_whitespace_from_lines(restored_translation)
         
         if not self.ui_handler.confirm_line_count(expected_lines, restored_translation_trimmed, strict=False, mode_label=mode_description):
+            self.ui_handler.finish_ai_operation()
             return
 
+        self.ui_handler.update_ai_operation_step(4, self.ui_handler._status_dialog.steps[4], self.ui_handler._status_dialog.STATUS_IN_PROGRESS)
         normalized_translation = self.ui_handler.normalize_line_count(restored_translation_trimmed, expected_lines, mode_description)
         self.ui_handler.apply_full_translation(normalized_translation)
         
+        self.ui_handler.finish_ai_operation()
         if self.mw.statusBar:
             self.mw.statusBar.showMessage("AI translation applied.", 4000)
 
@@ -416,41 +422,50 @@ class TranslationHandler(BaseHandler):
 
         system_prompt, glossary = self.glossary_handler.load_prompts()
         if not system_prompt: return []
-
-        glossary_entries = self._glossary_manager.get_entries_sorted_by_length()
-        prepared_source_text, placeholder_map = self.prompt_composer.prepare_text_for_translation(source_text, glossary_entries)
         
+        self.ui_handler.start_ai_operation("AI Variation")
+        self.ui_handler.update_ai_operation_step(0, self.ui_handler._status_dialog.steps[0], self.ui_handler._status_dialog.STATUS_IN_PROGRESS)
+
+        source_text_prepared, placeholder_map = self.prompt_composer.prepare_text_for_translation(source_text, [])
+        current_translation_prepared, _ = self.prompt_composer.prepare_text_for_translation(current_translation, [])
+
         combined_system, user_content = self.prompt_composer.compose_messages(
-            system_prompt, glossary, prepared_source_text,
+            system_prompt, glossary, source_text_prepared,
             block_idx=self.mw.current_block_idx, string_idx=self.mw.current_string_idx,
             expected_lines=expected_lines, mode_description="translation variations",
-            request_type="variation_list", current_translation=current_translation,
-            placeholder_tokens=list(placeholder_map.keys()),
+            request_type="variation_list", current_translation=current_translation_prepared,
+            placeholder_tokens=list(placeholder_map.keys())
         )
 
-        try:
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-            response = self._send_provider_request(
-                provider, combined_system, user_content,
-                request_label="variation generation", placeholder_count=len(placeholder_map),
-                expected_lines=expected_lines,
-            )
-            if response is None:
-                self.ui_handler.clear_status_message()
-                return []
-        finally:
-            QApplication.restoreOverrideCursor()
+        self.ui_handler.update_ai_operation_step(1, self.ui_handler._status_dialog.steps[1], self.ui_handler._status_dialog.STATUS_IN_PROGRESS)
+        response = self._send_provider_request(
+            provider, combined_system, user_content,
+            request_label="variation generation", placeholder_count=len(placeholder_map),
+            expected_lines=expected_lines,
+        )
+        if response is None:
+            self.ui_handler.finish_ai_operation()
+            return []
 
+        self.ui_handler.update_ai_operation_step(3, self.ui_handler._status_dialog.steps[3], self.ui_handler._status_dialog.STATUS_IN_PROGRESS)
         cleaned = self._clean_model_output(response)
-        variants_raw = self.ui_handler.parse_variation_payload(cleaned)
         
+        log_debug(f"Variation request: Full AI response after cleaning: '{cleaned}'")
+        variants_raw = self.ui_handler.parse_variation_payload(cleaned)
+        log_debug(f"Variation request: Parsed variations (with placeholders): {variants_raw}")
+        
+        self.ui_handler.finish_ai_operation()
+
         if not variants_raw:
-            log_debug(f"TranslationHandler: AI returned no valid variations. Response: {cleaned[:self._MAX_LOG_EXCERPT]}")
+            log_debug("TranslationHandler: AI returned no valid variations.")
+            QMessageBox.information(self.mw, "AI Variation", "Failed to parse variations from AI response.")
             return []
 
         restored_variants = [self.prompt_composer.restore_placeholders(v, placeholder_map) for v in variants_raw]
         trimmed_variants = [self._trim_trailing_whitespace_from_lines(v) for v in restored_variants]
-        return [v for v in trimmed_variants if len(v.split('\n')) == expected_lines]
+        
+        log_debug(f"Variation request: Found {len(trimmed_variants)} variations after restoring placeholders.")
+        return trimmed_variants
 
     def _request_inline_variation_candidates(self, *, full_text_context: str, selected_text_to_vary: str) -> List[str]:
         provider = self._prepare_provider()
@@ -458,6 +473,9 @@ class TranslationHandler(BaseHandler):
 
         system_prompt, glossary = self.glossary_handler.load_prompts()
         if not system_prompt: return []
+        
+        self.ui_handler.start_ai_operation("AI Variation (Inline)")
+        self.ui_handler.update_ai_operation_step(0, self.ui_handler._status_dialog.steps[0], self.ui_handler._status_dialog.STATUS_IN_PROGRESS)
         
         combined_system, user_content = self.prompt_composer.compose_messages(
             system_prompt, glossary, full_text_context,
@@ -468,20 +486,20 @@ class TranslationHandler(BaseHandler):
             selected_text_to_vary=selected_text_to_vary
         )
 
-        try:
-            QApplication.setOverrideCursor(Qt.WaitCursor)
-            response = self._send_provider_request(
-                provider, combined_system, user_content,
-                request_label="inline variation generation", placeholder_count=0,
-                expected_lines=1
-            )
-            if response is None:
-                self.ui_handler.clear_status_message()
-                return []
-        finally:
-            QApplication.restoreOverrideCursor()
-
+        self.ui_handler.update_ai_operation_step(1, self.ui_handler._status_dialog.steps[1], self.ui_handler._status_dialog.STATUS_IN_PROGRESS)
+        response = self._send_provider_request(
+            provider, combined_system, user_content,
+            request_label="inline variation generation", placeholder_count=0,
+            expected_lines=1
+        )
+        if response is None:
+            self.ui_handler.finish_ai_operation()
+            return []
+        
+        self.ui_handler.update_ai_operation_step(3, self.ui_handler._status_dialog.steps[3], self.ui_handler._status_dialog.STATUS_IN_PROGRESS)
         cleaned = self._clean_model_output(response)
+        self.ui_handler.finish_ai_operation()
+        
         return self.ui_handler.parse_variation_payload(cleaned)
 
     def _prepare_provider(self):
@@ -513,8 +531,8 @@ class TranslationHandler(BaseHandler):
             return None
 
     def _log_provider_response(self, response: ProviderResponse, placeholder_count: int, expected_lines: int) -> None:
-        text_excerpt = (response.text or '')[: self._MAX_LOG_EXCERPT]
-        log_debug(f"TranslationHandler: provider response id={getattr(response, 'message_id', None)}, placeholders={placeholder_count}, expected_lines={expected_lines}, text='{text_excerpt}'")
+        full_text = response.text or ''
+        log_debug(f"TranslationHandler: provider response id={getattr(response, 'message_id', None)}, placeholders={placeholder_count}, expected_lines={expected_lines}, FULL_TEXT='{full_text}'")
 
     def _send_provider_request(
         self, provider, combined_system: str, user_content: str, *,
@@ -526,9 +544,8 @@ class TranslationHandler(BaseHandler):
         messages, session_payload, state = session_prep
 
         try:
+            self.ui_handler.update_ai_operation_step(2, self.ui_handler._status_dialog.steps[2], self.ui_handler._status_dialog.STATUS_IN_PROGRESS)
             response = provider.translate(messages, session=session_payload)
-
-            self.ui_handler.update_status_message("AI: response received, processing...")
             
             if isinstance(response, ProviderResponse):
                 self._log_provider_response(response, placeholder_count, expected_lines)
@@ -540,6 +557,8 @@ class TranslationHandler(BaseHandler):
             return response
         except TranslationProviderError as e:
             QMessageBox.critical(self.mw, "AI Translation Error", str(e))
+            self.ui_handler.update_ai_operation_step(1, "Помилка мережі", self.ui_handler._status_dialog.STATUS_ERROR)
+            QTimer.singleShot(2000, self.ui_handler.finish_ai_operation)
             return None
     
     def _prepare_session_and_messages(self, combined_system, user_content):
