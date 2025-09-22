@@ -246,7 +246,7 @@ class GlossaryDialog(QDialog):
             
             entry = item.data(Qt.UserRole)
             if isinstance(entry, GlossaryEntry) and entry.original.strip() == term_to_find:
-                self._entry_table.selectRow(row)
+                self._entry_table.setCurrentCell(row, 0)
                 self._entry_table.scrollToItem(item, QTableWidget.ScrollHint.PositionAtCenter)
                 self._show_entry_for_row(row)
                 return
