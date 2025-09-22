@@ -226,7 +226,29 @@ class LineNumberedTextEdit(QPlainTextEdit):
         btn.clicked.connect(on_button_clicked)
         
         return btn
+    
+    def _get_selected_line_range(self) -> Optional[Tuple[int, int]]:
+        cursor = self.textCursor()
+        if not cursor.hasSelection():
+            return None
+
+        start_pos = cursor.selectionStart()
+        end_pos = cursor.selectionEnd()
+
+        start_block = self.document().findBlock(start_pos)
+        end_block = self.document().findBlock(end_pos)
+
+        start_line = start_block.blockNumber()
+        end_line = end_block.blockNumber()
         
+        if end_pos > start_pos and end_pos == end_block.position() and start_block.blockNumber() != end_block.blockNumber():
+            end_line -= 1
+        
+        if end_line < start_line:
+            end_line = start_line
+            
+        return start_line, end_line
+
     def populateContextMenu(self, menu: QMenu, position_in_widget_coords):
         log_debug(f"LNET ({self.objectName()}): populateContextMenu called.")
         main_window = self.window()
@@ -325,56 +347,35 @@ class LineNumberedTextEdit(QPlainTextEdit):
                 menu.addAction(color_widget_action)
         
         if self.objectName() == "preview_text_edit":
+            if not custom_actions_added: menu.addSeparator(); custom_actions_added = True
+            
             translator = getattr(main_window, 'translation_handler', None)
+            selection_range = self._get_selected_line_range()
+            
             if translator:
-                cursor = self.textCursor()
-                has_selection = cursor.hasSelection()
-                if not custom_actions_added:
+                if selection_range:
+                    start, end = selection_range
+                    action_text = f"AI Translate Lines {start + 1}-{end + 1} (UA)" if start != end else f"AI Translate Line {start + 1} (UA)"
+                else:
+                    cursor = self.cursorForPosition(position_in_widget_coords)
+                    line_num = cursor.blockNumber()
+                    action_text = f"AI Translate Line {line_num + 1} (UA)"
+                
+                translate_action = menu.addAction(action_text)
+                translate_action.triggered.connect(lambda: translator.translate_preview_selection(position_in_widget_coords))
+            
+            glossary_action = menu.addAction("Add Selected Lines to Glossary")
+            glossary_action.setEnabled(selection_range is not None)
+            if translator: glossary_action.triggered.connect(translator.append_selection_to_glossary)
+
+            if selection_range:
+                start, end = selection_range
+                if start != end:
                     menu.addSeparator()
-                    custom_actions_added = True
-                translate_action = menu.addAction("AI Translate Selected Lines (UA)")
-                translate_action.setEnabled(has_selection)
-                translate_action.triggered.connect(translator.translate_preview_selection)
-                glossary_action = menu.addAction("Add Selected Lines to Glossary")
-                glossary_action.setEnabled(has_selection)
-                glossary_action.triggered.connect(translator.append_selection_to_glossary)
-
-            cursor = self.textCursor()
-            if cursor.hasSelection():
-                start_pos = cursor.selectionStart()
-                end_pos = cursor.selectionEnd()
-
-                start_block = self.document().findBlock(start_pos)
-                end_block = self.document().findBlock(end_pos)
-
-
-                if (
-                    start_block.blockNumber() != end_block.blockNumber()
-                    or (end_pos > start_pos and end_pos == end_block.position())
-                ):
-                    start_line = start_block.blockNumber()
-                    end_line = end_block.blockNumber()
-
-                    if end_pos == end_block.position() and end_pos > start_pos:
-                        end_line -= 1
-
-                    if end_line >= start_line:
-                        if not custom_actions_added:
-                            menu.addSeparator()
-                            custom_actions_added = True
-                        set_font_action = menu.addAction(
-                            f"Set Font for Lines {start_line + 1}-{end_line + 1}..."
-                        )
-                        set_font_action.triggered.connect(
-                            lambda start=start_line, end=end_line: self.handle_mass_set_font(start, end)
-                        )
-
-                        set_width_action = menu.addAction(
-                            f"Set Width for Lines {start_line + 1}-{end_line + 1}..."
-                        )
-                        set_width_action.triggered.connect(
-                            lambda start=start_line, end=end_line: self.handle_mass_set_width(start, end)
-                        )
+                    set_font_action = menu.addAction(f"Set Font for Lines {start + 1}-{end + 1}...")
+                    set_font_action.triggered.connect(self.handle_mass_set_font)
+                    set_width_action = menu.addAction(f"Set Width for Lines {start + 1}-{end + 1}...")
+                    set_width_action.triggered.connect(self.handle_mass_set_width)
 
     def _update_auxiliary_widths(self):
         current_font_metrics = self.fontMetrics()
@@ -561,7 +562,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
         pos_in_block = cursor.positionInBlock()
         block_text = block.text()
         
-        # Find all icon occurrences in the line
         all_matches = []
         for token in sequences:
             start = -1
@@ -572,9 +572,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
         
         if not all_matches: return False
 
-        # Check if cursor is inside or adjacent to any icon
         for start, end, token in all_matches:
-            # Inside
             if start < pos_in_block < end:
                 new_pos = end if move_right else start
                 new_cursor = QTextCursor(block)
@@ -582,14 +580,12 @@ class LineNumberedTextEdit(QPlainTextEdit):
                 self.setTextCursor(new_cursor)
                 self._momentary_highlight_tag(block, start, len(token))
                 return True
-            # At left boundary, moving right
             elif move_right and pos_in_block == start:
                 new_cursor = QTextCursor(block)
                 new_cursor.setPosition(block.position() + end)
                 self.setTextCursor(new_cursor)
                 self._momentary_highlight_tag(block, start, len(token))
                 return True
-            # At right boundary, moving left
             elif not move_right and pos_in_block == end:
                 new_cursor = QTextCursor(block)
                 new_cursor.setPosition(block.position() + start)
@@ -692,14 +688,22 @@ class LineNumberedTextEdit(QPlainTextEdit):
     def hasProblemHighlight(self, line_number = None) -> bool:
         return self.hasProblemHighlight(line_number)
 
-    def handle_mass_set_font(self, start_line, end_line):
+    def handle_mass_set_font(self):
+        selection_range = self._get_selected_line_range()
+        if not selection_range: return
+        start_line, end_line = selection_range
+
         main_window = self.window()
         dialog = MassFontDialog(main_window)
         if dialog.exec_():
             font_file = dialog.get_selected_font()
             main_window.string_settings_handler.apply_font_to_range(start_line, end_line, font_file)
 
-    def handle_mass_set_width(self, start_line, end_line):
+    def handle_mass_set_width(self):
+        selection_range = self._get_selected_line_range()
+        if not selection_range: return
+        start_line, end_line = selection_range
+
         main_window = self.window()
         dialog = MassWidthDialog(main_window)
         if dialog.exec_():

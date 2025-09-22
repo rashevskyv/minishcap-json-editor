@@ -1,5 +1,4 @@
 # --- START OF FILE handlers/translation/glossary_handler.py ---
-
 import json
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
@@ -177,6 +176,7 @@ class GlossaryHandler(BaseTranslationHandler):
                     self.glossary_manager.save_to_disk()
                     self.main_handler._cached_glossary = self.glossary_manager.get_raw_text()
                     self._update_glossary_highlighting()
+                    self.main_handler.reset_translation_session()
             return
             
         if is_new:
@@ -187,6 +187,7 @@ class GlossaryHandler(BaseTranslationHandler):
         self.glossary_manager.save_to_disk()
         self.main_handler._cached_glossary = self.glossary_manager.get_raw_text()
         self._update_glossary_highlighting()
+        self.main_handler.reset_translation_session()
 
     def _create_edit_dialog(self, term: str, entry: Optional[GlossaryEntry], context: Optional[str]) -> QDialog:
         return _EditEntryDialog(self.mw, term, entry, context)
@@ -312,7 +313,7 @@ class GlossaryHandler(BaseTranslationHandler):
             data_source = getattr(self.mw, 'data', [])
             occurrence_map = self.glossary_manager.build_occurrence_index(data_source)
             entries = sorted(self.glossary_manager.get_entries(), key=lambda entry: entry.original.lower())
-            self.main_handler._session_manager.reset()
+            self.main_handler.reset_translation_session()
             self._update_glossary_highlighting()
             self.main_handler._cached_glossary = self.glossary_manager.get_raw_text()
             if self.mw.statusBar: self.mw.statusBar.showMessage(f"Glossary updated: {original}", 4000)
@@ -324,7 +325,7 @@ class GlossaryHandler(BaseTranslationHandler):
             data_source = getattr(self.mw, 'data', [])
             occurrence_map = self.glossary_manager.build_occurrence_index(data_source)
             entries = sorted(self.glossary_manager.get_entries(), key=lambda entry: entry.original.lower())
-            self.main_handler._session_manager.reset()
+            self.main_handler.reset_translation_session()
             self._update_glossary_highlighting()
             self.main_handler._cached_glossary = self.glossary_manager.get_raw_text()
             if self.mw.statusBar: self.mw.statusBar.showMessage(f"Glossary deleted: {original}", 4000)

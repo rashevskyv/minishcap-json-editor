@@ -1,10 +1,9 @@
 # --- START OF FILE handlers/translation/translation_ui_handler.py ---
-
 import json
 import re
 from typing import Dict, List, Optional, Tuple
 
-from PyQt5.QtWidgets import QMessageBox, QProgressDialog
+from PyQt5.QtWidgets import QMessageBox, QProgressDialog, QApplication
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QTextCursor
 
@@ -137,9 +136,16 @@ class TranslationUIHandler(BaseTranslationHandler):
         self._progress_dialog.setLabelText(message)
         self._progress_dialog.setValue(0)
         self._progress_dialog.show()
+        QApplication.processEvents()
+
+    def update_progress_message(self, message: str) -> None:
+        if self._progress_dialog:
+            self._progress_dialog.setLabelText(message)
+            QApplication.processEvents()
 
     def hide_progress_indicator(self) -> None:
-        if self._progress_dialog: self._progress_dialog.hide()
+        if self._progress_dialog:
+            self._progress_dialog.hide()
     
     def merge_session_instructions(self, instructions: str, message: str) -> str:
         instructions_clean = (instructions or '').strip()

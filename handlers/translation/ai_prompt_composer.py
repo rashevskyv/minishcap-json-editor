@@ -1,6 +1,5 @@
 # --- START OF FILE handlers/translation/ai_prompt_composer.py ---
-
-# handlers/translation/ai_prompt_composer.py
+import json
 import re
 from typing import Dict, List, Optional, Sequence, Tuple
 
@@ -109,6 +108,84 @@ class AIPromptComposer(BaseTranslationHandler):
                 continue
             restored = restored.replace(placeholder, replacement)
         return restored
+    
+    def compose_batch_request(
+        self,
+        system_prompt: str,
+        glossary_text: str,
+        source_items: List[Dict],
+        *,
+        block_idx: Optional[int],
+        mode_description: str,
+        is_retry: bool = False,
+        retry_reason: str = ""
+    ) -> Tuple[str, str, Dict]:
+        payload_strings = []
+        full_placeholder_map = {}
+        glossary_entries = self.main_handler._glossary_manager.get_entries_sorted_by_length()
+
+        for item in source_items:
+            prepared_text, placeholder_map = self.prepare_text_for_translation(
+                item["text"], glossary_entries
+            )
+            payload_strings.append({"id": item["id"], "text": prepared_text})
+            full_placeholder_map.update(placeholder_map)
+
+        json_payload_for_ai = {
+            "strings_to_translate": payload_strings,
+            "placeholder_map": {
+                k: v for k, v in full_placeholder_map.items() if v['type'] == 'glossary'
+            }
+        }
+        
+        if not is_retry:
+            instructions = [
+                "Translate the `text` field for each object in the `strings_to_translate` array into Ukrainian.",
+                "Return a single, valid JSON object with a `translated_strings` key.",
+                "The value of `translated_strings` must be an array of objects.",
+                "Each object in the returned array must have the original `id` (integer) and a `translation` (string) field.",
+                "The number of objects in the `translated_strings` array must exactly match the number of objects in the input `strings_to_translate` array.",
+                "Preserve all placeholder tokens (e.g., __TAG_0__, __GLOSS_1__) and their positions in the translated text.",
+                "Do not add any explanations or text outside the JSON object."
+            ]
+        else:
+            instructions = [
+                "Your previous response was invalid. Please correct it.",
+                f"Error: {retry_reason}",
+                "Follow these instructions carefully:",
+                "Translate the `text` field for each object in the `strings_to_translate` array into Ukrainian.",
+                "Return a single, valid JSON object with a `translated_strings` key.",
+                "The value of `translated_strings` must be an array of objects.",
+                "Each object must have the original `id` and a `translation` field.",
+                "The number of objects must match the input.",
+                "Preserve all placeholder tokens.",
+                "Do not add any explanations or text outside the JSON object."
+            ]
+
+        combined_system = system_prompt.strip()
+        if glossary_text:
+            combined_system = (
+                f"{combined_system}\n\n"
+                f"GLOSSARY (use with absolute priority):\n{glossary_text.strip()}"
+            )
+        
+        game_name = self.mw.current_game_rules.get_display_name() if self.mw.current_game_rules else "Unknown game"
+        context_lines = [
+            f"Game: {game_name}",
+            f"Mode: {mode_description}"
+        ]
+        if block_idx is not None:
+            block_label = self.mw.block_names.get(str(block_idx), f"Block {block_idx}")
+            context_lines.append(f"Block: {block_label} (#{block_idx})")
+
+        user_sections = [
+            "\n".join(context_lines),
+            "INSTRUCTIONS:\n" + "\n".join(f"- {i}" for i in instructions),
+            "JSON DATA TO PROCESS:\n" + json.dumps(json_payload_for_ai, indent=2, ensure_ascii=False)
+        ]
+        user_content = "\n\n".join(user_sections)
+
+        return combined_system, user_content, full_placeholder_map
     
     def compose_messages(
         self,
