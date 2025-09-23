@@ -189,6 +189,31 @@ class AIPromptComposer(BaseTranslationHandler):
         log_debug(f"Full JSON payload sent to AI:\n{json.dumps(json_payload_for_ai, indent=2, ensure_ascii=False)}")
         return combined_system, user_content, full_placeholder_map
     
+    def compose_variation_request(
+        self,
+        system_prompt: str,
+        glossary_text: str,
+        source_text: str,
+        *,
+        block_idx: Optional[int],
+        string_idx: Optional[int],
+        expected_lines: int,
+        current_translation: str,
+        request_type: str,
+        placeholder_map: dict
+    ) -> Tuple[str, str, Dict]:
+        
+        current_translation_prepared, _ = self.prepare_text_for_translation(str(current_translation), [])
+
+        combined_system, user_content = self.compose_messages(
+            system_prompt, glossary_text, source_text,
+            block_idx=block_idx, string_idx=string_idx, expected_lines=expected_lines,
+            mode_description="translation variations", request_type=request_type,
+            current_translation=current_translation_prepared,
+            placeholder_tokens=list(placeholder_map.keys())
+        )
+        return combined_system, user_content, placeholder_map
+
     def compose_messages(
         self,
         system_prompt: str,
@@ -222,29 +247,13 @@ class AIPromptComposer(BaseTranslationHandler):
         if mode_description:
             context_lines.append(f"Mode: {mode_description}")
 
-        if request_type == "variation":
-            instructions = [
-                "Create an alternative Ukrainian translation based on the original text.",
-                f"Keep exactly {expected_lines} lines (including empty ones) and preserve their order.",
-                "Preserve all tags, placeholders, spaces, and punctuation in their original positions.",
-                "Follow the glossary terminology and the game's style.",
-                "The variation must differ from the current translation while staying semantically accurate.",
-                "Do not add comments or meta text; return only the translation.",
-            ]
-        elif request_type == "variation_list":
+        if request_type == "variation_list":
             instructions = [
                 "Generate 10 different Ukrainian translation alternatives for the provided text.",
                 f"Each option must contain exactly {expected_lines} lines (including empty ones) in the same order.",
                 "Preserve all tags, placeholders, markup, spaces, and punctuation in their original positions.",
                 "Follow the glossary and the tone of the original text.",
                 "Return the response as a JSON array with 10 strings and no additional commentary.",
-            ]
-        elif request_type == "inline_variation":
-            instructions = [
-                "Generate 10 different Ukrainian alternatives for the specified text segment.",
-                "The full text is provided for context. Only modify the segment.",
-                "Preserve all tags, placeholders, spaces, and punctuation within the segment.",
-                "Return the response as a JSON array of 10 strings, where each string is just the translated segment.",
             ]
         else:
             instructions = [
@@ -268,21 +277,14 @@ class AIPromptComposer(BaseTranslationHandler):
             )
 
         user_sections = ["\n".join(context_lines), "\n".join(instructions)]
-        if request_type in {"variation", "variation_list"} and current_translation:
+        if request_type in {"variation_list"} and current_translation:
             user_sections.append("Current translation:")
             user_sections.append(str(current_translation))
         
-        if request_type == "inline_variation":
-            user_sections.append("Full text (for context):")
-            user_sections.append(source_text)
-            if selected_text_to_vary:
-                user_sections.append("Segment to vary:")
-                user_sections.append(selected_text_to_vary)
-        else:
-            user_sections.append("Original text:")
-            user_sections.append(source_text)
+        user_sections.append("Original text:")
+        user_sections.append(source_text)
 
 
         user_content = "\n\n".join([section for section in user_sections if section])
-        log_debug(f"Composed single-string request for AI. System prompt size: {len(combined_system)}, User content size: {len(user_content)}")
+        log_debug(f"Composed single-string/variation request for AI. System prompt size: {len(combined_system)}, User content size: {len(user_content)}")
         return combined_system, user_content

@@ -18,6 +18,12 @@ class TranslationUIHandler(BaseTranslationHandler):
         super().__init__(main_handler)
         self._status_dialog: Optional[AIStatusDialog] = None
 
+    @property
+    def status_dialog(self) -> AIStatusDialog:
+        if self._status_dialog is None:
+            self._status_dialog = AIStatusDialog(self.mw)
+        return self._status_dialog
+
     def show_variations_dialog(self, variations: List[str]) -> Optional[str]:
         self.update_status_message("AI: choose one of the suggested options", persistent=False)
         dialog = TranslationVariationsDialog(self.mw, variations)
@@ -128,19 +134,15 @@ class TranslationUIHandler(BaseTranslationHandler):
         if self.mw.statusBar: self.mw.statusBar.clearMessage()
     
     def start_ai_operation(self, title: str):
-        if self._status_dialog is None:
-            self._status_dialog = AIStatusDialog(self.mw)
-        self._status_dialog.start(title)
+        self.status_dialog.start(title)
         QApplication.processEvents()
 
     def update_ai_operation_step(self, step_index: int, text: str, status: int):
-        if self._status_dialog:
-            self._status_dialog.update_step(step_index, text, status)
-            QApplication.processEvents()
+        self.status_dialog.update_step(step_index, text, status)
+        QApplication.processEvents()
 
     def finish_ai_operation(self):
-        if self._status_dialog:
-            self._status_dialog.finish()
+        self.status_dialog.finish()
 
     def merge_session_instructions(self, instructions: str, message: str) -> str:
         instructions_clean = (instructions or '').strip()

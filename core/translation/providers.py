@@ -26,8 +26,7 @@ class BaseTranslationProvider:
     def __init__(self, settings: Dict[str, Any]) -> None:
         self.settings = settings
 
-    def translate(self, messages: List[Dict[str, str]], session: Optional[dict] = None) -> ProviderResponse:
-        """Translate text using the provider's API."""
+    def translate(self, messages: List[Dict[str, str]], session: Optional[dict] = None, settings_override: Optional[Dict[str, Any]] = None) -> ProviderResponse:
         raise NotImplementedError
 
 class OpenAIChatProvider(BaseTranslationProvider):
@@ -42,25 +41,30 @@ class OpenAIChatProvider(BaseTranslationProvider):
         if not self.model:
             raise TranslationProviderError("OpenAI model is not set.")
 
-    def translate(self, messages: List[Dict[str, str]], session: Optional[dict] = None) -> ProviderResponse:
+    def translate(self, messages: List[Dict[str, str]], session: Optional[dict] = None, settings_override: Optional[Dict[str, Any]] = None) -> ProviderResponse:
         endpoint = f"{self.base_url}/chat/completions"
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
-        extra_headers = self.settings.get('extra_headers')
+        
+        current_settings = self.settings.copy()
+        if settings_override:
+            current_settings.update(settings_override)
+
+        extra_headers = current_settings.get('extra_headers')
         if isinstance(extra_headers, dict):
             headers.update(extra_headers)
 
         body: Dict[str, Any] = {"model": self.model, "messages": messages}
-        if isinstance(self.settings.get('temperature'), (float, int)):
-            body['temperature'] = self.settings['temperature']
-        if isinstance(self.settings.get('max_output_tokens'), int) and self.settings['max_output_tokens'] > 0:
-            body['max_tokens'] = self.settings['max_output_tokens']
+        if isinstance(current_settings.get('temperature'), (float, int)):
+            body['temperature'] = current_settings['temperature']
+        if isinstance(current_settings.get('max_output_tokens'), int) and current_settings['max_output_tokens'] > 0:
+            body['max_tokens'] = current_settings['max_output_tokens']
         
         timeout = 60
-        if isinstance(self.settings.get('timeout'), int) and self.settings['timeout'] > 0:
-            timeout = self.settings['timeout']
+        if isinstance(current_settings.get('timeout'), int) and current_settings['timeout'] > 0:
+            timeout = current_settings['timeout']
 
         try:
             response = requests.post(endpoint, headers=headers, json=body, timeout=timeout)
@@ -82,10 +86,15 @@ class OllamaChatProvider(BaseTranslationProvider):
         if not self.model:
             raise TranslationProviderError("Ollama model is not set.")
 
-    def translate(self, messages: List[Dict[str, str]], session: Optional[dict] = None) -> ProviderResponse:
+    def translate(self, messages: List[Dict[str, str]], session: Optional[dict] = None, settings_override: Optional[Dict[str, Any]] = None) -> ProviderResponse:
         endpoint = f"{self.base_url}/api/chat"
         headers = {"Content-Type": "application/json"}
-        extra_headers = self.settings.get('extra_headers')
+
+        current_settings = self.settings.copy()
+        if settings_override:
+            current_settings.update(settings_override)
+
+        extra_headers = current_settings.get('extra_headers')
         if isinstance(extra_headers, dict):
             headers.update(extra_headers)
         
@@ -97,17 +106,17 @@ class OllamaChatProvider(BaseTranslationProvider):
             body['system'] = system_prompt
         
         options: Dict[str, Any] = {}
-        if isinstance(self.settings.get('temperature'), (float, int)):
-            options['temperature'] = self.settings['temperature']
+        if isinstance(current_settings.get('temperature'), (float, int)):
+            options['temperature'] = current_settings['temperature']
         if options:
             body['options'] = options
         
-        if self.settings.get('keep_alive'):
-            body['keep_alive'] = self.settings['keep_alive']
+        if current_settings.get('keep_alive'):
+            body['keep_alive'] = current_settings['keep_alive']
 
         timeout = 120
-        if isinstance(self.settings.get('timeout'), int) and self.settings['timeout'] > 0:
-            timeout = self.settings['timeout']
+        if isinstance(current_settings.get('timeout'), int) and current_settings['timeout'] > 0:
+            timeout = current_settings['timeout']
 
         try:
             response = requests.post(endpoint, headers=headers, json=body, timeout=timeout)
@@ -125,7 +134,7 @@ class ChatMockProvider(OpenAIChatProvider):
     supports_sessions = True
 
 class DeepLProvider(BaseTranslationProvider):
-    def translate(self, messages: list, session: Optional[dict] = None) -> ProviderResponse:
+    def translate(self, messages: list, session: Optional[dict] = None, settings_override: Optional[Dict[str, Any]] = None) -> ProviderResponse:
         raise NotImplementedError("DeepL provider is not yet implemented.")
 
 class GeminiProvider(BaseTranslationProvider):
@@ -141,9 +150,13 @@ class GeminiProvider(BaseTranslationProvider):
         if not self.model:
             raise TranslationProviderError("Gemini model is not set.")
 
-    def translate(self, messages: List[Dict[str, str]], session: Optional[dict] = None) -> ProviderResponse:
+    def translate(self, messages: List[Dict[str, str]], session: Optional[dict] = None, settings_override: Optional[Dict[str, Any]] = None) -> ProviderResponse:
         endpoint = f"{self.BASE_URL}/{self.model}:generateContent?key={self.api_key}"
         headers = {"Content-Type": "application/json"}
+
+        current_settings = self.settings.copy()
+        if settings_override:
+            current_settings.update(settings_override)
 
         system_prompt = next((m['content'] for m in messages if m['role'] == 'system'), "")
         user_prompt = next((m['content'] for m in messages if m['role'] == 'user'), "")
@@ -154,14 +167,14 @@ class GeminiProvider(BaseTranslationProvider):
         body: Dict[str, Any] = {"contents": contents}
         
         generation_config = {}
-        if isinstance(self.settings.get('temperature'), (float, int)):
-            generation_config['temperature'] = self.settings['temperature']
+        if isinstance(current_settings.get('temperature'), (float, int)):
+            generation_config['temperature'] = current_settings['temperature']
         if generation_config:
             body['generationConfig'] = generation_config
 
         timeout = 120
-        if isinstance(self.settings.get('timeout'), int) and self.settings['timeout'] > 0:
-            timeout = self.settings['timeout']
+        if isinstance(current_settings.get('timeout'), int) and current_settings['timeout'] > 0:
+            timeout = current_settings['timeout']
 
         try:
             response = requests.post(endpoint, headers=headers, json=body, timeout=timeout)

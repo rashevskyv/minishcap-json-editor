@@ -43,6 +43,7 @@ class _EditEntryDialog(QDialog):
         term: str,
         entry: Optional[GlossaryEntry] = None,
         context: Optional[str] = None,
+        ai_assist_callback: Optional[Callable[[], None]] = None,
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle("Edit Glossary Entry")
@@ -54,8 +55,17 @@ class _EditEntryDialog(QDialog):
         form_layout.addWidget(QLabel(f"<b>Term:</b> {term}"))
         if context:
             form_layout.addWidget(QLabel(f"<b>Context:</b> <i>{context}</i>"))
-
-        form_layout.addWidget(QLabel("Translation:"))
+        
+        translation_layout = QHBoxLayout()
+        translation_layout.addWidget(QLabel("Translation:"))
+        translation_layout.addStretch(1)
+        self._ai_button = QPushButton("AI Fill", self)
+        self._ai_button.setVisible(ai_assist_callback is not None)
+        if ai_assist_callback:
+            self._ai_button.clicked.connect(ai_assist_callback)
+        translation_layout.addWidget(self._ai_button)
+        form_layout.addLayout(translation_layout)
+        
         self._translation_edit = QLineEdit(self)
         self._translation_edit.installEventFilter(_ReturnToAcceptFilter(self))
         form_layout.addWidget(self._translation_edit)
@@ -74,6 +84,10 @@ class _EditEntryDialog(QDialog):
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
+        
+    def set_values(self, translation: str, notes: str) -> None:
+        self._translation_edit.setText(translation)
+        self._notes_edit.setPlainText(notes)
 
     def get_values(self) -> Tuple[str, str]:
         return (
@@ -159,10 +173,6 @@ class GlossaryHandler(BaseTranslationHandler):
         self.edit_glossary_entry(term, is_new=True, context=context)
 
     def edit_glossary_entry(self, term: str, is_new: bool = False, context: Optional[str] = None) -> None:
-        provider = self.main_handler._prepare_provider()
-        if not provider:
-            return
-        
         entry = self.glossary_manager.get_entry(term) if not is_new else None
         
         dialog = self._create_edit_dialog(term, entry, context)
@@ -189,8 +199,30 @@ class GlossaryHandler(BaseTranslationHandler):
         self._update_glossary_highlighting()
         self.main_handler.reset_translation_session()
 
-    def _create_edit_dialog(self, term: str, entry: Optional[GlossaryEntry], context: Optional[str]) -> QDialog:
-        return _EditEntryDialog(self.mw, term, entry, context)
+    def _create_edit_dialog(self, term: str, entry: Optional[GlossaryEntry], context: Optional[str]) -> _EditEntryDialog:
+        dialog = _EditEntryDialog(
+            self.mw, term, entry, context,
+            ai_assist_callback=lambda: self._ai_fill_glossary_entry(term, context, dialog)
+        )
+        return dialog
+        
+    def _ai_fill_glossary_entry(self, term: str, context: Optional[str], dialog: _EditEntryDialog) -> None:
+        provider = self.main_handler._prepare_provider()
+        if not provider: return
+
+        template, _ = self._get_glossary_prompt_template()
+        if not template: return
+
+        game_name = self.mw.current_game_rules.get_display_name() if self.mw.current_game_rules else "this game"
+        system_prompt = template.replace("{{GAME_NAME}}", game_name)
+
+        user_content_parts = [f'Term: "{term}"']
+        if context: user_content_parts.append(f'Context line: "{context}"')
+        user_content = "\n".join(user_content_parts)
+
+        context_dict = {'type': 'fill_glossary', 'dialog': dialog}
+        self.main_handler.ui_handler.start_ai_operation("AI Glossary Fill")
+        self.main_handler._run_ai_task(provider, system_prompt, user_content, context_dict)
 
     def load_prompts(self) -> Tuple[Optional[str], Optional[str]]:
         main_h = self.main_handler
@@ -246,6 +278,26 @@ class GlossaryHandler(BaseTranslationHandler):
         editor = getattr(self.mw, 'original_text_edit', None)
         if editor and hasattr(editor, 'set_glossary_manager'):
             editor.set_glossary_manager(manager)
+            
+    def _get_glossary_prompt_template(self) -> Tuple[str, Path]:
+        plugin_name = getattr(self.mw, 'active_game_plugin', None)
+        if (self._cached_glossary_prompt_template and self._cached_glossary_prompt_plugin == plugin_name):
+            return self._cached_glossary_prompt_template, self._current_glossary_path
+        
+        plugin_dir = Path('plugins', plugin_name, 'translation_prompts') if plugin_name else None
+        fallback_dir = Path('translation_prompts')
+
+        prompt_path = next((p for p in [plugin_dir / 'glossary_prompt.md' if plugin_dir else None, fallback_dir / 'glossary_prompt.md'] if p and p.exists()), None)
+        template = _DEFAULT_GLOSSARY_PROMPT
+        if prompt_path:
+            try:
+                template = prompt_path.read_text('utf-8')
+            except Exception as e:
+                log_debug(f"Glossary prompt template read error: {e}")
+
+        self._cached_glossary_prompt_template = template
+        self._cached_glossary_prompt_plugin = plugin_name
+        return template, self._current_glossary_path
 
     def _get_original_string(self, block_idx: int, string_idx: int) -> Optional[str]:
         return self.data_processor._get_string_from_source(block_idx, string_idx, getattr(self.mw, 'data', None), 'original_for_translation')

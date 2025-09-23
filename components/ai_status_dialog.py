@@ -1,47 +1,8 @@
 # --- START OF FILE components/ai_status_dialog.py ---
 import os
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QHBoxLayout, QWidget
-from PyQt5.QtGui import QMovie, QFont, QPalette, QPainter, QColor, QPen
-from PyQt5.QtCore import Qt, QSize, QTimer
-
-class AnimatedIcon(QWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.angle = 0
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.update_animation)
-        self.setFixedSize(48, 48)
-
-    def start(self):
-        self.angle = 0
-        self.timer.start(30)
-
-    def stop(self):
-        self.timer.stop()
-
-    def update_animation(self):
-        self.angle = (self.angle + 10) % 360
-        self.update()
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-        
-        center = self.rect().center()
-        radius = min(self.width(), self.height()) / 2 - 4
-        
-        painter.translate(center)
-        painter.rotate(self.angle)
-        
-        pen = QPen(self.palette().color(QPalette.Highlight), 4)
-        pen.setCapStyle(Qt.RoundCap)
-        painter.setPen(pen)
-        
-        painter.drawArc(int(-radius), int(-radius), int(radius * 2), int(radius * 2), 0 * 16, 90 * 16)
-        
-        pen.setColor(self.palette().color(QPalette.Highlight).lighter(120))
-        painter.setPen(pen)
-        painter.drawArc(int(-radius), int(-radius), int(radius * 2), int(radius * 2), 180 * 16, 90 * 16)
+from PyQt5.QtGui import QMovie, QFont, QPalette
+from PyQt5.QtCore import Qt, QSize
 
 class AIStatusDialog(QDialog):
     STATUS_PENDING = 0
@@ -51,18 +12,18 @@ class AIStatusDialog(QDialog):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("AI Operation in Progress")
+        self.setWindowTitle("AI Operation")
         self.setModal(True)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self.setMinimumWidth(450)
         self.setSizeGripEnabled(False)
 
         self.steps = [
-            "Підготовка запиту...",
-            "Надсилання до ШІ...",
-            "Очікування відповіді...",
-            "Перевірка результату...",
-            "Застосування змін..."
+            "Preparing request...",
+            "Sending to AI...",
+            "Waiting for response...",
+            "Validating result...",
+            "Applying changes..."
         ]
         self.step_labels: list[QLabel] = []
 
@@ -93,22 +54,31 @@ class AIStatusDialog(QDialog):
 
         animation_layout = QHBoxLayout()
         animation_layout.addStretch(1)
-        self.animation_widget = AnimatedIcon(self)
-        animation_layout.addWidget(self.animation_widget)
+        self.animation_label = QLabel(self)
+        self.movie = QMovie("resources/icons/loading.gif")
+        self.movie.setScaledSize(QSize(48, 48))
+        self.animation_label.setMovie(self.movie)
+        animation_layout.addWidget(self.animation_label)
         animation_layout.addStretch(1)
         
         main_layout.addLayout(animation_layout)
         main_layout.addStretch(1)
 
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.movie.start()
+
+    def hideEvent(self, event):
+        self.movie.stop()
+        super().hideEvent(event)
+
     def start(self, title: str):
         self.title_label.setText(title)
         for i, label in enumerate(self.step_labels):
             self._update_label_style(label, self.STATUS_PENDING, self.steps[i])
-        self.animation_widget.start()
         self.show()
 
     def finish(self):
-        self.animation_widget.stop()
         self.hide()
 
     def update_step(self, step_index: int, text: str, status: int):

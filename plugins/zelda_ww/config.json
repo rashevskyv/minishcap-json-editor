@@ -27,6 +27,11 @@
     "last_original_text_edit_scroll_value_h": 0,
     "search_history": [],
     "autofix_enabled": {
+        "PKFR_WIDTH_EXCEEDED": true,
+        "PKFR_SHORT_LINE": true,
+        "PKFR_EMPTY_SUBLINE": true,
+        "PKFR_SINGLE_WORD_SUBLINE": false,
+        "PKFR_TAG_WARNING": false,
         "ZWW_TAG_WARNING": false,
         "ZWW_WIDTH_EXCEEDED": true,
         "ZWW_EMPTY_ODD_SUBLINE_LOGICAL": true,
@@ -35,6 +40,11 @@
         "ZWW_SHORT_LINE": true
     },
     "detection_enabled": {
+        "PKFR_WIDTH_EXCEEDED": true,
+        "PKFR_SHORT_LINE": true,
+        "PKFR_EMPTY_SUBLINE": true,
+        "PKFR_SINGLE_WORD_SUBLINE": true,
+        "PKFR_TAG_WARNING": true,
         "ZWW_TAG_WARNING": true,
         "ZWW_WIDTH_EXCEEDED": true,
         "ZWW_EMPTY_ODD_SUBLINE_LOGICAL": true,
