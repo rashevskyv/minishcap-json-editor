@@ -364,10 +364,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
                 translate_action = menu.addAction(action_text)
                 translate_action.triggered.connect(lambda: translator.translate_preview_selection(position_in_widget_coords))
             
-            glossary_action = menu.addAction("Add Selected Lines to Glossary")
-            glossary_action.setEnabled(selection_range is not None)
-            if translator: glossary_action.triggered.connect(translator.append_selection_to_glossary)
-
             if selection_range:
                 start, end = selection_range
                 if start != end:
