@@ -1,10 +1,11 @@
-# --- START OF FILE components/ai_status_dialog.py ---
+# components/ai_status_dialog.py ---
 import os
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QHBoxLayout, QWidget, QProgressBar
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QHBoxLayout, QWidget, QProgressBar, QDialogButtonBox
 from PyQt5.QtGui import QMovie, QFont, QPalette
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import Qt, QSize, pyqtSignal, QEvent
 
 class AIStatusDialog(QDialog):
+    cancelled = pyqtSignal()
     STATUS_PENDING = 0
     STATUS_IN_PROGRESS = 1
     STATUS_DONE = 2
@@ -13,7 +14,7 @@ class AIStatusDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("AI Operation")
-        self.setModal(True)
+        self.setModal(False)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         self.setMinimumWidth(450)
         self.setSizeGripEnabled(False)
@@ -70,7 +71,20 @@ class AIStatusDialog(QDialog):
         self.progress_bar.setFormat('%v / %m chunks')
         self.progress_bar.setVisible(False)
         main_layout.addWidget(self.progress_bar)
-        main_layout.addStretch(1)
+
+        self.button_box = QDialogButtonBox(self)
+        self.cancel_button = self.button_box.addButton("Cancel", QDialogButtonBox.RejectRole)
+        main_layout.addWidget(self.button_box)
+
+        self.button_box.rejected.connect(self.on_cancel)
+
+    def on_cancel(self):
+        self.cancelled.emit()
+        self.reject()
+
+    def closeEvent(self, event: QEvent):
+        self.cancelled.emit()
+        super().closeEvent(event)
 
     def setup_progress_bar(self, total_chunks: int, completed_chunks: int = 0):
         self.progress_bar.setRange(0, total_chunks)
@@ -88,10 +102,19 @@ class AIStatusDialog(QDialog):
         self.movie.stop()
         super().hideEvent(event)
 
-    def start(self, title: str):
+    def start(self, title: str, is_chunked: bool = False):
         self.title_label.setText(title)
         for i, label in enumerate(self.step_labels):
             self._update_label_style(label, self.STATUS_PENDING, self.steps[i])
+
+        if is_chunked:
+            self.progress_bar.setVisible(False)
+        else:
+            self.progress_bar.setRange(0, 0)
+            self.progress_bar.setValue(0)
+            self.progress_bar.setFormat("Processing...")
+            self.progress_bar.setVisible(True)
+
         self.show()
 
     def finish(self):
