@@ -1,4 +1,4 @@
-# --- START OF FILE core/translation/providers.py ---
+# core/translation/providers.py ---
 
 import json
 from dataclasses import dataclass
@@ -41,6 +41,14 @@ class OpenAIChatProvider(BaseTranslationProvider):
         if not self.model:
             raise TranslationProviderError("OpenAI model is not set.")
 
+    def _prepare_body(self, messages: List[Dict[str, str]], current_settings: Dict[str, Any]) -> Dict[str, Any]:
+        body: Dict[str, Any] = {"model": self.model, "messages": messages}
+        if isinstance(current_settings.get('temperature'), (float, int)):
+            body['temperature'] = current_settings['temperature']
+        if isinstance(current_settings.get('max_output_tokens'), int) and current_settings['max_output_tokens'] > 0:
+            body['max_tokens'] = current_settings['max_output_tokens']
+        return body
+
     def translate(self, messages: List[Dict[str, str]], session: Optional[dict] = None, settings_override: Optional[Dict[str, Any]] = None) -> ProviderResponse:
         endpoint = f"{self.base_url}/chat/completions"
         headers = {
@@ -56,11 +64,7 @@ class OpenAIChatProvider(BaseTranslationProvider):
         if isinstance(extra_headers, dict):
             headers.update(extra_headers)
 
-        body: Dict[str, Any] = {"model": self.model, "messages": messages}
-        if isinstance(current_settings.get('temperature'), (float, int)):
-            body['temperature'] = current_settings['temperature']
-        if isinstance(current_settings.get('max_output_tokens'), int) and current_settings['max_output_tokens'] > 0:
-            body['max_tokens'] = current_settings['max_output_tokens']
+        body = self._prepare_body(messages, current_settings)
         
         timeout = 60
         if isinstance(current_settings.get('timeout'), int) and current_settings['timeout'] > 0:
@@ -132,6 +136,16 @@ class OllamaChatProvider(BaseTranslationProvider):
 class ChatMockProvider(OpenAIChatProvider):
     """Provider for the ChatMock development server."""
     supports_sessions = True
+    
+    def _prepare_body(self, messages: List[Dict[str, str]], current_settings: Dict[str, Any]) -> Dict[str, Any]:
+        body = super()._prepare_body(messages, current_settings)
+        
+        if current_settings.get('reasoning_effort'):
+            body['reasoning_effort'] = current_settings['reasoning_effort']
+        if current_settings.get('reasoning_summary'):
+            body['reasoning_summary'] = current_settings['reasoning_summary']
+            
+        return body
 
 class DeepLProvider(BaseTranslationProvider):
     def translate(self, messages: list, session: Optional[dict] = None, settings_override: Optional[Dict[str, Any]] = None) -> ProviderResponse:

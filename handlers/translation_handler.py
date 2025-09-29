@@ -1,4 +1,4 @@
-# handlers/translation/translation_handler.py ---
+# handlers/translation_handler.py ---
 import json
 import re
 from pathlib import Path
@@ -347,6 +347,7 @@ class TranslationHandler(BaseHandler):
         self._run_ai_task(provider, context)
 
     def _handle_chunk_translated(self, chunk_index: int, chunk_text: str, context: dict):
+        log_debug(f"Received translated chunk {chunk_index}. Raw AI response:\n{chunk_text}")
         try:
             block_idx = context['block_idx']
             parsed_json = json.loads(chunk_text)

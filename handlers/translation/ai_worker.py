@@ -27,6 +27,20 @@ class AIWorker(QObject):
         log_debug("AIWorker: Cancellation requested.")
         self.is_cancelled = True
 
+    def _clean_json_response(self, text: str) -> str:
+        stripped_text = (text or '').strip()
+        if stripped_text.startswith("```") and stripped_text.endswith("```"):
+            lines = stripped_text.splitlines()
+            if len(lines) > 1:
+                content_lines = lines[1:-1]
+                joined_content = "\n".join(content_lines).strip()
+                if joined_content.startswith("json"):
+                    joined_content = joined_content[4:].strip()
+                return joined_content
+            else:
+                return ""
+        return stripped_text
+
     def run(self):
         from components.ai_status_dialog import AIStatusDialog
         log_debug(f"AIWorker: Thread started for task type '{self.task_details.get('type')}'.")
@@ -60,13 +74,14 @@ class AIWorker(QObject):
                             log_debug("AIWorker: Translation cancelled during retry loop.")
                             break
 
-                        self.task_details['composer_args']['source_items'] = chunk
-                        system, user, p_map = self.prompt_composer.compose_batch_request(**self.task_details['composer_args'])
-                        self.task_details['placeholder_map'] = p_map
+                        composer_args_for_chunk = self.task_details['composer_args'].copy()
+                        composer_args_for_chunk['source_items'] = chunk
+                        system, user, p_map_for_chunk = self.prompt_composer.compose_batch_request(**composer_args_for_chunk)
+                        
                         messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
                         
                         self.progress_updated.emit(i + 1)
-                        self.step_updated.emit(1, f"Translating chunk {i + 1}/{len(chunks)}", AIStatusDialog.STATUS_IN_PROGRESS)
+                        self.step_updated.emit(1, f"Translating chunk {i + 1}/{len(chunks)} (Attempt {current_retry + 1})", AIStatusDialog.STATUS_IN_PROGRESS)
                         
                         try:
                             response = self.provider.translate(messages, session=None)
@@ -76,11 +91,14 @@ class AIWorker(QObject):
                                 break
 
                             import json
-                            parsed_response = json.loads(response.text)
+                            cleaned_text = self._clean_json_response(response.text)
+                            parsed_response = json.loads(cleaned_text)
                             translated_items = parsed_response.get("translated_strings", [])
                             
                             if len(translated_items) == len(chunk):
-                                self.chunk_translated.emit(i, response.text, self.task_details)
+                                task_details_for_chunk = self.task_details.copy()
+                                task_details_for_chunk['placeholder_map'] = p_map_for_chunk
+                                self.chunk_translated.emit(i, cleaned_text, task_details_for_chunk)
                                 break
                             else:
                                 log_debug(f"AIWorker: Line count mismatch in chunk {i}. Expected {len(chunk)}, got {len(translated_items)}. Retrying...")
@@ -95,12 +113,11 @@ class AIWorker(QObject):
                         return
 
                     if current_retry >= max_retries:
-                        self.error.emit(f"Failed to translate chunk {i+1} after {max_retries} attempts.", self.task_details)
+                        self.error.emit(f"Failed to translate chunk {i+1} after {current_retry} attempts.", self.task_details)
                         return
                 
                 return
 
-            # Restore original logic for other tasks
             dialog_steps = self.task_details['dialog_steps']
             self.step_updated.emit(0, dialog_steps[0], AIStatusDialog.STATUS_IN_PROGRESS)
             

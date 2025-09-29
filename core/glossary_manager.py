@@ -1,4 +1,4 @@
-# --- START OF FILE core/glossary_manager.py ---
+# core/glossary_manager.py ---
 """Glossary management helpers: loading, caching, and pattern matching."""
 from __future__ import annotations
 
@@ -53,6 +53,7 @@ class GlossaryManager:
         self._entries: List[GlossaryEntry] = []
         self._raw_text: str = ""
         self._compiled_patterns: Dict[str, re.Pattern[str]] = {}
+        self._compiled_patterns_for_translation: Dict[str, re.Pattern[str]] = {}
         self._glossary_path: Optional[Path] = None
         self._plugin_name: Optional[str] = None
         self._occurrence_index: Dict[str, List[GlossaryOccurrence]] = {}
@@ -127,6 +128,11 @@ class GlossaryManager:
         if not entry or not entry.original:
             return None
         return self._compiled_patterns.get(entry.original)
+    
+    def get_compiled_pattern_for_translation(self, entry: GlossaryEntry) -> Optional[re.Pattern[str]]:
+        if not entry or not entry.original:
+            return None
+        return self._compiled_patterns_for_translation.get(entry.original)
 
     def iter_compiled(self) -> Iterable[Tuple[GlossaryEntry, re.Pattern[str]]]:
         for entry in self._entries:
@@ -206,6 +212,7 @@ class GlossaryManager:
         new_entries.append(new_entry)
         self._entries = new_entries
         self._occurrence_index = {}
+        self._build_pattern_cache()
         self._persist()
         return new_entry
 
@@ -228,6 +235,7 @@ class GlossaryManager:
                 new_entries[idx] = updated_entry
                 self._entries = new_entries
                 self._occurrence_index = {}
+                self._build_pattern_cache()
                 self._persist()
                 return updated_entry
         return None
@@ -243,6 +251,7 @@ class GlossaryManager:
         del new_entries[index]
         self._entries = new_entries
         self._occurrence_index = {}
+        self._build_pattern_cache()
         self._persist()
         return True
 
@@ -366,25 +375,21 @@ class GlossaryManager:
 
     def _build_pattern_cache(self) -> None:
         self._compiled_patterns.clear()
+        self._compiled_patterns_for_translation.clear()
         for entry in self._entries:
             if not entry.original:
                 continue
-            pattern = self._build_regex(entry.original)
-            self._compiled_patterns[entry.original] = pattern
-    def _build_pattern_cache(self) -> None:
-        self._compiled_patterns.clear()
-        for entry in self._entries:
-            if not entry.original:
-                continue
-            pattern = self._build_regex(entry.original)
-            self._compiled_patterns[entry.original] = pattern
+            # Pattern for highlighting/search
+            self._compiled_patterns[entry.original] = self._build_regex(entry.original, separator_pattern=r'(?:\s+|[\u2028\u2029\u200B\u200C\u200D]|<[^>]+>|\{[^}]+\}|\[[^\]]+\])*?')
+            # Pattern for replacement in AI prompt: only matches word boundaries
+            self._compiled_patterns_for_translation[entry.original] = self._build_regex(entry.original, separator_pattern=r'\s+')
+
 
     @classmethod
-    def _build_regex(cls, term: str) -> re.Pattern[str]:
+    def _build_regex(cls, term: str, separator_pattern: str) -> re.Pattern[str]:
         if not term:
             return re.compile(r"(?!x)x")
 
-        separator_pattern = r"(?:\s+|[\u2028\u2029\u200B\u200C\u200D]|<[^>]+>|\{[^}]+\}|\[[^\]]+\])*?"
         pieces: List[str] = []
         for idx, char in enumerate(term):
             if char.isspace():
@@ -395,11 +400,22 @@ class GlossaryManager:
                 pieces.append(separator_pattern)
 
         pattern_body = "".join(pieces)
-        prefix = ''
-        suffix = ''
-        if term and term[0].isalnum():
-            prefix = r'(?<!\w)'
-        if term and term[-1].isalnum():
-            suffix = r'(?!\w)'
-        pattern = f"{prefix}{pattern_body}{suffix}"
-        return re.compile(pattern, re.IGNORECASE)
+        prefix = r'(?<![a-zA-Zа-яА-ЯіїІїЄєґҐ])' if term and term[0].isalnum() else ''
+        suffix = r'(?![a-zA-Zа-яА-ЯіїІїЄєґҐ])' if term and term[-1].isalnum() else ''
+        
+        # Видаляємо теги з терміна, якщо вони є. Це важливо для "Life energy" з глосарію.
+        # Але для нашої мети в ZeldaWW, теги в термінах глосарію (як-от [Red]Southern) вже є частиною тегів,
+        # які ми замінюємо окремими плейсхолдерами. Тому, якщо термін не містить тегів,
+        # ми використовуємо простішу логіку. Якщо містить, то це, ймовірно, вже не чистий термін.
+        
+        # Наразі, ми не підтримуємо терміни глосарію, що містять теги. Тому ми просто робимо 
+        # заміну в тексті, використовуючи його як є.
+        
+        # Забезпечуємо, щоб термін не був частиною більшого слова
+        if not term:
+            return re.compile(r"(?!x)x")
+        
+        final_pattern_body = re.escape(term)
+        final_pattern = f"{prefix}{final_pattern_body}{suffix}"
+        
+        return re.compile(final_pattern, re.IGNORECASE)
