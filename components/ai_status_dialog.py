@@ -66,9 +66,9 @@ class AIStatusDialog(QDialog):
         main_layout.addStretch(1)
 
         self.progress_bar = QProgressBar(self)
-        self.progress_bar.setRange(0, 1)
+        self.progress_bar.setRange(0, 100)
         self.progress_bar.setValue(0)
-        self.progress_bar.setFormat('%v / %m chunks')
+        self.progress_bar.setFormat('%p%')
         self.progress_bar.setVisible(False)
         main_layout.addWidget(self.progress_bar)
 
@@ -89,6 +89,7 @@ class AIStatusDialog(QDialog):
     def setup_progress_bar(self, total_chunks: int, completed_chunks: int = 0):
         self.progress_bar.setRange(0, total_chunks)
         self.progress_bar.setValue(completed_chunks)
+        self.progress_bar.setFormat('%p%')
         self.progress_bar.setVisible(True)
 
     def update_progress(self, completed_chunks: int):
@@ -108,6 +109,9 @@ class AIStatusDialog(QDialog):
             self._update_label_style(label, self.STATUS_PENDING, self.steps[i])
 
         if is_chunked:
+            self.progress_bar.setRange(0, 100)
+            self.progress_bar.setValue(0)
+            self.progress_bar.setFormat('%p%')
             self.progress_bar.setVisible(False)
         else:
             self.progress_bar.setRange(0, 0)

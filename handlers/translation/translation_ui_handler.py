@@ -136,11 +136,12 @@ class TranslationUIHandler(BaseTranslationHandler):
     
     def start_ai_operation(self, title: str, is_chunked: bool = False):
         self.status_dialog.start(title, is_chunked)
-        self.status_dialog.rejected.connect(self._handle_dialog_rejection)
+        self.status_dialog.cancelled.connect(self._handle_dialog_rejection)
 
     def _handle_dialog_rejection(self):
         if self.main_handler.worker:
             self.main_handler.worker.cancel()
+        self.main_handler.prompt_for_revert_after_cancel()
 
     def update_ai_operation_step(self, step_index: int, text: str, status: int):
         self.status_dialog.update_step(step_index, text, status)

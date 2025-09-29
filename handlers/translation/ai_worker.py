@@ -1,4 +1,4 @@
-# --- START OF FILE handlers/translation/ai_worker.py ---
+# handlers/translation/ai_worker.py ---
 from PyQt5.QtCore import QObject, pyqtSignal
 from typing import List, Dict, Optional, Any
 from core.translation.providers import BaseTranslationProvider, ProviderResponse, TranslationProviderError
@@ -48,7 +48,7 @@ class AIWorker(QObject):
                         continue
 
                     if self.is_cancelled:
-                        log_debug("AIWorker: Translation cancelled by user.")
+                        log_debug("AIWorker: Translation cancelled by user before processing chunk.")
                         self.translation_cancelled.emit()
                         return
 
@@ -65,13 +65,16 @@ class AIWorker(QObject):
                         self.task_details['placeholder_map'] = p_map
                         messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
                         
-                        self.progress_updated.emit(i)
-                        step_text = f"Translating chunk {i + 1}/{len(chunks)} (Attempt {current_retry + 1})"
-                        self.step_updated.emit(1, step_text, AIStatusDialog.STATUS_IN_PROGRESS)
+                        self.progress_updated.emit(i + 1)
+                        self.step_updated.emit(1, f"Translating chunk {i + 1}/{len(chunks)}", AIStatusDialog.STATUS_IN_PROGRESS)
                         
                         try:
                             response = self.provider.translate(messages, session=None)
                             
+                            if self.is_cancelled:
+                                log_debug("AIWorker: Translation cancelled during network request. Discarding response.")
+                                break
+
                             import json
                             parsed_response = json.loads(response.text)
                             translated_items = parsed_response.get("translated_strings", [])
@@ -122,13 +125,19 @@ class AIWorker(QObject):
             
             provider_settings_override = self.task_details.get('provider_settings_override', {})
             response = self.provider.translate(messages, session=None, settings_override=provider_settings_override)
+
+            if self.is_cancelled:
+                log_debug("AIWorker: Operation cancelled after network request. Discarding response.")
+                self.translation_cancelled.emit()
+                return
             
             self.success.emit(response, self.task_details)
 
 
         except (TranslationProviderError, ValueError, Exception) as e:
             log_debug(f"AIWorker: Exception caught in worker thread: {e}")
-            self.error.emit(str(e), self.task_details)
+            if not self.is_cancelled:
+                self.error.emit(str(e), self.task_details)
         finally:
             log_debug("AIWorker: Task finished, emitting 'finished' signal.")
             self.finished.emit()

@@ -1,4 +1,4 @@
-# --- START OF FILE handlers/translation_handler.py ---
+# handlers/translation/translation_handler.py ---
 import json
 import re
 from pathlib import Path
@@ -113,6 +113,8 @@ class TranslationHandler(BaseHandler):
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
+        self.thread.finished.connect(lambda: setattr(self, 'thread', None))
+        self.thread.finished.connect(lambda: setattr(self, 'worker', None))
 
         task_type = task_details.get('type')
         if task_type == 'translate_preview':
@@ -133,20 +135,23 @@ class TranslationHandler(BaseHandler):
 
         self.thread.start()
 
-    def _handle_translation_cancellation(self):
-        self.ui_handler.finish_ai_operation()
+    def prompt_for_revert_after_cancel(self):
+        if not self.worker:
+            return
+
         block_idx = self.worker.task_details.get('block_idx')
-        if block_idx is None:
+        if block_idx is None or block_idx not in self.pre_translation_state:
+            self.ui_handler.finish_ai_operation()
             return
 
         reply = QMessageBox.question(
             self.mw,
             "Translation Cancelled",
-            "Revert all changes made during this translation session?",
+            "Keep the already translated parts?",
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.Yes
         )
-        if reply == QMessageBox.Yes:
+        if reply == QMessageBox.No:
             if block_idx in self.pre_translation_state:
                 original_texts = self.pre_translation_state[block_idx]
                 for i, text in enumerate(original_texts):
@@ -160,9 +165,15 @@ class TranslationHandler(BaseHandler):
             self.ui_updater.populate_strings_for_block(block_idx)
             self.ui_updater.update_text_views()
         else:
-            # If user wants to keep progress, just clear the pre-translation state
             if block_idx in self.pre_translation_state:
                 del self.pre_translation_state[block_idx]
+        
+        self.ui_handler.finish_ai_operation()
+        self.ui_updater.update_block_item_text_with_problem_count(block_idx)
+
+    def _handle_translation_cancellation(self):
+        log_debug("TranslationHandler: Worker has confirmed cancellation.")
+        self.ui_handler.finish_ai_operation()
 
     def _setup_progress_bar(self, total_chunks: int, completed_chunks: int):
         block_idx = self.worker.task_details.get('block_idx')
@@ -229,7 +240,6 @@ class TranslationHandler(BaseHandler):
             QMessageBox.information(self.mw, "AI Translation", "The selected block is empty.")
             return
 
-        # Save pre-translation state for potential revert
         self.pre_translation_state[target_block_idx] = self.data_processor.get_block_texts(target_block_idx)
 
         source_items = [
@@ -248,7 +258,7 @@ class TranslationHandler(BaseHandler):
         )
 
         operation_title = f"AI Translation (Block {target_block_idx + 1})"
-        self.ui_handler.start_ai_operation(operation_title)
+        self.ui_handler.start_ai_operation(operation_title, is_chunked=True)
 
         task_details = {
             'type': 'translate_block_chunked',
@@ -268,6 +278,9 @@ class TranslationHandler(BaseHandler):
             QMessageBox.information(self.mw, "Resume Translation", "No active translation session found for this block.")
             return
 
+        if block_idx not in self.pre_translation_state:
+            self.pre_translation_state[block_idx] = self.data_processor.get_block_texts(block_idx)
+
         target_block_idx = block_idx
         block_strings = self.glossary_handler._get_original_block(target_block_idx)
         source_items = [
@@ -283,7 +296,7 @@ class TranslationHandler(BaseHandler):
         block_timeout = base_timeout * 10
 
         operation_title = f"Resuming Translation (Block {target_block_idx + 1})"
-        self.ui_handler.start_ai_operation(operation_title)
+        self.ui_handler.start_ai_operation(operation_title, is_chunked=True)
 
         task_details = {
             'type': 'translate_block_chunked',
@@ -318,7 +331,7 @@ class TranslationHandler(BaseHandler):
             if not context.get('is_resume', False):
                 self.translation_progress[block_idx] = {'completed_chunks': set(), 'total_chunks': 0}
             
-            context['chunks_to_skip'] = self.translation_progress[block_idx]['completed_chunks']
+            context['chunks_to_skip'] = self.translation_progress.get(block_idx, {}).get('completed_chunks', set())
 
         system_prompt, glossary = self.glossary_handler.load_prompts()
         if not system_prompt:
@@ -347,24 +360,24 @@ class TranslationHandler(BaseHandler):
                 final_text = self._trim_trailing_whitespace_from_lines(restored_text)
                 self.data_processor.update_edited_data(block_idx, string_idx, final_text)
             
-            # Update progress
             if block_idx in self.translation_progress:
                 self.translation_progress[block_idx]['completed_chunks'].add(chunk_index)
 
-            self.translated_chunks_count += 1
+            self.ui_updater.populate_strings_for_block(block_idx)
+            self.translated_chunks_count = len(self.translation_progress.get(block_idx, {}).get('completed_chunks', set()))
             self.ui_handler.status_dialog.update_progress(self.translated_chunks_count)
             
             total_chunks = self.translation_progress.get(block_idx, {}).get('total_chunks', -1)
             if self.translated_chunks_count == total_chunks:
                 self.ui_handler.finish_ai_operation()
-                self.ui_updater.populate_strings_for_block(block_idx)
                 self.ui_updater.update_text_views()
                 if hasattr(self.mw, 'app_action_handler'):
                     self.mw.app_action_handler.rescan_issues_for_single_block(block_idx, show_message_on_completion=False)
                 
-                # Clean up progress on completion
                 if block_idx in self.translation_progress:
                     del self.translation_progress[block_idx]
+                if block_idx in self.pre_translation_state:
+                    del self.pre_translation_state[block_idx]
 
         except (json.JSONDecodeError, ValueError) as e:
             self._handle_ai_error(f"Failed to process chunk {chunk_index + 1}: {e}", context)
