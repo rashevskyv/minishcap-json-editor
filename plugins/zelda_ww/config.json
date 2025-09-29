@@ -18,8 +18,8 @@
     "original_file_path": "D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt",
     "edited_file_path": "D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt",
     "last_selected_block_index": 0,
-    "last_selected_string_index": 5,
-    "last_cursor_position_in_edited": 53,
+    "last_selected_string_index": 9,
+    "last_cursor_position_in_edited": 24,
     "last_edited_text_edit_scroll_value_v": 0,
     "last_edited_text_edit_scroll_value_h": 0,
     "last_preview_text_edit_scroll_value_v": 0,
@@ -67,7 +67,7 @@
     "newline_italic": false,
     "newline_underline": false,
     "translation_config": {
-        "provider": "openai_chat",
+        "provider": "openai_responses",
         "session_mode": "auto",
         "providers": {
             "openai_chat": {
@@ -80,6 +80,16 @@
                 "timeout": 120,
                 "extra_headers": {}
             },
+            "openai_responses": {
+                "api_key": "***REMOVED***",
+                "api_key_env": "OPENAI_API_KEY",
+                "base_url": "",
+                "model": "gpt-5",
+                "reasoning_effort": "low",
+                "text_verbosity": "low",
+                "timeout": 120,
+                "use_chat_key": true
+            },
             "ollama_chat": {
                 "base_url": "http://localhost:11434",
                 "model": "llama3",
@@ -89,14 +99,16 @@
                 "extra_headers": {}
             },
             "chatmock": {
-                "base_url": "http://127.0.0.1:8000",
-                "model": "gpt-4o",
-                "api_key": "chatmock-placeholder",
+                "base_url": "",
+                "model": "gpt-5-mini",
+                "api_key": "***REMOVED***",
                 "temperature": 0.0,
                 "timeout": 120,
                 "reasoning_effort": "medium",
                 "reasoning_summary": "auto",
-                "extra_headers": {}
+                "extra_headers": {},
+                "api_key_env": "",
+                "max_output_tokens": 0
             },
             "deepl": {
                 "api_key": "",

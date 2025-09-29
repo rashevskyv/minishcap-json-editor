@@ -1,69 +1,69 @@
-2025-09-29 21:16:50,243 - DEBUG - logging_utils - log_debug - ================= Application Start =================
-2025-09-29 21:16:50,253 - DEBUG - logging_utils - log_debug - Applied Light Theme.
-2025-09-29 21:16:50,253 - DEBUG - logging_utils - log_debug - ++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++
-2025-09-29 21:16:50,253 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Core Components...
-2025-09-29 21:16:50,253 - DEBUG - logging_utils - log_debug - --> SettingsManager: load_settings from settings.json
-2025-09-29 21:16:50,253 - DEBUG - logging_utils - log_debug - Global settings loaded.
-2025-09-29 21:16:50,254 - DEBUG - logging_utils - log_debug - Plugin settings loaded from 'plugins\zelda_ww\config.json'.
-2025-09-29 21:16:50,254 - DEBUG - logging_utils - log_debug -   [LOAD STATE] Loaded Block Idx: 0, String Idx: 5, Cursor Pos: 53
-2025-09-29 21:16:50,254 - DEBUG - logging_utils - log_debug - --> SettingsManager: Loading all font maps from: plugins\zelda_ww\fonts
-2025-09-29 21:16:50,255 - DEBUG - logging_utils - log_debug -   Successfully loaded and parsed font map 'CKingMain.json'. Count: 386
-2025-09-29 21:16:50,256 - DEBUG - logging_utils - log_debug -   Successfully loaded and parsed font map 'CKingMainL.json'. Count: 268
-2025-09-29 21:16:50,258 - DEBUG - logging_utils - log_debug -   Successfully loaded and parsed font map 'CKingMsg.json'. Count: 1830
-2025-09-29 21:16:50,259 - DEBUG - logging_utils - log_debug - Set default font_map to 'CKingMsg.json'.
-2025-09-29 21:16:50,259 - DEBUG - logging_utils - log_debug - Loaded 27 font override entries from 'plugins\zelda_ww\font_map.json'.
-2025-09-29 21:16:50,259 - DEBUG - logging_utils - log_debug - Applied 27 font override entries.
-2025-09-29 21:16:50,259 - DEBUG - logging_utils - log_debug - <-- SettingsManager: load_settings finished
-2025-09-29 21:16:50,260 - DEBUG - logging_utils - log_debug - Updater 'StringSettingsUpdater' initialized.
-2025-09-29 21:16:50,260 - DEBUG - logging_utils - log_debug - UIHandler 'MainWindowUIHandler' initialized.
-2025-09-29 21:16:50,260 - DEBUG - logging_utils - log_debug - PluginHandler 'MainWindowPluginHandler' initialized.
-2025-09-29 21:16:50,260 - DEBUG - logging_utils - log_debug - EventHandler 'MainWindowEventHandler' initialized.
-2025-09-29 21:16:50,260 - DEBUG - logging_utils - log_debug - BlockHandler 'MainWindowBlockHandler' initialized.
-2025-09-29 21:16:50,260 - DEBUG - logging_utils - log_debug - MainWindow: Loading game plugin...
-2025-09-29 21:16:50,260 - DEBUG - logging_utils - log_debug - --> MainWindowPluginHandler: load_game_plugin called.
-2025-09-29 21:16:50,260 - DEBUG - logging_utils - log_debug -     Attempting to load plugin: 'zelda_ww'
-2025-09-29 21:16:50,260 - DEBUG - logging_utils - log_debug -     Importing module: plugins.zelda_ww.rules
-2025-09-29 21:16:50,262 - DEBUG - logging_utils - log_debug -     Successfully loaded and instantiated game rules: GameRules from plugins.zelda_ww.rules
-2025-09-29 21:16:50,262 - DEBUG - logging_utils - log_debug - <-- MainWindowPluginHandler: load_game_plugin finished.
-2025-09-29 21:16:50,262 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Handlers (Pre-UI setup)...
-2025-09-29 21:16:50,262 - DEBUG - logging_utils - log_debug - Handler 'ListSelectionHandler' initialized.
-2025-09-29 21:16:50,262 - DEBUG - logging_utils - log_debug - Handler 'TextOperationHandler' initialized.
-2025-09-29 21:16:50,262 - DEBUG - logging_utils - log_debug - Handler 'AppActionHandler' initialized.
-2025-09-29 21:16:50,262 - DEBUG - logging_utils - log_debug - Handler 'SearchHandler' initialized.
-2025-09-29 21:16:50,262 - DEBUG - logging_utils - log_debug - Handler 'StringSettingsHandler' initialized.
-2025-09-29 21:16:50,262 - DEBUG - logging_utils - log_debug - Handler 'TranslationHandler' initialized.
-2025-09-29 21:16:50,262 - DEBUG - logging_utils - log_debug - Handler 'TextAnalysisHandler' initialized.
-2025-09-29 21:16:50,262 - DEBUG - logging_utils - log_debug - MainWindow: Setting up UI...
-2025-09-29 21:16:50,262 - DEBUG - logging_utils - log_debug - setup_main_window_ui: Starting UI setup.
-2025-09-29 21:16:50,263 - DEBUG - logging_utils - log_debug - CustomListWidget INITIALIZED, parent: <__main__.MainWindow object at 0x0000020F67ADF760>
-2025-09-29 21:16:50,263 - DEBUG - logging_utils - log_debug - CustomListWidget: Item delegate set to <components.CustomListItemDelegate.CustomListItemDelegate object at 0x0000020F67BDC5E0>
-2025-09-29 21:16:50,269 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
-2025-09-29 21:16:50,269 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-2025-09-29 21:16:50,269 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
-2025-09-29 21:16:50,269 - DEBUG - logging_utils - log_debug - Loaded 2 syntax highlighting rules from game plugin.
-2025-09-29 21:16:50,386 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
-2025-09-29 21:16:50,386 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-2025-09-29 21:16:50,386 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
-2025-09-29 21:16:50,386 - DEBUG - logging_utils - log_debug - Loaded 2 syntax highlighting rules from game plugin.
-2025-09-29 21:16:50,392 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
-2025-09-29 21:16:50,392 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-2025-09-29 21:16:50,392 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
-2025-09-29 21:16:50,393 - DEBUG - logging_utils - log_debug - Loaded 2 syntax highlighting rules from game plugin.
-2025-09-29 21:16:50,400 - DEBUG - logging_utils - log_debug - setup_main_window_ui: UI setup complete.
-2025-09-29 21:16:50,415 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 101 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
-2025-09-29 21:16:50,415 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Handlers and dynamic UI from plugin (Post-UI setup)...
-2025-09-29 21:16:50,415 - DEBUG - logging_utils - log_debug - MainWindow: Connecting Signals...
-2025-09-29 21:16:50,416 - DEBUG - logging_utils - log_debug - --> MainWindowEventHandler: connect_signals() started
-2025-09-29 21:16:50,416 - DEBUG - logging_utils - log_debug - --> MainWindowEventHandler: connect_signals() finished
-2025-09-29 21:16:50,416 - DEBUG - logging_utils - log_debug - MainWindowHelper: restore_state_after_settings_load called.
-2025-09-29 21:16:50,416 - DEBUG - logging_utils - log_debug - Restored window geometry from settings: {'x': 340, 'y': 53, 'width': 1681, 'height': 1277}
-2025-09-29 21:16:50,416 - DEBUG - logging_utils - log_debug - MainWindowHelper: Attempting to load initial file from settings: D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt
-2025-09-29 21:16:50,416 - DEBUG - logging_utils - log_debug - --> AppActionHandler: load_all_data_for_path START. Original: 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt', Manual Edit Path: 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt', InitialLoad: True
-2025-09-29 21:16:50,416 - DEBUG - logging_utils - log_debug - load_text_file: Attempting to load 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt'
-2025-09-29 21:16:50,416 - DEBUG - logging_utils - log_debug - load_text_file: UTF-8 decoding failed for 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt'. Trying UTF-16.
-2025-09-29 21:16:50,417 - DEBUG - logging_utils - log_debug - load_text_file: Successfully loaded 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt' with UTF-16.
-2025-09-29 21:16:50,417 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Starting load_data_from_json_obj. Input type: <class 'str'>
-2025-09-29 21:16:50,417 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: File content (first 200 chars): Now saving...
+2025-09-29 22:29:02,730 - DEBUG - logging_utils - log_debug - ================= Application Start =================
+2025-09-29 22:29:02,739 - DEBUG - logging_utils - log_debug - Applied Light Theme.
+2025-09-29 22:29:02,740 - DEBUG - logging_utils - log_debug - ++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++
+2025-09-29 22:29:02,740 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Core Components...
+2025-09-29 22:29:02,740 - DEBUG - logging_utils - log_debug - --> SettingsManager: load_settings from settings.json
+2025-09-29 22:29:02,740 - DEBUG - logging_utils - log_debug - Global settings loaded.
+2025-09-29 22:29:02,740 - DEBUG - logging_utils - log_debug - Plugin settings loaded from 'plugins\zelda_ww\config.json'.
+2025-09-29 22:29:02,740 - DEBUG - logging_utils - log_debug -   [LOAD STATE] Loaded Block Idx: 0, String Idx: 0, Cursor Pos: 43
+2025-09-29 22:29:02,741 - DEBUG - logging_utils - log_debug - --> SettingsManager: Loading all font maps from: plugins\zelda_ww\fonts
+2025-09-29 22:29:02,742 - DEBUG - logging_utils - log_debug -   Successfully loaded and parsed font map 'CKingMain.json'. Count: 386
+2025-09-29 22:29:02,742 - DEBUG - logging_utils - log_debug -   Successfully loaded and parsed font map 'CKingMainL.json'. Count: 268
+2025-09-29 22:29:02,745 - DEBUG - logging_utils - log_debug -   Successfully loaded and parsed font map 'CKingMsg.json'. Count: 1830
+2025-09-29 22:29:02,745 - DEBUG - logging_utils - log_debug - Set default font_map to 'CKingMsg.json'.
+2025-09-29 22:29:02,745 - DEBUG - logging_utils - log_debug - Loaded 27 font override entries from 'plugins\zelda_ww\font_map.json'.
+2025-09-29 22:29:02,745 - DEBUG - logging_utils - log_debug - Applied 27 font override entries.
+2025-09-29 22:29:02,746 - DEBUG - logging_utils - log_debug - <-- SettingsManager: load_settings finished
+2025-09-29 22:29:02,746 - DEBUG - logging_utils - log_debug - Updater 'StringSettingsUpdater' initialized.
+2025-09-29 22:29:02,746 - DEBUG - logging_utils - log_debug - UIHandler 'MainWindowUIHandler' initialized.
+2025-09-29 22:29:02,746 - DEBUG - logging_utils - log_debug - PluginHandler 'MainWindowPluginHandler' initialized.
+2025-09-29 22:29:02,746 - DEBUG - logging_utils - log_debug - EventHandler 'MainWindowEventHandler' initialized.
+2025-09-29 22:29:02,746 - DEBUG - logging_utils - log_debug - BlockHandler 'MainWindowBlockHandler' initialized.
+2025-09-29 22:29:02,746 - DEBUG - logging_utils - log_debug - MainWindow: Loading game plugin...
+2025-09-29 22:29:02,746 - DEBUG - logging_utils - log_debug - --> MainWindowPluginHandler: load_game_plugin called.
+2025-09-29 22:29:02,746 - DEBUG - logging_utils - log_debug -     Attempting to load plugin: 'zelda_ww'
+2025-09-29 22:29:02,746 - DEBUG - logging_utils - log_debug -     Importing module: plugins.zelda_ww.rules
+2025-09-29 22:29:02,747 - DEBUG - logging_utils - log_debug -     Successfully loaded and instantiated game rules: GameRules from plugins.zelda_ww.rules
+2025-09-29 22:29:02,747 - DEBUG - logging_utils - log_debug - <-- MainWindowPluginHandler: load_game_plugin finished.
+2025-09-29 22:29:02,747 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Handlers (Pre-UI setup)...
+2025-09-29 22:29:02,747 - DEBUG - logging_utils - log_debug - Handler 'ListSelectionHandler' initialized.
+2025-09-29 22:29:02,747 - DEBUG - logging_utils - log_debug - Handler 'TextOperationHandler' initialized.
+2025-09-29 22:29:02,747 - DEBUG - logging_utils - log_debug - Handler 'AppActionHandler' initialized.
+2025-09-29 22:29:02,747 - DEBUG - logging_utils - log_debug - Handler 'SearchHandler' initialized.
+2025-09-29 22:29:02,747 - DEBUG - logging_utils - log_debug - Handler 'StringSettingsHandler' initialized.
+2025-09-29 22:29:02,749 - DEBUG - logging_utils - log_debug - Handler 'TranslationHandler' initialized.
+2025-09-29 22:29:02,749 - DEBUG - logging_utils - log_debug - Handler 'TextAnalysisHandler' initialized.
+2025-09-29 22:29:02,749 - DEBUG - logging_utils - log_debug - MainWindow: Setting up UI...
+2025-09-29 22:29:02,749 - DEBUG - logging_utils - log_debug - setup_main_window_ui: Starting UI setup.
+2025-09-29 22:29:02,750 - DEBUG - logging_utils - log_debug - CustomListWidget INITIALIZED, parent: <__main__.MainWindow object at 0x0000016762CDF6D0>
+2025-09-29 22:29:02,750 - DEBUG - logging_utils - log_debug - CustomListWidget: Item delegate set to <components.CustomListItemDelegate.CustomListItemDelegate object at 0x0000016762DE0550>
+2025-09-29 22:29:02,754 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
+2025-09-29 22:29:02,755 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+2025-09-29 22:29:02,755 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
+2025-09-29 22:29:02,755 - DEBUG - logging_utils - log_debug - Loaded 2 syntax highlighting rules from game plugin.
+2025-09-29 22:29:02,866 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
+2025-09-29 22:29:02,866 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+2025-09-29 22:29:02,866 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
+2025-09-29 22:29:02,866 - DEBUG - logging_utils - log_debug - Loaded 2 syntax highlighting rules from game plugin.
+2025-09-29 22:29:02,874 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
+2025-09-29 22:29:02,874 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+2025-09-29 22:29:02,874 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
+2025-09-29 22:29:02,874 - DEBUG - logging_utils - log_debug - Loaded 2 syntax highlighting rules from game plugin.
+2025-09-29 22:29:02,880 - DEBUG - logging_utils - log_debug - setup_main_window_ui: UI setup complete.
+2025-09-29 22:29:02,894 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 101 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
+2025-09-29 22:29:02,894 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Handlers and dynamic UI from plugin (Post-UI setup)...
+2025-09-29 22:29:02,894 - DEBUG - logging_utils - log_debug - MainWindow: Connecting Signals...
+2025-09-29 22:29:02,894 - DEBUG - logging_utils - log_debug - --> MainWindowEventHandler: connect_signals() started
+2025-09-29 22:29:02,895 - DEBUG - logging_utils - log_debug - --> MainWindowEventHandler: connect_signals() finished
+2025-09-29 22:29:02,895 - DEBUG - logging_utils - log_debug - MainWindowHelper: restore_state_after_settings_load called.
+2025-09-29 22:29:02,895 - DEBUG - logging_utils - log_debug - Restored window geometry from settings: {'x': 340, 'y': 53, 'width': 1681, 'height': 1277}
+2025-09-29 22:29:02,895 - DEBUG - logging_utils - log_debug - MainWindowHelper: Attempting to load initial file from settings: D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt
+2025-09-29 22:29:02,895 - DEBUG - logging_utils - log_debug - --> AppActionHandler: load_all_data_for_path START. Original: 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt', Manual Edit Path: 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt', InitialLoad: True
+2025-09-29 22:29:02,895 - DEBUG - logging_utils - log_debug - load_text_file: Attempting to load 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt'
+2025-09-29 22:29:02,895 - DEBUG - logging_utils - log_debug - load_text_file: UTF-8 decoding failed for 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt'. Trying UTF-16.
+2025-09-29 22:29:02,896 - DEBUG - logging_utils - log_debug - load_text_file: Successfully loaded 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt' with UTF-16.
+2025-09-29 22:29:02,896 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Starting load_data_from_json_obj. Input type: <class 'str'>
+2025-09-29 22:29:02,896 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: File content (first 200 chars): Now saving...
 Do not touch the Memory Card or
 the POWER Button.
 {END}
@@ -76,16 +76,16 @@ Fairy Island[/C][White]?[/C]
 {END}
 
 Warp to [Red]Tingle Island[/C][Whit
-2025-09-29 21:16:50,418 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Split by '{END}' resulted in 1003 segments.
-2025-09-29 21:16:50,418 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Popping last empty segment. Original last segment: '
+2025-09-29 22:29:02,896 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Split by '{END}' resulted in 1003 segments.
+2025-09-29 22:29:02,897 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Popping last empty segment. Original last segment: '
 '
-2025-09-29 21:16:50,418 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: After processing, 1002 strings remain.
-2025-09-29 21:16:50,418 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Loaded 1002 strings from TXT file into one block named 'Block 0'.
-2025-09-29 21:16:50,418 - DEBUG - logging_utils - log_debug - load_text_file: Attempting to load 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt'
-2025-09-29 21:16:50,418 - DEBUG - logging_utils - log_debug - load_text_file: UTF-8 decoding failed for 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt'. Trying UTF-16.
-2025-09-29 21:16:50,418 - DEBUG - logging_utils - log_debug - load_text_file: Successfully loaded 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt' with UTF-16.
-2025-09-29 21:16:50,418 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Starting load_data_from_json_obj. Input type: <class 'str'>
-2025-09-29 21:16:50,418 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: File content (first 200 chars): Now saving...
+2025-09-29 22:29:02,897 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: After processing, 1002 strings remain.
+2025-09-29 22:29:02,897 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Loaded 1002 strings from TXT file into one block named 'Block 0'.
+2025-09-29 22:29:02,897 - DEBUG - logging_utils - log_debug - load_text_file: Attempting to load 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt'
+2025-09-29 22:29:02,897 - DEBUG - logging_utils - log_debug - load_text_file: UTF-8 decoding failed for 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt'. Trying UTF-16.
+2025-09-29 22:29:02,898 - DEBUG - logging_utils - log_debug - load_text_file: Successfully loaded 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt' with UTF-16.
+2025-09-29 22:29:02,898 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Starting load_data_from_json_obj. Input type: <class 'str'>
+2025-09-29 22:29:02,898 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: File content (first 200 chars): Now saving...
 Do not touch the Memory Card or
 the POWER Button.
 {END}
@@ -98,35 +98,229 @@ Fairy Island[/C][White]?[/C]
 {END}
 
 Warp to [Red]Tingle Island[/C][Whit
-2025-09-29 21:16:50,418 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Split by '{END}' resulted in 1003 segments.
-2025-09-29 21:16:50,419 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Popping last empty segment. Original last segment: '
+2025-09-29 22:29:02,898 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Split by '{END}' resulted in 1003 segments.
+2025-09-29 22:29:02,898 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Popping last empty segment. Original last segment: '
 '
-2025-09-29 21:16:50,419 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: After processing, 1002 strings remain.
-2025-09-29 21:16:50,419 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Loaded 1002 strings from TXT file into one block named 'message_orig.txt'.
-2025-09-29 21:16:50,419 - DEBUG - logging_utils - log_debug - Performing initial silent scan for all issues...
-2025-09-29 21:16:50,633 - DEBUG - logging_utils - log_debug - Initial scan complete. Found problems in 1545 sublines.
-2025-09-29 21:16:50,634 - DEBUG - logging_utils - log_debug - <-- AppActionHandler: load_all_data_for_path FINISHED (Success)
-2025-09-29 21:16:50,634 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Attempting restore with Block Idx: 0, String Idx: 5
-2025-09-29 21:16:50,634 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Block index 0 is valid. Setting current row...
-2025-09-29 21:16:50,634 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Manually calling block_selected for item 'Block 0 (277 EmptyOddL, 16 1Word, 1255 Short)'
-2025-09-29 21:16:50,902 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] String index 5 is valid. Calling string_selected_from_preview...
-2025-09-29 21:16:51,124 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Setting cursor position. Target: 53 (from saved 53, doc len: 53)
-2025-09-29 21:16:51,124 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Cursor position set. Actual final position: 53
-2025-09-29 21:16:51,124 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Setting scollbars. Edited V/H: 0/0, Preview V: 0, Original V/H: 0/0
-2025-09-29 21:16:51,124 - DEBUG - logging_utils - log_debug - MainWindowHelper: Restored selection to block 0, string 5, cursor 53
-2025-09-29 21:16:51,125 - DEBUG - logging_utils - log_debug - MainWindowHelper: Search history loaded into panel. Last query (if any) set in SearchHandler: 
-2025-09-29 21:16:51,125 - DEBUG - logging_utils - log_debug - MainWindowUIHandler: Applying font. General: Family='Segoe UI', Editor: Family='Consolas', Size=13
-2025-09-29 21:16:51,165 - DEBUG - logging_utils - log_debug - ListSelectionHandler.block_selected: current_item is None. Attempting to restore selection to 0.
-2025-09-29 21:16:51,602 - DEBUG - logging_utils - log_debug - Applying text wrap settings: Preview wrap: False, Editors wrap: False
-2025-09-29 21:16:51,604 - DEBUG - logging_utils - log_debug - Rebuilt unsaved_block_indices: set()
-2025-09-29 21:16:51,604 - DEBUG - logging_utils - log_debug - ++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++
-2025-09-29 21:16:51,734 - DEBUG - logging_utils - log_debug - Starting Qt event loop...
-2025-09-29 21:16:51,735 - DEBUG - logging_utils - log_debug - MainWindowUIHandler: Forcing window focus.
-2025-09-29 21:16:54,296 - DEBUG - logging_utils - log_debug - Starting block AI translation for block 0 with timeout 1200s (base 120s); lines=1002
-2025-09-29 21:16:54,310 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 101 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
-2025-09-29 21:16:54,310 - DEBUG - logging_utils - log_debug - AIWorker: Thread started for task type 'translate_block_chunked'.
-2025-09-29 21:16:54,311 - DEBUG - logging_utils - log_debug - Composed batch request for AI. System prompt size: 10946, User content size: 1666
-2025-09-29 21:16:54,311 - DEBUG - logging_utils - log_debug - Full JSON payload sent to AI:
+2025-09-29 22:29:02,898 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: After processing, 1002 strings remain.
+2025-09-29 22:29:02,898 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Loaded 1002 strings from TXT file into one block named 'message_orig.txt'.
+2025-09-29 22:29:02,899 - DEBUG - logging_utils - log_debug - Performing initial silent scan for all issues...
+2025-09-29 22:29:03,116 - DEBUG - logging_utils - log_debug - Initial scan complete. Found problems in 1545 sublines.
+2025-09-29 22:29:03,117 - DEBUG - logging_utils - log_debug - <-- AppActionHandler: load_all_data_for_path FINISHED (Success)
+2025-09-29 22:29:03,117 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Attempting restore with Block Idx: 0, String Idx: 0
+2025-09-29 22:29:03,117 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Block index 0 is valid. Setting current row...
+2025-09-29 22:29:03,117 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Manually calling block_selected for item 'Block 0 (277 EmptyOddL, 16 1Word, 1255 Short)'
+2025-09-29 22:29:03,390 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] String index 0 is valid. Calling string_selected_from_preview...
+2025-09-29 22:29:03,610 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Setting cursor position. Target: 43 (from saved 43, doc len: 63)
+2025-09-29 22:29:03,611 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Cursor position set. Actual final position: 43
+2025-09-29 22:29:03,611 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Setting scollbars. Edited V/H: 0/0, Preview V: 0, Original V/H: 0/0
+2025-09-29 22:29:03,611 - DEBUG - logging_utils - log_debug - MainWindowHelper: Restored selection to block 0, string 0, cursor 43
+2025-09-29 22:29:03,611 - DEBUG - logging_utils - log_debug - MainWindowHelper: Search history loaded into panel. Last query (if any) set in SearchHandler: 
+2025-09-29 22:29:03,611 - DEBUG - logging_utils - log_debug - MainWindowUIHandler: Applying font. General: Family='Segoe UI', Editor: Family='Consolas', Size=13
+2025-09-29 22:29:03,652 - DEBUG - logging_utils - log_debug - ListSelectionHandler.block_selected: current_item is None. Attempting to restore selection to 0.
+2025-09-29 22:29:04,100 - DEBUG - logging_utils - log_debug - Applying text wrap settings: Preview wrap: False, Editors wrap: False
+2025-09-29 22:29:04,102 - DEBUG - logging_utils - log_debug - Rebuilt unsaved_block_indices: set()
+2025-09-29 22:29:04,102 - DEBUG - logging_utils - log_debug - ++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++
+2025-09-29 22:29:04,233 - DEBUG - logging_utils - log_debug - Starting Qt event loop...
+2025-09-29 22:29:04,234 - DEBUG - logging_utils - log_debug - MainWindowUIHandler: Forcing window focus.
+2025-09-29 22:29:05,717 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 101 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
+2025-09-29 22:29:05,730 - DEBUG - logging_utils - log_debug - AIWorker: Thread started for task type 'translate_single'.
+2025-09-29 22:29:05,730 - DEBUG - logging_utils - log_debug - Composed single-string/variation request for AI. System prompt size: 10946, User content size: 506
+2025-09-29 22:29:11,335 - DEBUG - logging_utils - log_debug - OpenAIResponsesProvider RAW response: STATUS=200, BODY={
+  "id": "resp_68dade024888819fbfea3987ccbb095c08a751d62302998c",
+  "object": "response",
+  "created_at": 1759174146,
+  "status": "completed",
+  "background": false,
+  "billing": {
+    "payer": "developer"
+  },
+  "error": null,
+  "incomplete_details": null,
+  "instructions": null,
+  "max_output_tokens": null,
+  "max_tool_calls": null,
+  "model": "gpt-5-2025-08-07",
+  "output": [
+    {
+      "id": "rs_68dade02df20819fa95c162eecffcbc708a751d62302998c",
+      "type": "reasoning",
+      "summary": []
+    },
+    {
+      "id": "msg_68dade0666a8819fb6e154c170ff6e1a08a751d62302998c",
+      "type": "message",
+      "status": "completed",
+      "content": [
+        {
+          "type": "output_text",
+          "annotations": [],
+          "logprobs": [],
+          "text": "\u0422\u0440\u0438\u0432\u0430\u0454 \u0437\u0431\u0435\u0440\u0435\u0436\u0435\u043d\u043d\u044f...\n\u041d\u0435 \u0442\u043e\u0440\u043a\u0430\u0439\u0442\u0435\u0441\u044f \u043a\u0430\u0440\u0442\u043a\u0438 \u043f\u0430\u043c'\u044f\u0442\u0456 \u0430\u0431\u043e\n\u043a\u043d\u043e\u043f\u043a\u0438 POWER."
+        }
+      ],
+      "role": "assistant"
+    }
+  ],
+  "parallel_tool_calls": true,
+  "previous_response_id": null,
+  "prompt_cache_key": null,
+  "reasoning": {
+    "effort": "low",
+    "summary": null
+  },
+  "safety_identifier": null,
+  "service_tier": "default",
+  "store": true,
+  "temperature": 1.0,
+  "text": {
+    "format": {
+      "type": "text"
+    },
+    "verbosity": "low"
+  },
+  "tool_choice": "auto",
+  "tools": [],
+  "top_logprobs": 0,
+  "top_p": 1.0,
+  "truncation": "disabled",
+  "usage": {
+    "input_tokens": 3938,
+    "input_tokens_details": {
+      "cached_tokens": 3840
+    },
+    "output_tokens": 288,
+    "output_tokens_details": {
+      "reasoning_tokens": 256
+    },
+    "total_tokens": 4226
+  },
+  "user": null,
+  "metadata": {}
+}
+2025-09-29 22:29:11,337 - DEBUG - logging_utils - log_debug - AIWorker: Task finished, emitting 'finished' signal.
+2025-09-29 22:29:11,340 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Unsaved changes status changed to True
+2025-09-29 22:29:17,695 - DEBUG - logging_utils - log_debug - LNETMouseHandlers: showContextMenu for editor: preview_text_edit at pos PyQt5.QtCore.QPoint(121, 163)
+2025-09-29 22:29:17,698 - DEBUG - logging_utils - log_debug - LNET (preview_text_edit): populateContextMenu called.
+2025-09-29 22:29:17,698 - DEBUG - logging_utils - log_debug - LNETMouseHandlers: Executing menu for preview_text_edit.
+2025-09-29 22:29:21,704 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 101 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
+2025-09-29 22:29:21,705 - DEBUG - logging_utils - log_debug - AIWorker: Thread started for task type 'translate_preview'.
+2025-09-29 22:29:21,705 - DEBUG - logging_utils - log_debug - Composed batch request for AI. System prompt size: 10946, User content size: 1462
+2025-09-29 22:29:21,706 - DEBUG - logging_utils - log_debug - Full JSON payload sent to AI:
+{
+  "strings_to_translate": [
+    {
+      "id": 1,
+      "text": "The game could not be saved."
+    },
+    {
+      "id": 2,
+      "text": "Warp to [Red]Southern\nFairy Island[/C][White]?[/C]"
+    },
+    {
+      "id": 3,
+      "text": "Warp to [Red]Tingle Island[/C][White]?[/C]"
+    },
+    {
+      "id": 4,
+      "text": "Warp to [Red]this area[/C][White]?[/C]"
+    },
+    {
+      "id": 5,
+      "text": "Warp to the [Red]Mother & Child\nIsles[/C][White]?[/C]"
+    },
+    {
+      "id": 6,
+      "text": "Warp to [Red]Windfall Island[/C][White]?[/C]"
+    },
+    {
+      "id": 7,
+      "text": "Warp to [Red]Dragon Roost Island[/C][White]?[/C]"
+    },
+    {
+      "id": 8,
+      "text": "Warp to [Red]Greatfish Isle[/C][White]?[/C]"
+    }
+  ]
+}
+2025-09-29 22:29:41,823 - DEBUG - logging_utils - log_debug - OpenAIResponsesProvider RAW response: STATUS=200, BODY={
+  "id": "resp_68dade11cf00819c90aa66e103faf92102bc9648fda6e645",
+  "object": "response",
+  "created_at": 1759174161,
+  "status": "completed",
+  "background": false,
+  "billing": {
+    "payer": "developer"
+  },
+  "error": null,
+  "incomplete_details": null,
+  "instructions": null,
+  "max_output_tokens": null,
+  "max_tool_calls": null,
+  "model": "gpt-5-2025-08-07",
+  "output": [
+    {
+      "id": "rs_68dade12b5ac819cba62571bbd4bf7cc02bc9648fda6e645",
+      "type": "reasoning",
+      "summary": []
+    },
+    {
+      "id": "msg_68dade2231e4819ca0f003db5129ca9502bc9648fda6e645",
+      "type": "message",
+      "status": "completed",
+      "content": [
+        {
+          "type": "output_text",
+          "annotations": [],
+          "logprobs": [],
+          "text": "{\n  \"translated_strings\": [\n    {\n      \"id\": 1,\n      \"translation\": \"\u0413\u0440\u0443 \u043d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u0437\u0431\u0435\u0440\u0435\u0433\u0442\u0438.\"\n    },\n    {\n      \"id\": 2,\n      \"translation\": \"\u0422\u0435\u043b\u0435\u043f\u043e\u0440\u0442\u0443\u0432\u0430\u0442\u0438\u0441\u044f \u0434\u043e [Red]\u041f\u0456\u0432\u0434\u0435\u043d\u043d\u043e\u0433\u043e\\n\u041e\u0441\u0442\u0440\u043e\u0432\u0430 \u0424\u0435\u0439[/C][White]?[/C]\"\n    },\n    {\n      \"id\": 3,\n      \"translation\": \"\u0422\u0435\u043b\u0435\u043f\u043e\u0440\u0442\u0443\u0432\u0430\u0442\u0438\u0441\u044f \u0434\u043e [Red]\u041e\u0441\u0442\u0440\u043e\u0432\u0430 \u0422\u0456\u043d\u0491\u043b\u0430[/C][White]?[/C]\"\n    },\n    {\n      \"id\": 4,\n      \"translation\": \"\u0422\u0435\u043b\u0435\u043f\u043e\u0440\u0442\u0443\u0432\u0430\u0442\u0438\u0441\u044f \u0434\u043e [Red]\u0446\u0456\u0454\u0457 \u043e\u0431\u043b\u0430\u0441\u0442\u0456[/C][White]?[/C]\"\n    },\n    {\n      \"id\": 5,\n      \"translation\": \"\u0422\u0435\u043b\u0435\u043f\u043e\u0440\u0442\u0443\u0432\u0430\u0442\u0438\u0441\u044f \u0434\u043e [Red]\u041e\u0441\u0442\u0440\u043e\u0432\u0456\u0432 \u041c\u0430\u0442\u0435\u0440\u0456 \u0442\u0430\\n\u0414\u0438\u0442\u0438\u043d\u0438[/C][White]?[/C]\"\n    },\n    {\n      \"id\": 6,\n      \"translation\": \"\u0422\u0435\u043b\u0435\u043f\u043e\u0440\u0442\u0443\u0432\u0430\u0442\u0438\u0441\u044f \u0434\u043e [Red]\u041e\u0441\u0442\u0440\u043e\u0432\u0430 \u0429\u0430\u0441\u043b\u0438\u0432\u043e\u0433\u043e \u0412\u0456\u0442\u0440\u0443[/C][White]?[/C]\"\n    },\n    {\n      \"id\": 7,\n      \"translation\": \"\u0422\u0435\u043b\u0435\u043f\u043e\u0440\u0442\u0443\u0432\u0430\u0442\u0438\u0441\u044f \u0434\u043e [Red]\u041e\u0441\u0442\u0440\u043e\u0432\u0430 \u0414\u0440\u0430\u043a\u043e\u043d\u044f\u0447\u043e\u0433\u043e \u0421\u0456\u0434\u0430\u043b\u0430[/C][White]?[/C]\"\n    },\n    {\n      \"id\": 8,\n      \"translation\": \"\u0422\u0435\u043b\u0435\u043f\u043e\u0440\u0442\u0443\u0432\u0430\u0442\u0438\u0441\u044f \u0434\u043e [Red]\u041e\u0441\u0442\u0440\u043e\u0432\u0430 \u0412\u0435\u043b\u0438\u043a\u043e\u0457 \u0420\u0438\u0431\u0438[/C][White]?[/C]\"\n    }\n  ]\n}"
+        }
+      ],
+      "role": "assistant"
+    }
+  ],
+  "parallel_tool_calls": true,
+  "previous_response_id": null,
+  "prompt_cache_key": null,
+  "reasoning": {
+    "effort": "low",
+    "summary": null
+  },
+  "safety_identifier": null,
+  "service_tier": "default",
+  "store": true,
+  "temperature": 1.0,
+  "text": {
+    "format": {
+      "type": "text"
+    },
+    "verbosity": "low"
+  },
+  "tool_choice": "auto",
+  "tools": [],
+  "top_logprobs": 0,
+  "top_p": 1.0,
+  "truncation": "disabled",
+  "usage": {
+    "input_tokens": 4261,
+    "input_tokens_details": {
+      "cached_tokens": 3712
+    },
+    "output_tokens": 1739,
+    "output_tokens_details": {
+      "reasoning_tokens": 1408
+    },
+    "total_tokens": 6000
+  },
+  "user": null,
+  "metadata": {}
+}
+2025-09-29 22:29:41,824 - DEBUG - logging_utils - log_debug - AIWorker: Task finished, emitting 'finished' signal.
+2025-09-29 22:29:42,321 - DEBUG - logging_utils - log_debug - ListSelectionHandler.block_selected: current_item is None. Attempting to restore selection to 0.
+2025-09-29 22:30:01,598 - DEBUG - logging_utils - log_debug - Starting block AI translation for block 0 with timeout 1200s (base 120s); lines=1002
+2025-09-29 22:30:01,608 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 101 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
+2025-09-29 22:30:01,609 - DEBUG - logging_utils - log_debug - AIWorker: Thread started for task type 'translate_block_chunked'.
+2025-09-29 22:30:01,609 - DEBUG - logging_utils - log_debug - Composed batch request for AI. System prompt size: 10946, User content size: 1666
+2025-09-29 22:30:01,609 - DEBUG - logging_utils - log_debug - Full JSON payload sent to AI:
 {
   "strings_to_translate": [
     {
@@ -171,17 +365,89 @@ Warp to [Red]Tingle Island[/C][Whit
     }
   ]
 }
-2025-09-29 21:17:04,653 - DEBUG - logging_utils - log_debug - Composed batch request for AI. System prompt size: 10946, User content size: 2451
-2025-09-29 21:17:04,653 - DEBUG - logging_utils - log_debug - Received translated chunk 0. Raw AI response:
+2025-09-29 22:30:38,243 - DEBUG - logging_utils - log_debug - OpenAIResponsesProvider RAW response: STATUS=200, BODY={
+  "id": "resp_68dade39dff481949d01d279968839250b31e633499ac186",
+  "object": "response",
+  "created_at": 1759174201,
+  "status": "completed",
+  "background": false,
+  "billing": {
+    "payer": "developer"
+  },
+  "error": null,
+  "incomplete_details": null,
+  "instructions": null,
+  "max_output_tokens": null,
+  "max_tool_calls": null,
+  "model": "gpt-5-2025-08-07",
+  "output": [
+    {
+      "id": "rs_68dade3b1a508194bfd01643f6c8498c0b31e633499ac186",
+      "type": "reasoning",
+      "summary": []
+    },
+    {
+      "id": "msg_68dade55c21c819496cfb8195cafdb8e0b31e633499ac186",
+      "type": "message",
+      "status": "completed",
+      "content": [
+        {
+          "type": "output_text",
+          "annotations": [],
+          "logprobs": [],
+          "text": "{\n  \"translated_strings\": [\n    {\n      \"id\": 0,\n      \"translation\": \"\u0419\u0434\u0435 \u0437\u0431\u0435\u0440\u0435\u0436\u0435\u043d\u043d\u044f...\\n\u041d\u0435 \u0442\u043e\u0440\u043a\u0430\u0439\u0442\u0435\u0441\u044f \u043a\u0430\u0440\u0442\u043a\u0438 \u043f\u0430\u043c\u2019\u044f\u0442\u0456 \u0430\u0431\u043e\\n\u043a\u043d\u043e\u043f\u043a\u0438 POWER.\"\n    },\n    {\n      \"id\": 1,\n      \"translation\": \"\u041d\u0435 \u0432\u0434\u0430\u043b\u043e\u0441\u044f \u0437\u0431\u0435\u0440\u0435\u0433\u0442\u0438 \u0433\u0440\u0443.\"\n    },\n    {\n      \"id\": 2,\n      \"translation\": \"\u0422\u0435\u043b\u0435\u043f\u043e\u0440\u0442\u0443\u0432\u0430\u0442\u0438\u0441\u044f \u043d\u0430 [Red]\u041f\u0456\u0432\u0434\u0435\u043d\u043d\u0438\u0439\\n\u041e\u0441\u0442\u0440\u0456\u0432 \u0424\u0435\u0439[/C][White]?[/C]\"\n    },\n    {\n      \"id\": 3,\n      \"translation\": \"\u0422\u0435\u043b\u0435\u043f\u043e\u0440\u0442\u0443\u0432\u0430\u0442\u0438\u0441\u044f \u043d\u0430 [Red]\u041e\u0441\u0442\u0440\u0456\u0432 \u0422\u0456\u043d\u0491\u043b\u0430[/C][White]?[/C]\"\n    },\n    {\n      \"id\": 4,\n      \"translation\": \"\u0422\u0435\u043b\u0435\u043f\u043e\u0440\u0442\u0443\u0432\u0430\u0442\u0438\u0441\u044f \u0434\u043e [Red]\u0446\u0456\u0454\u0457 \u043e\u0431\u043b\u0430\u0441\u0442\u0456[/C][White]?[/C]\"\n    },\n    {\n      \"id\": 5,\n      \"translation\": \"\u0422\u0435\u043b\u0435\u043f\u043e\u0440\u0442\u0443\u0432\u0430\u0442\u0438\u0441\u044f \u043d\u0430 [Red]\u041e\u0441\u0442\u0440\u043e\u0432\u0438 \u041c\u0430\u0442\u0435\u0440\u0456 \u0442\u0430\\n\u0414\u0438\u0442\u0438\u043d\u0438[/C][White]?[/C]\"\n    },\n    {\n      \"id\": 6,\n      \"translation\": \"\u0422\u0435\u043b\u0435\u043f\u043e\u0440\u0442\u0443\u0432\u0430\u0442\u0438\u0441\u044f \u043d\u0430 [Red]\u041e\u0441\u0442\u0440\u0456\u0432 \u0429\u0430\u0441\u043b\u0438\u0432\u043e\u0433\u043e \u0412\u0456\u0442\u0440\u0443[/C][White]?[/C]\"\n    },\n    {\n      \"id\": 7,\n      \"translation\": \"\u0422\u0435\u043b\u0435\u043f\u043e\u0440\u0442\u0443\u0432\u0430\u0442\u0438\u0441\u044f \u043d\u0430 [Red]\u041e\u0441\u0442\u0440\u0456\u0432 \u0414\u0440\u0430\u043a\u043e\u043d\u044f\u0447\u043e\u0433\u043e \u0421\u0456\u0434\u0430\u043b\u0430[/C][White]?[/C]\"\n    },\n    {\n      \"id\": 8,\n      \"translation\": \"\u0422\u0435\u043b\u0435\u043f\u043e\u0440\u0442\u0443\u0432\u0430\u0442\u0438\u0441\u044f \u043d\u0430 [Red]\u041e\u0441\u0442\u0440\u0456\u0432 \u0412\u0435\u043b\u0438\u043a\u043e\u0457 \u0420\u0438\u0431\u0438[/C][White]?[/C]\"\n    },\n    {\n      \"id\": 9,\n      \"translation\": \"\u0422\u0435\u043b\u0435\u043f\u043e\u0440\u0442\u0443\u0432\u0430\u0442\u0438\u0441\u044f \u0434\u043e [Red]\u0412\u0435\u0436\u0456\\n\u0411\u043e\u0433\u0456\u0432[/C][White]?[/C]\"\n    }\n  ]\n}"
+        }
+      ],
+      "role": "assistant"
+    }
+  ],
+  "parallel_tool_calls": true,
+  "previous_response_id": null,
+  "prompt_cache_key": null,
+  "reasoning": {
+    "effort": "low",
+    "summary": null
+  },
+  "safety_identifier": null,
+  "service_tier": "default",
+  "store": true,
+  "temperature": 1.0,
+  "text": {
+    "format": {
+      "type": "text"
+    },
+    "verbosity": "low"
+  },
+  "tool_choice": "auto",
+  "tools": [],
+  "top_logprobs": 0,
+  "top_p": 1.0,
+  "truncation": "disabled",
+  "usage": {
+    "input_tokens": 4328,
+    "input_tokens_details": {
+      "cached_tokens": 3712
+    },
+    "output_tokens": 1819,
+    "output_tokens_details": {
+      "reasoning_tokens": 1408
+    },
+    "total_tokens": 6147
+  },
+  "user": null,
+  "metadata": {}
+}
+2025-09-29 22:30:38,245 - DEBUG - logging_utils - log_debug - Composed batch request for AI. System prompt size: 10946, User content size: 2451
+2025-09-29 22:30:38,245 - DEBUG - logging_utils - log_debug - Received translated chunk 0. Raw AI response:
 {
   "translated_strings": [
     {
       "id": 0,
-      "translation": "Зараз зберігається...\nНе торкайтеся до картки пам'яті або\nкнопки Живлення."
+      "translation": "Йде збереження...\nНе торкайтеся картки пам’яті або\nкнопки POWER."
     },
     {
       "id": 1,
-      "translation": "Гру не вдалося зберегти."
+      "translation": "Не вдалося зберегти гру."
     },
     {
       "id": 2,
@@ -193,11 +459,11 @@ Warp to [Red]Tingle Island[/C][Whit
     },
     {
       "id": 4,
-      "translation": "Телепортуватися в [Red]цю зону[/C][White]?[/C]"
+      "translation": "Телепортуватися до [Red]цієї області[/C][White]?[/C]"
     },
     {
       "id": 5,
-      "translation": "Телепортуватися на [Red]Острови Матері та Дитини[/C][White]?[/C]"
+      "translation": "Телепортуватися на [Red]Острови Матері та\nДитини[/C][White]?[/C]"
     },
     {
       "id": 6,
@@ -213,11 +479,11 @@ Warp to [Red]Tingle Island[/C][Whit
     },
     {
       "id": 9,
-      "translation": "Телепортуватися на [Red]Вежу Богів[/C][White]?[/C]"
+      "translation": "Телепортуватися до [Red]Вежі\nБогів[/C][White]?[/C]"
     }
   ]
 }
-2025-09-29 21:17:04,653 - DEBUG - logging_utils - log_debug - Full JSON payload sent to AI:
+2025-09-29 22:30:38,245 - DEBUG - logging_utils - log_debug - Full JSON payload sent to AI:
 {
   "strings_to_translate": [
     {
@@ -262,9 +528,134 @@ Warp to [Red]Tingle Island[/C][Whit
     }
   ]
 }
-2025-09-29 21:17:04,654 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Unsaved changes status changed to True
-2025-09-29 21:17:22,735 - DEBUG - logging_utils - log_debug - Composed batch request for AI. System prompt size: 10946, User content size: 3669
-2025-09-29 21:17:22,735 - DEBUG - logging_utils - log_debug - Full JSON payload sent to AI:
+2025-09-29 22:31:00,653 - DEBUG - logging_utils - log_debug - LNETMouseHandlers: showContextMenu for editor: original_text_edit at pos PyQt5.QtCore.QPoint(70, 40)
+2025-09-29 22:31:00,653 - DEBUG - logging_utils - log_debug - LNET (original_text_edit): populateContextMenu called.
+2025-09-29 22:31:00,653 - DEBUG - logging_utils - log_debug - LNETMouseHandlers: Executing menu for original_text_edit.
+2025-09-29 22:31:07,994 - DEBUG - logging_utils - log_debug - LNETMouseHandlers: showContextMenu for editor: original_text_edit at pos PyQt5.QtCore.QPoint(199, 10)
+2025-09-29 22:31:07,994 - DEBUG - logging_utils - log_debug - LNET (original_text_edit): populateContextMenu called.
+2025-09-29 22:31:07,995 - DEBUG - logging_utils - log_debug - LNETMouseHandlers: Executing menu for original_text_edit.
+2025-09-29 22:31:12,098 - DEBUG - logging_utils - log_debug - LNETMouseHandlers: showContextMenu for editor: original_text_edit at pos PyQt5.QtCore.QPoint(215, 15)
+2025-09-29 22:31:12,098 - DEBUG - logging_utils - log_debug - LNET (original_text_edit): populateContextMenu called.
+2025-09-29 22:31:12,099 - DEBUG - logging_utils - log_debug - LNETMouseHandlers: Executing menu for original_text_edit.
+2025-09-29 22:31:12,523 - DEBUG - logging_utils - log_debug - OpenAIResponsesProvider RAW response: STATUS=200, BODY={
+  "id": "resp_68dade5ea38481a3b6d008d4496dd304022fc1140051d1e8",
+  "object": "response",
+  "created_at": 1759174238,
+  "status": "completed",
+  "background": false,
+  "billing": {
+    "payer": "developer"
+  },
+  "error": null,
+  "incomplete_details": null,
+  "instructions": null,
+  "max_output_tokens": null,
+  "max_tool_calls": null,
+  "model": "gpt-5-2025-08-07",
+  "output": [
+    {
+      "id": "rs_68dade5f638081a3b3c60ba50159f863022fc1140051d1e8",
+      "type": "reasoning",
+      "summary": []
+    },
+    {
+      "id": "msg_68dade7ca5d481a3985611d6bebb0630022fc1140051d1e8",
+      "type": "message",
+      "status": "completed",
+      "content": [
+        {
+          "type": "output_text",
+          "annotations": [],
+          "logprobs": [],
+          "text": "{\n  \"translated_strings\": [\n    {\n      \"id\": 10,\n      \"translation\": \"\u0422\u0435\u043b\u0435\u043f\u043e\u0440\u0442\u0443\u0432\u0430\u0442\u0438\u0441\u044f \u0434\u043e [Red]\u041b\u0456\u0441\u043e\u0432\u043e\u0433\u043e \u041f\u0440\u0438\u0442\u0443\u043b\u043a\u0443[/C][White]?[/C]\"\n    },\n    {\n      \"id\": 11,\n      \"translation\": \"\u0422\u0435\u043b\u0435\u043f\u043e\u0440\u0442\u0443\u0432\u0430\u0442\u0438\u0441\u044f \u0434\u043e [Red]\u041f\u043e\u0447\u0430\u0442\u043a\u043e\u0432\u043e\u0433\u043e \u043e\u0441\u0442\u0440\u043e\u0432\u0430[/C][White]?[/C]\"\n    },\n    {\n      \"id\": 12,\n      \"translation\": \"[ChM1]\u0422\u0438 \u043e\u0442\u0440\u0438\u043c\u0430\u0432 [Green]\u0417\u0435\u043b\u0435\u043d\u0443 \u0420\u0443\u043f\u0456\u044e[/C][White]![ChM2]\\n[02_184]\u0412\u043e\u043d\u0430 \u0432\u0430\u0440\u0442\u0430 [/C][Purple]1 \u0420\u0443\u043f\u0456\u0457[/C][White]!\\n\u041a\u0440\u0430\u0449\u0435 \u043d\u0430\u0437\u0431\u0438\u0440\u0430\u0439 \u0457\u0445 \u043f\u043e\u0431\u0456\u043b\u044c\u0448\u0435![/C]\"\n    },\n    {\n      \"id\": 13,\n      \"translation\": \"[ChM1]\u0422\u0438 \u043e\u0442\u0440\u0438\u043c\u0430\u0432 [Blue]\u0421\u0438\u043d\u044e \u0420\u0443\u043f\u0456\u044e[/C][White]![ChM2]\\n[02_184]\u0412\u043e\u043d\u0430 \u0432\u0430\u0440\u0442\u0430 [/C][Purple]5 \u0420\u0443\u043f\u0456\u0439[/C][White].\\n\u041d\u0435\u043f\u043e\u0433\u0430\u043d\u043e, \u0447\u0438 \u043d\u0435 \u0442\u0430\u043a?[/C]\"\n    },\n    {\n      \"id\": 14,\n      \"translation\": \"[ChM1]\u0422\u0438 \u043e\u0442\u0440\u0438\u043c\u0430\u0432 [Yellow]\u0416\u043e\u0432\u0442\u0443 \u0420\u0443\u043f\u0456\u044e[/C][White]![ChM2]\\n[02_184]\u0412\u043e\u043d\u0430 \u0432\u0430\u0440\u0442\u0430 [/C][Purple]10 \u0420\u0443\u043f\u0456\u0439[/C][White].\\n\u041d\u0435\u043f\u043e\u0433\u0430\u043d\u043e![/C]\"\n    },\n    {\n      \"id\": 15,\n      \"translation\": \"[ChM1]\u0422\u0438 \u043e\u0442\u0440\u0438\u043c\u0430\u0432 [Red]\u0427\u0435\u0440\u0432\u043e\u043d\u0443 \u0420\u0443\u043f\u0456\u044e[/C][White]![ChM2]\\n[02_184]\u0426\u0435 [/C][Purple]20 \u0420\u0443\u043f\u0456\u0439[/C][White].\\n\u042f\u043a\u0438\u0439 \u043f\u0440\u0438\u0454\u043c\u043d\u0438\u0439 \u0441\u044e\u0440\u043f\u0440\u0438\u0437![/C]\"\n    },\n    {\n      \"id\": 16,\n      \"translation\": \"[ChM1]\u0422\u0438 \u043e\u0442\u0440\u0438\u043c\u0430\u0432 [Purple]\u041f\u0443\u0440\u043f\u0443\u0440\u043e\u0432\u0443 \u0420\u0443\u043f\u0456\u044e[/C][White]![ChM2]\\n[02_184]\u0412\u043e\u043d\u0430 \u0432\u0430\u0440\u0442\u0430 [/C][Purple]50 \u0420\u0443\u043f\u0456\u0439[/C][White].\\n\u041e\u0446\u0435 \u0432\u0436\u0435 \u0447\u0443\u0434\u043e\u0432\u043e![/C]\"\n    },\n    {\n      \"id\": 17,\n      \"translation\": \"[ChM1]\u0422\u0438 \u043e\u0442\u0440\u0438\u043c\u0430\u0432 [Orange]\u041f\u043e\u043c\u0430\u0440\u0430\u043d\u0447\u0435\u0432\u0443 \u0420\u0443\u043f\u0456\u044e[/C][White]![ChM2]\\n[02_184]\u041b\u0438\u0448\u0435 \u043e\u0434\u043d\u0430 \u0442\u0430\u043a\u0430 \u043a\u043e\u0448\u0442\u0443\u0454\\n[/C][Purple]100 \u0420\u0443\u043f\u0456\u0439[/C][White]! \u0422\u0432\u043e\u0454 \u043e\u0431\u043b\u0438\u0447\u0447\u044f \u0441\u044f\u0454![/C]\"\n    },\n    {\n      \"id\": 18,\n      \"translation\": \"[ChM1]\u0422\u0438 \u043e\u0442\u0440\u0438\u043c\u0430\u0432 [Red]\u0427\u0430\u0441\u0442\u0438\u043d\u043a\u0443 \u0421\u0435\u0440\u0446\u044f[/C][White]![ChM2]\\n[02_184]\u0417\u0431\u0435\u0440\u0438 \u0447\u043e\u0442\u0438\u0440\u0438 \u0442\u0430\u043a\u0438\u0445, \u0449\u043e\u0431 \u0441\u0442\u0432\u043e\u0440\u0438\u0442\u0438\\n\u043d\u043e\u0432\u0438\u0439 \u0421\u0435\u0440\u0446\u0435-\u043a\u043e\u043d\u0442\u0435\u0439\u043d\u0435\u0440. \u0411\u0456\u043b\u044c\u0448\u0435\\n\u0421\u0435\u0440\u0434\u0435\u0446\u044c-\u043a\u043e\u043d\u0442\u0435\u0439\u043d\u0435\u0440\u0456\u0432 \u2014 \u0431\u0456\u043b\u044c\u0448\u0435 \u0436\u0438\u0442\u0442\u044f![/C]\"\n    },\n    {\n      \"id\": 19,\n      \"translation\": \"[ChM1]\u0422\u0438 \u043e\u0442\u0440\u0438\u043c\u0430\u0432 [Red]\u0421\u0435\u0440\u0446\u0435-\u043a\u043e\u043d\u0442\u0435\u0439\u043d\u0435\u0440[/C][White]![ChM2]\\n[02_184]\u0422\u0432\u0456\u0439 \u0440\u0456\u0432\u0435\u043d\u044c \u0437\u0434\u043e\u0440\u043e\u0432'\u044f \u0437\u0440\u0456\u0441 \u043d\u0430\\n[/C][Red]\u043e\u0434\u043d\u0435[/C][White]! \u0410 \u0449\u0435 \u0442\u0432\u043e\u044f \u0448\u043a\u0430\u043b\u0430 \u0437\u0434\u043e\u0440\u043e\u0432'\u044f\\n\u043f\u043e\u0432\u043d\u0456\u0441\u0442\u044e \u0432\u0456\u0434\u043d\u043e\u0432\u043b\u0435\u043d\u0430![/C]\"\n    }\n  ]\n}"
+        }
+      ],
+      "role": "assistant"
+    }
+  ],
+  "parallel_tool_calls": true,
+  "previous_response_id": null,
+  "prompt_cache_key": null,
+  "reasoning": {
+    "effort": "low",
+    "summary": null
+  },
+  "safety_identifier": null,
+  "service_tier": "default",
+  "store": true,
+  "temperature": 1.0,
+  "text": {
+    "format": {
+      "type": "text"
+    },
+    "verbosity": "low"
+  },
+  "tool_choice": "auto",
+  "tools": [],
+  "top_logprobs": 0,
+  "top_p": 1.0,
+  "truncation": "disabled",
+  "usage": {
+    "input_tokens": 4638,
+    "input_tokens_details": {
+      "cached_tokens": 3840
+    },
+    "output_tokens": 3132,
+    "output_tokens_details": {
+      "reasoning_tokens": 2368
+    },
+    "total_tokens": 7770
+  },
+  "user": null,
+  "metadata": {}
+}
+2025-09-29 22:31:12,525 - DEBUG - logging_utils - log_debug - Composed batch request for AI. System prompt size: 10946, User content size: 3669
+2025-09-29 22:31:12,525 - DEBUG - logging_utils - log_debug - Received translated chunk 1. Raw AI response:
+{
+  "translated_strings": [
+    {
+      "id": 10,
+      "translation": "Телепортуватися до [Red]Лісового Притулку[/C][White]?[/C]"
+    },
+    {
+      "id": 11,
+      "translation": "Телепортуватися до [Red]Початкового острова[/C][White]?[/C]"
+    },
+    {
+      "id": 12,
+      "translation": "[ChM1]Ти отримав [Green]Зелену Рупію[/C][White]![ChM2]\n[02_184]Вона варта [/C][Purple]1 Рупії[/C][White]!\nКраще назбирай їх побільше![/C]"
+    },
+    {
+      "id": 13,
+      "translation": "[ChM1]Ти отримав [Blue]Синю Рупію[/C][White]![ChM2]\n[02_184]Вона варта [/C][Purple]5 Рупій[/C][White].\nНепогано, чи не так?[/C]"
+    },
+    {
+      "id": 14,
+      "translation": "[ChM1]Ти отримав [Yellow]Жовту Рупію[/C][White]![ChM2]\n[02_184]Вона варта [/C][Purple]10 Рупій[/C][White].\nНепогано![/C]"
+    },
+    {
+      "id": 15,
+      "translation": "[ChM1]Ти отримав [Red]Червону Рупію[/C][White]![ChM2]\n[02_184]Це [/C][Purple]20 Рупій[/C][White].\nЯкий приємний сюрприз![/C]"
+    },
+    {
+      "id": 16,
+      "translation": "[ChM1]Ти отримав [Purple]Пурпурову Рупію[/C][White]![ChM2]\n[02_184]Вона варта [/C][Purple]50 Рупій[/C][White].\nОце вже чудово![/C]"
+    },
+    {
+      "id": 17,
+      "translation": "[ChM1]Ти отримав [Orange]Помаранчеву Рупію[/C][White]![ChM2]\n[02_184]Лише одна така коштує\n[/C][Purple]100 Рупій[/C][White]! Твоє обличчя сяє![/C]"
+    },
+    {
+      "id": 18,
+      "translation": "[ChM1]Ти отримав [Red]Частинку Серця[/C][White]![ChM2]\n[02_184]Збери чотири таких, щоб створити\nновий Серце-контейнер. Більше\nСердець-контейнерів — більше життя![/C]"
+    },
+    {
+      "id": 19,
+      "translation": "[ChM1]Ти отримав [Red]Серце-контейнер[/C][White]![ChM2]\n[02_184]Твій рівень здоров'я зріс на\n[/C][Red]одне[/C][White]! А ще твоя шкала здоров'я\nповністю відновлена![/C]"
+    }
+  ]
+}
+2025-09-29 22:31:12,525 - DEBUG - logging_utils - log_debug - Full JSON payload sent to AI:
 {
   "strings_to_translate": [
     {
@@ -309,427 +700,123 @@ Warp to [Red]Tingle Island[/C][Whit
     }
   ]
 }
-2025-09-29 21:17:22,737 - DEBUG - logging_utils - log_debug - Received translated chunk 1. Raw AI response:
-{
-  "translated_strings": [
+2025-09-29 22:31:23,367 - DEBUG - logging_utils - log_debug - AIWorker: Cancellation requested.
+2025-09-29 22:31:24,759 - DEBUG - logging_utils - log_debug - AIWorker: Cancellation requested.
+2025-09-29 22:31:24,759 - DEBUG - logging_utils - log_debug - AIWorker: Cancellation requested.
+2025-09-29 22:31:59,608 - DEBUG - logging_utils - log_debug - OpenAIResponsesProvider RAW response: STATUS=200, BODY={
+  "id": "resp_68dade8088ac8193a61146f8b7125b3a09652396f9b724d6",
+  "object": "response",
+  "created_at": 1759174272,
+  "status": "completed",
+  "background": false,
+  "billing": {
+    "payer": "developer"
+  },
+  "error": null,
+  "incomplete_details": null,
+  "instructions": null,
+  "max_output_tokens": null,
+  "max_tool_calls": null,
+  "model": "gpt-5-2025-08-07",
+  "output": [
     {
-      "id": 10,
-      "translation": "Телепортуватися до [Red]Лісового Притулку[/C][White]?[/C]"
+      "id": "rs_68dade81467c8193aa220c815a365ded09652396f9b724d6",
+      "type": "reasoning",
+      "summary": []
     },
     {
-      "id": 11,
-      "translation": "Телепортуватися до [Red]Початкового острова[/C][White]?[/C]"
-    },
-    {
-      "id": 12,
-      "translation": "[ChM1]Ви отримали [Green]Зелену Рупію[/C][White]![ChM2]\n[02_184]Це коштує [/C][Purple]1 Рупію[/C][White]!\nКраще збирайте їх багато![/C]"
-    },
-    {
-      "id": 13,
-      "translation": "[ChM1]Ви отримали [Blue]Синю Рупію[/C][White]![ChM2]\n[02_184]Це коштує [/C][Purple]5 Рупій[/C][White].\nНе так вже й погано, правда?[/C]"
-    },
-    {
-      "id": 14,
-      "translation": "[ChM1]Ви отримали [Yellow]Жовту Рупію[/C][White]![ChM2]\n[02_184]Це коштує [/C][Purple]10 Рупій[/C][White].\nНе так вже й погано![/C]"
-    },
-    {
-      "id": 15,
-      "translation": "[ChM1]Ви отримали [Red]Червону Рупію[/C][White]![ChM2]\n[02_184]Це [/C][Purple]20 Рупій[/C][White].\nЯка приємна несподіванка![/C]"
-    },
-    {
-      "id": 16,
-      "translation": "[ChM1]Ви отримали [Purple]Фіолетову Рупію[/C][White]![ChM2]\n[02_184]Це коштує [/C][Purple]50 Рупій[/C][White].\nЦе просто чудово![/C]"
-    },
-    {
-      "id": 17,
-      "translation": "[ChM1]Ви отримали [Orange]Помаранчеву Рупію[/C][White]![ChM2]\n[02_184]Лише одна з цих коштує\n[/C][Purple]100 Рупій[/C][White]! Ваше обличчя сяє![/C]"
-    },
-    {
-      "id": 18,
-      "translation": "[ChM1]Ви отримали [Red]Частинку Серця[/C][White]![ChM2]\n[02_184]Зберіть чотири з цих, щоб завершити\nновий Серце-контейнер. Більше Серце-контейнерів\nозначає більше життя![/C]"
-    },
-    {
-      "id": 19,
-      "translation": "[ChM1]Ви отримали [Red]Серце-контейнер[/C][White]![ChM2]\n[02_184]Ваш рівень здоров'я збільшився на\n[/C][Red]одне[/C][White]! Крім того, ваш запас здоров'я\nбув відновлений![/C]"
+      "id": "msg_68dadea87f84819390f0cacf58a7688709652396f9b724d6",
+      "type": "message",
+      "status": "completed",
+      "content": [
+        {
+          "type": "output_text",
+          "annotations": [],
+          "logprobs": [],
+          "text": "{\n  \"translated_strings\": [\n    {\n      \"id\": 20,\n      \"translation\": \"[ChM1]\u0422\u0438 \u043e\u0442\u0440\u0438\u043c\u0430\u0432 [Silver]\u0421\u0440\u0456\u0431\u043d\u0443 \u0420\u0443\u043f\u0456\u044e[/C][White]![ChM2]\\n[02_184]\u041e\u0434\u043d\u0430 \u043a\u043e\u0448\u0442\u0443\u0454 \u0446\u0456\u043b\u0438\u0445 [/C][Purple]200 \u0440\u0443\u043f\u0456\u0439[/C][White]!\\n\u0427\u0430\u0441 \u043f\u0456\u0434\u0441\u0442\u0440\u0438\u0431\u043d\u0443\u0442\u0438 \u0432\u0456\u0434 \u0440\u0430\u0434\u043e\u0441\u0442\u0456![/C]\"\n    },\n    {\n      \"id\": 21,\n      \"translation\": \"[ChM1]\u0422\u0438 \u043e\u0442\u0440\u0438\u043c\u0430\u0432 [Red]\u043c\u0430\u043b\u0438\u0439 \u043a\u043b\u044e\u0447[/C][White]![/C][Red][ChM2]\\n[/C][White][02_184]\u0412\u0438\u043a\u043e\u0440\u0438\u0441\u0442\u0430\u0439 \u0439\u043e\u0433\u043e, \u0449\u043e\u0431 \u0432\u0456\u0434\u0447\u0438\u043d\u044f\u0442\u0438 \u0437\u0430\u043c\u043a\u043d\u0435\u043d\u0456 \u0434\u0432\u0435\u0440\u0456.\\n\u0419\u043e\u0433\u043e \u043c\u043e\u0436\u043d\u0430 \u0432\u0438\u043a\u043e\u0440\u0438\u0441\u0442\u043e\u0432\u0443\u0432\u0430\u0442\u0438 \u043b\u0438\u0448\u0435 \u0432 \u0446\u044c\u043e\u043c\u0443 \u043f\u0456\u0434\u0437\u0435\u043c\u0435\u043b\u043b\u0456.[/C]\"\n    },\n    {\n      \"id\": 22,\n      \"translation\": \"[ChM1]\u0422\u0438 \u043e\u0442\u0440\u0438\u043c\u0430\u0432 [Red]\u0427\u0430\u0441\u0442\u0438\u043d\u043a\u0443 \u0421\u0435\u0440\u0446\u044f[/C][White]![ChM2]\\n[02_184]\u0423\u0441\u044c\u043e\u0433\u043e \u0442\u0438 \u0437\u0456\u0431\u0440\u0430\u0432 [/C][Red]\u0434\u0432\u0456\\n\u0447\u0430\u0441\u0442\u0438\u043d\u043a\u0438[/C][White]. \u0417\u0431\u0435\u0440\u0438 \u0449\u0435 [/C][Red]\u0434\u0432\u0456[/C][White], \u0449\u043e\u0431 \u0437\u0430\u0432\u0435\u0440\u0448\u0438\u0442\u0438\\n\u0449\u0435 \u043e\u0434\u0438\u043d \u0421\u0435\u0440\u0446\u0435-\u043a\u043e\u043d\u0442\u0435\u0439\u043d\u0435\u0440.[/C]\"\n    },\n    {\n      \"id\": 23,\n      \"translation\": \"[ChM1]\u0422\u0438 \u043e\u0442\u0440\u0438\u043c\u0430\u0432 [Red]\u0427\u0430\u0441\u0442\u0438\u043d\u043a\u0443 \u0421\u0435\u0440\u0446\u044f[/C][White]![ChM2]\\n[02_184]\u041d\u0430\u0440\u0430\u0437\u0456 \u0442\u0438 \u0437\u0456\u0431\u0440\u0430\u0432 [/C][Red]\u0442\u0440\u0438[/C][White]. \u0417\u0431\u0435\u0440\u0438\\n[/C][Red]\u0449\u0435 \u043e\u0434\u043d\u0443[/C][White], \u0449\u043e\u0431 \u0437\u0431\u0456\u043b\u044c\u0448\u0438\u0442\u0438 \u0440\u0456\u0432\u0435\u043d\u044c \u0437\u0434\u043e\u0440\u043e\u0432'\u044f\\n\u043d\u0430 \u043e\u0434\u043d\u0435 \u0441\u0435\u0440\u0446\u0435.[/C]\"\n    },\n    {\n      \"id\": 24,\n      \"translation\": \"[ChM1]\u0422\u0438 \u043e\u0442\u0440\u0438\u043c\u0430\u0432 [Red]\u0427\u0430\u0441\u0442\u0438\u043d\u043a\u0443 \u0421\u0435\u0440\u0446\u044f[/C][White]![ChM2]\\n[02_184]\u0426\u0435 [/C][Red]\u0447\u0435\u0442\u0432\u0435\u0440\u0442\u0430[/C][White] \u0447\u0430\u0441\u0442\u0438\u043d\u043a\u0430, \u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043d\u043e\\n\u0449\u0435 \u043e\u0434\u0438\u043d \u0421\u0435\u0440\u0446\u0435-\u043a\u043e\u043d\u0442\u0435\u0439\u043d\u0435\u0440! \u0422\u0432\u0456\u0439 \u0440\u0456\u0432\u0435\u043d\u044c\\n\u0437\u0434\u043e\u0440\u043e\u0432'\u044f \u0437\u0431\u0456\u043b\u044c\u0448\u0438\u0432\u0441\u044f \u043d\u0430 [/C][Red]\u043e\u0434\u043d\u0435 \u0441\u0435\u0440\u0446\u0435[/C][White]![/C]\"\n    },\n    {\n      \"id\": 25,\n      \"translation\": \"[ChM1]\u0422\u0438 \u043e\u0442\u0440\u0438\u043c\u0430\u0432 [Yellow]\u0416\u043e\u0432\u0442\u0443 \u0420\u0443\u043f\u0456\u044e[/C][White]![ChM2]\\n[02_184]\u0426\u0435 [/C][Purple]10 \u0440\u0443\u043f\u0456\u0439[/C][White].\\n[02_188]\u0429\u043e?! [02_191]\u0426-[02_188]\u0426\u0435 \u0439 \u0443\u0441\u0435?!\\n\u0426\u0435 \u0436\u0430\u0440\u0442, \u0442\u0430\u043a?[/C]\"\n    },\n    {\n      \"id\": 26,\n      \"translation\": \"[ChM1]\u0422\u0438 \u043e\u0442\u0440\u0438\u043c\u0430\u0432 [Red]\u041f\u0456\u0434\u0432\u0456\u0441\u043a\u0443 \u0420\u0430\u0434\u043e\u0441\u0442\u0456[/C][White]![ChM2]\\n\u0422\u0438 \u043c\u043e\u0436\u0435\u0448 \u0437\u0431\u0435\u0440\u0456\u0433\u0430\u0442\u0438 \u0457\u0457 \u0432 \u0421\u0443\u043c\u0446\u0456 \u0434\u043b\u044f \u0422\u0440\u043e\u0444\u0435\u0457\u0432.\\n\\n\\n\u041a\u0430\u0436\u0443\u0442\u044c, \u0446\u0456 \u043f\u0456\u0434\u0432\u0456\u0441\u043a\u0438 \u0442\u044f\u0433\u043d\u0443\u0442\u044c\u0441\u044f \u0434\u043e\\n\u0442\u0438\u0445, \u0445\u0442\u043e \u0434\u0430\u0440\u0443\u0454 \u0440\u0430\u0434\u0456\u0441\u0442\u044c, \u043c\u043e\u0432 \u043c\u0435\u0442\u0435\u043b\u0438\u043a\u0438\\n\u0434\u043e \u043a\u0432\u0456\u0442\u0456\u0432, \u043f\u043e\u0432\u043d\u0438\u0445 \u043d\u0435\u043a\u0442\u0430\u0440\u0443.[/C]\"\n    },\n    {\n      \"id\": 27,\n      \"translation\": \"[ChM1]\u0422\u0438 \u043e\u0442\u0440\u0438\u043c\u0430\u0432 [Red]\u0422\u0435\u043b\u0435\u0441\u043a\u043e\u043f[/C][White]![ChM2]\\n[02_184]\u0426\u0435 \u043d\u0430\u0439\u0434\u043e\u0440\u043e\u0436\u0447\u0430 \u0440\u0456\u0447 \u0442\u0432\u043e\u0454\u0457 \u0441\u0435\u0441\u0442\u0440\u0438.\\n\u0411\u0435\u0440\u0435\u0436\u0438 \u0457\u0457 \u044f\u043a \u0441\u043a\u0430\u0440\u0431!\\n\\n\u041f\u0440\u0438\u0437\u043d\u0430\u0447 \u0439\u043e\u0433\u043e \u043d\u0430 (Y), [White](X)[White] \u0430\u0431\u043e [White]<R>,[White] \u0456 \u043a\u043e\u0440\u0438\u0441\u0442\u0443\u0439\u0441\u044f,\\n\u043d\u0430\u0442\u0438\u0441\u043d\u0443\u0432\u0448\u0438 \u043a\u043d\u043e\u043f\u043a\u0443, \u043d\u0430 \u044f\u043a\u0443 \u0439\u043e\u0433\u043e\\n\u043f\u0440\u0438\u0437\u043d\u0430\u0447\u0438\u0448. \u0421\u043f\u0440\u043e\u0431\u0443\u0439 \u0437\u0430\u0440\u0430\u0437 \u0456 \u043f\u043e\u0434\u0438\u0432\u0438\u0441\u044c,\\n\u0449\u043e \u043f\u043e\u0431\u0430\u0447\u0438\u0448!\\n\u041a\u043e\u0440\u0438\u0441\u0442\u0443\u044e\u0447\u0438\u0441\u044c GamePad, \u0442\u0438 \u0442\u0430\u043a\u043e\u0436 \u043c\u043e\u0436\u0435\u0448 \u0442\u043e\u0440\u043a\u0430\u0442\u0438\u0441\u044f\\n\u0442\u0430 \u043f\u0435\u0440\u0435\u0442\u044f\u0433\u0443\u0432\u0430\u0442\u0438 \u043f\u0440\u0435\u0434\u043c\u0435\u0442\u0438, \u0449\u043e\u0431 \u043f\u0440\u0438\u0437\u043d\u0430\u0447\u0430\u0442\u0438 \u0457\u0445![/C]\"\n    },\n    {\n      \"id\": 28,\n      \"translation\": \"[ChM1]\u0422\u0438 \u043e\u0442\u0440\u0438\u043c\u0430\u0432 [Red]\u041f\u043b\u044f\u0448\u043a\u0443 \u0422\u0456\u043d\u0491\u043b\u0430[/C][White]![ChM2]\\n[02_184]\u041a\u043e\u0440\u0438\u0441\u0442\u0443\u044e\u0447\u0438\u0441\u044c Miiverse, \u0442\u0438 \u043c\u043e\u0436\u0435\u0448 \u0432\u043a\u043b\u0430\u0441\u0442\u0438\\n\u043d\u0430\u043f\u0438\u0441\u0430\u043d\u0435 \u043f\u043e\u0432\u0456\u0434\u043e\u043c\u043b\u0435\u043d\u043d\u044f \u0439 \u0432\u0456\u0434\u043f\u0440\u0430\u0432\u0438\u0442\u0438 \u0439\u043e\u0433\u043e \u0432 \u043c\u043e\u0440\u0435\\n\u0434\u043b\u044f \u043a\u043e\u0433\u043e\u0441\u044c \u043d\u0435\u0432\u0456\u0434\u043e\u043c\u043e\u0433\u043e![/C][White]\\n\u041f\u0440\u0438\u0437\u043d\u0430\u0447 \u0457\u0457 \u0442\u0430 \u0432\u0438\u043a\u043e\u0440\u0438\u0441\u0442\u043e\u0432\u0443\u0439 \u0437 (Y), [White](X)[White] \u0430\u0431\u043e [White]<R>.\\n\u041c\u0430\u0439 \u043d\u0430 \u0443\u0432\u0430\u0437\u0456: \u0442\u0438 \u043d\u0435 \u0437\u043c\u043e\u0436\u0435\u0448 \u043f\u0438\u0441\u0430\u0442\u0438 \u043b\u0438\u0441\u0442\u0438, \u044f\u043a\u0449\u043e\\n\u043d\u0435 \u043f\u0456\u0434\u2019\u0454\u0434\u043d\u0430\u043d\u0438\u0439 \u0434\u043e Miiverse.[White][/C]\"\n    },\n    {\n      \"id\": 29,\n      \"translation\": \"[ChM1]\u0422\u0438 \u043e\u0442\u0440\u0438\u043c\u0430\u0432 \u043b\u0435\u0433\u0435\u043d\u0434\u0430\u0440\u043d\u0438\u0439\\n[Red]\u0414\u0438\u0440\u0438\u0433\u0435\u043d\u0442 \u0412\u0456\u0442\u0440\u0456\u0432[/C][White]![White][ChM2][White] [02_184]\u041a\u043e\u0440\u0438\u0441\u0442\u0443\u044e\u0447\u0438\u0441\u044c \u0446\u0456\u0454\u044e \u043c\u0430\u0433\u0456\u0447\u043d\u043e\u044e\\n\u0434\u0438\u0440\u0438\u0433\u0435\u043d\u0442\u0441\u044c\u043a\u043e\u044e \u043f\u0430\u043b\u0438\u0447\u043a\u043e\u044e, \u0442\u0438 \u0437\u043c\u043e\u0436\u0435\u0448\\n\u0447\u0435\u0440\u043f\u0430\u0442\u0438 \u0441\u0438\u043b\u0443 \u0431\u043e\u0433\u0456\u0432!\\n\u0412\u0438\u043a\u043e\u0440\u0438\u0441\u0442\u043e\u0432\u0443\u0439 [White][White](R)[White], \u0449\u043e\u0431 \u0434\u0438\u0440\u0438\u0433\u0443\u0432\u0430\u0442\u0438.[White]\\n\\n\\n\\n\u041d\u0435 \u043d\u0430\u0445\u0438\u043b\u044f\u0439 (L), \u0449\u043e\u0431 \u0434\u0438\u0440\u0438\u0433\u0443\u0432\u0430\u0442\u0438 \u0443 \u0440\u043e\u0437\u043c\u0456\u0440\u0456 [/C][Red]3</>4[/C][White].[/C][Red]\\n[/C][White]\u0423\u0442\u0440\u0438\u043c\u0443\u0439 [White](L\u2190)[White], \u0449\u043e\u0431 \u0434\u0438\u0440\u0438\u0433\u0443\u0432\u0430\u0442\u0438 \u0443 \u0440\u043e\u0437\u043c\u0456\u0440\u0456 [/C][Red]4</>4[/C][White].[/C][Red]\\n[/C][White]\u0423\u0442\u0440\u0438\u043c\u0443\u0439 [White](L\u2192)[White], \u0449\u043e\u0431 \u0434\u0438\u0440\u0438\u0433\u0443\u0432\u0430\u0442\u0438 \u0443 \u0440\u043e\u0437\u043c\u0456\u0440\u0456 [/C][Red]6</>4[/C][White].[/C]\"\n    }\n  ]\n}"
+        }
+      ],
+      "role": "assistant"
     }
-  ]
+  ],
+  "parallel_tool_calls": true,
+  "previous_response_id": null,
+  "prompt_cache_key": null,
+  "reasoning": {
+    "effort": "low",
+    "summary": null
+  },
+  "safety_identifier": null,
+  "service_tier": "default",
+  "store": true,
+  "temperature": 1.0,
+  "text": {
+    "format": {
+      "type": "text"
+    },
+    "verbosity": "low"
+  },
+  "tool_choice": "auto",
+  "tools": [],
+  "top_logprobs": 0,
+  "top_p": 1.0,
+  "truncation": "disabled",
+  "usage": {
+    "input_tokens": 5039,
+    "input_tokens_details": {
+      "cached_tokens": 3840
+    },
+    "output_tokens": 5047,
+    "output_tokens_details": {
+      "reasoning_tokens": 3776
+    },
+    "total_tokens": 10086
+  },
+  "user": null,
+  "metadata": {}
 }
-2025-09-29 21:17:49,971 - DEBUG - logging_utils - log_debug - Composed batch request for AI. System prompt size: 10946, User content size: 3878
-2025-09-29 21:17:49,971 - DEBUG - logging_utils - log_debug - Received translated chunk 2. Raw AI response:
-{
-  "translated_strings": [
-    {
-      "id": 20,
-      "translation": "[ChM1]Ви отримали [Silver]Срібну Рупію[/C][White]![ChM2]\n[02_184]Одна коштує вражаючі [/C][Purple]200 Рупій[/C][White]!\nЧас стрибати від радості![/C]"
-    },
-    {
-      "id": 21,
-      "translation": "[ChM1]Ви отримали [Red]малий ключ[/C][White]![/C][Red][ChM2]\n[/C][White][02_184]Використовуйте його, щоб відкрити замкнені двері.\nВи можете використовувати його тільки в цьому підземеллі.[/C]"
-    },
-    {
-      "id": 22,
-      "translation": "[ChM1]Ви отримали [Red]Частинку Серця[/C][White]![ChM2]\n[02_184]Ви зібрали всього [/C][Red]дві\nчастинки[/C][White]. Зберіть [/C][Red]дві[/C][White] ще, щоб завершити\nінший Серце-контейнер.[/C]"
-    },
-    {
-      "id": 23,
-      "translation": "[ChM1]Ви отримали [Red]Частинку Серця[/C][White]![ChM2]\n[02_184]Ви зібрали [/C][Red]три[/C][White] до цього часу. Зберіть\n[/C][Red]одну[/C][White] ще, щоб збільшити свій рівень здоров'я\nна одне серце.[/C]"
-    },
-    {
-      "id": 24,
-      "translation": "[ChM1]Ви отримали [Red]Частинку Серця[/C][White]![ChM2]\n[02_184]Це [/C][Red]четверта[/C][White] частинка, що завершує\nінший Серце-контейнер! Ваш рівень\nздоров'я збільшився на [/C][Red]одне серце[/C][White]![/C]"
-    },
-    {
-      "id": 25,
-      "translation": "[ChM1]Ви отримали [Yellow]Жовту Рупію[/C][White]![ChM2]\n[02_184]Це [/C][Purple]10 Рупій[/C][White].\n[02_188]Що?! [02_191]Це-[02_188] це все?!\nЦе ж жарт, правда?[/C]"
-    },
-    {
-      "id": 26,
-      "translation": "[ChM1]Ви отримали [Red]Підвіску Радості[/C][White]![ChM2]\nВи можете зберігати її у своїй Сумці для Трофеїв.\n\n\nЦі підвіски, кажуть, збираються до\nтих, хто поширює радість, як метелики\nдо квітів, наповнених нектаром.[/C]"
-    },
-    {
-      "id": 27,
-      "translation": "[ChM1]Ви отримали [Red]Телескоп[/C][White]![ChM2]\n[02_184]Це найцінніша річ вашої сестри.\nЦінуйте її дорого!\n\nВстановіть його на (Y), [White](X)[White], або [White]<R>,[White] і використовуйте, натискаючи будь-яку кнопку, яку ви встановили.\nЗробіть це зараз і подивіться, що ви можете\nпобачити!\nВикористовуючи GamePad, ви також можете торкатися\nі перетягувати предмети, щоб їх налаштувати![/C]"
-    },
-    {
-      "id": 28,
-      "translation": "[ChM1]Ви отримали [Red]Пляшку Тінґла[/C][White]![ChM2]\n[02_184]Використовуючи Miiverse, ви можете вставити повідомлення,\nяке ви написали, і надіслати його в море, щоб\nхтось невідомий отримав його![/C][White]\nВстановіть його і використовуйте з (Y), [White](X)[White], або [White]<R>.\nЗверніть увагу, що ви не можете писати листи, якщо\nне підключені до Miiverse.[White][/C]"
-    },
-    {
-      "id": 29,
-      "translation": "[ChM1]Ви отримали легендарний\n[Red]Диригент Вітрів[/C][White]![White][ChM2][White] [02_184]Використовуючи цю магічну\nдиригентську паличку, ви можете запозичити\nсилу богів!\nВикористовуйте [White][White](R)[White], щоб диригувати.[White]\n\n\n\nНе нахиляйте (L), щоб диригувати в [/C][Red]3</>4 час[/C][White].[/C][Red]\n[/C][White]Тримайте [White](L←)[White], щоб диригувати в [/C][Red]4</>4 час[/C][White].[/C][Red]\n[/C][White]Тримайте [White](L→)[White], щоб диригувати в [/C][Red]6</>4 час[/C][White].[/C]"
-    }
-  ]
-}
-2025-09-29 21:17:49,971 - DEBUG - logging_utils - log_debug - Full JSON payload sent to AI:
-{
-  "strings_to_translate": [
-    {
-      "id": 30,
-      "text": "[ChM1]You got the [Red]Picto Box[/C][White]![ChM2]\nSet it to and use it with (Y), [White](X)[White], or [White]<R>[White]!\nIt can record up to 12 pictographs.\nPress [White]<ZR>[White] to view your pictographs.[/C]"
-    },
-    {
-      "id": 31,
-      "text": "[ChM1]You got the [Red]Spoils Bag[/C][White]![ChM2]\n[02_184]You can keep the items you get from\nenemies in this handy pouch.\n\nIt can hold up to [/C][Red]eight kinds[/C][White] of items.\nPress (Y), [White](X)[White], or [White]<R>[White] on the Items screen\nto see what's inside.[/C]"
-    },
-    {
-      "id": 32,
-      "text": "[ChM1]You got the [Red]Grappling Hook[/C][White]![ChM2]\n[02_184]This was an item used by the\nRito people before they had wings.\n\nSet it to (Y), [White](X)[White], or [White]<R>[White] on the Items\nscreen, and then press that button to\naim. Use this item to latch on to\nanything with a [/C][Yellow][flash][/C][White] on it.\nYou can even use it to haul things\nup from the seafloor while on your\nboat.[/C]"
-    },
-    {
-      "id": 33,
-      "text": "[ChM1]You got a [Red]Deluxe Picto Box[/C][White]![ChM2]\nA gift from Lenzo, commemorating your\nbecoming his assistant. It can take color\npictographs!\nSet it to and use it with (Y), (X), or <R>.[/C]"
-    },
-    {
-      "id": 34,
-      "text": "[ChM1]You got the [Red]Hero's Bow[/C][White]![ChM2]\n[02_184]Set it to (Y), (X), or <R>, and then use\nit with the button you've set it to.\n\nHold the button to nock an arrow,\nand release the button to shoot.\nYou can carry up to [/C][Red]30 arrows[/C][White].[/C]"
-    },
-    {
-      "id": 35,
-      "text": "[ChM1]You got the [Red]Power Bracelets[/C][White]![ChM2]\n[02_184]Both arms are now stronger than\never! Press (A) to grab and lift\nobjects.[/C]"
-    },
-    {
-      "id": 36,
-      "text": "[ChM1]You got the [Red]Iron Boots[/C][White]![ChM2]\n[02_184]These boots are so heavy, you can\nhardly walk, but the wind can't blow\nyou around when you wear them![/C]"
-    },
-    {
-      "id": 37,
-      "text": "[ChM1]You got the [Red]Magic Armor[/C][White]![ChM2]\n[02_184]Use your [/C][Red]Rupees[/C][White] to create a barrier around\nyou that protects you from enemy attacks!\n\nYou won't expend Rupees unless you take\ndamage from an enemy or other hazard.\nSet it to and use it with (Y), [White](X)[White], or [White]<R>[White]![/C]"
-    },
-    {
-      "id": 38,
-      "text": "[ChM1]You got the [Red]Bait Bag[/C][White]![ChM2]\n[02_184]You can keep plenty of bait in this\nconvenient satchel!\n\nIt has [/C][Red]eight pouches[/C][White] for storing bait.\nPress (Y), [White](X)[White], or [White]<R>[White] to see what's\ninside![/C]"
-    },
-    {
-      "id": 39,
-      "text": "[ChM1]You got the [Red]Boomerang[/C][White]![ChM2]\n[02_184]Set it to and throw it with\n(Y), [White](X)[White], or [White]<R>[White].\n\nTarget specific objects by holding\nthe button you set it to and aiming\nat something until the [/C][Red]red targeting\ncursor[/C][White] changes to a [/C][Yellow][flash][/C][White].\nYou can target [/C][Red]up to five objects [/C][White]at\nonce.[/C]"
-    }
-  ]
-}
-2025-09-29 21:18:17,391 - DEBUG - logging_utils - log_debug - Composed batch request for AI. System prompt size: 10946, User content size: 3829
-2025-09-29 21:18:17,391 - DEBUG - logging_utils - log_debug - Received translated chunk 3. Raw AI response:
-{
-  "translated_strings": [
-    {
-      "id": 30,
-      "translation": "[ChM1]Ви отримали [Red]Пікто-скриньку[/C][White]![ChM2]\nПризначте її та використовуйте з (Y), [White](X)[White] або [White]<R>[White]!\nВона може записувати до 12 піктографів.\nНатисніть [White]<ZR>[White], щоб переглянути свої піктографи.[/C]"
-    },
-    {
-      "id": 31,
-      "translation": "[ChM1]Ви отримали [Red]Сумку для Трофеїв[/C][White]![ChM2]\n[02_184]Ви можете зберігати предмети, які отримуєте від\nворогів у цій зручній сумці.\n\nВона може вмістити до [/C][Red]восьми видів[/C][White] предметів.\nНатисніть (Y), [White](X)[White] або [White]<R>[White] на екрані предметів,\nщоб побачити, що всередині.[/C]"
-    },
-    {
-      "id": 32,
-      "translation": "[ChM1]Ви отримали [Red]Гакустріл[/C][White]![ChM2]\n[02_184]Цей предмет використовували люди племені Ріто,\nперш ніж вони отримали крила.\n\nПризначте його на (Y), [White](X)[White] або [White]<R>[White] на екрані предметів,\nа потім натисніть цю кнопку, щоб націлитися. Використовуйте цей предмет, щоб зачепитися за\nбудь-що з [/C][Yellow][flash][/C][White] на ньому.\nВи навіть можете використовувати його, щоб витягувати речі\nз морського дна, перебуваючи на своєму\nчовні.[/C]"
-    },
-    {
-      "id": 33,
-      "translation": "[ChM1]Ви отримали [Red]Делюкс Пікто-скриньку[/C][White]![ChM2]\nПодарунок від Ленцо, що відзначає ваше\nстатус асистента. Вона може робити кольорові\nпіктографи!\nПризначте її та використовуйте з (Y), (X) або <R>.[/C]"
-    },
-    {
-      "id": 34,
-      "translation": "[ChM1]Ви отримали [Red]Лук Героя[/C][White]![ChM2]\n[02_184]Призначте його на (Y), (X) або <R>, а потім використовуйте\nз кнопкою, на яку ви його призначили.\n\nУтримуйте кнопку, щоб зарядити стрілу,\nі відпустіть кнопку, щоб вистрілити.\nВи можете носити до [/C][Red]30 стріл[/C][White].[/C]"
-    },
-    {
-      "id": 35,
-      "translation": "[ChM1]Ви отримали [Red]Браслети Сили[/C][White]![ChM2]\n[02_184]Обидві руки тепер сильніші, ніж\nколи-небудь! Натисніть (A), щоб схопити та підняти\nоб'єкти.[/C]"
-    },
-    {
-      "id": 36,
-      "translation": "[ChM1]Ви отримали [Red]Залізні Чоботи[/C][White]![ChM2]\n[02_184]Ці чоботи такі важкі, що ви\nледве можете ходити, але вітер не може\nвас здути, коли ви їх носите![/C]"
-    },
-    {
-      "id": 37,
-      "translation": "[ChM1]Ви отримали [Red]Магічну Броню[/C][White]![ChM2]\n[02_184]Використовуйте свої [/C][Red]Рупії[/C][White], щоб створити бар'єр навколо\nвас, який захищає від атак ворогів!\n\nВи не витрачатимете Рупії, якщо не отримаєте\nшкоду від ворога або іншої небезпеки.\nПризначте її та використовуйте з (Y), [White](X)[White] або [White]<R>[White]![/C]"
-    },
-    {
-      "id": 38,
-      "translation": "[ChM1]Ви отримали [Red]Сумку для Приманок[/C][White]![ChM2]\n[02_184]Ви можете зберігати багато приманок у цій\nзручній сумці!\n\nВона має [/C][Red]вісім кишень[/C][White] для зберігання приманок.\nНатисніть (Y), [White](X)[White] або [White]<R>[White], щоб побачити, що\nвсередині![/C]"
-    },
-    {
-      "id": 39,
-      "translation": "[ChM1]Ви отримали [Red]Бумеранг[/C][White]![ChM2]\n[02_184]Призначте його та киньте з\n(Y), [White](X)[White] або [White]<R>[White].\n\nНацілюйте на конкретні об'єкти, утримуючи\nкнопку, на яку ви його призначили, і націлюючись\nна щось, поки [/C][Red]червоний курсор націлювання[/C][White] не зміниться на [/C][Yellow][flash][/C][White].\nВи можете націлитися [/C][Red]до п'яти об'єктів [/C][White]одразу.[/C]"
-    }
-  ]
-}
-2025-09-29 21:18:17,391 - DEBUG - logging_utils - log_debug - Full JSON payload sent to AI:
-{
-  "strings_to_translate": [
-    {
-      "id": 40,
-      "text": "[ChM1]You got the [Red]Hookshot[/C][White]![ChM2]\n[02_184]It extends! It retracts! It latches on to\nthings! What a cool invention!\n\nSet it to (Y), (X), or <R>, and then hold\nthe button you've set it to and aim\nwith [White](R)[White]. Release the button to fire\nout the Hookshot.[/C]"
-    },
-    {
-      "id": 41,
-      "text": "[ChM1]You got a [Red]Delivery Bag[/C][White]![ChM2]\n[02_184]Finely crafted bags like this are\nused by Rito postmen everywhere!\n\nWith so many pockets, it can hold\nmany [/C][Red]items[/C][White]. Select it on the Items\nscreen and press (Y), [White](X)[White], or [White]<R>[White]\nto see what you have inside.[/C]"
-    },
-    {
-      "id": 42,
-      "text": "[ChM1]You got [Red]bombs[/C][White]![ChM2]\n[02_184]You can carry up to [/C][Red]30[/C][White].\n\n\nPull one out, and then press (A) to\nthrow it or [White]<ZR>[White] to set it at your feet.\nTry it out... It's a blast!\n\nUsing bombs while on your boat\ngives you a mighty cannon you can\nuse to fight off seagoing enemies.\n\nSet them to and use them with\n(Y), [White](X)[White], or [White]<R>[White]![/C]"
-    },
-    {
-      "id": 43,
-      "text": "[ChM1]You got the [Red]Hero's Clothes[/C][White]![ChM2]\n[02_184]They look like they might be a little\nwarm for this weather...[/C]"
-    },
-    {
-      "id": 44,
-      "text": "[ChM1]You got the [Red]Skull Hammer[/C][White]![ChM2]\n[White][02_184][White]Set it to and use it with (Y), [White](X)[White], or <R>.\nThis mighty hammer can break things\nand pound obstacles into the ground.\nSome enemies even get stunned by\nthe shock waves it causes when you\npound the ground with it.[/C]"
-    },
-    {
-      "id": 45,
-      "text": "[ChM1]You got the [Red]Deku Leaf[/C][White]![ChM2]\n[02_184]Set it to and use it with (Y), [White](X)[White], or [White]<R>[White].\n\n\nPlant your feet on the ground and\nuse it to blow blasts of air at\nobjects and enemies.\n\nYou can also jump in the air and\nuse your [/C][Red]magic power[/C][White] to drift on\nthe currents of the wind![/C]"
-    },
-    {
-      "id": 46,
-      "text": "[ChM1]The powers of [Red]fire[/C][White] and [/C][Red]ice [/C][White]have been\nadded to your [/C][Red]arrows[/C][White]![White][ChM2][White][02_184] When you take\nout your bow, use [White]<ZR>[White] to change\narrowheads, and then fire away![/C]"
-    },
-    {
-      "id": 47,
-      "text": "[ChM1]You got the [Red]Light Arrow[/C][White]![ChM2]\n[02_184]When you take out your bow, use [White]<ZR>[White]\nto change arrowheads, and then fire\naway.\nThe sacred light of these arrows can\npierce pure evil itself![/C]"
-    },
-    {
-      "id": 48,
-      "text": "[ChM1]You got the [Red]Hero's New Clothes[/C][White]...\nWhat the...?[White][ChM2][White]\n[02_184]Wow! They're really [02_184]light...[/C]"
-    },
-    {
-      "id": 49,
-      "text": "[ChM1]You accepted the [Red]Hero's Sword[/C][White]![ChM2]\n[02_184]Wield it with (B).\n\n\nUse it wisely and carefully... You\ndon't want to let down the kind old\nman who has entrusted it to you![/C]"
-    }
-  ]
-}
-2025-09-29 21:18:48,411 - DEBUG - logging_utils - log_debug - Composed batch request for AI. System prompt size: 10946, User content size: 3292
-2025-09-29 21:18:48,412 - DEBUG - logging_utils - log_debug - Full JSON payload sent to AI:
-{
-  "strings_to_translate": [
-    {
-      "id": 50,
-      "text": "[ChM1]You got the [Red]Master Sword[/C][White]![ChM2]\n[02_184]The legendary blade with the power\nto repel evil...once wielded by the\nlegendary hero himself![/C]"
-    },
-    {
-      "id": 51,
-      "text": "[ChM1]The prayers of the Earth Sage have\nrestored the [Red]Master Sword's[/C][White] former\nenergy![White][ChM2][White]\n\n[02_184]There is but one last step before it\nbecomes the true Master Sword once\nagain![/C]"
-    },
-    {
-      "id": 52,
-      "text": "[ChM1]You got the [Red]Hero's Shield[/C][White]![ChM2]\n[02_184]This is the legendary shield said to\nhave been used by the hero himself!\n\nHold <ZR> to defend yourself while holding\nthe sword. You can move around if you\ndefend while [/C][Red]targeting[/C][White]![/C]"
-    },
-    {
-      "id": 53,
-      "text": "[ChM1]You got the [Red]Mirror Shield[/C][White]![ChM2]\n[02_184]Its shiny surface reflects beams of\nlight. Hold [White]<ZR>[White] to shield, and use (L)\nto aim its reflection.[/C]"
-    },
-    {
-      "id": 54,
-      "text": "[ChM1]You got back the [Red]Hero's Sword you\ndropped[/C][White]! Now you're in business![White][ChM2][White] \n[02_184]Take care not to drop it again![/C]"
-    },
-    {
-      "id": 55,
-      "text": "[ChM1]The [Red]Master Sword[/C][White] has returned![ChM2]\n[02_184]Its blade once again houses the\npower to repel evil. The sword of the\none true hero is revived at last![/C]"
-    },
-    {
-      "id": 56,
-      "text": "[ChM1]You got a [Red]Piece of Heart[/C][White]![ChM2]\n[02_184]Collect four to form one Heart\nContainer. More Heart Containers\nmean more life energy! How exciting![/C]"
-    },
-    {
-      "id": 57,
-      "text": "[ChM1]You got the [Red]Hero's Charm[/C][White]![ChM2]\n[02_184]This mystical trinket gives you the\nability to see the life forces of your\nfoes!\nTouch its icon on the [Red]Items screen[White]\nto equip it![/C]"
-    },
-    {
-      "id": 58,
-      "text": "[ChM1]You got a [Red]Skull Necklace[/C][White]![ChM2]\n[02_184]You can keep it in your [/C][Red]Spoils Bag[/C][White].\n\n\nThis rather off-putting accessory\nwould appear to be of little value,\nbut shown to the right person, it is\napparently of great worth.[/C]"
-    },
-    {
-      "id": 59,
-      "text": "[ChM1]You got a [Red]Boko Baba Seed[/C][White]![ChM2]\n[02_184]You can keep it in your [/C][Red]Spoils Bag[/C][White]!\n\n\nThis is the source of the evil plant's\n[/C][Red]magic[/C][White]. Perhaps if you can find\nsomeone to cook it up, its magic\ncan be unleashed![/C]"
-    }
-  ]
-}
-2025-09-29 21:18:48,412 - DEBUG - logging_utils - log_debug - Received translated chunk 4. Raw AI response:
-{
-  "translated_strings": [
-    {
-      "id": 40,
-      "translation": "[ChM1]Ви отримали [Red]Гакустріл[/C][White]![ChM2]\n[02_184]Він розтягується! Він згортається! Він чіпляється за\nречі! Який чудовий винахід!\n\nПризначте його на (Y), (X) або <R>, а потім утримуйте\nкнопку, яку ви призначили, і націлюйте\nз [White](R)[White]. Відпустіть кнопку, щоб вистрілити\nГакустрілом.[/C]"
-    },
-    {
-      "id": 41,
-      "translation": "[ChM1]Ви отримали [Red]Сумку Кур'єра[/C][White]![ChM2]\n[02_184]Такі майстерно виготовлені сумки використовують\nлистоноші племені Ріто скрізь!\n\nЗ такою кількістю кишень, вона може вмістити\nбагато [/C][Red]предметів[/C][White]. Виберіть її на екрані\nпредметів і натисніть (Y), [White](X)[White] або [White]<R>[White],\nщоб побачити, що у вас всередині.[/C]"
-    },
-    {
-      "id": 42,
-      "translation": "[ChM1]Ви отримали [Red]бомби[/C][White]![ChM2]\n[02_184]Ви можете носити до [/C][Red]30[/C][White].\n\n\nВитягніть одну, а потім натисніть (A), щоб\nкинути її або [White]<ZR>[White], щоб покласти її під ноги.\nСпробуйте... Це вибухово!\n\nВикористання бомб на вашому човні\nдає вам могутню гармату, яку ви можете\nвикористовувати для боротьби з морськими ворогами.\n\nПризначте їх і використовуйте з\n(Y), [White](X)[White] або [White]<R>[White]![/C]"
-    },
-    {
-      "id": 43,
-      "translation": "[ChM1]Ви отримали [Red]Вбрання Героя[/C][White]![ChM2]\n[02_184]Вони виглядають так, ніби можуть бути трохи\nтеплими для цієї погоди...[/C]"
-    },
-    {
-      "id": 44,
-      "translation": "[ChM1]Ви отримали [Red]Молот-Череп[/C][White]![ChM2]\n[White][02_184][White]Призначте його і використовуйте з (Y), [White](X)[White] або <R>.\nЦей могутній молот може ламати речі\nі вбивати перешкоди в землю.\nДеякі вороги навіть отримують шок від\nвибухових хвиль, які він викликає, коли ви\nб'єте землю ним.[/C]"
-    },
-    {
-      "id": 45,
-      "translation": "[ChM1]Ви отримали [Red]Листок Деку[/C][White]![ChM2]\n[02_184]Призначте його і використовуйте з (Y), [White](X)[White] або [White]<R>[White].\n\n\nСтаньте на землю і\nвикористовуйте його, щоб дмухати пориви повітря на\nоб'єкти та ворогів.\n\nВи також можете стрибнути в повітря і\nвикористати свою [/C][Red]магічну силу[/C][White], щоб планувати на\nпотоках вітру![/C]"
-    },
-    {
-      "id": 46,
-      "translation": "[ChM1]Сили [Red]вогню[/C][White] та [/C][Red]льоду [/C][White]додані до ваших [/C][Red]стріл[/C][White]![White][ChM2][White][02_184] Коли ви витягнете\nлук, використовуйте [White]<ZR>[White], щоб змінити\nнаконечники стріл, а потім стріляйте![/C]"
-    },
-    {
-      "id": 47,
-      "translation": "[ChM1]Ви отримали [Red]Стрілу Світла[/C][White]![ChM2]\n[02_184]Коли ви витягнете свій лук, використовуйте [White]<ZR>[White]\nщоб змінити наконечники стріл, а потім стріляйте.\nСвітло цих стріл може\nпробити саме чисте зло![/C]"
-    },
-    {
-      "id": 48,
-      "translation": "[ChM1]Ви отримали [Red]Нові Вбрання Героя[/C][White]...\nЩо за...?[White][ChM2][White]\n[02_184]Вау! Вони справді [02_184]легкі...[/C]"
-    },
-    {
-      "id": 49,
-      "translation": "[ChM1]Ви прийняли [Red]Меч Героя[/C][White]![ChM2]\n[02_184]Використовуйте його з (B).\n\n\nВикористовуйте його мудро і обережно... Ви\nне хочете підвести доброго старого\nчоловіка, який довірив його вам![/C]"
-    }
-  ]
-}
-2025-09-29 21:19:14,320 - DEBUG - logging_utils - log_debug - Composed batch request for AI. System prompt size: 10946, User content size: 3555
-2025-09-29 21:19:14,320 - DEBUG - logging_utils - log_debug - Received translated chunk 5. Raw AI response:
-{
-  "translated_strings": [
-    {
-      "id": 50,
-      "translation": "[ChM1]Ви отримали [Red]Майстер-меч[/C][White]![ChM2]\n[02_184]Легендарний меч, що має силу\nвідганяти зло... колись ним володів\nлегендарний герой сам![/C]"
-    },
-    {
-      "id": 51,
-      "translation": "[ChM1]Молитви Земного Мудреця\nвідновили колишню\nенергію [Red]Майстер-меча[/C][White]![White][ChM2][White]\n\n[02_184]Залишився лише один останній крок,\nперш ніж він знову стане справжнім\nМайстер-мечем![/C]"
-    },
-    {
-      "id": 52,
-      "translation": "[ChM1]Ви отримали [Red]Щит Героя[/C][White]![ChM2]\n[02_184]Це легендарний щит, яким, як кажуть,\nкористувався сам герой!\n\nТримайте <ZR>, щоб захистити себе,\nтримаючи меч. Ви можете рухатися,\nякщо захищаєтеся, поки [/C][Red]націлюєтеся[/C][White]![/C]"
-    },
-    {
-      "id": 53,
-      "translation": "[ChM1]Ви отримали [Red]Дзеркальний Щит[/C][White]![ChM2]\n[02_184]Його блискуча поверхня відбиває\nпроміні світла. Тримайте [White]<ZR>[White], щоб захиститися,\nі використовуйте (L), щоб націлити його відображення.[/C]"
-    },
-    {
-      "id": 54,
-      "translation": "[ChM1]Ви повернули [Red]Меч Героя, який\nвипустили[/C][White]! Тепер ви готові до дій![White][ChM2][White] \n[02_184]Будьте обережні, щоб не впустити його знову![/C]"
-    },
-    {
-      "id": 55,
-      "translation": "[ChM1]Відновлено [Red]Майстер-меч[/C][White]![ChM2]\n[02_184]Його лезо знову має силу\nвідганяти зло. Меч одного справжнього\nгероя нарешті відроджено![/C]"
-    },
-    {
-      "id": 56,
-      "translation": "[ChM1]Ви отримали [Red]Частинку Серця[/C][White]![ChM2]\n[02_184]Зберіть чотири, щоб утворити один\nСерце-контейнер. Більше Серце-контейнерів\nозначає більше рівня здоров'я! Як захопливо![/C]"
-    },
-    {
-      "id": 57,
-      "translation": "[ChM1]Ви отримали [Red]Чарівний Амулет Героя[/C][White]![ChM2]\n[02_184]Цей містичний талісман дає вам\nможливість бачити життєві сили ваших\nворогів!\nДоторкніться до його іконки на [Red]Екран предметів[White],\nщоб одягнути його![/C]"
-    },
-    {
-      "id": 58,
-      "translation": "[ChM1]Ви отримали [Red]Намисто з черепів[/C][White]![ChM2]\n[02_184]Ви можете зберігати його у своїй [/C][Red]Сумці для Трофеїв[/C][White].\n\n\nЦей досить неприємний аксесуар\nздається не має великої цінності,\nале показавши його правильній людині,\nвін, очевидно, має велику вартість.[/C]"
-    },
-    {
-      "id": 59,
-      "translation": "[ChM1]Ви отримали [Red]Насіння Боко Баби[/C][White]![ChM2]\n[02_184]Ви можете зберігати його у своїй [/C][Red]Сумці для Трофеїв[/C][White]!\n\n\nЦе джерело магії злого рослини.\nМожливо, якщо ви знайдете\nкогось, хто зможе його приготувати,\nйого магію можна буде звільнити![/C]"
-    }
-  ]
-}
-2025-09-29 21:19:14,320 - DEBUG - logging_utils - log_debug - Full JSON payload sent to AI:
-{
-  "strings_to_translate": [
-    {
-      "id": 60,
-      "text": "[ChM1]You got a [Red]Golden Feather[/C][White]![ChM2]\n[02_184]Keep it in your [/C][Red]Spoils Bag[/C][White].\n\n\nA certain strangeness emanates from\nthe quill of this beautifully shining\ngolden feather. Winged girls are said\nto be infatuated with these treasures.[/C]"
-    },
-    {
-      "id": 61,
-      "text": "[ChM1]You got a [Red]Knight's Crest[/C][White]![ChM2]\n[02_184]Keep it in your [/C][Red]Spoils Bag[/C][White].\n\n\nAll who are skilled in the ways of\nthe sword know the value of a crest\nsuch as this![/C]"
-    },
-    {
-      "id": 62,
-      "text": "[ChM1]You got some [Red]Red Chu Jelly[/C][White]![ChM2]\n[02_184]Keep it in your [/C][Red]Spoils Bag[/C][White].\n\n\nThis gelatinous goo comes from deep\nwithin [/C][Red]Red ChuChus[/C][White]. It is effective as\na cure for exhaustion, but it can't be\nused in its current state.[/C]"
-    },
-    {
-      "id": 63,
-      "text": "[ChM1]You got some [Green]Green Chu Jelly[/C][White]![ChM2]\n[02_184]Keep it in your [/C][Red]Spoils Bag[/C][White].\n\n\nInside [/C][Green]Green ChuChus[/C][White] is a magical\ngelatinous essence, but it can't be\nused in its current form.[/C]"
-    },
-    {
-      "id": 64,
-      "text": "[ChM1]You got some [Blue]Blue Chu Jelly[/C][White]![ChM2]\n[02_184]Keep it in your [/C][Red]Spoils Bag[/C][White].\n\n\nDeep within [/C][Blue]Blue ChuChus[/C][White] is a\ngelatinous essence that is said\nto be a magical cure-all.\n\n...But unfortunately, it can't be\nused in its current form.[/C]"
-    },
-    {
-      "id": 65,
-      "text": "[ChM1]You got the [Red]Dungeon Map[/C][White]![ChM2]\n[White][02_184]You can view it by tapping the [Red]Map Screen[White]\non the Wii U GamePad and even see rooms\nyou haven't been to yet. That's useful![White][/C]"
-    },
-    {
-      "id": 66,
-      "text": "[ChM1]You got the [Red]Compass[/C][White]![ChM2]\n[02_184]Now you can see where things are\nhidden in the dungeon. View the\n[Red]Map Screen[White][/C][White] and see for yourself![/C]"
-    },
-    {
-      "id": 67,
-      "text": "[ChM1]You got the [Red]Big Key[/C][White]![ChM2]\n[02_184]Use it to gain entrance to the room\nwhere the dungeon's boss lurks!\n\n[White]View the [White][Red]Map Screen [White][White]and see for yourself![White][/C]"
-    },
-    {
-      "id": 68,
-      "text": "[ChM1]You got an [Red]empty bottle[/C][White]![ChM2]\n[02_184]Set it to and use it with (Y), [White](X)[White], or [White]<R>[White].\n\n\nBottles are great for carrying water\nand holding other things.[/C]"
-    },
-    {
-      "id": 69,
-      "text": "[ChM1]You got some [Red]Red Potion[/C][White]![ChM2]\n[02_184]Set it to (Y), [White](X)[White], or [White]<R>[White] and use it to\nreplenish your [/C][Red]life energy[/C][White]. You can\nkeep it in your bottle.[/C]"
-    }
-  ]
-}
-2025-09-29 21:19:36,651 - DEBUG - logging_utils - log_debug - AIWorker: Cancellation requested.
-2025-09-29 21:19:41,969 - DEBUG - logging_utils - log_debug - AIWorker: Translation cancelled during network request. Discarding response.
-2025-09-29 21:19:41,969 - DEBUG - logging_utils - log_debug - AIWorker: Task finished, emitting 'finished' signal.
-2025-09-29 21:19:41,970 - DEBUG - logging_utils - log_debug - TranslationHandler: Worker has confirmed cancellation.
-2025-09-29 21:20:27,214 - DEBUG - logging_utils - log_debug - --> MainWindowEventHandler: closeEvent received.
-2025-09-29 21:20:27,214 - DEBUG - logging_utils - log_debug - MainWindowHelper: prepare_to_close called.
-2025-09-29 21:20:27,214 - DEBUG - logging_utils - log_debug -   [SAVE STATE] Block Idx: 0, String Idx: 46
-2025-09-29 21:20:27,214 - DEBUG - logging_utils - log_debug -   [SAVE STATE] Cursor Pos: 103, Scroll V/H: 0/0
-2025-09-29 21:20:27,214 - DEBUG - logging_utils - log_debug - MainWindowHelper: Updated search_history_to_save: 0 items
-2025-09-29 21:20:27,214 - DEBUG - logging_utils - log_debug - --> AppActionHandler: handle_close_event called.
-2025-09-29 21:20:28,142 - DEBUG - logging_utils - log_debug - <-- AppActionHandler: handle_close_event finished.
-2025-09-29 21:20:28,142 - DEBUG - logging_utils - log_debug - Close accepted. Settings save skipped due to unsaved changes (handled by dialog) or restart in progress.
-2025-09-29 21:20:28,143 - DEBUG - logging_utils - log_debug - <-- MainWindowEventHandler: closeEvent finished.
-2025-09-29 21:20:28,151 - DEBUG - logging_utils - log_debug - Qt event loop finished with exit code: 0
-2025-09-29 21:20:28,151 - DEBUG - logging_utils - log_debug - ================= Application End =================
+2025-09-29 22:31:59,610 - DEBUG - logging_utils - log_debug - AIWorker: Translation cancelled during network request. Discarding response.
+2025-09-29 22:31:59,610 - DEBUG - logging_utils - log_debug - AIWorker: Task finished, emitting 'finished' signal.
+2025-09-29 22:31:59,610 - DEBUG - logging_utils - log_debug - TranslationHandler: Worker has confirmed cancellation.
+2025-09-29 22:33:25,191 - DEBUG - logging_utils - log_debug - LNETMouseHandlers: showContextMenu for editor: original_text_edit at pos PyQt5.QtCore.QPoint(27, 35)
+2025-09-29 22:33:25,191 - DEBUG - logging_utils - log_debug - LNET (original_text_edit): populateContextMenu called.
+2025-09-29 22:33:25,191 - DEBUG - logging_utils - log_debug - LNETMouseHandlers: Executing menu for original_text_edit.
+2025-09-29 22:33:46,224 - DEBUG - logging_utils - log_debug - LNETMouseHandlers: showContextMenu for editor: original_text_edit at pos PyQt5.QtCore.QPoint(187, 11)
+2025-09-29 22:33:46,225 - DEBUG - logging_utils - log_debug - LNET (original_text_edit): populateContextMenu called.
+2025-09-29 22:33:46,225 - DEBUG - logging_utils - log_debug - LNETMouseHandlers: Executing menu for original_text_edit.
+2025-09-29 22:34:40,337 - DEBUG - logging_utils - log_debug - --> MainWindowEventHandler: closeEvent received.
+2025-09-29 22:34:40,337 - DEBUG - logging_utils - log_debug - MainWindowHelper: prepare_to_close called.
+2025-09-29 22:34:40,338 - DEBUG - logging_utils - log_debug -   [SAVE STATE] Block Idx: 0, String Idx: 9
+2025-09-29 22:34:40,338 - DEBUG - logging_utils - log_debug -   [SAVE STATE] Cursor Pos: 24, Scroll V/H: 0/0
+2025-09-29 22:34:40,338 - DEBUG - logging_utils - log_debug - MainWindowHelper: Updated search_history_to_save: 0 items
+2025-09-29 22:34:40,338 - DEBUG - logging_utils - log_debug - --> AppActionHandler: handle_close_event called.
+2025-09-29 22:34:41,306 - DEBUG - logging_utils - log_debug - --> AppActionHandler: save_data_action called. ask_confirmation=True, current unsaved=True
+2025-09-29 22:34:41,306 - DEBUG - logging_utils - log_debug - --> AppActionHandler: save_data_action called. ask_confirmation=True, current unsaved=True
+2025-09-29 22:34:43,120 - DEBUG - logging_utils - log_debug - Applying 20 in-memory edits before saving...
+2025-09-29 22:34:43,120 - DEBUG - logging_utils - log_debug - save_text_file: Attempting to save text content to 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt'.
+2025-09-29 22:34:43,121 - DEBUG - logging_utils - log_debug - save_text_file: Text content successfully saved to 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt'
+2025-09-29 22:34:43,122 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Starting load_data_from_json_obj. Input type: <class 'str'>
+2025-09-29 22:34:43,122 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: File content (first 200 chars): Йде збереження...
+Не торкайтеся картки пам’яті або
+кнопки POWER.{END}
+
+Не вдалося зберегти гру.{END}
+
+Телепортуватися на [Red]Південний
+Острів Фей[/C][White]?[/C]{END}
+
+Телепортуватися на [Red]Острів 
+2025-09-29 22:34:43,122 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Split by '{END}' resulted in 1003 segments.
+2025-09-29 22:34:43,122 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Popping last empty segment. Original last segment: '
+'
+2025-09-29 22:34:43,123 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: After processing, 1002 strings remain.
+2025-09-29 22:34:43,123 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Loaded 1002 strings from TXT file into one block named 'message_orig.txt'.
+2025-09-29 22:34:44,055 - DEBUG - logging_utils - log_debug - <-- AppActionHandler: handle_close_event finished.
+2025-09-29 22:34:44,055 - DEBUG - logging_utils - log_debug - Close accepted (no unsaved changes, not a restart). Saving editor settings via SettingsManager.
+2025-09-29 22:34:44,055 - DEBUG - logging_utils - log_debug - Saving all settings...
+2025-09-29 22:34:44,056 - DEBUG - logging_utils - log_debug - Global settings saved.
+2025-09-29 22:34:44,056 - DEBUG - logging_utils - log_debug -   [SAVE STATE TO DICT] Block Idx: 0, String Idx: 9, Cursor Pos: 24
+2025-09-29 22:34:44,056 - DEBUG - logging_utils - log_debug - Plugin settings saved to 'plugins\zelda_ww\config.json'.
+2025-09-29 22:34:44,057 - DEBUG - logging_utils - log_debug - <-- MainWindowEventHandler: closeEvent finished.
+2025-09-29 22:34:44,068 - DEBUG - logging_utils - log_debug - Qt event loop finished with exit code: 0
+2025-09-29 22:34:44,068 - DEBUG - logging_utils - log_debug - ================= Application End =================

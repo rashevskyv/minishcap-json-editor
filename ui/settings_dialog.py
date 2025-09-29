@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (
     QDoubleSpinBox, QSpinBox, QStackedWidget
 )
 from PyQt5.QtGui import QColor, QPalette
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, Qt
 from utils.logging_utils import log_debug
 from components.labeled_spinbox import LabeledSpinBox
 from core.translation.config import build_default_translation_config, merge_translation_config
@@ -75,10 +75,11 @@ class SettingsDialog(QDialog):
         self.provider_page_map = {
             "disabled": 0,
             "openai_chat": 1,
+            "openai_responses": 2,
             "chatmock": 1,
-            "ollama_chat": 2,
-            "deepl": 3,
-            "gemini": 4
+            "ollama_chat": 3,
+            "deepl": 4,
+            "gemini": 5
         }
 
         main_layout = QVBoxLayout(self)
@@ -192,12 +193,10 @@ class SettingsDialog(QDialog):
             return
             
         fonts_dir = os.path.join("plugins", plugin_dir_name, "fonts")
-        if not os.path.isdir(fonts_dir):
-            return
-
-        for filename in sorted(os.listdir(fonts_dir)):
-            if filename.lower().endswith(".json"):
-                self.font_file_combo.addItem(filename, filename)
+        if os.path.isdir(fonts_dir):
+            for filename in sorted(os.listdir(fonts_dir)):
+                if filename.lower().endswith(".json"):
+                    self.font_file_combo.addItem(filename, filename)
 
     def _setup_display_subtab(self, tab):
         layout = QFormLayout(tab)
@@ -301,6 +300,7 @@ class SettingsDialog(QDialog):
         self.translation_provider_combo = QComboBox(self)
         self.translation_provider_combo.addItem("Disabled", "disabled")
         self.translation_provider_combo.addItem("OpenAI Chat Completions", "openai_chat")
+        self.translation_provider_combo.addItem("OpenAI Responses (gpt-5)", "openai_responses")
         self.translation_provider_combo.addItem("ChatMock (GPT-5 via ChatGPT)", "chatmock")
         self.translation_provider_combo.addItem("Ollama Chat", "ollama_chat")
         self.translation_provider_combo.addItem("DeepL", "deepl")
@@ -314,7 +314,7 @@ class SettingsDialog(QDialog):
         disabled_page = QWidget()
         self.ai_provider_pages.addWidget(disabled_page)
 
-        openai_group = QGroupBox("OpenAI-compatible / ChatMock", self.ai_translation_tab)
+        openai_group = QGroupBox("OpenAI Chat (gpt-4o, etc.) / ChatMock", self.ai_translation_tab)
         openai_layout = QFormLayout(openai_group)
         self.openai_api_key_edit = QLineEdit(self)
         self.openai_api_key_edit.setEchoMode(QLineEdit.Password)
@@ -339,6 +339,20 @@ class SettingsDialog(QDialog):
         self.openai_timeout_spin.setRange(1, 600); self.openai_timeout_spin.setSuffix(" s"); self.openai_timeout_spin.setValue(60)
         openai_layout.addRow("Request Timeout:", self.openai_timeout_spin)
         self.ai_provider_pages.addWidget(openai_group)
+
+        openai_responses_group = QGroupBox("OpenAI Responses API (gpt-5)", self.ai_translation_tab)
+        openai_responses_layout = QFormLayout(openai_responses_group)
+        self.responses_use_chat_key_checkbox = QCheckBox("Use API Key from OpenAI Chat", self)
+        openai_responses_layout.addRow(self.responses_use_chat_key_checkbox)
+        self.responses_api_key_edit = QLineEdit(self); self.responses_api_key_edit.setEchoMode(QLineEdit.Password); openai_responses_layout.addRow("API Key:", self.responses_api_key_edit)
+        self.responses_model_edit = QLineEdit(self); self.responses_model_edit.setText("gpt-5"); openai_responses_layout.addRow("Model:", self.responses_model_edit)
+        self.responses_effort_combo = QComboBox(self); self.responses_effort_combo.addItems(["low", "medium", "high"]); openai_responses_layout.addRow("Reasoning Effort:", self.responses_effort_combo)
+        self.responses_verbosity_combo = QComboBox(self); self.responses_verbosity_combo.addItems(["low", "medium", "high"]); openai_responses_layout.addRow("Text Verbosity:", self.responses_verbosity_combo)
+        self.responses_timeout_spin = QSpinBox(self); self.responses_timeout_spin.setRange(1, 600); self.responses_timeout_spin.setSuffix(" s"); self.responses_timeout_spin.setValue(120); openai_responses_layout.addRow("Request Timeout:", self.responses_timeout_spin)
+        self.ai_provider_pages.addWidget(openai_responses_group)
+        self.responses_use_chat_key_checkbox.stateChanged.connect(
+            lambda state: self.responses_api_key_edit.setDisabled(state == Qt.Checked)
+        )
 
         ollama_group = QGroupBox("Ollama Chat API", self.ai_translation_tab)
         ollama_layout = QFormLayout(ollama_group)
@@ -470,6 +484,17 @@ class SettingsDialog(QDialog):
         try: self.openai_timeout_spin.setValue(int(active_openai_cfg.get('timeout', 60) or 60))
         except (TypeError, ValueError): self.openai_timeout_spin.setValue(60)
 
+        responses_cfg = providers_cfg.get('openai_responses', {})
+        self.responses_api_key_edit.setText(responses_cfg.get('api_key', ''))
+        self.responses_model_edit.setText(responses_cfg.get('model', 'gpt-5'))
+        self.responses_effort_combo.setCurrentText(responses_cfg.get('reasoning_effort', 'low'))
+        self.responses_verbosity_combo.setCurrentText(responses_cfg.get('text_verbosity', 'low'))
+        self.responses_timeout_spin.setValue(responses_cfg.get('timeout', 120))
+        use_chat_key = responses_cfg.get('use_chat_key', False)
+        self.responses_use_chat_key_checkbox.setChecked(use_chat_key)
+        self.responses_api_key_edit.setDisabled(use_chat_key)
+
+
         ollama_cfg = providers_cfg.get('ollama_chat', {})
         self.ollama_base_url_edit.setText(ollama_cfg.get('base_url', '')); self.ollama_model_edit.setText(ollama_cfg.get('model', ''))
         try: self.ollama_temperature_spin.setValue(float(ollama_cfg.get('temperature', 0.0)))
@@ -505,6 +530,15 @@ class SettingsDialog(QDialog):
         }
         if provider_key == 'chatmock': chatmock_cfg.update(openai_values)
         else: openai_cfg.update(openai_values)
+        
+        responses_cfg = providers_cfg.setdefault('openai_responses', {})
+        use_chat_key = self.responses_use_chat_key_checkbox.isChecked()
+        api_key_to_save = self.openai_api_key_edit.text().strip() if use_chat_key else self.responses_api_key_edit.text().strip()
+        responses_cfg.update({
+            'api_key': api_key_to_save, 'model': self.responses_model_edit.text().strip(),
+            'reasoning_effort': self.responses_effort_combo.currentText(), 'text_verbosity': self.responses_verbosity_combo.currentText(),
+            'timeout': self.responses_timeout_spin.value(), 'use_chat_key': use_chat_key
+        })
 
         ollama_cfg = providers_cfg.setdefault('ollama_chat', {}); ollama_cfg.update({
             'base_url': self.ollama_base_url_edit.text().strip(), 'model': self.ollama_model_edit.text().strip(),

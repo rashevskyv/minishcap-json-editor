@@ -579,6 +579,9 @@ class TranslationHandler(BaseHandler):
 
     def _clean_model_output(self, raw_output: Union[str, ProviderResponse]) -> str:
         text = raw_output.text if isinstance(raw_output, ProviderResponse) else str(raw_output or '')
+        if not text:
+            return ""
+            
         stripped_text = text.strip()
         
         if stripped_text.startswith("```") and stripped_text.endswith("```"):

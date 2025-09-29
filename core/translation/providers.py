@@ -1,4 +1,4 @@
-# core/translation/providers.py ---
+# --- START OF FILE core/translation/providers.py ---
 
 import json
 from dataclasses import dataclass
@@ -80,6 +80,63 @@ class OpenAIChatProvider(BaseTranslationProvider):
             raise TranslationProviderError(f"Request timed out after {timeout} seconds.")
         except requests.RequestException as e:
             raise TranslationProviderError(f"API request failed: {e}")
+
+class OpenAIResponsesProvider(BaseTranslationProvider):
+    """Provider for the new OpenAI /v1/responses API (e.g., for gpt-5)."""
+    def __init__(self, settings: Dict[str, Any]) -> None:
+        super().__init__(settings)
+        self.api_key = self.settings.get('api_key') or os.getenv(str(self.settings.get('api_key_env')))
+        self.base_url = (self.settings.get('base_url') or "https://api.openai.com/v1").rstrip('/')
+        self.model = self.settings.get('model')
+        if not self.api_key:
+            raise TranslationProviderError("OpenAI API key for Responses API is not set.")
+        if not self.model:
+            raise TranslationProviderError("OpenAI model for Responses API is not set.")
+
+    def translate(self, messages: List[Dict[str, str]], session: Optional[dict] = None, settings_override: Optional[Dict[str, Any]] = None) -> ProviderResponse:
+        endpoint = f"{self.base_url}/responses"
+        headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+        
+        current_settings = self.settings.copy()
+        if settings_override:
+            current_settings.update(settings_override)
+
+        system_prompt = next((m['content'] for m in messages if m['role'] == 'system'), "")
+        user_prompt = next((m['content'] for m in messages if m['role'] == 'user'), "")
+        full_input = f"{system_prompt}\n\n{user_prompt}".strip()
+
+        body: Dict[str, Any] = {
+            "model": self.model,
+            "input": full_input,
+            "reasoning": {"effort": current_settings.get("reasoning_effort", "low")},
+            "text": {"verbosity": current_settings.get("text_verbosity", "low")}
+        }
+        
+        timeout = 120
+        if isinstance(current_settings.get('timeout'), int) and current_settings['timeout'] > 0:
+            timeout = current_settings['timeout']
+
+        try:
+            response = requests.post(endpoint, headers=headers, json=body, timeout=timeout)
+            log_debug(f"OpenAIResponsesProvider RAW response: STATUS={response.status_code}, BODY={response.text}")
+            response.raise_for_status()
+            data = response.json()
+            
+            text = None
+            if data and isinstance(data.get('output'), list) and len(data['output']) > 1:
+                message_part = data['output'][1]
+                if (message_part.get('type') == 'message' and
+                        isinstance(message_part.get('content'), list) and
+                        message_part['content']):
+                    text_content = message_part['content'][0]
+                    if text_content.get('type') == 'output_text':
+                        text = text_content.get('text')
+            
+            return ProviderResponse(text=text, raw_payload=data)
+        except Timeout:
+            raise TranslationProviderError(f"Request timed out after {timeout} seconds.")
+        except requests.RequestException as e:
+            raise TranslationProviderError(f"API request failed for Responses API: {e}")
 
 class OllamaChatProvider(BaseTranslationProvider):
     """Provider for Ollama chat APIs."""
@@ -216,6 +273,8 @@ def create_translation_provider(provider_key: str, settings: Dict[str, Any]) -> 
     """Factory function to create a translation provider instance."""
     if provider_key == 'openai_chat':
         return OpenAIChatProvider(settings)
+    if provider_key == 'openai_responses':
+        return OpenAIResponsesProvider(settings)
     if provider_key == 'ollama_chat':
         return OllamaChatProvider(settings)
     if provider_key == 'chatmock':

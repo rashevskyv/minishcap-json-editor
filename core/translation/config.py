@@ -34,6 +34,15 @@ def build_default_translation_config() -> dict:
                 "timeout": 60,
                 "extra_headers": {},
             },
+            "openai_responses": {
+                "api_key": "",
+                "api_key_env": "OPENAI_API_KEY",
+                "base_url": "",
+                "model": "gpt-5",
+                "reasoning_effort": "low",
+                "text_verbosity": "low",
+                "timeout": 120,
+            },
             "ollama_chat": {
                 "base_url": "http://localhost:11434",
                 "model": "llama3",
@@ -44,7 +53,7 @@ def build_default_translation_config() -> dict:
             },
             "chatmock": {
                 "base_url": "http://127.0.0.1:8000",
-                "model": "gpt-4o",
+                "model": "gpt-5",
                 "api_key": "chatmock-placeholder",
                 "temperature": 0.0,
                 "timeout": 120,
