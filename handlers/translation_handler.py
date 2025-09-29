@@ -37,6 +37,8 @@ class TranslationHandler(BaseHandler):
         self._active_provider_key: Optional[str] = None
         self.thread: Optional[QThread] = None
         self.worker: Optional[AIWorker] = None
+        self.translation_progress: Dict[int, Dict[str, Union[set, int]]] = {}
+        self.pre_translation_state: Dict[int, List[str]] = {}
 
         self.glossary_handler = GlossaryHandler(self)
         self.prompt_composer = AIPromptComposer(self)
@@ -115,6 +117,11 @@ class TranslationHandler(BaseHandler):
         task_type = task_details.get('type')
         if task_type == 'translate_preview':
             self.worker.success.connect(self._handle_preview_translation_success)
+        elif task_type == 'translate_block_chunked':
+            self.worker.total_chunks_calculated.connect(self._setup_progress_bar)
+            self.worker.chunk_translated.connect(self._handle_chunk_translated)
+            self.worker.translation_cancelled.connect(self._handle_translation_cancellation)
+            self.worker.progress_updated.connect(self.ui_handler.status_dialog.update_progress)
         elif task_type == 'translate_single':
             self.worker.success.connect(self._handle_single_translation_success)
         elif task_type == 'generate_variation':
@@ -125,6 +132,45 @@ class TranslationHandler(BaseHandler):
         self.worker.error.connect(self._handle_ai_error)
 
         self.thread.start()
+
+    def _handle_translation_cancellation(self):
+        self.ui_handler.finish_ai_operation()
+        block_idx = self.worker.task_details.get('block_idx')
+        if block_idx is None:
+            return
+
+        reply = QMessageBox.question(
+            self.mw,
+            "Translation Cancelled",
+            "Revert all changes made during this translation session?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.Yes
+        )
+        if reply == QMessageBox.Yes:
+            if block_idx in self.pre_translation_state:
+                original_texts = self.pre_translation_state[block_idx]
+                for i, text in enumerate(original_texts):
+                    self.data_processor.update_edited_data(block_idx, i, text)
+                
+                del self.pre_translation_state[block_idx]
+
+            if block_idx in self.translation_progress:
+                del self.translation_progress[block_idx]
+
+            self.ui_updater.populate_strings_for_block(block_idx)
+            self.ui_updater.update_text_views()
+        else:
+            # If user wants to keep progress, just clear the pre-translation state
+            if block_idx in self.pre_translation_state:
+                del self.pre_translation_state[block_idx]
+
+    def _setup_progress_bar(self, total_chunks: int, completed_chunks: int):
+        block_idx = self.worker.task_details.get('block_idx')
+        if block_idx is not None and block_idx in self.translation_progress:
+            self.translation_progress[block_idx]['total_chunks'] = total_chunks
+        
+        self.translated_chunks_count = completed_chunks
+        self.ui_handler.status_dialog.setup_progress_bar(total_chunks, completed_chunks)
 
     def translate_current_string(self):
         if self.mw.current_block_idx == -1 or self.mw.current_string_idx == -1: return
@@ -150,22 +196,130 @@ class TranslationHandler(BaseHandler):
 
         provider = self._prepare_provider()
         if not provider: return
-        
+
+        base_timeout = self._resolve_base_timeout(provider)
         operation_title = f"AI Translation (Lines {start_line + 1}-{end_line + 1})" if start_line != end_line else f"AI Translation (Line {start_line + 1})"
         self.ui_handler.start_ai_operation(operation_title)
-        
+
         task_details = {
-            'type': 'translate_preview', 
-            'provider': provider, 
-            'source_items': source_items, 
-            'attempt': 1, 'max_retries': 4, 
+            'type': 'translate_preview',
+            'provider': provider,
+            'source_items': source_items,
+            'attempt': 1,
+            'max_retries': 4,
             'block_idx': block_idx,
-            'mode_description': f"lines {start_line+1}-{end_line+1}"
+            'mode_description': f"lines {start_line + 1}-{end_line + 1}",
+            'timeout_seconds': base_timeout
         }
         self._initiate_batch_translation(task_details)
 
+    def translate_current_block(self, block_idx: Optional[int] = None) -> None:
+        target_block_idx = self.mw.current_block_idx if block_idx is None else block_idx
+        if target_block_idx is None or target_block_idx == -1:
+            QMessageBox.information(self.mw, "AI Translation", "Select a block to translate.")
+            return
+
+        data_source = getattr(self.mw, 'data', None)
+        if not isinstance(data_source, list) or not (0 <= target_block_idx < len(data_source)):
+            QMessageBox.information(self.mw, "AI Translation", "No block data available to translate.")
+            return
+
+        block_strings = self.glossary_handler._get_original_block(target_block_idx)
+        if not block_strings:
+            QMessageBox.information(self.mw, "AI Translation", "The selected block is empty.")
+            return
+
+        # Save pre-translation state for potential revert
+        self.pre_translation_state[target_block_idx] = self.data_processor.get_block_texts(target_block_idx)
+
+        source_items = [
+            {"id": idx, "text": str(self.glossary_handler._get_original_string(target_block_idx, idx) or "")}
+            for idx in range(len(block_strings))
+        ]
+
+        provider = self._prepare_provider()
+        if not provider:
+            return
+
+        base_timeout = self._resolve_base_timeout(provider)
+        block_timeout = base_timeout * 10
+        log_debug(
+            f"Starting block AI translation for block {target_block_idx} with timeout {block_timeout}s (base {base_timeout}s); lines={len(source_items)}"
+        )
+
+        operation_title = f"AI Translation (Block {target_block_idx + 1})"
+        self.ui_handler.start_ai_operation(operation_title)
+
+        task_details = {
+            'type': 'translate_block_chunked',
+            'provider': provider,
+            'source_items': source_items,
+            'attempt': 1,
+            'max_retries': 4,
+            'block_idx': target_block_idx,
+            'mode_description': f"block {target_block_idx + 1}",
+            'provider_settings_override': {'timeout': block_timeout},
+            'timeout_seconds': block_timeout
+        }
+        self._initiate_batch_translation(task_details)
+
+    def resume_block_translation(self, block_idx: int) -> None:
+        if block_idx not in self.translation_progress:
+            QMessageBox.information(self.mw, "Resume Translation", "No active translation session found for this block.")
+            return
+
+        target_block_idx = block_idx
+        block_strings = self.glossary_handler._get_original_block(target_block_idx)
+        source_items = [
+            {"id": idx, "text": str(self.glossary_handler._get_original_string(target_block_idx, idx) or "")}
+            for idx in range(len(block_strings))
+        ]
+
+        provider = self._prepare_provider()
+        if not provider:
+            return
+
+        base_timeout = self._resolve_base_timeout(provider)
+        block_timeout = base_timeout * 10
+
+        operation_title = f"Resuming Translation (Block {target_block_idx + 1})"
+        self.ui_handler.start_ai_operation(operation_title)
+
+        task_details = {
+            'type': 'translate_block_chunked',
+            'provider': provider,
+            'source_items': source_items,
+            'attempt': 1,
+            'max_retries': 4,
+            'block_idx': target_block_idx,
+            'mode_description': f"block {target_block_idx + 1}",
+            'provider_settings_override': {'timeout': block_timeout},
+            'timeout_seconds': block_timeout,
+            'is_resume': True
+        }
+        self._initiate_batch_translation(task_details)
+
+    def _resolve_base_timeout(self, provider: BaseTranslationProvider) -> int:
+        try:
+            base = int(provider.settings.get('timeout', 120))
+        except (TypeError, ValueError):
+            base = 120
+        return max(base, 30)
+
+
     def _initiate_batch_translation(self, context: dict):
+        self.translated_chunks_count = 0
         provider = context['provider']
+        
+        block_idx = context.get('block_idx')
+        task_type = context.get('type')
+
+        if task_type == 'translate_block_chunked' and block_idx is not None:
+            if not context.get('is_resume', False):
+                self.translation_progress[block_idx] = {'completed_chunks': set(), 'total_chunks': 0}
+            
+            context['chunks_to_skip'] = self.translation_progress[block_idx]['completed_chunks']
+
         system_prompt, glossary = self.glossary_handler.load_prompts()
         if not system_prompt:
             self.ui_handler.finish_ai_operation()
@@ -178,6 +332,42 @@ class TranslationHandler(BaseHandler):
             'retry_reason': context.get('last_error', '')
         }
         self._run_ai_task(provider, context)
+
+    def _handle_chunk_translated(self, chunk_index: int, chunk_text: str, context: dict):
+        try:
+            block_idx = context['block_idx']
+            parsed_json = json.loads(chunk_text)
+            translated_strings = parsed_json.get("translated_strings")
+            if not isinstance(translated_strings, list):
+                raise ValueError("Invalid response structure: 'translated_strings' is not a list.")
+
+            for item in translated_strings:
+                string_idx, translated_text = item["id"], item["translation"]
+                restored_text = self.prompt_composer.restore_placeholders(translated_text, context['placeholder_map'])
+                final_text = self._trim_trailing_whitespace_from_lines(restored_text)
+                self.data_processor.update_edited_data(block_idx, string_idx, final_text)
+            
+            # Update progress
+            if block_idx in self.translation_progress:
+                self.translation_progress[block_idx]['completed_chunks'].add(chunk_index)
+
+            self.translated_chunks_count += 1
+            self.ui_handler.status_dialog.update_progress(self.translated_chunks_count)
+            
+            total_chunks = self.translation_progress.get(block_idx, {}).get('total_chunks', -1)
+            if self.translated_chunks_count == total_chunks:
+                self.ui_handler.finish_ai_operation()
+                self.ui_updater.populate_strings_for_block(block_idx)
+                self.ui_updater.update_text_views()
+                if hasattr(self.mw, 'app_action_handler'):
+                    self.mw.app_action_handler.rescan_issues_for_single_block(block_idx, show_message_on_completion=False)
+                
+                # Clean up progress on completion
+                if block_idx in self.translation_progress:
+                    del self.translation_progress[block_idx]
+
+        except (json.JSONDecodeError, ValueError) as e:
+            self._handle_ai_error(f"Failed to process chunk {chunk_index + 1}: {e}", context)
 
     def _handle_preview_translation_success(self, response: ProviderResponse, context: dict):
         self.ui_handler.update_ai_operation_step(3, self.ui_handler.status_dialog.steps[3], self.ui_handler.status_dialog.STATUS_IN_PROGRESS)
@@ -236,15 +426,59 @@ class TranslationHandler(BaseHandler):
                 self.ui_handler.apply_full_translation(chosen)
 
     def _handle_ai_error(self, error_message: str, context: dict):
-        log_debug(f"AI Error (Attempt {context.get('attempt', 1)}): {error_message}")
-        context['attempt'] = context.get('attempt', 1) + 1
-        if context['attempt'] <= context.get('max_retries', 1):
-            context['last_error'] = error_message
-            if context['type'] == 'translate_preview':
-                self._initiate_batch_translation(context)
-        else:
-            self.ui_handler.finish_ai_operation()
-            QMessageBox.critical(self.mw, "AI Operation Failed", f"Operation failed after {context.get('max_retries', 1)} attempts.\n\nLast error: {error_message}")
+        attempt = context.get('attempt', 1)
+        max_attempts = context.get('max_retries', 1)
+        mode = context.get('mode_description', 'unknown')
+        task_type = context.get('type', 'unknown')
+        timeout_seconds = context.get('timeout_seconds')
+
+        log_debug(
+            f"AI Error (type={task_type}, attempt={attempt}/{max_attempts}, mode={mode}): {error_message}"
+        )
+
+        is_timeout = 'timed out' in error_message.lower()
+        context['last_error'] = error_message
+        next_attempt = attempt + 1
+        context['attempt'] = next_attempt
+
+        if (next_attempt <= max_attempts) and task_type == 'translate_preview':
+            if is_timeout:
+                message = (
+                    f"AI translation timed out after {timeout_seconds or '?'} seconds while processing {mode}."
+                    "\n\nWould you like to wait longer and retry?"
+                )
+                user_choice = QMessageBox.question(
+                    self.mw,
+                    "AI Translation Timeout",
+                    message,
+                    QMessageBox.Yes | QMessageBox.No,
+                    QMessageBox.Yes
+                )
+                if user_choice != QMessageBox.Yes:
+                    log_debug("User cancelled AI retry after timeout.")
+                    self.ui_handler.finish_ai_operation()
+                    QMessageBox.information(
+                        self.mw,
+                        "AI Translation",
+                        "Translation cancelled after timeout."
+                    )
+                    return
+                log_debug("Retrying AI translation after user confirmation post-timeout.")
+            QTimer.singleShot(0, lambda: self._initiate_batch_translation(context))
+            return
+
+        self.ui_handler.finish_ai_operation()
+        failure_message = (
+            f"Operation failed after {max_attempts} attempts while processing {mode}."
+            "\n\n"
+            f"Last error: {error_message}"
+        )
+        QMessageBox.critical(
+            self.mw,
+            "AI Operation Failed",
+            failure_message
+        )
+
 
     def generate_variation_for_current_string(self):
         if self.mw.current_block_idx == -1 or self.mw.current_string_idx == -1: return

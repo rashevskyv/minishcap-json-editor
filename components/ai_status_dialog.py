@@ -1,6 +1,6 @@
 # --- START OF FILE components/ai_status_dialog.py ---
 import os
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QHBoxLayout, QWidget
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QHBoxLayout, QWidget, QProgressBar
 from PyQt5.QtGui import QMovie, QFont, QPalette
 from PyQt5.QtCore import Qt, QSize
 
@@ -63,6 +63,22 @@ class AIStatusDialog(QDialog):
         
         main_layout.addLayout(animation_layout)
         main_layout.addStretch(1)
+
+        self.progress_bar = QProgressBar(self)
+        self.progress_bar.setRange(0, 1)
+        self.progress_bar.setValue(0)
+        self.progress_bar.setFormat('%v / %m chunks')
+        self.progress_bar.setVisible(False)
+        main_layout.addWidget(self.progress_bar)
+        main_layout.addStretch(1)
+
+    def setup_progress_bar(self, total_chunks: int, completed_chunks: int = 0):
+        self.progress_bar.setRange(0, total_chunks)
+        self.progress_bar.setValue(completed_chunks)
+        self.progress_bar.setVisible(True)
+
+    def update_progress(self, completed_chunks: int):
+        self.progress_bar.setValue(completed_chunks)
 
     def showEvent(self, event):
         super().showEvent(event)

@@ -363,6 +363,9 @@ class LineNumberedTextEdit(QPlainTextEdit):
                 
                 translate_action = menu.addAction(action_text)
                 translate_action.triggered.connect(lambda: translator.translate_preview_selection(position_in_widget_coords))
+
+                translate_block_action = menu.addAction("AI Translate Entire Block (UA)")
+                translate_block_action.triggered.connect(lambda: translator.translate_current_block())
             
             if selection_range:
                 start, end = selection_range

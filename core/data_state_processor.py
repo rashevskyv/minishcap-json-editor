@@ -41,6 +41,13 @@ class DataStateProcessor:
         log_debug(f"!!! DSP: Error in get_current_string_text - Index ({block_idx}, {string_idx}) out of bounds or data missing after checking all sources.")
         return "[DATA ERROR]", "error" 
 
+    def get_block_texts(self, block_idx: int) -> list[str]:
+        if not self.mw.data or not (0 <= block_idx < len(self.mw.data)):
+            return []
+        
+        num_strings = len(self.mw.data[block_idx])
+        return [self.get_current_string_text(block_idx, i)[0] for i in range(num_strings)]
+
     def update_edited_data(self, block_idx, string_idx, new_text):
         edit_key = (block_idx, string_idx)
         

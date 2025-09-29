@@ -238,18 +238,28 @@ class GlossaryHandler(BaseTranslationHandler):
         plugin_dir = Path('plugins', plugin_name, 'translation_prompts') if plugin_name else None
         fallback_dir = Path('translation_prompts')
 
-        system_path = next((p for p in [plugin_dir / 'system_prompt.md' if plugin_dir else None, fallback_dir / 'system_prompt.md'] if p and p.exists()), None)
-        glossary_path = next((p for p in [plugin_dir / 'glossary.md' if plugin_dir else None, fallback_dir / 'glossary.md'] if p and p.exists()), None)
+        prompt_candidates = [
+            plugin_dir / 'prompts.json' if plugin_dir else None,
+            fallback_dir / 'prompts.json'
+        ]
+        prompts_path = next((p for p in prompt_candidates if p and p.exists()), None)
 
-        if not system_path:
-            QMessageBox.critical(self.mw, "AI Translation", "system_prompt.md not found.")
+        if not prompts_path:
+            QMessageBox.critical(self.mw, "AI Translation", "prompts.json not found.")
             return None, None
 
         try:
-            system_prompt = system_path.read_text('utf-8').strip()
+            prompt_data = json.loads(prompts_path.read_text('utf-8'))
         except Exception as e:
-            QMessageBox.critical(self.mw, "AI Translation", f"Failed to read system_prompt.md: {e}")
+            QMessageBox.critical(self.mw, "AI Translation", f"Failed to load prompts.json: {e}")
             return None, None
+
+        system_prompt = self._extract_system_prompt(prompt_data)
+        if not system_prompt:
+            QMessageBox.critical(self.mw, "AI Translation", "System prompt not defined in prompts.json.")
+            return None, None
+
+        glossary_path = next((p for p in [plugin_dir / 'glossary.md' if plugin_dir else None, fallback_dir / 'glossary.md'] if p and p.exists()), None)
 
         glossary_text = ''
         if glossary_path:
@@ -266,6 +276,32 @@ class GlossaryHandler(BaseTranslationHandler):
         main_h._cached_system_prompt = system_prompt
         main_h._cached_glossary = glossary_text
         return system_prompt, glossary_text
+
+    def _extract_glossary_prompt(self, payload: Dict) -> Optional[str]:
+        if not isinstance(payload, dict):
+            return None
+        glossary_section = payload.get('glossary')
+        if isinstance(glossary_section, dict):
+            candidate = glossary_section.get('prompt_template')
+            if isinstance(candidate, str) and candidate.strip():
+                return candidate.strip()
+        candidate = payload.get('glossary_prompt')
+        if isinstance(candidate, str) and candidate.strip():
+            return candidate.strip()
+        return None
+
+    def _extract_system_prompt(self, payload: Dict) -> Optional[str]:
+        if not isinstance(payload, dict):
+            return None
+        translation_section = payload.get('translation')
+        if isinstance(translation_section, dict):
+            candidate = translation_section.get('system_prompt')
+            if isinstance(candidate, str) and candidate.strip():
+                return candidate.strip()
+        candidate = payload.get('translation_system_prompt')
+        if isinstance(candidate, str) and candidate.strip():
+            return candidate.strip()
+        return None
 
     def _ensure_glossary_loaded(self, *, glossary_text: Optional[str], plugin_name: Optional[str], glossary_path: Optional[Path]) -> None:
         if glossary_text is None:
@@ -287,11 +323,19 @@ class GlossaryHandler(BaseTranslationHandler):
         plugin_dir = Path('plugins', plugin_name, 'translation_prompts') if plugin_name else None
         fallback_dir = Path('translation_prompts')
 
-        prompt_path = next((p for p in [plugin_dir / 'glossary_prompt.md' if plugin_dir else None, fallback_dir / 'glossary_prompt.md'] if p and p.exists()), None)
+        prompt_candidates = [
+            plugin_dir / 'prompts.json' if plugin_dir else None,
+            fallback_dir / 'prompts.json'
+        ]
+        prompts_path = next((p for p in prompt_candidates if p and p.exists()), None)
+
         template = _DEFAULT_GLOSSARY_PROMPT
-        if prompt_path:
+        if prompts_path:
             try:
-                template = prompt_path.read_text('utf-8')
+                prompt_data = json.loads(prompts_path.read_text('utf-8'))
+                extracted = self._extract_glossary_prompt(prompt_data)
+                if extracted:
+                    template = extracted
             except Exception as e:
                 log_debug(f"Glossary prompt template read error: {e}")
 

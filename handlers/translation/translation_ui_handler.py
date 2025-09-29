@@ -15,6 +15,7 @@ from utils.utils import convert_spaces_to_dots_for_display
 
 class TranslationUIHandler(BaseTranslationHandler):
     def __init__(self, main_handler):
+        self.main_handler = main_handler
         super().__init__(main_handler)
         self._status_dialog: Optional[AIStatusDialog] = None
 
@@ -135,11 +136,10 @@ class TranslationUIHandler(BaseTranslationHandler):
     
     def start_ai_operation(self, title: str):
         self.status_dialog.start(title)
-        QApplication.processEvents()
+        self.status_dialog.rejected.connect(self._handle_dialog_rejection)
 
     def update_ai_operation_step(self, step_index: int, text: str, status: int):
         self.status_dialog.update_step(step_index, text, status)
-        QApplication.processEvents()
 
     def finish_ai_operation(self):
         self.status_dialog.finish()

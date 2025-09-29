@@ -82,11 +82,15 @@ class CustomListWidget(QListWidget):
         translator = getattr(main_window, 'translation_handler', None)
         if translator:
             menu.addSeparator()
-            translate_block = menu.addAction(f"AI Translate Block '{block_name}' (UA)")
-            translate_block.triggered.connect(lambda checked=False, idx=block_idx: translator.translate_current_block(idx))
+            
+            progress = translator.translation_progress.get(block_idx)
+            if progress and progress['completed_chunks'] and len(progress['completed_chunks']) < progress['total_chunks']:
+                resume_action = menu.addAction(f"Resume Translation for '{block_name}'")
+                resume_action.triggered.connect(lambda checked=False, idx=block_idx: translator.resume_block_translation(idx))
+            else:
+                translate_block = menu.addAction(f"AI Translate Block '{block_name}' (UA)")
+                translate_block.triggered.connect(lambda checked=False, idx=block_idx: translator.translate_current_block(idx))
+
             generate_glossary = menu.addAction(f"AI Build Glossary for '{block_name}'")
             generate_glossary.triggered.connect(lambda checked=False, idx=block_idx: translator.generate_block_glossary(idx))
-            add_selection_glossary = menu.addAction("Add Selected Lines to Glossary")
-            add_selection_glossary.triggered.connect(lambda checked=False, idx=block_idx: translator.append_selection_to_glossary(idx))
-
         menu.exec_(self.mapToGlobal(pos))

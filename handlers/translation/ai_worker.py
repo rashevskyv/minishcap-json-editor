@@ -10,12 +10,22 @@ class AIWorker(QObject):
     error = pyqtSignal(str, dict)
     finished = pyqtSignal()
     step_updated = pyqtSignal(int, str, int)
+    
+    chunk_translated = pyqtSignal(int, str, dict)
+    total_chunks_calculated = pyqtSignal(int, int)
+    translation_cancelled = pyqtSignal()
+    progress_updated = pyqtSignal(int)
 
     def __init__(self, provider: BaseTranslationProvider, prompt_composer: AIPromptComposer, task_details: Dict[str, Any]):
         super().__init__()
         self.provider = provider
         self.prompt_composer = prompt_composer
         self.task_details = task_details
+        self.is_cancelled = False
+
+    def cancel(self):
+        log_debug("AIWorker: Cancellation requested.")
+        self.is_cancelled = True
 
     def run(self):
         from components.ai_status_dialog import AIStatusDialog
@@ -25,6 +35,69 @@ class AIWorker(QObject):
             task_type = self.task_details.get('type')
             messages: List[Dict[str, str]] = []
 
+            if task_type == 'translate_block_chunked':
+                CHUNK_SIZE = 10
+                source_items = self.task_details['source_items']
+                chunks = [source_items[i:i + CHUNK_SIZE] for i in range(0, len(source_items), CHUNK_SIZE)]
+                chunks_to_skip = self.task_details.get('chunks_to_skip', set())
+                self.total_chunks_calculated.emit(len(chunks), len(chunks_to_skip))
+                
+                for i, chunk in enumerate(chunks):
+                    if i in chunks_to_skip:
+                        log_debug(f"AIWorker: Skipping already translated chunk {i + 1}/{len(chunks)}.")
+                        continue
+
+                    if self.is_cancelled:
+                        log_debug("AIWorker: Translation cancelled by user.")
+                        self.translation_cancelled.emit()
+                        return
+
+                    max_retries = self.task_details.get('max_retries', 3)
+                    current_retry = 0
+                    
+                    while current_retry < max_retries:
+                        if self.is_cancelled:
+                            log_debug("AIWorker: Translation cancelled during retry loop.")
+                            break
+
+                        self.task_details['composer_args']['source_items'] = chunk
+                        system, user, p_map = self.prompt_composer.compose_batch_request(**self.task_details['composer_args'])
+                        self.task_details['placeholder_map'] = p_map
+                        messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+                        
+                        self.progress_updated.emit(i)
+                        step_text = f"Translating chunk {i + 1}/{len(chunks)} (Attempt {current_retry + 1})"
+                        self.step_updated.emit(1, step_text, AIStatusDialog.STATUS_IN_PROGRESS)
+                        
+                        try:
+                            response = self.provider.translate(messages, session=None)
+                            
+                            import json
+                            parsed_response = json.loads(response.text)
+                            translated_items = parsed_response.get("translated_strings", [])
+                            
+                            if len(translated_items) == len(chunk):
+                                self.chunk_translated.emit(i, response.text, self.task_details)
+                                break
+                            else:
+                                log_debug(f"AIWorker: Line count mismatch in chunk {i}. Expected {len(chunk)}, got {len(translated_items)}. Retrying...")
+                                current_retry += 1
+
+                        except (TranslationProviderError, json.JSONDecodeError) as e:
+                            log_debug(f"AIWorker: Error translating chunk {i}: {e}. Retrying...")
+                            current_retry += 1
+                    
+                    if self.is_cancelled:
+                        self.translation_cancelled.emit()
+                        return
+
+                    if current_retry >= max_retries:
+                        self.error.emit(f"Failed to translate chunk {i+1} after {max_retries} attempts.", self.task_details)
+                        return
+                
+                return
+
+            # Restore original logic for other tasks
             dialog_steps = self.task_details['dialog_steps']
             self.step_updated.emit(0, dialog_steps[0], AIStatusDialog.STATUS_IN_PROGRESS)
             
@@ -41,10 +114,7 @@ class AIWorker(QObject):
             elif task_type == 'fill_glossary':
                 system, user = self.prompt_composer.compose_glossary_request(**self.task_details['composer_args'])
                 messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
-
-            else:
-                raise ValueError(f"Unknown AI task type: {task_type}")
-
+            
             step_text = f"Sending to AI... (Attempt {self.task_details.get('attempt', 1)}/{self.task_details.get('max_retries', 1)})"
             self.step_updated.emit(1, step_text, AIStatusDialog.STATUS_IN_PROGRESS)
             
@@ -54,6 +124,7 @@ class AIWorker(QObject):
             response = self.provider.translate(messages, session=None, settings_override=provider_settings_override)
             
             self.success.emit(response, self.task_details)
+
 
         except (TranslationProviderError, ValueError, Exception) as e:
             log_debug(f"AIWorker: Exception caught in worker thread: {e}")
