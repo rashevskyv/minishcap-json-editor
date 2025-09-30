@@ -5,11 +5,29 @@ from PyQt5.QtGui import QColor, QBrush, QTextCursor
 from PyQt5.QtWidgets import QApplication
 from utils.logging_utils import log_debug
 from utils.utils import convert_spaces_to_dots_for_display, convert_dots_to_spaces_from_editor, remove_curly_tags, calculate_string_width, remove_all_tags
+from core.glossary_manager import GlossaryOccurrence
 
 class UIUpdater:
     def __init__(self, main_window, data_processor):
         self.mw = main_window
         self.data_processor = data_processor
+
+    def highlight_glossary_occurrence(self, occurrence: GlossaryOccurrence):
+        """Highlights a glossary occurrence in the original_text_edit."""
+        if not hasattr(self.mw, 'original_text_edit'):
+            return
+
+        editor = self.mw.original_text_edit
+        if not hasattr(editor, 'highlightManager'):
+            return
+
+        editor.highlightManager.clear_search_match_highlights()
+        
+        block_number = occurrence.line_idx
+        start_char = occurrence.start
+        length = occurrence.end - occurrence.start
+        
+        editor.highlightManager.add_search_match_highlight(block_number, start_char, length)
 
     def _get_aggregated_problems_for_block(self, block_idx: int) -> dict:
         problem_counts = {}

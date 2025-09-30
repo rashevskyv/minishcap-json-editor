@@ -9,7 +9,7 @@
         "height": 1277
     },
     "main_splitter_state": "AAAA/wAAAAEAAAACAAAAyAAAAyAB/////wEAAAABAA==",
-    "right_splitter_state": "AAAA/wAAAAEAAAACAAADPQAAAU4B/////wEAAAACAA==",
+    "right_splitter_state": "AAAA/wAAAAEAAAACAAAAlgAAAcIB/////wEAAAACAA==",
     "bottom_right_splitter_state": "AAAA/wAAAAEAAAACAAABkAAAAZAB/////wEAAAABAA==",
     "show_multiple_spaces_as_dots": true,
     "space_dot_color_hex": "#808080",
@@ -17,8 +17,8 @@
     "restore_unsaved_on_startup": false,
     "glossary_dialog_state": {
         "geometry": {
-            "x": 597,
-            "y": 109,
+            "x": -1063,
+            "y": 297,
             "width": 1593,
             "height": 1182
         },

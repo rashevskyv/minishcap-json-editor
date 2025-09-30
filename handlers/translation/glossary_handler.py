@@ -1,4 +1,4 @@
-# --- START OF FILE handlers/translation/glossary_handler.py ---
+# handlers/translation/glossary_handler.py ---
 import json
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple
@@ -104,6 +104,7 @@ class GlossaryHandler(BaseTranslationHandler):
         self._current_plugin_name: Optional[str] = None
         self._cached_glossary_prompt_template: Optional[str] = None
         self._cached_glossary_prompt_plugin: Optional[str] = None
+        self.dialog: Optional[GlossaryDialog] = None
 
     def install_menu_actions(self) -> None:
         tools_menu = getattr(self.mw, 'tools_menu', None)
@@ -144,7 +145,16 @@ class GlossaryHandler(BaseTranslationHandler):
         self.main_handler._cached_glossary = glossary_text
         self._ensure_glossary_loaded(glossary_text=glossary_text, plugin_name=plugin_name, glossary_path=glossary_path)
 
+    def _on_glossary_dialog_closed(self):
+        self.dialog = None
+        log_debug("Glossary dialog closed and reference cleared.")
+
     def show_glossary_dialog(self, initial_term: Optional[str] = None) -> None:
+        if self.dialog and self.dialog.isVisible():
+            self.dialog.raise_()
+            self.dialog.activateWindow()
+            return
+
         system_prompt, glossary_text = self.load_prompts()
         if system_prompt is None:
             return
@@ -160,14 +170,15 @@ class GlossaryHandler(BaseTranslationHandler):
 
         occurrence_map = self.glossary_manager.build_occurrence_index(data_source)
         entries = sorted(self.glossary_manager.get_entries(), key=lambda item: item.original.lower())
-        dialog = GlossaryDialog(
+        self.dialog = GlossaryDialog(
             parent=self.mw, entries=entries, occurrence_map=occurrence_map,
             jump_callback=self._jump_to_occurrence,
             update_callback=self._handle_glossary_entry_update,
             delete_callback=self._handle_glossary_entry_delete,
             initial_term=initial_term,
         )
-        dialog.exec_()
+        self.dialog.finished.connect(self._on_glossary_dialog_closed)
+        self.dialog.show()
 
     def add_glossary_entry(self, term: str, context: Optional[str] = None) -> None:
         self.edit_glossary_entry(term, is_new=True, context=context)
@@ -402,6 +413,9 @@ class GlossaryHandler(BaseTranslationHandler):
         if occurrence is None: return
         entry = {'block_idx': occurrence.block_idx, 'string_idx': occurrence.string_idx, 'line_idx': occurrence.line_idx}
         self.main_handler.ui_handler._activate_entry(entry)
+        self.mw.ui_updater.highlight_glossary_occurrence(occurrence)
+        self.mw.activateWindow()
+        self.mw.raise_()
         if self.mw.statusBar: self.mw.statusBar.showMessage(f"Navigated to glossary term: {occurrence.entry.original}", 4000)
 
     def _handle_glossary_entry_update(self, original: str, translation: str, notes: str) -> Optional[Tuple[Sequence[GlossaryEntry], Dict[str, List[GlossaryOccurrence]]]]:
@@ -424,6 +438,6 @@ class GlossaryHandler(BaseTranslationHandler):
             self.main_handler.reset_translation_session()
             self._update_glossary_highlighting()
             self.main_handler._cached_glossary = self.glossary_manager.get_raw_text()
-            if self.mw.statusBar: self.mw.statusBar.showMessage(f"Glossary deleted: {original}", 4000)
+            if self.mw.statusBar: self.mw.statusBar.showMessage(f"Glossostary deleted: {original}", 4000)
             return entries, occurrence_map
         return None

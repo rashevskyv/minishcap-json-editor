@@ -204,9 +204,7 @@ class GlossaryDialog(QDialog):
         elif self._filtered_entries:
             self._entry_table.selectRow(0)
             self._show_entry_for_row(0)
-    # ------------------------------------------------------------------
-    # UI population
-    # ------------------------------------------------------------------
+
     def _populate_entries(self, entries: Sequence[GlossaryEntry]) -> None:
         self._entry_table.setSortingEnabled(False)
         self._is_populating = True
@@ -260,9 +258,7 @@ class GlossaryDialog(QDialog):
             self._update_occurrences(entry)
         else:
             self._clear_entry_details()
-    # ------------------------------------------------------------------
-    # Event handlers
-    # ------------------------------------------------------------------
+
     def _on_entry_current_changed(self, row: int, _column: int, _prev_row: int, _prev_column: int) -> None:
         if self._is_populating:
             return
@@ -312,7 +308,7 @@ class GlossaryDialog(QDialog):
         occurrence = current_item.data(Qt.UserRole)
         if occurrence:
             self._jump_callback(occurrence)
-            self.accept()
+
     def _on_editor_content_changed(self) -> None:
         if self._suppress_editor_signals or not self._update_callback or not self._current_entry:
             return
@@ -454,16 +450,14 @@ class GlossaryDialog(QDialog):
     def closeEvent(self, event) -> None:
         self._save_dialog_state()
         super().closeEvent(event)
-    # ------------------------------------------------------------------
-    # Helpers
-    # ------------------------------------------------------------------
+
     def _update_occurrences(self, entry: GlossaryEntry) -> None:
         occ_list = self._occurrences.get(entry.original, [])
         self._occurrence_list.clear()
         for index, occ in enumerate(occ_list, start=1):
             preview = occ.line_text.strip()
             if len(preview) > 120:
-                preview = preview[:117] + "..."
+                preview = f"{preview[:117]}…"
             preview_html = escape(preview).replace('\n', '<br>')
             header_html = (
                 f"<b>#{index}</b> | block <b>{occ.block_idx}</b> | "
