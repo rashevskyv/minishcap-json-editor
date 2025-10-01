@@ -20,6 +20,7 @@ from .translation.glossary_handler import GlossaryHandler
 from .translation.ai_prompt_composer import AIPromptComposer
 from .translation.translation_ui_handler import TranslationUIHandler
 from .translation.ai_worker import AIWorker
+from components.prompt_editor_dialog import PromptEditorDialog
 from utils.logging_utils import log_debug
 from utils.utils import convert_spaces_to_dots_for_display
 
@@ -123,6 +124,24 @@ class TranslationHandler(BaseHandler):
             'new_translation': new_term_translation or '',
             'expected_lines': max(1, (current_translation or '').count('\n') + 1),
         }
+        combined_system, user_prompt, placeholder_map = self.prompt_composer.compose_glossary_occurrence_update_request(**composer_args)
+        edited = self._maybe_edit_prompt(
+            title="AI Glossary Update Prompt",
+            system_prompt=combined_system,
+            user_prompt=user_prompt,
+            save_section='glossary_occurrence_update',
+        )
+        if edited is None:
+            if from_batch and hasattr(dialog, 'set_ai_busy'):
+                dialog.set_ai_busy(False)
+                dialog.set_batch_active(False)
+            return
+        edited_system, edited_user = edited
+
+        precomposed = [
+            {"role": "system", "content": edited_system},
+            {"role": "user", "content": edited_user},
+        ]
         task_details = {
             'type': 'glossary_occurrence_update',
             'composer_args': composer_args,
@@ -132,6 +151,7 @@ class TranslationHandler(BaseHandler):
             'dialog': dialog,
             'from_batch': from_batch,
             'placeholder_map': placeholder_map,
+            'precomposed_prompt': precomposed,
         }
 
         self.ui_handler.start_ai_operation("AI Glossary Update", model_name=self._active_model_name)
@@ -151,6 +171,41 @@ class TranslationHandler(BaseHandler):
         cleaned_lines = [line.rstrip() for line in lines]
         return '\n'.join(cleaned_lines)
     
+    def _maybe_edit_prompt(
+        self,
+        *,
+        title: str,
+        system_prompt: str,
+        user_prompt: str,
+        save_section: Optional[str] = None,
+        save_field: str = 'system_prompt',
+    ) -> Optional[tuple[str, str]]:
+        force = bool(QApplication.keyboardModifiers() & Qt.ControlModifier)
+        enabled = getattr(self.mw, 'prompt_editor_enabled', True)
+        if not force and not enabled:
+            return system_prompt, user_prompt
+
+        allow_save = bool(save_section and self.glossary_handler._current_prompts_path)
+        dialog = PromptEditorDialog(
+            parent=self.mw,
+            title=title,
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            allow_save=allow_save,
+        )
+        if dialog.exec_() != dialog.Accepted:
+            return None
+
+        edited_system, edited_user, save_requested = dialog.get_user_inputs()
+        edited_system = edited_system.rstrip()
+        edited_user = edited_user.rstrip()
+
+        if save_requested and allow_save and save_section:
+            if self.glossary_handler.save_prompt_section(save_section, save_field, edited_system):
+                if save_section == 'translation' and save_field == 'system_prompt':
+                    self._cached_system_prompt = edited_system
+        return edited_system, edited_user
+
     def _run_ai_task(self, provider: BaseTranslationProvider, task_details: dict):
         self.thread = QThread()
         task_details['dialog_steps'] = self.ui_handler.status_dialog.steps
@@ -608,7 +663,32 @@ class TranslationHandler(BaseHandler):
             'expected_lines': len(original_text.split('\n')), 'current_translation': str(current_translation),
             'request_type': 'variation_list'
         }
-        task_details = {'type': 'generate_variation', 'is_inline': False, 'composer_args': composer_args, 'provider_settings_override': {'temperature': 0.7}, 'attempt': 1, 'max_retries': 1}
+        combined_system, user_prompt, _ = self.prompt_composer.compose_variation_request(**composer_args)
+        edited = self._maybe_edit_prompt(
+            title="AI Variation Prompt",
+            system_prompt=combined_system,
+            user_prompt=user_prompt,
+            save_section='translation',
+        )
+        if edited is None:
+            return
+        edited_system, edited_user = edited
+
+        precomposed = [
+            {"role": "system", "content": edited_system},
+            {"role": "user", "content": edited_user},
+        ]
+        task_details = {
+            'type': 'generate_variation',
+            'is_inline': False,
+            'composer_args': composer_args,
+            'provider_settings_override': {'temperature': 0.7},
+            'attempt': 1,
+            'max_retries': 1,
+            'precomposed_prompt': precomposed,
+            'placeholder_map': placeholder_map,
+        }
+        self.ui_handler.start_ai_operation("AI Variation", model_name=self._active_model_name)
         self._run_ai_task(provider, task_details)
 
     def _translate_and_apply(self, *, source_text: str, expected_lines: int, mode_description: str, block_idx: int, string_idx: int):
@@ -619,8 +699,6 @@ class TranslationHandler(BaseHandler):
         if not system_prompt:
             return
 
-        self.ui_handler.start_ai_operation("AI Translation")
-        
         glossary_entries = self._glossary_manager.get_entries_sorted_by_length()
         prepared_text, placeholder_map = self.prompt_composer.prepare_text_for_translation(
             source_text, glossary_entries
@@ -633,7 +711,30 @@ class TranslationHandler(BaseHandler):
             'block_idx': block_idx, 'string_idx': string_idx, 'expected_lines': expected_lines,
             'current_translation': None, 'request_type': 'translation'
         }
-        task_details = {'type': 'translate_single', 'composer_args': composer_args, 'attempt': 1, 'max_retries': 1}
+        combined_system, user_prompt, _ = self.prompt_composer.compose_variation_request(**composer_args)
+        edited = self._maybe_edit_prompt(
+            title="AI Translation Prompt",
+            system_prompt=combined_system,
+            user_prompt=user_prompt,
+            save_section='translation',
+        )
+        if edited is None:
+            return
+        edited_system, edited_user = edited
+
+        precomposed = [
+            {"role": "system", "content": edited_system},
+            {"role": "user", "content": edited_user},
+        ]
+        task_details = {
+            'type': 'translate_single',
+            'composer_args': composer_args,
+            'attempt': 1,
+            'max_retries': 1,
+            'precomposed_prompt': precomposed,
+            'placeholder_map': placeholder_map,
+        }
+        self.ui_handler.start_ai_operation("AI Translation", model_name=self._active_model_name)
         self._run_ai_task(provider, task_details)
         
     def _prepare_provider(self):

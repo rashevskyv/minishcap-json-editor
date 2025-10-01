@@ -29,21 +29,21 @@ Enhance the AI-assisted glossary workflow so that:
 | ID | Task | Status | Notes |
 |----|------|--------|-------|
 | T1 | Stabilise AI Fill flow (correct `_run_ai_task` usage, add success handler, regression test Add/Edit glossary dialog) | In Progress | Added task payload + success/error handlers, UI disables AI Fill button during requests; manual Add/Edit regression still pending. |
-| T2 | Glossary translation update workflow (manual dialog + AI helpers) | In Progress | Manual review dialog active; AI-assisted replacement wiring underway (single & batch hooks). |
+| T2 | Glossary translation update workflow (manual dialog + AI helpers) | In Progress | Manual dialog + AI hooks wired (single/all); prompt editor integration pending QA for block translation. |
 | T2.1 | Design & build occurrence review dialog (list, manual editing, apply/skip controls) | Completed | Implemented `GlossaryTranslationUpdateDialog` with manual apply/skip flow (single Apply now advances automatically); AI buttons stubbed for future wiring. |
-| T2.2 | Wire dialog into glossary entry update flow (detect translation change, gather occurrences) | In Progress | Dialog now opens on translation changes and routes AI callbacks; still needs thorough testing/undo review. |
-| T2.3 | Implement AI-assisted substitution (single/all) with placeholder-safe updates | In Progress | Prompt + handler plumbing wired (new request type, dialog buttons); pending validation of AI responses & batch UX polish. |
-| T3 | Prompt editor modal for AI requests (preview/edit/save per query) | In Progress | Prompt editor dialog scaffold created; next step integrate with AI pipeline and persistence. |
+| T2.2 | Wire dialog into glossary entry update flow (detect translation change, gather occurrences) | In Progress | Dialog now opens on translation changes, handles AI queueing/busy state; needs undo/batch UX validation. |
+| T2.3 | Implement AI-assisted substitution (single/all) with placeholder-safe updates | In Progress | Prompt composer + worker now support AI suggestions (single/all) with prompt editor; pending JSON validation and error handling polish. |
+| T3 | Prompt editor modal for AI requests (preview/edit/save per query) | In Progress | Prompt editor wired into translation/glossary flows with save-to-prompts; block translation still relies on auto prompts. |
 | T3.1 | Catalogue AI entry points + ensure prompts live in JSON definitions | TODO | Audit required across `translation_prompts`, plugin overrides, and builder prompts. |
-| T3.2 | Build prompt editor UI (view merged prompt, edit, save-to-disk option) | In Progress | Base `PromptEditorDialog` added (system/user fields, optional save flag); persistence wiring pending. |
+| T3.2 | Build prompt editor UI (view merged prompt, edit, save-to-disk option) | Completed | `PromptEditorDialog` now used across AI calls with save-to-prompts support. |
 | T3.3 | Hook modal into request pipeline with enable/disable toggle & Ctrl override | TODO | Requires settings flag (see T4) and handler changes. |
 | T4 | Settings integration (toggle for prompt editor, persistence, Ctrl override) | TODO | Needs updates to `settings.json`, `settings_dialog.py`, and runtime checks before launching prompt editor. |
 | T5 | Testing & QA (AI Fill, occurrence updates, prompt editor flows, regression) | TODO | Define manual scripts once upstream tasks land. |
 
 ## Next Iteration Goals
 1. Finish T1: validate AI Fill end-to-end, ensure `_handle_ai_fill_success` applies results without raising, and remove stray debug placeholders (manual run pending).
-2. Extend T2: exercise the new update dialog (manual + AI) against real data; capture gaps (selection, undo, batch UX) and log findings.
-3. Validate AI occurrence prompt/response shape end-to-end; tighten placeholder handling and fallback messaging if tags appear or JSON is malformed.
+2. Extend T2: exercise the new update dialog (manual + AI) against real data; capture gaps (selection, undo, batch UX) and validate prompt edits.
+3. Validate AI prompt edits for chunked/block translations; decide how to expose per-chunk content or limit editing.
 
 ## Testing Strategy
 - Manual GUI testing for the three AI entry points (block translation, preview translation, glossary notes).

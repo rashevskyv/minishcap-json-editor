@@ -19,6 +19,13 @@ class TranslationUIHandler(BaseTranslationHandler):
         super().__init__(main_handler)
         self._status_dialog: Optional[AIStatusDialog] = None
 
+    def _set_ai_controls_enabled(self, enabled: bool) -> None:
+        for attr in ('ai_translate_button', 'ai_variation_button'):
+            control = getattr(self.mw, attr, None)
+            if control is not None:
+                control.setEnabled(enabled)
+
+
     @property
     def status_dialog(self) -> AIStatusDialog:
         if self._status_dialog is None:
@@ -134,8 +141,9 @@ class TranslationUIHandler(BaseTranslationHandler):
     def clear_status_message(self) -> None:
         if self.mw.statusBar: self.mw.statusBar.clearMessage()
     
-    def start_ai_operation(self, title: str, is_chunked: bool = False):
-        self.status_dialog.start(title, is_chunked)
+    def start_ai_operation(self, title: str, is_chunked: bool = False, model_name: Optional[str] = None):
+        self._set_ai_controls_enabled(False)
+        self.status_dialog.start(title, is_chunked, model_name=model_name)
         self.status_dialog.cancelled.connect(self._handle_dialog_rejection)
 
     def _handle_dialog_rejection(self):
@@ -148,6 +156,7 @@ class TranslationUIHandler(BaseTranslationHandler):
 
     def finish_ai_operation(self):
         self.status_dialog.finish()
+        self._set_ai_controls_enabled(True)
 
     def merge_session_instructions(self, instructions: str, message: str) -> str:
         instructions_clean = (instructions or '').strip()

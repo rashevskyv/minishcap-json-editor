@@ -116,6 +116,7 @@ class GlossaryHandler(BaseTranslationHandler):
         self._cached_glossary_prompt_template: Optional[str] = None
         self._cached_glossary_prompt_plugin: Optional[str] = None
         self.dialog: Optional[GlossaryDialog] = None
+        self._current_prompts_path: Optional[Path] = None
         self.translation_update_dialog: Optional[GlossaryTranslationUpdateDialog] = None
         self._pending_ai_occurrences: List[GlossaryOccurrence] = []
         self._current_translation_entry: Optional[GlossaryEntry] = None
@@ -246,22 +247,33 @@ class GlossaryHandler(BaseTranslationHandler):
         if context: user_content_parts.append(f'Context line: "{context}"')
         user_content = "\n".join(user_content_parts)
 
-        composer_args = {
-            'system_prompt': system_prompt,
-            'user_content': user_content,
-        }
+        edited = self.main_handler._maybe_edit_prompt(
+            title="AI Glossary Fill Prompt",
+            system_prompt=system_prompt,
+            user_prompt=user_content,
+            save_section='glossary',
+            save_field='prompt_template',
+        )
+        if edited is None:
+            return
+        edited_system, edited_user = edited
+
         task_details = {
             'type': 'fill_glossary',
-            'composer_args': composer_args,
+            'composer_args': {'system_prompt': edited_system, 'user_content': edited_user},
             'attempt': 1,
             'max_retries': 1,
             'dialog': dialog,
             'term': term,
             'context_line': context,
+            'precomposed_prompt': [
+                {"role": "system", "content": edited_system},
+                {"role": "user", "content": edited_user},
+            ],
         }
         if hasattr(dialog, 'set_ai_busy'):
             dialog.set_ai_busy(True)
-        self.main_handler.ui_handler.start_ai_operation("AI Glossary Fill")
+        self.main_handler.ui_handler.start_ai_operation("AI Glossary Fill", model_name=self.main_handler._active_model_name)
         self.main_handler._run_ai_task(provider, task_details)
 
     def _handle_ai_fill_success(self, response, context: dict) -> None:
@@ -331,6 +343,7 @@ class GlossaryHandler(BaseTranslationHandler):
             fallback_dir / 'prompts.json'
         ]
         prompts_path = next((p for p in prompt_candidates if p and p.exists()), None)
+        self._current_prompts_path = prompts_path
 
         if not prompts_path:
             QMessageBox.critical(self.mw, "AI Translation", "prompts.json not found.")
@@ -416,6 +429,8 @@ class GlossaryHandler(BaseTranslationHandler):
             fallback_dir / 'prompts.json'
         ]
         prompts_path = next((p for p in prompt_candidates if p and p.exists()), None)
+        if prompts_path:
+            self._current_prompts_path = prompts_path
 
         template = _DEFAULT_GLOSSARY_PROMPT
         if prompts_path:
@@ -562,6 +577,35 @@ class GlossaryHandler(BaseTranslationHandler):
         self._pending_ai_occurrences = []
         self._current_translation_entry = None
         self._previous_translation_value = None
+
+    def save_prompt_section(self, section: str, field: str, value: str) -> bool:
+        path = self._current_prompts_path
+        if not path:
+            return False
+        try:
+            data = json.loads(path.read_text('utf-8')) if path.exists() else {}
+            if not isinstance(data, dict):
+                data = {}
+        except Exception as exc:
+            log_debug(f'Failed to load prompts file {path}: {exc}')
+            return False
+
+        section_data = data.setdefault(section, {}) if isinstance(data, dict) else None
+        if section_data is None or not isinstance(section_data, dict):
+            section_data = {}
+            data[section] = section_data
+        section_data[field] = value
+        try:
+            path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+        except Exception as exc:
+            log_debug(f'Failed to write prompts file {path}: {exc}')
+            return False
+
+        if section == 'glossary' and field == 'prompt_template':
+            self._cached_glossary_prompt_template = value
+        if section == 'translation' and field == 'system_prompt':
+            self.main_handler._cached_system_prompt = value
+        return True
 
     def _get_occurrence_original_text(self, occurrence: GlossaryOccurrence) -> str:
         return str(self._get_original_string(occurrence.block_idx, occurrence.string_idx) or '')

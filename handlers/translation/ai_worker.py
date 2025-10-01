@@ -179,14 +179,19 @@ class AIWorker(QObject):
             dialog_steps = self.task_details['dialog_steps']
             self.step_updated.emit(0, dialog_steps[0], AIStatusDialog.STATUS_IN_PROGRESS)
             
-            if task_type == 'translate_preview':
+            precomposed = self.task_details.get('precomposed_prompt')
+            if precomposed:
+                messages = precomposed
+            elif task_type == 'translate_preview':
                 system, user, p_map = self.prompt_composer.compose_batch_request(**self.task_details['composer_args'])
-                self.task_details['placeholder_map'] = p_map
+                if 'placeholder_map' not in self.task_details:
+                    self.task_details['placeholder_map'] = p_map
                 messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
             elif task_type in ['translate_single', 'generate_variation']:
                 system, user, p_map = self.prompt_composer.compose_variation_request(**self.task_details['composer_args'])
-                self.task_details['placeholder_map'] = p_map
+                if 'placeholder_map' not in self.task_details:
+                    self.task_details['placeholder_map'] = p_map
                 messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
             elif task_type == 'fill_glossary':
@@ -194,9 +199,12 @@ class AIWorker(QObject):
                 messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
             elif task_type == 'glossary_occurrence_update':
                 system, user, p_map = self.prompt_composer.compose_glossary_occurrence_update_request(**self.task_details['composer_args'])
-                self.task_details['placeholder_map'] = p_map
+                if 'placeholder_map' not in self.task_details:
+                    self.task_details['placeholder_map'] = p_map
                 messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
-            
+            else:
+                messages = [{"role": "system", "content": self.task_details.get('composer_args', {}).get('system_prompt', '')}]
+
             step_text = f"Sending to AI... (Attempt {self.task_details.get('attempt', 1)}/{self.task_details.get('max_retries', 1)})"
             self.step_updated.emit(1, step_text, AIStatusDialog.STATUS_IN_PROGRESS)
             
