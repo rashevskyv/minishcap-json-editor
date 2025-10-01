@@ -105,12 +105,8 @@ class GlossaryTranslationUpdateDialog(QDialog):
         right_layout.addLayout(button_row)
 
         apply_button = QPushButton("Apply", right_panel)
-        apply_button.clicked.connect(self._apply_current)
+        apply_button.clicked.connect(lambda: self._apply_current(next_item=True))
         button_row.addWidget(apply_button)
-
-        apply_next_button = QPushButton("Apply && Next", right_panel)
-        apply_next_button.clicked.connect(lambda: self._apply_current(next_item=True))
-        button_row.addWidget(apply_next_button)
 
         skip_button = QPushButton("Skip", right_panel)
         skip_button.clicked.connect(self._skip_current)

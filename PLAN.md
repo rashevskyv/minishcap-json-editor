@@ -30,7 +30,7 @@ Enhance the AI-assisted glossary workflow so that:
 |----|------|--------|-------|
 | T1 | Stabilise AI Fill flow (correct `_run_ai_task` usage, add success handler, regression test Add/Edit glossary dialog) | In Progress | Added task payload + success/error handlers, UI disables AI Fill button during requests; manual Add/Edit regression still pending. |
 | T2 | Glossary translation update workflow (manual dialog + AI helpers) | In Progress | Manual review dialog scaffolded; wiring and AI support under active development. |
-| T2.1 | Design & build occurrence review dialog (list, manual editing, apply/skip controls) | Completed | Implemented `GlossaryTranslationUpdateDialog` with manual apply/skip flow; AI buttons stubbed for future wiring. |
+| T2.1 | Design & build occurrence review dialog (list, manual editing, apply/skip controls) | Completed | Implemented `GlossaryTranslationUpdateDialog` with manual apply/skip flow (single Apply now advances automatically); AI buttons stubbed for future wiring. |
 | T2.2 | Wire dialog into glossary entry update flow (detect translation change, gather occurrences) | In Progress | Translation changes now trigger the dialog when occurrences exist; need smoke testing and edge-case handling. |
 | T2.3 | Implement AI-assisted substitution (single/all) with placeholder-safe updates | TODO | Requires new prompt template and translation handler plumbing. |
 | T3 | Prompt editor modal for AI requests (preview/edit/save per query) | TODO | Need reusable dialog, integration with translation handler, variation flows, glossary flows. |
