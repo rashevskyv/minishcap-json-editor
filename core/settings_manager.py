@@ -58,7 +58,18 @@ class SettingsManager:
             "right_splitter_state": None,
             "bottom_right_splitter_state": None,
             "theme": "auto",
-            "restore_unsaved_on_startup": False
+            "restore_unsaved_on_startup": False,
+            "prompt_editor_enabled": True,
+            "translation_ai": {
+                "provider": "OpenAI", "api_key": "", "model": "gpt-4o"
+            },
+            "glossary_ai": {
+                "provider": "OpenAI",
+                "api_key": "",
+                "use_translation_api_key": False,
+                "model": "gpt-4o",
+                "chunk_size": 8000
+            }
         }
         for key, value in defaults.items():
             setattr(self.mw, key, value)
@@ -71,9 +82,18 @@ class SettingsManager:
         try:
             with open(self.settings_file_path, 'r', encoding='utf-8') as f:
                 settings_data = json.load(f)
-            for key, value in settings_data.items():
-                if hasattr(self.mw, key):
-                    setattr(self.mw, key, value)
+
+            for key, default_value in defaults.items():
+                loaded_value = settings_data.get(key, default_value)
+                if isinstance(default_value, dict):
+                    # Merge dictionaries to ensure all keys are present
+                    merged_value = default_value.copy()
+                    if isinstance(loaded_value, dict):
+                        merged_value.update(loaded_value)
+                    setattr(self.mw, key, merged_value)
+                else:
+                    setattr(self.mw, key, loaded_value)
+
             self.mw.current_font_size = settings_data.get('font_size', default_font_size)
             self.mw.window_geometry_to_restore = settings_data.get("window_normal_geometry")
             self.mw.window_was_maximized_at_save = settings_data.get("window_was_maximized", False)
@@ -229,7 +249,10 @@ class SettingsManager:
             "space_dot_color_hex": self.mw.space_dot_color_hex,
             "window_was_maximized": self.mw.window_was_maximized_on_close,
             "theme": getattr(self.mw, 'theme', 'auto'),
-            "restore_unsaved_on_startup": self.mw.restore_unsaved_on_startup
+            "restore_unsaved_on_startup": self.mw.restore_unsaved_on_startup,
+            "prompt_editor_enabled": getattr(self.mw, 'prompt_editor_enabled', True),
+            "translation_ai": getattr(self.mw, 'translation_ai', {}),
+            "glossary_ai": getattr(self.mw, 'glossary_ai', {})
         })
 
         if self.mw.restore_unsaved_on_startup and self.mw.edited_data:

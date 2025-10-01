@@ -72,6 +72,9 @@ class SettingsDialog(QDialog):
         self.initial_theme = getattr(self.mw, 'theme', 'auto')
         self.rules_changed_requires_rescan = False
 
+        self._glossary_manual_api_keys = {}
+        self._glossary_updating_api_key = False
+
         self.provider_page_map = {
             "disabled": 0,
             "openai_chat": 1,
@@ -90,14 +93,17 @@ class SettingsDialog(QDialog):
         self.general_tab = QWidget()
         self.plugin_tab = QWidget()
         self.ai_translation_tab = QWidget()
+        self.ai_glossary_tab = QWidget()
 
         self.tabs.addTab(self.general_tab, "Global")
         self.tabs.addTab(self.plugin_tab, "Plugin")
         self.tabs.addTab(self.ai_translation_tab, "AI Translation")
+        self.tabs.addTab(self.ai_glossary_tab, "AI Glossary")
         
         self.setup_general_tab()
         self.setup_plugin_tab()
         self.setup_ai_translation_tab()
+        self.setup_ai_glossary_tab()
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
         self.button_box.accepted.connect(self.accept)
@@ -149,6 +155,9 @@ class SettingsDialog(QDialog):
         self.restore_session_checkbox = QCheckBox("Restore unsaved session on startup", self)
         self.restore_session_checkbox.setToolTip("If unchecked, any unsaved changes will be discarded on close.")
         layout.addRow(self.restore_session_checkbox)
+
+        self.prompt_editor_checkbox = QCheckBox("Show prompt editor before AI requests", self)
+        layout.addRow(self.prompt_editor_checkbox)
 
         self.plugin_combo.activated.connect(self.on_plugin_changed)
         self.theme_combo.activated.connect(self.on_theme_changed)
@@ -353,6 +362,7 @@ class SettingsDialog(QDialog):
         self.responses_use_chat_key_checkbox.stateChanged.connect(
             lambda state: self.responses_api_key_edit.setDisabled(state == Qt.Checked)
         )
+        self.responses_use_chat_key_checkbox.stateChanged.connect(self._refresh_glossary_api_key_from_translation)
 
         ollama_group = QGroupBox("Ollama Chat API", self.ai_translation_tab)
         ollama_layout = QFormLayout(ollama_group)
@@ -376,7 +386,126 @@ class SettingsDialog(QDialog):
         self.ai_provider_pages.addWidget(gemini_group)
 
         self.translation_provider_combo.currentIndexChanged.connect(self.on_provider_changed)
+        self.openai_api_key_edit.textChanged.connect(self._refresh_glossary_api_key_from_translation)
+        self.openai_api_key_env_edit.textChanged.connect(self._refresh_glossary_api_key_from_translation)
+        self.responses_api_key_edit.textChanged.connect(self._refresh_glossary_api_key_from_translation)
+        self.gemini_api_key_edit.textChanged.connect(self._refresh_glossary_api_key_from_translation)
         layout.addStretch(1)
+
+    def setup_ai_glossary_tab(self):
+        layout = QFormLayout(self.ai_glossary_tab)
+
+        self.glossary_provider_combo = QComboBox(self)
+        # For now, let's keep it simple. We can expand this later.
+        self.glossary_provider_combo.addItems(["OpenAI", "Ollama", "Gemini"])
+        layout.addRow("Provider:", self.glossary_provider_combo)
+
+        self.glossary_api_key_edit = QLineEdit(self)
+        self.glossary_api_key_edit.setEchoMode(QLineEdit.Password)
+        self.glossary_api_key_edit.setPlaceholderText("Provider API Key")
+        layout.addRow("API Key:", self.glossary_api_key_edit)
+
+        self.glossary_use_translation_key_checkbox = QCheckBox("Use API key from AI Translation", self)
+        layout.addRow("", self.glossary_use_translation_key_checkbox)
+
+        self.glossary_model_edit = QLineEdit(self)
+        self.glossary_model_edit.setPlaceholderText("e.g., gpt-4o-mini")
+        layout.addRow("Model:", self.glossary_model_edit)
+
+        self.glossary_chunk_size_spin = QSpinBox(self)
+        self.glossary_chunk_size_spin.setRange(1000, 32000)
+        self.glossary_chunk_size_spin.setSingleStep(100)
+        self.glossary_chunk_size_spin.setSuffix(" chars")
+        layout.addRow("Text Chunk Size:", self.glossary_chunk_size_spin)
+
+        self.glossary_use_translation_key_checkbox.stateChanged.connect(self._on_glossary_use_translation_key_changed)
+        self.glossary_provider_combo.currentIndexChanged.connect(self._on_glossary_provider_changed)
+        self.glossary_api_key_edit.textChanged.connect(self._on_glossary_api_key_changed)
+
+
+    def _set_glossary_api_key_text(self, value: str) -> None:
+        self._glossary_updating_api_key = True
+        try:
+            self.glossary_api_key_edit.setText(value or "")
+        finally:
+            self._glossary_updating_api_key = False
+
+    def _get_translation_credentials_for_glossary(self, provider_name: str) -> dict:
+        providers_cfg = {}
+        if isinstance(self.translation_config_snapshot, dict):
+            providers_cfg = self.translation_config_snapshot.get('providers', {}) or {}
+
+        if provider_name == 'OpenAI':
+            api_key = self.openai_api_key_edit.text().strip()
+            if not api_key and not self.responses_use_chat_key_checkbox.isChecked():
+                api_key = self.responses_api_key_edit.text().strip()
+                if not api_key:
+                    api_key = providers_cfg.get('openai_responses', {}).get('api_key', '')
+            if not api_key:
+                api_key = providers_cfg.get('openai_chat', {}).get('api_key', '')
+
+            api_key_env = self.openai_api_key_env_edit.text().strip()
+            if not api_key_env:
+                api_key_env = providers_cfg.get('openai_chat', {}).get('api_key_env', '')
+
+            return {
+                'api_key': api_key,
+                'api_key_env': api_key_env
+            }
+
+        if provider_name == 'Gemini':
+            api_key = self.gemini_api_key_edit.text().strip()
+            api_key_env = ''
+            gemini_cfg = providers_cfg.get('gemini', {}) or {}
+            if not api_key:
+                api_key = gemini_cfg.get('api_key', '')
+            api_key_env = gemini_cfg.get('api_key_env', '')
+            return {
+                'api_key': api_key,
+                'api_key_env': api_key_env
+            }
+
+        return {}
+
+    def _update_glossary_api_key_controls(self, provider_name: str = None) -> None:
+        provider = provider_name or self.glossary_provider_combo.currentText()
+        use_translation = self.glossary_use_translation_key_checkbox.isChecked()
+        self.glossary_api_key_edit.setEnabled(not use_translation)
+
+        if use_translation:
+            credentials = self._get_translation_credentials_for_glossary(provider)
+            self._set_glossary_api_key_text(credentials.get('api_key') or '')
+        else:
+            manual_value = self._glossary_manual_api_keys.get(provider, '')
+            self._set_glossary_api_key_text(manual_value)
+
+    def _refresh_glossary_api_key_from_translation(self, *args):
+        if not self.glossary_use_translation_key_checkbox.isChecked():
+            return
+        provider = self.glossary_provider_combo.currentText()
+        if provider in ("OpenAI", "Gemini"):
+            self._update_glossary_api_key_controls(provider)
+
+    def _on_glossary_use_translation_key_changed(self, state):
+        provider = self.glossary_provider_combo.currentText()
+        if state == Qt.Checked:
+            self._glossary_manual_api_keys[provider] = self.glossary_api_key_edit.text().strip()
+        self._update_glossary_api_key_controls(provider)
+
+    def _on_glossary_provider_changed(self, index):
+        provider = self.glossary_provider_combo.itemText(index)
+        if not provider:
+            provider = self.glossary_provider_combo.currentText()
+        self._update_glossary_api_key_controls(provider)
+
+    def _on_glossary_api_key_changed(self, text):
+        if self._glossary_updating_api_key:
+            return
+        if self.glossary_use_translation_key_checkbox.isChecked():
+            return
+        provider = self.glossary_provider_combo.currentText()
+        self._glossary_manual_api_keys[provider] = text.strip()
+
 
     def find_plugins(self):
         plugins_dir = "plugins"
@@ -443,6 +572,7 @@ class SettingsDialog(QDialog):
         self.show_spaces_checkbox.setChecked(self.mw.show_multiple_spaces_as_dots)
         self.space_dot_color_picker.setColor(QColor(self.mw.space_dot_color_hex))
         self.restore_session_checkbox.setChecked(self.mw.restore_unsaved_on_startup)
+        self.prompt_editor_checkbox.setChecked(getattr(self.mw, 'prompt_editor_enabled', True))
         
         self.original_path_edit.setText(self.mw.json_path or ""); self.edited_path_edit.setText(self.mw.edited_json_path or "")
         
@@ -506,6 +636,30 @@ class SettingsDialog(QDialog):
         deepl_cfg = providers_cfg.get('deepl', {}); self.deepl_api_key_edit.setText(deepl_cfg.get('api_key', '')); self.deepl_server_url_edit.setText(deepl_cfg.get('server_url', ''))
         gemini_cfg = providers_cfg.get('gemini', {}); self.gemini_api_key_edit.setText(gemini_cfg.get('api_key', '')); self.gemini_model_edit.setText(gemini_cfg.get('model', ''))
 
+        # Load AI Glossary settings
+        glossary_ai_cfg = getattr(self.mw, 'glossary_ai', {})
+        glossary_provider = glossary_ai_cfg.get('provider', 'OpenAI')
+        provider_index = self.glossary_provider_combo.findText(glossary_provider)
+        if provider_index >= 0:
+            self.glossary_provider_combo.blockSignals(True)
+            self.glossary_provider_combo.setCurrentIndex(provider_index)
+            self.glossary_provider_combo.blockSignals(False)
+        else:
+            self.glossary_provider_combo.setCurrentText(glossary_provider)
+
+        manual_key = glossary_ai_cfg.get('api_key', '')
+        self._glossary_manual_api_keys[glossary_provider] = manual_key
+
+        use_translation_key = glossary_ai_cfg.get('use_translation_api_key', False)
+        self.glossary_use_translation_key_checkbox.blockSignals(True)
+        self.glossary_use_translation_key_checkbox.setChecked(use_translation_key)
+        self.glossary_use_translation_key_checkbox.blockSignals(False)
+
+        self._update_glossary_api_key_controls(glossary_provider)
+
+        self.glossary_model_edit.setText(glossary_ai_cfg.get('model', 'gpt-4o'))
+        self.glossary_chunk_size_spin.setValue(glossary_ai_cfg.get('chunk_size', 8000))
+
         self.on_provider_changed(self.translation_provider_combo.currentIndex())
         self.rules_changed_requires_rescan = False
 
@@ -551,10 +705,25 @@ class SettingsDialog(QDialog):
         
         self.translation_config_snapshot = translation_config_to_save
 
+        glossary_provider = self.glossary_provider_combo.currentText()
+        use_translation_key = self.glossary_use_translation_key_checkbox.isChecked()
+        manual_key = self._glossary_manual_api_keys.get(glossary_provider, '')
+        if not use_translation_key:
+            manual_key = self.glossary_api_key_edit.text().strip()
+
+        glossary_ai_settings = {
+            'provider': glossary_provider,
+            'api_key': manual_key or '',
+            'use_translation_api_key': use_translation_key,
+            'model': self.glossary_model_edit.text().strip(),
+            'chunk_size': self.glossary_chunk_size_spin.value()
+        }
+
         return {
             'theme': self.theme_combo.currentText().lower(), 'active_game_plugin': selected_dir_name,
             'font_size': self.font_size_spinbox.value(), 'show_multiple_spaces_as_dots': self.show_spaces_checkbox.isChecked(),
             'space_dot_color_hex': self.space_dot_color_picker.color().name(), 'restore_unsaved_on_startup': self.restore_session_checkbox.isChecked(),
+            'prompt_editor_enabled': self.prompt_editor_checkbox.isChecked(),
             'original_file_path': self.original_path_edit.text(), 'edited_file_path': self.edited_path_edit.text(),
             'default_font_file': self.font_file_combo.currentData(), 'preview_wrap_lines': self.preview_wrap_checkbox.isChecked(),
             'editors_wrap_lines': self.editors_wrap_checkbox.isChecked(), 'newline_display_symbol': self.newline_symbol_edit.text(),
@@ -563,5 +732,6 @@ class SettingsDialog(QDialog):
             'tag_color_rgba': self.tag_color_picker.color().name(QColor.HexArgb) if hasattr(QColor, 'HexArgb') else self.tag_color_picker.color().name(),
             'tag_bold': self.tag_bold_chk.isChecked(), 'tag_italic': self.tag_italic_chk.isChecked(), 'tag_underline': self.tag_underline_chk.isChecked(),
             'game_dialog_max_width_pixels': self.game_dialog_width_spinbox.value(), 'line_width_warning_threshold_pixels': self.width_warning_spinbox.value(),
-            'autofix_enabled': autofix_settings, 'translation_config': translation_config_to_save, 'detection_enabled': detection_settings
+            'autofix_enabled': autofix_settings, 'translation_config': translation_config_to_save, 'detection_enabled': detection_settings,
+            'glossary_ai': glossary_ai_settings
         }

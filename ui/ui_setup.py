@@ -197,7 +197,7 @@ def setup_main_window_ui(main_window):
     save_icon = style.standardIcon(QStyle.SP_DialogSaveButton)
     reload_icon = style.standardIcon(QStyle.SP_BrowserReload)
     exit_icon = style.standardIcon(QStyle.SP_DialogCloseButton)
-    settings_icon = style.standardIcon(QStyle.SP_ComputerIcon)
+    settings_icon = QIcon.fromTheme('settings', style.standardIcon(QStyle.SP_FileDialogDetailedView))
 
     main_window.open_action = QAction(open_icon, '&Open Original File...', main_window)
     file_menu.addAction(main_window.open_action)
@@ -240,6 +240,7 @@ def setup_main_window_ui(main_window):
     tools_menu = menubar.addMenu('&Tools')
     tools_menu.setObjectName('&Tools')
     main_window.tools_menu = tools_menu
+
 
     # Helper to load semicircular undo/redo icons reliably across platforms
     def _icon_path(file_name: str) -> str:
