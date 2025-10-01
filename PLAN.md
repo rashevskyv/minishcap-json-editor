@@ -29,9 +29,9 @@ Enhance the AI-assisted glossary workflow so that:
 | ID | Task | Status | Notes |
 |----|------|--------|-------|
 | T1 | Stabilise AI Fill flow (correct `_run_ai_task` usage, add success handler, regression test Add/Edit glossary dialog) | In Progress | Added task payload + success/error handlers, UI disables AI Fill button during requests; manual Add/Edit regression still pending. |
-| T2 | Glossary translation update workflow (manual dialog + AI helpers) | Blocked | Waiting for T1 completion and consolidated requirements for AI prompt structure. |
-| T2.1 | Design occurrence review dialog (list, manual editing, apply/skip controls) | TODO | `components/glossary_translation_update_dialog.py` scaffold added; requires integration wiring. |
-| T2.2 | Wire dialog into glossary entry update flow (detect translation change, gather occurrences) | TODO | Detection logic partially inserted in `glossary_handler`; needs testing and gating. |
+| T2 | Glossary translation update workflow (manual dialog + AI helpers) | In Progress | Manual review dialog scaffolded; wiring and AI support under active development. |
+| T2.1 | Design & build occurrence review dialog (list, manual editing, apply/skip controls) | Completed | Implemented `GlossaryTranslationUpdateDialog` with manual apply/skip flow; AI buttons stubbed for future wiring. |
+| T2.2 | Wire dialog into glossary entry update flow (detect translation change, gather occurrences) | In Progress | Translation changes now trigger the dialog when occurrences exist; need smoke testing and edge-case handling. |
 | T2.3 | Implement AI-assisted substitution (single/all) with placeholder-safe updates | TODO | Requires new prompt template and translation handler plumbing. |
 | T3 | Prompt editor modal for AI requests (preview/edit/save per query) | TODO | Need reusable dialog, integration with translation handler, variation flows, glossary flows. |
 | T3.1 | Catalogue AI entry points + ensure prompts live in JSON definitions | TODO | Audit required across `translation_prompts`, plugin overrides, and builder prompts. |
@@ -41,9 +41,9 @@ Enhance the AI-assisted glossary workflow so that:
 | T5 | Testing & QA (AI Fill, occurrence updates, prompt editor flows, regression) | TODO | Define manual scripts once upstream tasks land. |
 
 ## Next Iteration Goals
-1. Finish T1: validate AI Fill end-to-end, ensure `_handle_ai_fill_success` applies results without raising, and remove stray debug placeholders.
-2. Lock the scope for T2 prompts (define JSON template keys, expected AI response contract) before implementing dialog wiring.
-3. Draft UX for prompt editor modal (rough wireframes/flow) to unblock T3.2.
+1. Finish T1: validate AI Fill end-to-end, ensure `_handle_ai_fill_success` applies results without raising, and remove stray debug placeholders (manual run pending).
+2. Extend T2: exercise the new update dialog against real data and capture gaps (selection, undo, batch UX).
+3. Define AI prompt contract for occurrence replacement (JSON schema, placeholder plan) ahead of T2.3.
 
 ## Testing Strategy
 - Manual GUI testing for the three AI entry points (block translation, preview translation, glossary notes).

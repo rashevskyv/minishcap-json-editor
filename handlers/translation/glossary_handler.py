@@ -115,6 +115,7 @@ class GlossaryHandler(BaseTranslationHandler):
         self._cached_glossary_prompt_template: Optional[str] = None
         self._cached_glossary_prompt_plugin: Optional[str] = None
         self.dialog: Optional[GlossaryDialog] = None
+        self.translation_update_dialog: Optional[GlossaryTranslationUpdateDialog] = None
 
     def install_menu_actions(self) -> None:
         tools_menu = getattr(self.mw, 'tools_menu', None)
@@ -491,6 +492,9 @@ class GlossaryHandler(BaseTranslationHandler):
         if self.mw.statusBar: self.mw.statusBar.showMessage(f"Navigated to glossary term: {occurrence.entry.original}", 4000)
 
     def _handle_glossary_entry_update(self, original: str, translation: str, notes: str) -> Optional[Tuple[Sequence[GlossaryEntry], Dict[str, List[GlossaryOccurrence]]]]:
+        previous_entry = self.glossary_manager.get_entry(original)
+        previous_translation = previous_entry.translation if previous_entry else None
+
         if self.glossary_manager.update_entry(original, translation, notes):
             data_source = getattr(self.mw, 'data', [])
             occurrence_map = self.glossary_manager.build_occurrence_index(data_source)
@@ -498,9 +502,71 @@ class GlossaryHandler(BaseTranslationHandler):
             self.main_handler.reset_translation_session()
             self._update_glossary_highlighting()
             self.main_handler._cached_glossary = self.glossary_manager.get_raw_text()
-            if self.mw.statusBar: self.mw.statusBar.showMessage(f"Glossary updated: {original}", 4000)
+            if self.mw.statusBar:
+                self.mw.statusBar.showMessage(f"Glossary updated: {original}", 4000)
+
+            updated_entry = self.glossary_manager.get_entry(original)
+            if (
+                previous_translation is not None
+                and updated_entry is not None
+                and previous_translation.strip() != updated_entry.translation.strip()
+            ):
+                occurrences = occurrence_map.get(updated_entry.original, [])
+                if occurrences:
+                    self._show_translation_update_dialog(
+                        entry=updated_entry,
+                        previous_translation=previous_translation,
+                        occurrences=occurrences,
+                    )
             return entries, occurrence_map
         return None
+
+    def _show_translation_update_dialog(
+        self,
+        *,
+        entry: GlossaryEntry,
+        previous_translation: str,
+        occurrences: Sequence[GlossaryOccurrence],
+    ) -> None:
+        if self.translation_update_dialog and self.translation_update_dialog.isVisible():
+            self.translation_update_dialog.raise_()
+            self.translation_update_dialog.activateWindow()
+            return
+
+        dialog = GlossaryTranslationUpdateDialog(
+            parent=self.mw,
+            term=entry.original,
+            old_translation=previous_translation,
+            new_translation=entry.translation,
+            occurrences=occurrences,
+            get_original_text=self._get_occurrence_original_text,
+            get_current_translation=self._get_occurrence_translation_text,
+            apply_translation=self._apply_occurrence_translation,
+        )
+        dialog.finished.connect(self._on_translation_update_dialog_closed)
+        dialog.show()
+        self.translation_update_dialog = dialog
+
+    def _on_translation_update_dialog_closed(self, *_args) -> None:
+        self.translation_update_dialog = None
+
+    def _get_occurrence_original_text(self, occurrence: GlossaryOccurrence) -> str:
+        return str(self._get_original_string(occurrence.block_idx, occurrence.string_idx) or '')
+
+    def _get_occurrence_translation_text(self, occurrence: GlossaryOccurrence) -> str:
+        text, _ = self.main_handler.data_processor.get_current_string_text(occurrence.block_idx, occurrence.string_idx)
+        return str(text or '')
+
+    def _apply_occurrence_translation(self, occurrence: GlossaryOccurrence, new_text: str) -> None:
+        self.main_handler.data_processor.update_edited_data(occurrence.block_idx, occurrence.string_idx, new_text)
+        self.mw.ui_updater.populate_strings_for_block(occurrence.block_idx)
+        if self.mw.current_block_idx == occurrence.block_idx:
+            self.mw.ui_updater.update_text_views()
+        if self.mw.statusBar:
+            self.mw.statusBar.showMessage(
+                f"Updated translation for block {occurrence.block_idx}, string {occurrence.string_idx}",
+                3000,
+            )
 
     def _handle_glossary_entry_delete(self, original: str) -> Optional[Tuple[Sequence[GlossaryEntry], Dict[str, List[GlossaryOccurrence]]]]:
         if self.glossary_manager.delete_entry(original):
