@@ -129,7 +129,7 @@ class TranslationHandler(BaseHandler):
         elif task_type == 'generate_variation':
             self.worker.success.connect(self._handle_variation_success)
         elif task_type == 'fill_glossary':
-             self.worker.success.connect(self.glossary_handler._handle_ai_fill_success)
+            self.worker.success.connect(self.glossary_handler._handle_ai_fill_success)
 
         self.worker.error.connect(self._handle_ai_error)
 
@@ -449,6 +449,11 @@ class TranslationHandler(BaseHandler):
         log_debug(
             f"AI Error (type={task_type}, attempt={attempt}/{max_attempts}, mode={mode}): {error_message}"
         )
+
+        if context.get('type') == 'fill_glossary':
+            self.ui_handler.finish_ai_operation()
+            self.glossary_handler._handle_ai_fill_error(error_message, context)
+            return
 
         is_timeout = 'timed out' in error_message.lower()
         context['last_error'] = error_message

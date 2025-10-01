@@ -59,7 +59,8 @@ class _EditEntryDialog(QDialog):
         translation_layout = QHBoxLayout()
         translation_layout.addWidget(QLabel("Translation:"))
         translation_layout.addStretch(1)
-        self._ai_button = QPushButton("AI Fill", self)
+        self._ai_button_default_text = "AI Fill"
+        self._ai_button = QPushButton(self._ai_button_default_text, self)
         self._ai_button.setVisible(ai_assist_callback is not None)
         if ai_assist_callback:
             self._ai_button.clicked.connect(ai_assist_callback)
@@ -94,6 +95,15 @@ class _EditEntryDialog(QDialog):
             self._translation_edit.text().strip(),
             self._notes_edit.toPlainText().strip(),
         )
+
+    def set_ai_busy(self, busy: bool) -> None:
+        if not self._ai_button:
+            return
+        self._ai_button.setEnabled(not busy)
+        if busy:
+            self._ai_button.setText(f"{self._ai_button_default_text} (working...)")
+        else:
+            self._ai_button.setText(self._ai_button_default_text)
 
 class GlossaryHandler(BaseTranslationHandler):
     def __init__(self, main_handler):
@@ -231,9 +241,71 @@ class GlossaryHandler(BaseTranslationHandler):
         if context: user_content_parts.append(f'Context line: "{context}"')
         user_content = "\n".join(user_content_parts)
 
-        context_dict = {'type': 'fill_glossary', 'dialog': dialog}
+        composer_args = {
+            'system_prompt': system_prompt,
+            'user_content': user_content,
+        }
+        task_details = {
+            'type': 'fill_glossary',
+            'composer_args': composer_args,
+            'attempt': 1,
+            'max_retries': 1,
+            'dialog': dialog,
+            'term': term,
+            'context_line': context,
+        }
+        if hasattr(dialog, 'set_ai_busy'):
+            dialog.set_ai_busy(True)
         self.main_handler.ui_handler.start_ai_operation("AI Glossary Fill")
-        self.main_handler._run_ai_task(provider, system_prompt, user_content, context_dict)
+        self.main_handler._run_ai_task(provider, task_details)
+
+    def _handle_ai_fill_success(self, response, context: dict) -> None:
+        """Handle successful AI Fill response for the glossary dialog."""
+        self.main_handler.ui_handler.finish_ai_operation()
+
+        dialog = context.get('dialog') if isinstance(context, dict) else None
+        if not isinstance(dialog, _EditEntryDialog):
+            return
+
+        if hasattr(dialog, 'set_ai_busy'):
+            dialog.set_ai_busy(False)
+
+        cleaned = self.main_handler._clean_model_output(response)
+        translation_value = None
+        notes_value = None
+
+        if cleaned:
+            try:
+                payload = json.loads(cleaned)
+            except json.JSONDecodeError as exc:
+                log_debug(f"AI Glossary Fill: failed to parse response: {exc}")
+                QMessageBox.warning(self.mw, "AI Glossary Fill", "Could not parse AI response. Check logs for details.")
+                return
+
+            if isinstance(payload, dict):
+                if 'translation' in payload:
+                    translation_value = str(payload.get('translation') or '').strip()
+                if 'notes' in payload:
+                    notes_value = str(payload.get('notes') or '').strip()
+
+        current_translation, current_notes = dialog.get_values()
+        if translation_value is None and notes_value is None:
+            QMessageBox.information(self.mw, "AI Glossary Fill", "AI response did not include translation or notes.")
+            return
+
+        new_translation = translation_value or current_translation
+        new_notes = notes_value if notes_value is not None else current_notes
+        dialog.set_values(new_translation, new_notes)
+
+    def _handle_ai_fill_error(self, error_message: str, context: dict) -> None:
+        dialog = context.get('dialog') if isinstance(context, dict) else None
+        if isinstance(dialog, _EditEntryDialog) and hasattr(dialog, 'set_ai_busy'):
+            dialog.set_ai_busy(False)
+        if error_message:
+            QMessageBox.warning(self.mw, "AI Glossary Fill", error_message)
+        else:
+            QMessageBox.warning(self.mw, "AI Glossary Fill", "AI request failed.")
+
 
     def load_prompts(self) -> Tuple[Optional[str], Optional[str]]:
         main_h = self.main_handler
