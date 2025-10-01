@@ -651,6 +651,7 @@ class TranslationHandler(BaseHandler):
         try:
             provider = create_translation_provider(provider_key, provider_settings)
             self._active_provider_key = provider_key
+            self._active_model_name = provider_settings.get('model') if isinstance(provider_settings, dict) else None
             return provider
         except TranslationProviderError as exc:
             QMessageBox.critical(self.mw, "AI Translation", str(exc))
