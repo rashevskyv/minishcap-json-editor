@@ -11,6 +11,7 @@ from PyQt5.QtCore import Qt, QObject, QEvent
 from .base_translation_handler import BaseTranslationHandler
 from core.glossary_manager import GlossaryEntry, GlossaryManager, GlossaryOccurrence
 from components.glossary_dialog import GlossaryDialog
+from components.glossary_translation_update_dialog import GlossaryTranslationUpdateDialog
 from utils.logging_utils import log_debug
 
 _DEFAULT_GLOSSARY_PROMPT = (
