@@ -117,6 +117,9 @@ class GlossaryHandler(BaseTranslationHandler):
         self._cached_glossary_prompt_plugin: Optional[str] = None
         self.dialog: Optional[GlossaryDialog] = None
         self.translation_update_dialog: Optional[GlossaryTranslationUpdateDialog] = None
+        self._pending_ai_occurrences: List[GlossaryOccurrence] = []
+        self._current_translation_entry: Optional[GlossaryEntry] = None
+        self._previous_translation_value: Optional[str] = None
 
     def install_menu_actions(self) -> None:
         tools_menu = getattr(self.mw, 'tools_menu', None)
@@ -534,6 +537,10 @@ class GlossaryHandler(BaseTranslationHandler):
             self.translation_update_dialog.activateWindow()
             return
 
+        self._current_translation_entry = entry
+        self._previous_translation_value = previous_translation
+        self._pending_ai_occurrences = []
+
         dialog = GlossaryTranslationUpdateDialog(
             parent=self.mw,
             term=entry.original,
@@ -543,6 +550,8 @@ class GlossaryHandler(BaseTranslationHandler):
             get_original_text=self._get_occurrence_original_text,
             get_current_translation=self._get_occurrence_translation_text,
             apply_translation=self._apply_occurrence_translation,
+            ai_request_single=lambda occ: self._request_ai_occurrence_update(occ, from_batch=False),
+            ai_request_all=self._start_ai_occurrence_batch,
         )
         dialog.finished.connect(self._on_translation_update_dialog_closed)
         dialog.show()
@@ -550,6 +559,9 @@ class GlossaryHandler(BaseTranslationHandler):
 
     def _on_translation_update_dialog_closed(self, *_args) -> None:
         self.translation_update_dialog = None
+        self._pending_ai_occurrences = []
+        self._current_translation_entry = None
+        self._previous_translation_value = None
 
     def _get_occurrence_original_text(self, occurrence: GlossaryOccurrence) -> str:
         return str(self._get_original_string(occurrence.block_idx, occurrence.string_idx) or '')
@@ -568,6 +580,77 @@ class GlossaryHandler(BaseTranslationHandler):
                 f"Updated translation for block {occurrence.block_idx}, string {occurrence.string_idx}",
                 3000,
             )
+
+    def _request_ai_occurrence_update(self, occurrence: GlossaryOccurrence, from_batch: bool) -> None:
+        if not self.translation_update_dialog or not self._current_translation_entry:
+            return
+
+        dialog = self.translation_update_dialog
+        term_entry = self._current_translation_entry
+        original_text = self._get_occurrence_original_text(occurrence)
+        current_translation = self._get_occurrence_translation_text(occurrence)
+
+        if not from_batch:
+            self._pending_ai_occurrences = []
+
+        dialog.set_ai_busy(True)
+        if from_batch:
+            dialog.set_batch_active(True)
+
+        self.main_handler.request_glossary_occurrence_update(
+            occurrence=occurrence,
+            original_text=original_text,
+            current_translation=current_translation,
+            term=term_entry.original,
+            old_term_translation=self._previous_translation_value or '',
+            new_term_translation=term_entry.translation,
+            dialog=dialog,
+            from_batch=from_batch,
+        )
+
+    def _start_ai_occurrence_batch(self, occurrences: List[GlossaryOccurrence]) -> None:
+        if not occurrences:
+            QMessageBox.information(self.mw, "AI Update", "No occurrences to process.")
+            return
+        if not self.translation_update_dialog:
+            return
+
+        # Clone list to avoid modifying original sequence
+        queue = list(occurrences)
+        first = queue.pop(0)
+        self._pending_ai_occurrences = queue
+        self._request_ai_occurrence_update(first, from_batch=True)
+
+    def _resume_ai_occurrence_batch(self) -> None:
+        if not self._pending_ai_occurrences:
+            if self.translation_update_dialog:
+                self.translation_update_dialog.set_ai_busy(False)
+                self.translation_update_dialog.set_batch_active(False)
+            return
+        next_occ = self._pending_ai_occurrences.pop(0)
+        self._request_ai_occurrence_update(next_occ, from_batch=True)
+
+    def _handle_occurrence_ai_result(self, *, occurrence: GlossaryOccurrence, updated_translation: str, from_batch: bool) -> None:
+        dialog = self.translation_update_dialog
+        if not dialog:
+            return
+
+        dialog.on_ai_result(occurrence, updated_translation)
+        if from_batch:
+            if self._pending_ai_occurrences:
+                self._resume_ai_occurrence_batch()
+            else:
+                dialog.set_ai_busy(False)
+                dialog.set_batch_active(False)
+        else:
+            dialog.set_ai_busy(False)
+            dialog.set_batch_active(False)
+
+    def _handle_occurrence_ai_error(self, message: str, from_batch: bool) -> None:
+        dialog = self.translation_update_dialog
+        if dialog:
+            dialog.on_ai_error(message)
+        self._pending_ai_occurrences = []
 
     def _handle_glossary_entry_delete(self, original: str) -> Optional[Tuple[Sequence[GlossaryEntry], Dict[str, List[GlossaryOccurrence]]]]:
         if self.glossary_manager.delete_entry(original):

@@ -36,6 +36,8 @@ class GlossaryTranslationUpdateDialog(QDialog):
         get_original_text: Callable[[GlossaryOccurrence], str],
         get_current_translation: Callable[[GlossaryOccurrence], str],
         apply_translation: Callable[[GlossaryOccurrence, str], None],
+        ai_request_single: Optional[Callable[[GlossaryOccurrence], None]] = None,
+        ai_request_all: Optional[Callable[[List[GlossaryOccurrence]], None]] = None,
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle(f"Update \"{term}\" translations")
@@ -48,8 +50,12 @@ class GlossaryTranslationUpdateDialog(QDialog):
         self._get_original = get_original_text
         self._get_current_translation = get_current_translation
         self._apply_translation_cb = apply_translation
+        self._ai_request_single = ai_request_single
+        self._ai_request_all = ai_request_all
 
         self._status: Dict[int, str] = {}
+        self._ai_busy = False
+        self._batch_mode = False
 
         self._build_ui()
         self._populate_occurrences()
@@ -114,10 +120,19 @@ class GlossaryTranslationUpdateDialog(QDialog):
 
         button_row.addStretch(1)
 
-        self._ai_notice = QLabel("AI suggestions coming soon", right_panel)
-        self._ai_notice.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        self._ai_notice.setStyleSheet("color: grey; font-style: italic;")
-        button_row.addWidget(self._ai_notice)
+        self._ai_current_button = QPushButton("AI Suggest", right_panel)
+        self._ai_current_button.clicked.connect(self._run_ai_for_current)
+        button_row.addWidget(self._ai_current_button)
+
+        self._ai_all_button = QPushButton("AI All", right_panel)
+        self._ai_all_button.clicked.connect(self._run_ai_for_all)
+        button_row.addWidget(self._ai_all_button)
+
+        self._ai_current_button.setVisible(self._ai_request_single is not None)
+        self._ai_current_button.setEnabled(bool(self._ai_request_single) and not self._ai_busy)
+
+        self._ai_all_button.setVisible(self._ai_request_all is not None)
+        self._ai_all_button.setEnabled(bool(self._ai_request_all) and not self._ai_busy)
 
         footer = QDialogButtonBox(QDialogButtonBox.Close, right_panel)
         footer.rejected.connect(self.close)
@@ -218,4 +233,61 @@ class GlossaryTranslationUpdateDialog(QDialog):
         row = self._occurrence_list.currentRow()
         if row + 1 < self._occurrence_list.count():
             self._occurrence_list.setCurrentRow(row + 1)
+
+    def _run_ai_for_current(self) -> None:
+        if not self._ai_request_single or self._ai_busy:
+            return
+        occ = self._current_occurrence()
+        if not occ:
+            return
+        self.set_ai_busy(True)
+        self._ai_request_single(occ)
+
+    def _run_ai_for_all(self) -> None:
+        if not self._ai_request_all or self._ai_busy:
+            return
+        remaining = [occ for occ in self._occurrences if self._status.get(id(occ)) != 'applied']
+        if not remaining:
+            QMessageBox.information(self, "AI Update", "All occurrences already applied.")
+            return
+        reply = QMessageBox.question(
+            self,
+            "AI Update",
+            "Run AI suggestions for all remaining occurrences?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        )
+        if reply != QMessageBox.Yes:
+            return
+        self.set_batch_active(True)
+        self.set_ai_busy(True)
+        self._ai_request_all(remaining)
+
+    def set_ai_busy(self, busy: bool) -> None:
+        self._ai_busy = busy
+        if getattr(self, '_ai_current_button', None):
+            self._ai_current_button.setEnabled(bool(self._ai_request_single) and not busy)
+        if getattr(self, '_ai_all_button', None):
+            self._ai_all_button.setEnabled(bool(self._ai_request_all) and not busy and not self._batch_mode)
+
+    def set_batch_active(self, active: bool) -> None:
+        self._batch_mode = bool(active)
+        if getattr(self, '_ai_all_button', None):
+            self._ai_all_button.setEnabled(bool(self._ai_request_all) and not self._ai_busy and not self._batch_mode)
+
+    def on_ai_result(self, occurrence: GlossaryOccurrence, new_translation: str) -> None:
+        self._apply_translation_cb(occurrence, new_translation)
+        self._status[id(occurrence)] = 'applied'
+        self._refresh_occurrence_item(occurrence)
+        if self._current_occurrence() is occurrence:
+            self._translation_edit.setPlainText(new_translation)
+            self._status_label.setText("AI applied.")
+        if not self._batch_mode:
+            self._select_next()
+
+    def on_ai_error(self, message: str) -> None:
+        if message:
+            QMessageBox.warning(self, "AI Update", message)
+        self.set_batch_active(False)
+        self.set_ai_busy(False)
 

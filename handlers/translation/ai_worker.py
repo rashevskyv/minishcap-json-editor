@@ -1,6 +1,7 @@
 # handlers/translation/ai_worker.py ---
 from PyQt5.QtCore import QObject, pyqtSignal
 from typing import List, Dict, Optional, Any
+import json
 from core.translation.providers import BaseTranslationProvider, ProviderResponse, TranslationProviderError
 from .ai_prompt_composer import AIPromptComposer
 from utils.logging_utils import log_debug
@@ -49,6 +50,64 @@ class AIWorker(QObject):
             task_type = self.task_details.get('type')
             messages: List[Dict[str, str]] = []
 
+            if task_type == 'build_glossary':
+                system_prompt = self.task_details.get('system_prompt', '')
+                user_template = self.task_details.get('user_prompt_template', '{text_chunk}')
+                chunks: List[str] = self.task_details.get('chunks', [])
+                dialog_steps = self.task_details.get('dialog_steps', [])
+                total_chunks = len(chunks)
+                aggregated_terms: List[Dict[str, Any]] = []
+
+                self.total_chunks_calculated.emit(total_chunks, 0)
+                if dialog_steps:
+                    self.step_updated.emit(0, dialog_steps[0], AIStatusDialog.STATUS_IN_PROGRESS)
+
+                for idx, chunk in enumerate(chunks):
+                    if self.is_cancelled:
+                        log_debug("AIWorker: Glossary build cancelled before processing chunk.")
+                        self.translation_cancelled.emit()
+                        return
+
+                    self.progress_updated.emit(idx + 1)
+                    step_text = f"Processing chunk {idx + 1}/{total_chunks}"
+                    self.step_updated.emit(1, step_text, AIStatusDialog.STATUS_IN_PROGRESS)
+
+                    user_prompt = user_template.format(text_chunk=chunk)
+                    messages = [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ]
+
+                    try:
+                        response = self.provider.translate(messages, session=None)
+                        cleaned_text = self._clean_json_response(response.text)
+                        parsed = json.loads(cleaned_text) if cleaned_text else []
+                        if isinstance(parsed, list):
+                            aggregated_terms.extend(parsed)
+                        else:
+                            log_debug(f"AIWorker: Glossary chunk {idx + 1} returned non-list response: {parsed}")
+                    except (TranslationProviderError, json.JSONDecodeError) as exc:
+                        log_debug(f"AIWorker: Error while building glossary chunk {idx + 1}: {exc}")
+                        if not self.is_cancelled:
+                            self.error.emit(str(exc), self.task_details)
+                        return
+
+                    if self.is_cancelled:
+                        log_debug("AIWorker: Glossary build cancelled after chunk response.")
+                        self.translation_cancelled.emit()
+                        return
+
+                aggregated_payload = ProviderResponse(
+                    text=json.dumps(aggregated_terms, ensure_ascii=False),
+                    raw_payload=aggregated_terms
+                )
+                if dialog_steps:
+                    self.step_updated.emit(1, dialog_steps[1], AIStatusDialog.STATUS_DONE)
+                    self.step_updated.emit(2, dialog_steps[2], AIStatusDialog.STATUS_DONE)
+                    self.step_updated.emit(3, dialog_steps[3], AIStatusDialog.STATUS_DONE)
+                self.success.emit(aggregated_payload, self.task_details)
+                return
+
             if task_type == 'translate_block_chunked':
                 CHUNK_SIZE = 10
                 source_items = self.task_details['source_items']
@@ -90,7 +149,6 @@ class AIWorker(QObject):
                                 log_debug("AIWorker: Translation cancelled during network request. Discarding response.")
                                 break
 
-                            import json
                             cleaned_text = self._clean_json_response(response.text)
                             parsed_response = json.loads(cleaned_text)
                             translated_items = parsed_response.get("translated_strings", [])
@@ -134,6 +192,10 @@ class AIWorker(QObject):
             elif task_type == 'fill_glossary':
                 system, user = self.prompt_composer.compose_glossary_request(**self.task_details['composer_args'])
                 messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+            elif task_type == 'glossary_occurrence_update':
+                system, user, p_map = self.prompt_composer.compose_glossary_occurrence_update_request(**self.task_details['composer_args'])
+                self.task_details['placeholder_map'] = p_map
+                messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
             
             step_text = f"Sending to AI... (Attempt {self.task_details.get('attempt', 1)}/{self.task_details.get('max_retries', 1)})"
             self.step_updated.emit(1, step_text, AIStatusDialog.STATUS_IN_PROGRESS)
@@ -158,3 +220,4 @@ class AIWorker(QObject):
         finally:
             log_debug("AIWorker: Task finished, emitting 'finished' signal.")
             self.finished.emit()
+

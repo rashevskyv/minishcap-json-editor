@@ -88,6 +88,55 @@ class TranslationHandler(BaseHandler):
         term_to_add = "\n".join(selected_lines)
         self.glossary_handler.add_glossary_entry(term_to_add)
 
+    def request_glossary_occurrence_update(
+        self,
+        *,
+        occurrence,
+        original_text: str,
+        current_translation: str,
+        term: str,
+        old_term_translation: str,
+        new_term_translation: str,
+        dialog,
+        from_batch: bool,
+    ) -> None:
+        provider = self._prepare_provider()
+        if not provider:
+            self.glossary_handler._handle_occurrence_ai_error("AI provider is not configured.", from_batch)
+            return
+
+        system_prompt, glossary = self.glossary_handler.load_prompts()
+        if not system_prompt:
+            self.glossary_handler._handle_occurrence_ai_error("Failed to load prompts.", from_batch)
+            return
+
+        masked_text, placeholder_map = self.prompt_composer.prepare_text_for_translation(current_translation or '', [])
+        composer_args = {
+            'system_prompt': system_prompt,
+            'glossary_text': glossary,
+            'source_text': masked_text,
+            'placeholder_map': placeholder_map,
+            'current_translation': current_translation or '',
+            'original_text': original_text or '',
+            'term': term,
+            'old_translation': old_term_translation or '',
+            'new_translation': new_term_translation or '',
+            'expected_lines': max(1, (current_translation or '').count('\n') + 1),
+        }
+        task_details = {
+            'type': 'glossary_occurrence_update',
+            'composer_args': composer_args,
+            'attempt': 1,
+            'max_retries': 1,
+            'occurrence': occurrence,
+            'dialog': dialog,
+            'from_batch': from_batch,
+            'placeholder_map': placeholder_map,
+        }
+
+        self.ui_handler.start_ai_operation("AI Glossary Update", model_name=self._active_model_name)
+        self._run_ai_task(provider, task_details)
+
     def reset_translation_session(self) -> None:
         self._session_manager.reset()
         self._cached_system_prompt = None
@@ -130,6 +179,8 @@ class TranslationHandler(BaseHandler):
             self.worker.success.connect(self._handle_variation_success)
         elif task_type == 'fill_glossary':
             self.worker.success.connect(self.glossary_handler._handle_ai_fill_success)
+        elif task_type == 'glossary_occurrence_update':
+            self.worker.success.connect(self._handle_glossary_occurrence_update_success)
 
         self.worker.error.connect(self._handle_ai_error)
 
@@ -419,6 +470,28 @@ class TranslationHandler(BaseHandler):
         self.ui_handler.apply_full_translation(trimmed_translation)
         self.ui_handler.finish_ai_operation()
 
+    def _handle_glossary_occurrence_update_success(self, response: ProviderResponse, context: dict) -> None:
+        self.ui_handler.finish_ai_operation()
+        cleaned = self._clean_model_output(response)
+        try:
+            payload = json.loads(cleaned) if cleaned else {}
+        except json.JSONDecodeError as exc:
+            self.glossary_handler._handle_occurrence_ai_error(f"Failed to parse AI response: {exc}", context.get('from_batch', False))
+            return
+
+        if not isinstance(payload, dict) or 'translation' not in payload:
+            self.glossary_handler._handle_occurrence_ai_error("AI response missing 'translation' field.", context.get('from_batch', False))
+            return
+
+        new_translation_raw = str(payload.get('translation') or '')
+        restored = self.prompt_composer.restore_placeholders(new_translation_raw, context.get('placeholder_map'))
+        trimmed = self._trim_trailing_whitespace_from_lines(restored)
+        self.glossary_handler._handle_occurrence_ai_result(
+            occurrence=context.get('occurrence'),
+            updated_translation=trimmed,
+            from_batch=context.get('from_batch', False),
+        )
+
     def _handle_variation_success(self, response: ProviderResponse, context: dict):
         self.ui_handler.update_ai_operation_step(3, self.ui_handler.status_dialog.steps[3], self.ui_handler.status_dialog.STATUS_IN_PROGRESS)
         cleaned = self._clean_model_output(response)
@@ -453,6 +526,11 @@ class TranslationHandler(BaseHandler):
         if context.get('type') == 'fill_glossary':
             self.ui_handler.finish_ai_operation()
             self.glossary_handler._handle_ai_fill_error(error_message, context)
+            return
+
+        if context.get('type') == 'glossary_occurrence_update':
+            self.ui_handler.finish_ai_operation()
+            self.glossary_handler._handle_occurrence_ai_error(error_message, context.get('from_batch', False))
             return
 
         is_timeout = 'timed out' in error_message.lower()
