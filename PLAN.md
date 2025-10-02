@@ -34,7 +34,7 @@ Enhance the AI-assisted glossary workflow so that:
 | T2.2 | Wire dialog into glossary entry update flow (detect translation change, gather occurrences) | In Progress | Pending follow-up in `handlers/translation/glossary_handler.py` (`_handle_occurrence_ai_result`, `_handle_occurrence_ai_error`) and undo/QA around dialog workflows. |
 | T2.3 | Implement AI-assisted substitution (single/all) with placeholder-safe updates | In Progress | Validate AI JSON in `handlers/translation_handler.py` (`_handle_glossary_occurrence_update_success`) and ensure prompts in `translation_prompts/prompts.json` cover edge cases. |
 | T3 | Prompt editor modal for AI requests (preview/edit/save per query) | Completed | Prompt editor dialog invoked for translation, variations, glossary fill, and occurrence updates with Ctrl override & save-to-prompts support. |
-| T3.1 | Catalogue AI entry points + ensure prompts live in JSON definitions | TODO | Audit `translation_prompts/prompts.json`, plugin overrides (e.g., `plugins/.../translation_prompts/prompts.json`), and `handlers/translation/ai_prompt_composer.py` for missing sections. |
+| T3.1 | Catalogue AI entry points + ensure prompts live in JSON definitions | Completed | Audit complete: all active AI entry points reference prompts (core JSON or plugin overrides); no additional sections required. |
 | T3.2 | Build prompt editor UI (view merged prompt, edit, save-to-disk option) | Completed | `PromptEditorDialog` now used across AI calls with save-to-prompts support. |
 | T3.3 | Hook modal into request pipeline with enable/disable toggle & Ctrl override | Completed | `_maybe_edit_prompt` handles Ctrl override and global toggle across AI flows. |
 | T4 | Settings integration (toggle for prompt editor, persistence, Ctrl override) | Completed | Settings checkbox added, persisted via `SettingsManager`, toolbar icon updated. |
@@ -44,6 +44,7 @@ Enhance the AI-assisted glossary workflow so that:
 1. Finish T1: validate AI Fill end-to-end, ensure `_handle_ai_fill_success` applies results without raising, and remove stray debug placeholders (manual run pending).
 2. Extend T2: exercise the new update dialog (manual + AI) against real data; capture gaps (selection, undo, batch UX) and confirm AI JSON reliability in `handlers/translation_handler.py` & `handlers/translation/glossary_handler.py`.
 3. Validate AI prompt edits for chunked/block translations in `handlers/translation_handler.py` (`_initiate_batch_translation`) and decide UX for chunk prompts (possible `precomposed_prompt` support).
+4. Add AI chat concept: design in-app discussion channel for ambiguous translations (define UX and dependencies).
 
 ## Testing Strategy
 - Manual GUI testing for the three AI entry points (block translation, preview translation, glossary notes).

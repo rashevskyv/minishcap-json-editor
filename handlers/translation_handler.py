@@ -454,7 +454,7 @@ class TranslationHandler(BaseHandler):
 
         base_timeout = self._resolve_base_timeout(provider)
         operation_title = f"AI Translation (Lines {start_line + 1}-{end_line + 1})" if start_line != end_line else f"AI Translation (Line {start_line + 1})"
-        self.ui_handler.start_ai_operation(operation_title)
+        self.ui_handler.start_ai_operation(operation_title, model_name=self._active_model_name)
 
         task_details = {
             'type': 'translate_preview',
@@ -502,7 +502,7 @@ class TranslationHandler(BaseHandler):
         )
 
         operation_title = f"AI Translation (Block {target_block_idx + 1})"
-        self.ui_handler.start_ai_operation(operation_title, is_chunked=True)
+        self.ui_handler.start_ai_operation(operation_title, is_chunked=True, model_name=self._active_model_name)
 
         task_details = {
             'type': 'translate_block_chunked',
@@ -522,6 +522,8 @@ class TranslationHandler(BaseHandler):
             QMessageBox.information(self.mw, "Resume Translation", "No active translation session found for this block.")
             return
 
+        progress_entry = self.translation_progress.get(block_idx, {})
+
         if block_idx not in self.pre_translation_state:
             self.pre_translation_state[block_idx] = self.data_processor.get_block_texts(block_idx)
 
@@ -540,7 +542,7 @@ class TranslationHandler(BaseHandler):
         block_timeout = base_timeout * 10
 
         operation_title = f"Resuming Translation (Block {target_block_idx + 1})"
-        self.ui_handler.start_ai_operation(operation_title, is_chunked=True)
+        self.ui_handler.start_ai_operation(operation_title, is_chunked=True, model_name=self._active_model_name)
 
         task_details = {
             'type': 'translate_block_chunked',
@@ -554,6 +556,11 @@ class TranslationHandler(BaseHandler):
             'timeout_seconds': block_timeout,
             'is_resume': True
         }
+        if progress_entry.get('custom_user_header'):
+            task_details['custom_user_header'] = progress_entry.get('custom_user_header')
+            task_details['custom_user_label'] = progress_entry.get('custom_user_label')
+        if progress_entry.get('system_prompt_override'):
+            task_details['system_prompt_override'] = progress_entry.get('system_prompt_override')
         self._initiate_batch_translation(task_details)
 
     def _resolve_base_timeout(self, provider: BaseTranslationProvider) -> int:
@@ -581,15 +588,11 @@ class TranslationHandler(BaseHandler):
         if not system_prompt:
             self.ui_handler.finish_ai_operation()
             return
-        
+
+        if context.get('system_prompt_override'):
+            system_prompt = context['system_prompt_override']
+
         combined_system = self.prompt_composer._append_glossary_to_system_prompt(system_prompt, glossary)
-        if task_type:
-            self._attach_session_to_task(
-                context,
-                system_prompt=combined_system,
-                user_prompt='',
-                task_type=task_type,
-            )
 
         context['composer_args'] = {
             'system_prompt': system_prompt, 'glossary_text': glossary,
@@ -597,6 +600,36 @@ class TranslationHandler(BaseHandler):
             'mode_description': context['mode_description'], 'is_retry': (context['attempt'] > 1),
             'retry_reason': context.get('last_error', '')
         }
+
+        if task_type == 'translate_block_chunked' and not context.get('is_resume', False):
+            preview_system, preview_user, _ = self.prompt_composer.compose_batch_request(**context['composer_args'])
+            edited = self._maybe_edit_prompt(
+                title="AI Block Translation Prompt",
+                system_prompt=preview_system,
+                user_prompt=preview_user,
+                save_section='translation',
+            )
+            if edited is None:
+                self.ui_handler.finish_ai_operation()
+                if block_idx is not None:
+                    self.translation_progress.pop(block_idx, None)
+                    self.pre_translation_state.pop(block_idx, None)
+                return
+            edited_system, edited_user = edited
+            context['composer_args']['system_prompt'] = edited_system
+            header, sep, json_section = edited_user.partition('JSON DATA TO PROCESS:')
+            if sep:
+                context['custom_user_header'] = header
+                context['custom_user_label'] = sep
+            else:
+                context['custom_user_header'] = edited_user
+                context['custom_user_label'] = 'JSON DATA TO PROCESS:'
+            context['system_prompt_override'] = edited_system
+            if block_idx is not None:
+                progress_entry = self.translation_progress.setdefault(block_idx, {'completed_chunks': set(), 'total_chunks': 0})
+                progress_entry['custom_user_header'] = context['custom_user_header']
+                progress_entry['custom_user_label'] = context['custom_user_label']
+                progress_entry['system_prompt_override'] = edited_system
         self._run_ai_task(provider, context)
 
     def _handle_chunk_translated(self, chunk_index: int, chunk_text: str, context: dict):

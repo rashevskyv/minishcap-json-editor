@@ -137,6 +137,21 @@ class AIWorker(QObject):
                         composer_args_for_chunk['source_items'] = chunk
                         system, user, p_map_for_chunk = self.prompt_composer.compose_batch_request(**composer_args_for_chunk)
                         
+                        custom_header = self.task_details.get('custom_user_header')
+                        if custom_header:
+                            label = (self.task_details.get('custom_user_label') or 'JSON DATA TO PROCESS:').strip()
+                            _, sep_marker, json_section = user.partition('JSON DATA TO PROCESS:')
+                            if sep_marker:
+                                rebuilt = custom_header.rstrip()
+                                if rebuilt:
+                                    rebuilt += '\n\n' + label
+                                else:
+                                    rebuilt = label
+                                if not json_section.startswith('\n'):
+                                    rebuilt += '\n'
+                                rebuilt += json_section
+                                user = rebuilt
+
                         messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
                         
                         self.progress_updated.emit(i + 1)
