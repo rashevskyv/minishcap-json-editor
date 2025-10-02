@@ -757,16 +757,26 @@ class GlossaryHandler(BaseTranslationHandler):
         if not occurrences:
             QMessageBox.information(self.mw, "AI Update", "No occurrences to process.")
             return
-        if not self.translation_update_dialog:
+        if not self.translation_update_dialog or not self._current_translation_entry:
             return
 
-        self._batch_prompt_override = None
+        dialog = self.translation_update_dialog
+        dialog.set_batch_active(True)
+        dialog.set_ai_busy(True)
 
-        # Clone list to avoid modifying original sequence
-        queue = list(occurrences)
-        first = queue.pop(0)
-        self._pending_ai_occurrences = queue
-        self._request_ai_occurrence_update(first, from_batch=True)
+        started = self.main_handler.request_glossary_occurrence_batch_update(
+            occurrences=occurrences,
+            term=self._current_translation_entry.original,
+            old_term_translation=self._previous_translation_value or '',
+            new_term_translation=self._current_translation_entry.translation,
+            dialog=dialog,
+        )
+        if not started:
+            dialog.set_ai_busy(False)
+            dialog.set_batch_active(False)
+
+        self._pending_ai_occurrences = []
+        self._batch_prompt_override = None
 
     def _resume_ai_occurrence_batch(self) -> None:
         if not self._pending_ai_occurrences:
@@ -809,6 +819,37 @@ class GlossaryHandler(BaseTranslationHandler):
                 f"AI updated translation for block {target_occurrence.block_idx}, string {target_occurrence.string_idx}",
                 4000,
             )
+
+    def _handle_occurrence_batch_success(self, *, results: Dict[str, str], context: dict) -> None:
+        dialog = self.translation_update_dialog
+        occurrence_lookup = context.get('occurrence_lookup') or {}
+        applied_count = 0
+
+        for occ_id, occurrence in occurrence_lookup.items():
+            if not isinstance(occurrence, GlossaryOccurrence):
+                continue
+            new_translation = results.get(occ_id)
+            if new_translation is None:
+                continue
+            if dialog:
+                dialog.on_ai_result(occurrence, new_translation)
+            else:
+                self._apply_occurrence_translation(occurrence, new_translation)
+            applied_count += 1
+
+        if dialog:
+            dialog.set_ai_busy(False)
+            dialog.set_batch_active(False)
+
+        if applied_count and self.mw.statusBar:
+            self.mw.statusBar.showMessage(
+                f"AI updated {applied_count} occurrence(s).",
+                4000,
+            )
+
+        self._pending_ai_occurrences = []
+        self._batch_prompt_override = None
+
 
     def _handle_occurrence_ai_error(self, message: str, from_batch: bool) -> None:
         dialog = self.translation_update_dialog

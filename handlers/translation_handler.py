@@ -160,13 +160,114 @@ class TranslationHandler(BaseHandler):
             task_details,
             system_prompt=edited_system,
             user_prompt=edited_user,
-            task_type='glossary_occurrence_update',
+            task_type='glossary_occurrence_batch_update',
         ):
             task_details['precomposed_prompt'] = precomposed
 
         self.ui_handler.start_ai_operation("AI Glossary Update", model_name=self._active_model_name)
         self._run_ai_task(provider, task_details)
         return edited_system, edited_user
+
+    def request_glossary_occurrence_batch_update(
+        self,
+        *,
+        occurrences,
+        term: str,
+        old_term_translation: str,
+        new_term_translation: str,
+        dialog,
+    ) -> bool:
+        if not occurrences:
+            self.glossary_handler._handle_occurrence_ai_error("No occurrences to process.", True)
+            return False
+
+        provider = self._prepare_provider()
+        if not provider:
+            return False
+
+        system_prompt, glossary = self.glossary_handler.load_prompts()
+        if not system_prompt:
+            self.glossary_handler._handle_occurrence_ai_error("Failed to load prompts.", True)
+            return False
+
+        occurrences_list = list(occurrences)
+        batch_items = []
+        placeholder_map_by_id: Dict[str, Dict] = {}
+        expected_lines_by_id: Dict[str, int] = {}
+        occurrence_metadata: List[Dict[str, object]] = []
+        occurrence_lookup: Dict[str, object] = {}
+
+        for index, occurrence in enumerate(occurrences_list):
+            occurrence_id = str(index)
+            original_text = self.glossary_handler._get_occurrence_original_text(occurrence) or ""
+            current_translation = self.glossary_handler._get_occurrence_translation_text(occurrence) or ""
+            masked_text, placeholder_map = self.prompt_composer.prepare_text_for_translation(current_translation, [])
+            placeholder_map_by_id[occurrence_id] = placeholder_map
+            expected_lines = max(1, current_translation.count('\n') + 1)
+            expected_lines_by_id[occurrence_id] = expected_lines
+            batch_items.append({
+                "id": occurrence_id,
+                "block_index": occurrence.block_idx,
+                "string_index": occurrence.string_idx,
+                "line_index": occurrence.line_idx + 1,
+                "original_text": original_text,
+                "current_translation": masked_text,
+                "expected_lines": expected_lines,
+            })
+            occurrence_metadata.append({"id": occurrence_id, "occurrence": occurrence})
+            occurrence_lookup[occurrence_id] = occurrence
+
+        combined_system, user_prompt = self.prompt_composer.compose_glossary_occurrence_batch_request(
+            system_prompt=system_prompt,
+            glossary_text=glossary,
+            term=term,
+            old_translation=old_term_translation,
+            new_translation=new_term_translation,
+            batch_items=batch_items,
+        )
+
+        edited = self._maybe_edit_prompt(
+            title="AI Glossary Batch Update Prompt",
+            system_prompt=combined_system,
+            user_prompt=user_prompt,
+            save_section='glossary_occurrence_update',
+        )
+        if edited is None:
+            return False
+        edited_system, edited_user = edited
+
+        composer_args = {
+            'system_prompt': edited_system,
+            'user_prompt': edited_user,
+            'batch_items': batch_items,
+        }
+        precomposed = [
+            {"role": "system", "content": edited_system},
+            {"role": "user", "content": edited_user},
+        ]
+        task_details = {
+            'type': 'glossary_occurrence_batch_update',
+            'composer_args': composer_args,
+            'attempt': 1,
+            'max_retries': 1,
+            'dialog': dialog,
+            'occurrence_metadata': occurrence_metadata,
+            'occurrence_lookup': occurrence_lookup,
+            'placeholder_map': placeholder_map_by_id,
+            'expected_lines': expected_lines_by_id,
+            'from_batch': True,
+        }
+        if not self._attach_session_to_task(
+            task_details,
+            system_prompt=edited_system,
+            user_prompt=edited_user,
+            task_type='glossary_occurrence_batch_update',
+        ):
+            task_details['precomposed_prompt'] = precomposed
+
+        self.ui_handler.start_ai_operation("AI Glossary Update (All)", model_name=self._active_model_name)
+        self._run_ai_task(provider, task_details)
+        return True
 
     def request_glossary_notes_variation(
         self,
@@ -372,6 +473,8 @@ class TranslationHandler(BaseHandler):
             self.worker.success.connect(self.glossary_handler._handle_ai_fill_success)
         elif task_type == 'glossary_occurrence_update':
             self.worker.success.connect(self._handle_glossary_occurrence_update_success)
+        elif task_type == 'glossary_occurrence_batch_update':
+            self.worker.success.connect(self._handle_glossary_occurrence_batch_success)
         elif task_type == 'glossary_notes_variation':
             self.worker.success.connect(self._handle_glossary_notes_variation_success)
 
@@ -783,6 +886,65 @@ class TranslationHandler(BaseHandler):
         )
         log_debug("Glossary AI occurrence update validated and applied.")
 
+
+    def _handle_glossary_occurrence_batch_success(self, response: ProviderResponse, context: dict) -> None:
+        from_batch = context.get('from_batch', True)
+        placeholder_map = context.get('placeholder_map') or {}
+        expected_lines = context.get('expected_lines') or {}
+        occurrence_lookup = context.get('occurrence_lookup') or {}
+
+        self.ui_handler.finish_ai_operation()
+        cleaned = self._clean_model_output(response)
+        try:
+            payload = json.loads(cleaned) if cleaned else {}
+        except json.JSONDecodeError as exc:
+            self.glossary_handler._handle_occurrence_ai_error(f"Failed to parse AI response: {exc}", from_batch)
+            return
+
+        updates = None
+        if isinstance(payload, dict):
+            updates = payload.get('occurrences') or payload.get('translations') or payload.get('updated_translations')
+        if not isinstance(updates, list):
+            self.glossary_handler._handle_occurrence_ai_error("AI response missing 'occurrences' array.", from_batch)
+            return
+
+        results: Dict[str, str] = {}
+        for item in updates:
+            if not isinstance(item, dict):
+                continue
+            occ_id = item.get('id') or item.get('occurrence_id')
+            translation_value = item.get('translation')
+            if occ_id is None or not isinstance(translation_value, str):
+                continue
+            occ_id = str(occ_id)
+            restored = self.prompt_composer.restore_placeholders(
+                translation_value,
+                placeholder_map.get(occ_id),
+            )
+            trimmed = self._trim_trailing_whitespace_from_lines(restored)
+            expected = expected_lines.get(occ_id)
+            if isinstance(expected, int) and expected > 0:
+                actual = trimmed.count('\\n') + 1
+                if actual != expected:
+                    self.glossary_handler._handle_occurrence_ai_error(
+                        f"AI response for occurrence {occ_id} returned {actual} lines (expected {expected}).",
+                        from_batch,
+                    )
+                    return
+            results[occ_id] = trimmed
+
+        missing = [occ_id for occ_id in occurrence_lookup.keys() if occ_id not in results]
+        if missing:
+            self.glossary_handler._handle_occurrence_ai_error(
+                f"AI response missing translations for occurrences: {', '.join(missing)}.",
+                from_batch,
+            )
+            return
+
+        self._record_session_exchange(context=context, assistant_content=cleaned, response=response)
+        self.glossary_handler._handle_occurrence_batch_success(results=results, context=context)
+
+
     def _handle_glossary_notes_variation_success(self, response: ProviderResponse, context: dict) -> None:
         self.ui_handler.finish_ai_operation()
         cleaned = self._clean_model_output(response)
@@ -848,6 +1010,11 @@ class TranslationHandler(BaseHandler):
         if context.get('type') == 'glossary_occurrence_update':
             self.ui_handler.finish_ai_operation()
             self.glossary_handler._handle_occurrence_ai_error(error_message, context.get('from_batch', False))
+            return
+
+        if context.get('type') == 'glossary_occurrence_batch_update':
+            self.ui_handler.finish_ai_operation()
+            self.glossary_handler._handle_occurrence_ai_error(error_message, True)
             return
 
         if context.get('type') == 'glossary_notes_variation':

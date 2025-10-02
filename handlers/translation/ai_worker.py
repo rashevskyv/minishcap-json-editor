@@ -260,6 +260,17 @@ class AIWorker(QObject):
                     messages, session_payload = session_info['state'].prepare_request(user_message)
                 else:
                     messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+            elif task_type == 'glossary_occurrence_batch_update':
+                composer = self.task_details.get('composer_args', {})
+                system = composer.get('system_prompt', '')
+                user = composer.get('user_prompt', '')
+                if session_info and session_info.get('state'):
+                    user_message = {'role': 'user', 'content': user}
+                    session_info['user_message'] = user_message
+                    self.task_details['session_user_message'] = user
+                    messages, session_payload = session_info['state'].prepare_request(user_message)
+                else:
+                    messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
             else:
                 messages = [{"role": "system", "content": self.task_details.get('composer_args', {}).get('system_prompt', '')}]
 

@@ -294,6 +294,43 @@ class AIPromptComposer(BaseTranslationHandler):
         user_content = "\n".join(user_sections)
         return combined_system, user_content, placeholder_map or {}
 
+    def compose_glossary_occurrence_batch_request(
+        self,
+        system_prompt: str,
+        glossary_text: str,
+        *,
+        term: str,
+        old_translation: str,
+        new_translation: str,
+        batch_items: List[Dict],
+    ) -> Tuple[str, str]:
+        combined_system = self._append_glossary_to_system_prompt(system_prompt, glossary_text)
+
+        instructions = [
+            "For each object in the JSON payload, update the Ukrainian translation to use the new glossary translation.",
+            "Preserve all tags/placeholders, punctuation, whitespace, and line breaks exactly as provided.",
+            "Keep the line count for each translation identical to the original.",
+            "Return JSON only: {\"occurrences\": [{\"id\": string, \"translation\": string}, ...]}.",
+        ]
+
+        payload = {
+            "term": term,
+            "old_translation": old_translation or "[empty]",
+            "new_translation": new_translation or "[empty]",
+            "occurrences": batch_items,
+        }
+
+        user_sections = [
+            "Instructions:\n" + "\n".join(f"- {item}" for item in instructions),
+            "JSON DATA TO UPDATE:\n" + json.dumps(payload, indent=2, ensure_ascii=False),
+        ]
+        user_content = "\n\n".join(user_sections)
+        log_debug(
+            "Composed glossary batch update: "
+            f"System prompt size={len(combined_system)}, User content size={len(user_content)}"
+        )
+        return combined_system, user_content
+
     def compose_glossary_request(self, system_prompt: str, user_content: str, **_: Dict) -> Tuple[str, str]:
         return system_prompt.strip(), user_content
 
