@@ -180,28 +180,55 @@ class AIWorker(QObject):
             self.step_updated.emit(0, dialog_steps[0], AIStatusDialog.STATUS_IN_PROGRESS)
             
             precomposed = self.task_details.get('precomposed_prompt')
-            if precomposed:
+            session_info = self.task_details.get('session') if isinstance(self.task_details.get('session'), dict) else None
+            session_payload = None
+
+            if precomposed and not session_info:
                 messages = precomposed
             elif task_type == 'translate_preview':
                 system, user, p_map = self.prompt_composer.compose_batch_request(**self.task_details['composer_args'])
                 if 'placeholder_map' not in self.task_details:
                     self.task_details['placeholder_map'] = p_map
-                messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+                if session_info and session_info.get('state'):
+                    user_message = {'role': 'user', 'content': user}
+                    session_info['user_message'] = user_message
+                    self.task_details['session_user_message'] = user
+                    messages, session_payload = session_info['state'].prepare_request(user_message)
+                else:
+                    messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
-            elif task_type in ['translate_single', 'generate_variation']:
+            elif task_type in ['translate_single', 'generate_variation', 'glossary_notes_variation']:
                 system, user, p_map = self.prompt_composer.compose_variation_request(**self.task_details['composer_args'])
                 if 'placeholder_map' not in self.task_details:
                     self.task_details['placeholder_map'] = p_map
-                messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+                if session_info and session_info.get('state'):
+                    user_message = {'role': 'user', 'content': user}
+                    session_info['user_message'] = user_message
+                    self.task_details['session_user_message'] = user
+                    messages, session_payload = session_info['state'].prepare_request(user_message)
+                else:
+                    messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
             elif task_type == 'fill_glossary':
                 system, user = self.prompt_composer.compose_glossary_request(**self.task_details['composer_args'])
-                messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+                if session_info and session_info.get('state'):
+                    user_message = {'role': 'user', 'content': user}
+                    session_info['user_message'] = user_message
+                    self.task_details['session_user_message'] = user
+                    messages, session_payload = session_info['state'].prepare_request(user_message)
+                else:
+                    messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
             elif task_type == 'glossary_occurrence_update':
                 system, user, p_map = self.prompt_composer.compose_glossary_occurrence_update_request(**self.task_details['composer_args'])
                 if 'placeholder_map' not in self.task_details:
                     self.task_details['placeholder_map'] = p_map
-                messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+                if session_info and session_info.get('state'):
+                    user_message = {'role': 'user', 'content': user}
+                    session_info['user_message'] = user_message
+                    self.task_details['session_user_message'] = user
+                    messages, session_payload = session_info['state'].prepare_request(user_message)
+                else:
+                    messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
             else:
                 messages = [{"role": "system", "content": self.task_details.get('composer_args', {}).get('system_prompt', '')}]
 
@@ -211,7 +238,7 @@ class AIWorker(QObject):
             self.step_updated.emit(2, dialog_steps[2], AIStatusDialog.STATUS_IN_PROGRESS)
             
             provider_settings_override = self.task_details.get('provider_settings_override', {})
-            response = self.provider.translate(messages, session=None, settings_override=provider_settings_override)
+            response = self.provider.translate(messages, session=session_payload, settings_override=provider_settings_override)
 
             if self.is_cancelled:
                 log_debug("AIWorker: Operation cancelled after network request. Discarding response.")

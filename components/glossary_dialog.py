@@ -97,6 +97,7 @@ class GlossaryDialog(QDialog):
         delete_callback: Optional[
             Callable[[str], Optional[Tuple[Sequence[GlossaryEntry], Dict[str, List[GlossaryOccurrence]]]]]
         ] = None,
+        ai_variation_callback: Optional[Callable[[GlossaryEntry], None]] = None,
         initial_term: Optional[str] = None,
     ) -> None:
         super().__init__(parent)
@@ -122,6 +123,7 @@ class GlossaryDialog(QDialog):
         self._jump_callback = jump_callback
         self._update_callback = update_callback
         self._delete_callback = delete_callback
+        self._ai_variation_callback = ai_variation_callback
         self._initial_term = initial_term
         self._pending_select_term: Optional[str] = None
         self._is_populating = False
@@ -172,8 +174,18 @@ class GlossaryDialog(QDialog):
         right_layout.addWidget(translation_label)
         self._translation_edit = QLineEdit(self)
         right_layout.addWidget(self._translation_edit)
+        notes_row = QHBoxLayout()
         notes_label = QLabel("Notes:", self)
-        right_layout.addWidget(notes_label)
+        notes_row.addWidget(notes_label)
+        self._notes_variation_default_text = "AI Variations"
+        self._notes_variation_button = QPushButton(self._notes_variation_default_text, self)
+        self._notes_variation_button.clicked.connect(self._on_notes_variation_clicked)
+        self._notes_variation_busy = False
+        notes_row.addWidget(self._notes_variation_button)
+        notes_row.addStretch()
+        right_layout.addLayout(notes_row)
+        if not self._ai_variation_callback:
+            self._notes_variation_button.hide()
         self._notes_edit = QPlainTextEdit(self)
         right_layout.addWidget(self._notes_edit, 1)
         self._occurrence_label = QLabel("Occurrences: 0", self)
@@ -309,6 +321,31 @@ class GlossaryDialog(QDialog):
         if occurrence:
             self._jump_callback(occurrence)
 
+    def _set_notes_variation_busy(self, busy: bool) -> None:
+        if not hasattr(self, '_notes_variation_button'):
+            return
+        self._notes_variation_busy = busy
+        has_callback = self._ai_variation_callback is not None
+        if busy:
+            self._notes_variation_button.setText(f"{self._notes_variation_default_text} (working...)")
+        else:
+            self._notes_variation_button.setText(self._notes_variation_default_text)
+        should_enable = has_callback and not busy and self._current_entry is not None
+        self._notes_variation_button.setEnabled(should_enable)
+
+    def apply_notes_variation(self, new_notes: str) -> None:
+        if not self._current_entry:
+            return
+        self._suppress_editor_signals = True
+        self._notes_edit.setPlainText(new_notes or '')
+        self._suppress_editor_signals = False
+        self._on_editor_content_changed()
+
+    def _on_notes_variation_clicked(self) -> None:
+        if not self._ai_variation_callback or not self._current_entry:
+            return
+        self._ai_variation_callback(self._current_entry)
+
     def _on_editor_content_changed(self) -> None:
         if self._suppress_editor_signals or not self._update_callback or not self._current_entry:
             return
@@ -326,6 +363,11 @@ class GlossaryDialog(QDialog):
         can_edit = self._update_callback is not None and self._current_entry is not None
         self._translation_edit.setReadOnly(not can_edit)
         self._notes_edit.setReadOnly(not can_edit)
+        if hasattr(self, '_notes_variation_button'):
+            has_callback = self._ai_variation_callback is not None
+            self._notes_variation_button.setVisible(has_callback)
+            should_enable = has_callback and self._current_entry is not None and not getattr(self, '_notes_variation_busy', False)
+            self._notes_variation_button.setEnabled(should_enable)
         if hasattr(self, '_save_button'):
             if self._update_callback is None:
                 self._save_button.setVisible(False)
@@ -487,6 +529,9 @@ class GlossaryDialog(QDialog):
         self._translation_edit.setText(entry.translation or '')
         self._notes_edit.setPlainText(entry.notes or '')
         self._suppress_editor_signals = False
+        if hasattr(self, '_notes_variation_button'):
+            self._notes_variation_busy = False
+            self._notes_variation_button.setText(self._notes_variation_default_text)
         self._mark_editor_dirty(False)
         self._update_editor_enabled_state()
     def _clear_entry_details(self) -> None:
@@ -496,6 +541,10 @@ class GlossaryDialog(QDialog):
         self._translation_edit.clear()
         self._notes_edit.clear()
         self._suppress_editor_signals = False
+        if hasattr(self, '_notes_variation_button'):
+            self._notes_variation_busy = False
+            self._notes_variation_button.setText(self._notes_variation_default_text)
+            self._notes_variation_button.setEnabled(False)
         self._mark_editor_dirty(False)
         self._update_editor_enabled_state()
     def _apply_filter(self, text: str) -> None:
@@ -521,3 +570,4 @@ class GlossaryDialog(QDialog):
             self._clear_entry_details()
             self._occurrence_list.clear()
             self._occurrence_label.setText("Occurrences: 0")
+

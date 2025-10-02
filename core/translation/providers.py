@@ -22,6 +22,7 @@ class ProviderResponse:
     conversation_id: Optional[str] = None
 
 class BaseTranslationProvider:
+    supports_sessions = False
     """Abstract base class for all translation providers."""
     def __init__(self, settings: Dict[str, Any]) -> None:
         self.settings = settings
@@ -30,6 +31,7 @@ class BaseTranslationProvider:
         raise NotImplementedError
 
 class OpenAIChatProvider(BaseTranslationProvider):
+    supports_sessions = True
     """Provider for OpenAI-compatible chat completion APIs."""
     def __init__(self, settings: Dict[str, Any]) -> None:
         super().__init__(settings)
@@ -82,6 +84,7 @@ class OpenAIChatProvider(BaseTranslationProvider):
             raise TranslationProviderError(f"API request failed: {e}")
 
 class OpenAIResponsesProvider(BaseTranslationProvider):
+    supports_sessions = True
     """Provider for the new OpenAI /v1/responses API (e.g., for gpt-5)."""
     def __init__(self, settings: Dict[str, Any]) -> None:
         super().__init__(settings)
@@ -139,6 +142,7 @@ class OpenAIResponsesProvider(BaseTranslationProvider):
             raise TranslationProviderError(f"API request failed for Responses API: {e}")
 
 class OllamaChatProvider(BaseTranslationProvider):
+    supports_sessions = True
     """Provider for Ollama chat APIs."""
     def __init__(self, settings: Dict[str, Any]) -> None:
         super().__init__(settings)
@@ -209,6 +213,7 @@ class DeepLProvider(BaseTranslationProvider):
         raise NotImplementedError("DeepL provider is not yet implemented.")
 
 class GeminiProvider(BaseTranslationProvider):
+    supports_sessions = True
     """Provider for Google Gemini API."""
     BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
 
@@ -284,3 +289,24 @@ def create_translation_provider(provider_key: str, settings: Dict[str, Any]) -> 
     if provider_key == 'gemini':
         return GeminiProvider(settings)
     raise TranslationProviderError(f"Unknown provider key: {provider_key}")
+
+def get_provider_for_config(config: Dict[str, Any]) -> BaseTranslationProvider:
+    """
+    Initializes and returns a translation provider based on a configuration dictionary.
+    This is intended for one-off tasks like glossary building.
+    """
+    provider_name = config.get("provider", "").lower()
+    
+    # The config passed here is the specific config for the task,
+    # e.g., mw.glossary_ai, which already contains api_key, model, etc.
+    
+    if provider_name == 'openai':
+        return OpenAIChatProvider(config)
+    elif provider_name == 'ollama':
+        # Ollama provider expects 'base_url' and 'model' in its settings,
+        # which should be present in the passed config.
+        return OllamaChatProvider(config)
+    elif provider_name == 'gemini':
+        return GeminiProvider(config)
+    
+    raise TranslationProviderError(f"Unknown or unsupported provider for this task: {provider_name}")

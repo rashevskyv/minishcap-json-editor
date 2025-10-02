@@ -100,16 +100,17 @@ class TranslationHandler(BaseHandler):
         new_term_translation: str,
         dialog,
         from_batch: bool,
-    ) -> None:
+        prompt_override: Optional[Tuple[str, str]] = None,
+    ) -> Optional[Tuple[str, str]]:
         provider = self._prepare_provider()
         if not provider:
             self.glossary_handler._handle_occurrence_ai_error("AI provider is not configured.", from_batch)
-            return
+            return None
 
         system_prompt, glossary = self.glossary_handler.load_prompts()
         if not system_prompt:
             self.glossary_handler._handle_occurrence_ai_error("Failed to load prompts.", from_batch)
-            return
+            return None
 
         masked_text, placeholder_map = self.prompt_composer.prepare_text_for_translation(current_translation or '', [])
         composer_args = {
@@ -125,18 +126,21 @@ class TranslationHandler(BaseHandler):
             'expected_lines': max(1, (current_translation or '').count('\n') + 1),
         }
         combined_system, user_prompt, placeholder_map = self.prompt_composer.compose_glossary_occurrence_update_request(**composer_args)
-        edited = self._maybe_edit_prompt(
-            title="AI Glossary Update Prompt",
-            system_prompt=combined_system,
-            user_prompt=user_prompt,
-            save_section='glossary_occurrence_update',
-        )
-        if edited is None:
-            if from_batch and hasattr(dialog, 'set_ai_busy'):
-                dialog.set_ai_busy(False)
-                dialog.set_batch_active(False)
-            return
-        edited_system, edited_user = edited
+        if prompt_override and all(isinstance(item, str) and item.strip() for item in prompt_override):
+            edited_system, edited_user = prompt_override
+        else:
+            edited = self._maybe_edit_prompt(
+                title="AI Glossary Update Prompt",
+                system_prompt=combined_system,
+                user_prompt=user_prompt,
+                save_section='glossary_occurrence_update',
+            )
+            if edited is None:
+                if from_batch and hasattr(dialog, 'set_ai_busy'):
+                    dialog.set_ai_busy(False)
+                    dialog.set_batch_active(False)
+                return None
+            edited_system, edited_user = edited
 
         precomposed = [
             {"role": "system", "content": edited_system},
@@ -151,11 +155,89 @@ class TranslationHandler(BaseHandler):
             'dialog': dialog,
             'from_batch': from_batch,
             'placeholder_map': placeholder_map,
-            'precomposed_prompt': precomposed,
         }
+        if not self._attach_session_to_task(
+            task_details,
+            system_prompt=edited_system,
+            user_prompt=edited_user,
+            task_type='glossary_occurrence_update',
+        ):
+            task_details['precomposed_prompt'] = precomposed
 
         self.ui_handler.start_ai_operation("AI Glossary Update", model_name=self._active_model_name)
         self._run_ai_task(provider, task_details)
+        return edited_system, edited_user
+
+    def request_glossary_notes_variation(
+        self,
+        *,
+        term: str,
+        translation: str,
+        current_notes: str,
+        context_line: Optional[str],
+        dialog,
+    ) -> bool:
+        provider = self._prepare_provider()
+        if not provider:
+            return False
+
+        system_prompt, glossary = self.glossary_handler.load_prompts()
+        if not system_prompt:
+            return False
+
+        source_sections = [f"Term: {term}", f"Translation: {translation or '[empty]'}"]
+        if context_line:
+            source_sections.append(f"Context: {context_line}")
+        source_text = '\n'.join(source_sections)
+
+        composer_args = {
+            'system_prompt': system_prompt,
+            'glossary_text': glossary,
+            'source_text': source_text,
+            'placeholder_map': {},
+            'block_idx': None,
+            'string_idx': None,
+            'expected_lines': max(1, (current_notes or '').count('\n') + 1),
+            'current_translation': current_notes or '',
+            'mode_description': 'glossary_notes',
+            'request_type': 'glossary_notes_variation',
+        }
+        combined_system, user_prompt, _ = self.prompt_composer.compose_variation_request(**composer_args)
+        edited = self._maybe_edit_prompt(
+            title="AI Glossary Notes Prompt",
+            system_prompt=combined_system,
+            user_prompt=user_prompt,
+        )
+        if edited is None:
+            return False
+        edited_system, edited_user = edited
+
+        precomposed = [
+            {"role": "system", "content": edited_system},
+            {"role": "user", "content": edited_user},
+        ]
+        task_details = {
+            'type': 'glossary_notes_variation',
+            'composer_args': composer_args,
+            'attempt': 1,
+            'max_retries': 1,
+            'dialog': dialog,
+            'term': term,
+            'translation': translation,
+            'current_notes': current_notes,
+            'placeholder_map': {},
+        }
+        if not self._attach_session_to_task(
+            task_details,
+            system_prompt=edited_system,
+            user_prompt=edited_user,
+            task_type='glossary_notes_variation',
+        ):
+            task_details['precomposed_prompt'] = precomposed
+
+        self.ui_handler.start_ai_operation("AI Glossary Notes", model_name=self._active_model_name)
+        self._run_ai_task(provider, task_details)
+        return True
 
     def reset_translation_session(self) -> None:
         self._session_manager.reset()
@@ -206,6 +288,60 @@ class TranslationHandler(BaseHandler):
                     self._cached_system_prompt = edited_system
         return edited_system, edited_user
 
+
+    def _should_use_session(self, task_type: str) -> bool:
+        if not self._provider_supports_sessions:
+            return False
+        return task_type not in {'translate_block_chunked', 'build_glossary'}
+
+    def _prepare_session_for_request(self, *, system_prompt: str, user_prompt: str, task_type: str) -> Optional[dict]:
+        if not self._should_use_session(task_type):
+            return None
+        state = self._session_manager.ensure_session(
+            provider_key=self._active_provider_key or '',
+            system_content=system_prompt,
+            supports_sessions=self._provider_supports_sessions,
+        )
+        if not state:
+            return None
+        return {
+            'state': state,
+            'user_message': {'role': 'user', 'content': user_prompt},
+        }
+
+    def _attach_session_to_task(self, task_details: dict, *, system_prompt: str, user_prompt: str, task_type: str) -> bool:
+        session_info = self._prepare_session_for_request(
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            task_type=task_type,
+        )
+        if not session_info:
+            return False
+        task_details['session'] = session_info
+        task_details['session_state'] = session_info['state']
+        task_details['session_user_message'] = session_info['user_message']['content']
+        return True
+
+    def _record_session_exchange(self, *, context: dict, assistant_content: str, response: Optional[ProviderResponse] = None) -> None:
+        state = context.get('session_state') if isinstance(context, dict) else None
+        user_content = context.get('session_user_message') if isinstance(context, dict) else None
+        if not state or not isinstance(user_content, str):
+            return
+        conversation_id = response.conversation_id if isinstance(response, ProviderResponse) else None
+        state.record_exchange(
+            user_content=user_content,
+            assistant_content=assistant_content or '',
+            conversation_id=conversation_id,
+        )
+
+    def _set_notes_dialog_busy(self, dialog_obj, busy: bool) -> None:
+        if not dialog_obj:
+            return
+        if hasattr(dialog_obj, 'set_ai_busy'):
+            dialog_obj.set_ai_busy(busy)
+        elif hasattr(dialog_obj, 'set_notes_variation_busy'):
+            dialog_obj.set_notes_variation_busy(busy)
+
     def _run_ai_task(self, provider: BaseTranslationProvider, task_details: dict):
         self.thread = QThread()
         task_details['dialog_steps'] = self.ui_handler.status_dialog.steps
@@ -236,6 +372,8 @@ class TranslationHandler(BaseHandler):
             self.worker.success.connect(self.glossary_handler._handle_ai_fill_success)
         elif task_type == 'glossary_occurrence_update':
             self.worker.success.connect(self._handle_glossary_occurrence_update_success)
+        elif task_type == 'glossary_notes_variation':
+            self.worker.success.connect(self._handle_glossary_notes_variation_success)
 
         self.worker.error.connect(self._handle_ai_error)
 
@@ -444,6 +582,15 @@ class TranslationHandler(BaseHandler):
             self.ui_handler.finish_ai_operation()
             return
         
+        combined_system = self.prompt_composer._append_glossary_to_system_prompt(system_prompt, glossary)
+        if task_type:
+            self._attach_session_to_task(
+                context,
+                system_prompt=combined_system,
+                user_prompt='',
+                task_type=task_type,
+            )
+
         context['composer_args'] = {
             'system_prompt': system_prompt, 'glossary_text': glossary,
             'source_items': context['source_items'], 'block_idx': context['block_idx'],
@@ -506,6 +653,7 @@ class TranslationHandler(BaseHandler):
                 final_text = self._trim_trailing_whitespace_from_lines(restored_text)
                 self.data_processor.update_edited_data(context['block_idx'], string_idx, final_text)
 
+            self._record_session_exchange(context=context, assistant_content=cleaned_text, response=response)
             self.ui_handler.finish_ai_operation()
             self.ui_updater.populate_strings_for_block(context['block_idx'])
             self.ui_updater.update_text_views()
@@ -520,36 +668,100 @@ class TranslationHandler(BaseHandler):
         cleaned_translation = self._clean_model_output(response)
         restored_translation = self.prompt_composer.restore_placeholders(cleaned_translation, context['placeholder_map'])
         trimmed_translation = self._trim_trailing_whitespace_from_lines(restored_translation)
+        self._record_session_exchange(context=context, assistant_content=cleaned_translation, response=response)
         
         self.ui_handler.update_ai_operation_step(4, self.ui_handler.status_dialog.steps[4], self.ui_handler.status_dialog.STATUS_IN_PROGRESS)
         self.ui_handler.apply_full_translation(trimmed_translation)
         self.ui_handler.finish_ai_operation()
 
     def _handle_glossary_occurrence_update_success(self, response: ProviderResponse, context: dict) -> None:
+        from_batch = context.get('from_batch', False)
+        occurrence = context.get('occurrence')
+        placeholder_map = context.get('placeholder_map')
+        composer_args = context.get('composer_args') or {}
+
         self.ui_handler.finish_ai_operation()
         cleaned = self._clean_model_output(response)
         try:
             payload = json.loads(cleaned) if cleaned else {}
         except json.JSONDecodeError as exc:
-            self.glossary_handler._handle_occurrence_ai_error(f"Failed to parse AI response: {exc}", context.get('from_batch', False))
+            self.glossary_handler._handle_occurrence_ai_error(f"Failed to parse AI response: {exc}", from_batch)
             return
 
-        if not isinstance(payload, dict) or 'translation' not in payload:
-            self.glossary_handler._handle_occurrence_ai_error("AI response missing 'translation' field.", context.get('from_batch', False))
+        translation_value = payload.get('translation') if isinstance(payload, dict) else None
+        if not isinstance(translation_value, str):
+            self.glossary_handler._handle_occurrence_ai_error("AI response missing string 'translation' field.", from_batch)
             return
 
-        new_translation_raw = str(payload.get('translation') or '')
-        restored = self.prompt_composer.restore_placeholders(new_translation_raw, context.get('placeholder_map'))
+        restored = self.prompt_composer.restore_placeholders(translation_value, placeholder_map)
         trimmed = self._trim_trailing_whitespace_from_lines(restored)
+
+        expected_lines = composer_args.get('expected_lines') if isinstance(composer_args, dict) else None
+        if isinstance(expected_lines, int) and expected_lines > 0:
+            actual_lines = trimmed.count('\n') + 1
+            if actual_lines != expected_lines:
+                self.glossary_handler._handle_occurrence_ai_error(
+                    f"AI response returned {actual_lines} lines (expected {expected_lines}).",
+                    from_batch,
+                )
+                return
+
+        placeholder_tokens = {}
+        if isinstance(placeholder_map, dict):
+            tags = placeholder_map.get('tags')
+            if isinstance(tags, dict):
+                placeholder_tokens.update(tags)
+            else:
+                for value in placeholder_map.values():
+                    if isinstance(value, dict) and isinstance(value.get('tags'), dict):
+                        placeholder_tokens.update(value['tags'])
+        if placeholder_tokens:
+            leftovers = [token for token in placeholder_tokens if token in trimmed]
+            if leftovers:
+                self.glossary_handler._handle_occurrence_ai_error("AI response did not restore placeholder tokens correctly.", from_batch)
+                return
+
+        if occurrence is None:
+            self.glossary_handler._handle_occurrence_ai_error("Glossary update is missing occurrence context.", from_batch)
+            return
+
+        self._record_session_exchange(context=context, assistant_content=cleaned, response=response)
         self.glossary_handler._handle_occurrence_ai_result(
-            occurrence=context.get('occurrence'),
+            occurrence=occurrence,
             updated_translation=trimmed,
-            from_batch=context.get('from_batch', False),
+            from_batch=from_batch,
         )
+        log_debug("Glossary AI occurrence update validated and applied.")
+
+    def _handle_glossary_notes_variation_success(self, response: ProviderResponse, context: dict) -> None:
+        self.ui_handler.finish_ai_operation()
+        cleaned = self._clean_model_output(response)
+        self._record_session_exchange(context=context, assistant_content=cleaned, response=response)
+
+        dialog = context.get('dialog')
+        self._set_notes_dialog_busy(dialog, False)
+
+        variants = self.ui_handler.parse_variation_payload(cleaned)
+        if not variants:
+            QMessageBox.information(self.mw, "AI Glossary Notes", "Failed to parse variations from AI response.")
+            return
+
+        chosen = self.ui_handler.show_variations_dialog(variants)
+        if not chosen:
+            return
+
+        if dialog and hasattr(dialog, 'get_values') and hasattr(dialog, 'set_values'):
+            current_translation, _ = dialog.get_values()
+            dialog.set_values(current_translation, chosen)
+        elif dialog and hasattr(dialog, 'apply_notes_variation'):
+            dialog.apply_notes_variation(chosen)
+        if self.mw.statusBar:
+            self.mw.statusBar.showMessage("Applied AI-generated glossary notes.", 4000)
 
     def _handle_variation_success(self, response: ProviderResponse, context: dict):
         self.ui_handler.update_ai_operation_step(3, self.ui_handler.status_dialog.steps[3], self.ui_handler.status_dialog.STATUS_IN_PROGRESS)
         cleaned = self._clean_model_output(response)
+        self._record_session_exchange(context=context, assistant_content=cleaned, response=response)
         variants_raw = self.ui_handler.parse_variation_payload(cleaned)
         self.ui_handler.finish_ai_operation()
 
@@ -586,6 +798,13 @@ class TranslationHandler(BaseHandler):
         if context.get('type') == 'glossary_occurrence_update':
             self.ui_handler.finish_ai_operation()
             self.glossary_handler._handle_occurrence_ai_error(error_message, context.get('from_batch', False))
+            return
+
+        if context.get('type') == 'glossary_notes_variation':
+            self.ui_handler.finish_ai_operation()
+            self._set_notes_dialog_busy(context.get('dialog'), False)
+            message = error_message or "AI request failed."
+            QMessageBox.warning(self.mw, "AI Glossary Notes", message)
             return
 
         is_timeout = 'timed out' in error_message.lower()
@@ -685,9 +904,15 @@ class TranslationHandler(BaseHandler):
             'provider_settings_override': {'temperature': 0.7},
             'attempt': 1,
             'max_retries': 1,
-            'precomposed_prompt': precomposed,
             'placeholder_map': placeholder_map,
         }
+        if not self._attach_session_to_task(
+            task_details,
+            system_prompt=edited_system,
+            user_prompt=edited_user,
+            task_type='generate_variation',
+        ):
+            task_details['precomposed_prompt'] = precomposed
         self.ui_handler.start_ai_operation("AI Variation", model_name=self._active_model_name)
         self._run_ai_task(provider, task_details)
 
@@ -731,9 +956,15 @@ class TranslationHandler(BaseHandler):
             'composer_args': composer_args,
             'attempt': 1,
             'max_retries': 1,
-            'precomposed_prompt': precomposed,
             'placeholder_map': placeholder_map,
         }
+        if not self._attach_session_to_task(
+            task_details,
+            system_prompt=edited_system,
+            user_prompt=edited_user,
+            task_type='translate_single',
+        ):
+            task_details['precomposed_prompt'] = precomposed
         self.ui_handler.start_ai_operation("AI Translation", model_name=self._active_model_name)
         self._run_ai_task(provider, task_details)
         
@@ -753,8 +984,12 @@ class TranslationHandler(BaseHandler):
             provider = create_translation_provider(provider_key, provider_settings)
             self._active_provider_key = provider_key
             self._active_model_name = provider_settings.get('model') if isinstance(provider_settings, dict) else None
+            self._provider_supports_sessions = bool(getattr(provider, 'supports_sessions', False))
+            if not self._provider_supports_sessions:
+                self._session_manager.reset()
             return provider
         except TranslationProviderError as exc:
+            self._provider_supports_sessions = False
             QMessageBox.critical(self.mw, "AI Translation", str(exc))
             return None
 

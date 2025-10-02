@@ -45,6 +45,7 @@ class _EditEntryDialog(QDialog):
         entry: Optional[GlossaryEntry] = None,
         context: Optional[str] = None,
         ai_assist_callback: Optional[Callable[[], None]] = None,
+        notes_variation_callback: Optional[Callable[[], None]] = None,
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle("Edit Glossary Entry")
@@ -72,7 +73,17 @@ class _EditEntryDialog(QDialog):
         self._translation_edit.installEventFilter(_ReturnToAcceptFilter(self))
         form_layout.addWidget(self._translation_edit)
 
-        form_layout.addWidget(QLabel("Notes:"))
+        notes_header_layout = QHBoxLayout()
+        notes_header_layout.addWidget(QLabel("Notes:"))
+        notes_header_layout.addStretch(1)
+        self._notes_variation_default_text = "AI Variations"
+        self._notes_variation_button = QPushButton(self._notes_variation_default_text, self)
+        self._notes_variation_button.setVisible(notes_variation_callback is not None)
+        if notes_variation_callback:
+            self._notes_variation_button.clicked.connect(notes_variation_callback)
+        notes_header_layout.addWidget(self._notes_variation_button)
+        form_layout.addLayout(notes_header_layout)
+
         self._notes_edit = QPlainTextEdit(self)
         self._notes_edit.setMinimumHeight(80)
         form_layout.addWidget(self._notes_edit)
@@ -98,13 +109,18 @@ class _EditEntryDialog(QDialog):
         )
 
     def set_ai_busy(self, busy: bool) -> None:
-        if not self._ai_button:
-            return
-        self._ai_button.setEnabled(not busy)
-        if busy:
-            self._ai_button.setText(f"{self._ai_button_default_text} (working...)")
-        else:
-            self._ai_button.setText(self._ai_button_default_text)
+        if self._ai_button:
+            self._ai_button.setEnabled(not busy)
+            if busy:
+                self._ai_button.setText(f"{self._ai_button_default_text} (working...)")
+            else:
+                self._ai_button.setText(self._ai_button_default_text)
+        if getattr(self, '_notes_variation_button', None):
+            self._notes_variation_button.setEnabled(not busy)
+            if busy:
+                self._notes_variation_button.setText(f"{self._notes_variation_default_text} (working...)")
+            else:
+                self._notes_variation_button.setText(self._notes_variation_default_text)
 
 class GlossaryHandler(BaseTranslationHandler):
     def __init__(self, main_handler):
@@ -121,6 +137,7 @@ class GlossaryHandler(BaseTranslationHandler):
         self._pending_ai_occurrences: List[GlossaryOccurrence] = []
         self._current_translation_entry: Optional[GlossaryEntry] = None
         self._previous_translation_value: Optional[str] = None
+        self._batch_prompt_override: Optional[Tuple[str, str]] = None
 
     def install_menu_actions(self) -> None:
         tools_menu = getattr(self.mw, 'tools_menu', None)
@@ -191,6 +208,7 @@ class GlossaryHandler(BaseTranslationHandler):
             jump_callback=self._jump_to_occurrence,
             update_callback=self._handle_glossary_entry_update,
             delete_callback=self._handle_glossary_entry_delete,
+            ai_variation_callback=self._handle_notes_variation_from_dialog,
             initial_term=initial_term,
         )
         self.dialog.finished.connect(self._on_glossary_dialog_closed)
@@ -227,10 +245,32 @@ class GlossaryHandler(BaseTranslationHandler):
         self.main_handler.reset_translation_session()
 
     def _create_edit_dialog(self, term: str, entry: Optional[GlossaryEntry], context: Optional[str]) -> _EditEntryDialog:
+        dialog_ref: Dict[str, _EditEntryDialog] = {}
+
+        def _ai_fill_wrapper() -> None:
+            dialog_obj = dialog_ref.get('dialog')
+            if dialog_obj:
+                self._ai_fill_glossary_entry(term, context, dialog_obj)
+
+        def _notes_variation_wrapper() -> None:
+            dialog_obj = dialog_ref.get('dialog')
+            if not dialog_obj:
+                return
+            translation, notes = dialog_obj.get_values()
+            self._start_glossary_notes_variation(
+                term=term,
+                translation=translation,
+                notes=notes,
+                context_line=context,
+                target_dialog=dialog_obj,
+            )
+
         dialog = _EditEntryDialog(
             self.mw, term, entry, context,
-            ai_assist_callback=lambda: self._ai_fill_glossary_entry(term, context, dialog)
+            ai_assist_callback=_ai_fill_wrapper,
+            notes_variation_callback=_notes_variation_wrapper,
         )
+        dialog_ref['dialog'] = dialog
         return dialog
         
     def _ai_fill_glossary_entry(self, term: str, context: Optional[str], dialog: _EditEntryDialog) -> None:
@@ -258,6 +298,10 @@ class GlossaryHandler(BaseTranslationHandler):
             return
         edited_system, edited_user = edited
 
+        precomposed = [
+            {"role": "system", "content": edited_system},
+            {"role": "user", "content": edited_user},
+        ]
         task_details = {
             'type': 'fill_glossary',
             'composer_args': {'system_prompt': edited_system, 'user_content': edited_user},
@@ -266,15 +310,64 @@ class GlossaryHandler(BaseTranslationHandler):
             'dialog': dialog,
             'term': term,
             'context_line': context,
-            'precomposed_prompt': [
-                {"role": "system", "content": edited_system},
-                {"role": "user", "content": edited_user},
-            ],
         }
+        if not self.main_handler._attach_session_to_task(
+            task_details,
+            system_prompt=edited_system,
+            user_prompt=edited_user,
+            task_type='fill_glossary',
+        ):
+            task_details['precomposed_prompt'] = precomposed
         if hasattr(dialog, 'set_ai_busy'):
             dialog.set_ai_busy(True)
         self.main_handler.ui_handler.start_ai_operation("AI Glossary Fill", model_name=self.main_handler._active_model_name)
         self.main_handler._run_ai_task(provider, task_details)
+
+    def _set_notes_dialog_busy(self, dialog_obj, busy: bool) -> None:
+        if not dialog_obj:
+            return
+        if hasattr(dialog_obj, 'set_ai_busy'):
+            dialog_obj.set_ai_busy(busy)
+        elif hasattr(dialog_obj, 'set_notes_variation_busy'):
+            dialog_obj.set_notes_variation_busy(busy)
+
+    def _start_glossary_notes_variation(
+        self,
+        *,
+        term: str,
+        translation: str,
+        notes: str,
+        context_line: Optional[str],
+        target_dialog,
+    ) -> None:
+        self._set_notes_dialog_busy(target_dialog, True)
+        started = self.main_handler.request_glossary_notes_variation(
+            term=term,
+            translation=translation,
+            current_notes=notes,
+            context_line=context_line,
+            dialog=target_dialog,
+        )
+        if not started:
+            self._set_notes_dialog_busy(target_dialog, False)
+
+    def _handle_notes_variation_from_dialog(self, entry: GlossaryEntry) -> None:
+        if not entry or not self.dialog:
+            return
+        context_line: Optional[str] = None
+        data_source = getattr(self.mw, 'data', None)
+        if isinstance(data_source, list):
+            occurrence_map = self.glossary_manager.build_occurrence_index(data_source)
+            occ_list = occurrence_map.get(entry.original, [])
+            if occ_list:
+                context_line = getattr(occ_list[0], 'line_text', None)
+        self._start_glossary_notes_variation(
+            term=entry.original,
+            translation=entry.translation or '',
+            notes=entry.notes or '',
+            context_line=context_line,
+            target_dialog=self.dialog,
+        )
 
     def _handle_ai_fill_success(self, response, context: dict) -> None:
         """Handle successful AI Fill response for the glossary dialog."""
@@ -313,6 +406,7 @@ class GlossaryHandler(BaseTranslationHandler):
         new_translation = translation_value or current_translation
         new_notes = notes_value if notes_value is not None else current_notes
         dialog.set_values(new_translation, new_notes)
+        self.main_handler._record_session_exchange(context=context, assistant_content=cleaned)
 
     def _handle_ai_fill_error(self, error_message: str, context: dict) -> None:
         dialog = context.get('dialog') if isinstance(context, dict) else None
@@ -577,6 +671,7 @@ class GlossaryHandler(BaseTranslationHandler):
         self._pending_ai_occurrences = []
         self._current_translation_entry = None
         self._previous_translation_value = None
+        self._batch_prompt_override = None
 
     def save_prompt_section(self, section: str, field: str, value: str) -> bool:
         path = self._current_prompts_path
@@ -641,7 +736,8 @@ class GlossaryHandler(BaseTranslationHandler):
         if from_batch:
             dialog.set_batch_active(True)
 
-        self.main_handler.request_glossary_occurrence_update(
+        prompt_override = self._batch_prompt_override if from_batch else None
+        result = self.main_handler.request_glossary_occurrence_update(
             occurrence=occurrence,
             original_text=original_text,
             current_translation=current_translation,
@@ -650,7 +746,12 @@ class GlossaryHandler(BaseTranslationHandler):
             new_term_translation=term_entry.translation,
             dialog=dialog,
             from_batch=from_batch,
+            prompt_override=prompt_override,
         )
+        if from_batch and result:
+            self._batch_prompt_override = result
+        elif not from_batch:
+            self._batch_prompt_override = None
 
     def _start_ai_occurrence_batch(self, occurrences: List[GlossaryOccurrence]) -> None:
         if not occurrences:
@@ -658,6 +759,8 @@ class GlossaryHandler(BaseTranslationHandler):
             return
         if not self.translation_update_dialog:
             return
+
+        self._batch_prompt_override = None
 
         # Clone list to avoid modifying original sequence
         queue = list(occurrences)
@@ -676,25 +779,50 @@ class GlossaryHandler(BaseTranslationHandler):
 
     def _handle_occurrence_ai_result(self, *, occurrence: GlossaryOccurrence, updated_translation: str, from_batch: bool) -> None:
         dialog = self.translation_update_dialog
-        if not dialog:
-            return
+        target_occurrence = occurrence
 
-        dialog.on_ai_result(occurrence, updated_translation)
-        if from_batch:
-            if self._pending_ai_occurrences:
-                self._resume_ai_occurrence_batch()
+        if dialog:
+            dialog.on_ai_result(occurrence, updated_translation)
+            if from_batch:
+                if self._pending_ai_occurrences:
+                    self._resume_ai_occurrence_batch()
+                else:
+                    dialog.set_ai_busy(False)
+                    dialog.set_batch_active(False)
+                    self._batch_prompt_override = None
             else:
                 dialog.set_ai_busy(False)
                 dialog.set_batch_active(False)
+                self._pending_ai_occurrences = []
+                self._batch_prompt_override = None
         else:
-            dialog.set_ai_busy(False)
-            dialog.set_batch_active(False)
+            if target_occurrence:
+                self._apply_occurrence_translation(target_occurrence, updated_translation)
+                log_debug("Glossary AI: applied occurrence update after dialog closed (block=%s, string=%s)." % (target_occurrence.block_idx, target_occurrence.string_idx))
+            else:
+                log_debug("Glossary AI: received occurrence result with no target occurrence.")
+            self._pending_ai_occurrences = []
+            self._batch_prompt_override = None
+
+        if target_occurrence and self.mw.statusBar:
+            self.mw.statusBar.showMessage(
+                f"AI updated translation for block {target_occurrence.block_idx}, string {target_occurrence.string_idx}",
+                4000,
+            )
 
     def _handle_occurrence_ai_error(self, message: str, from_batch: bool) -> None:
         dialog = self.translation_update_dialog
         if dialog:
             dialog.on_ai_error(message)
+        else:
+            if message:
+                QMessageBox.warning(self.mw, "AI Update", message)
+            else:
+                QMessageBox.warning(self.mw, "AI Update", "AI request failed.")
+            if self.mw.statusBar:
+                self.mw.statusBar.showMessage("AI glossary update failed.", 4000)
         self._pending_ai_occurrences = []
+        self._batch_prompt_override = None
 
     def _handle_glossary_entry_delete(self, original: str) -> Optional[Tuple[Sequence[GlossaryEntry], Dict[str, List[GlossaryOccurrence]]]]:
         if self.glossary_manager.delete_entry(original):
