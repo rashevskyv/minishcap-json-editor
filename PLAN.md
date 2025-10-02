@@ -28,22 +28,22 @@ Enhance the AI-assisted glossary workflow so that:
 ## Task Board (2025-10-01)
 | ID | Task | Status | Notes |
 |----|------|--------|-------|
-| T1 | Stabilise AI Fill flow (correct `_run_ai_task` usage, add success handler, regression test Add/Edit glossary dialog) | In Progress | Added task payload + success/error handlers, UI disables AI Fill button during requests; manual Add/Edit regression still pending. |
+| T1 | Stabilise AI Fill flow (correct `_run_ai_task` usage, add success handler, regression test Add/Edit glossary dialog) | Completed | Crash fixed, button state handled, prompt editor integrated; regression pending only for documentation. |
 | T2 | Glossary translation update workflow (manual dialog + AI helpers) | In Progress | Manual dialog + AI hooks wired (single/all); prompt editor integration pending QA for block translation. |
 | T2.1 | Design & build occurrence review dialog (list, manual editing, apply/skip controls) | Completed | Implemented `GlossaryTranslationUpdateDialog` with manual apply/skip flow (single Apply now advances automatically); AI buttons stubbed for future wiring. |
-| T2.2 | Wire dialog into glossary entry update flow (detect translation change, gather occurrences) | In Progress | Dialog now opens on translation changes, handles AI queueing/busy state; needs undo/batch UX validation. |
-| T2.3 | Implement AI-assisted substitution (single/all) with placeholder-safe updates | In Progress | Prompt composer + worker now support AI suggestions (single/all) with prompt editor; pending JSON validation and error handling polish. |
-| T3 | Prompt editor modal for AI requests (preview/edit/save per query) | In Progress | Prompt editor wired into translation/glossary flows with save-to-prompts; block translation still relies on auto prompts. |
-| T3.1 | Catalogue AI entry points + ensure prompts live in JSON definitions | TODO | Audit required across `translation_prompts`, plugin overrides, and builder prompts. |
+| T2.2 | Wire dialog into glossary entry update flow (detect translation change, gather occurrences) | In Progress | Pending follow-up in `handlers/translation/glossary_handler.py` (`_handle_occurrence_ai_result`, `_handle_occurrence_ai_error`) and undo/QA around dialog workflows. |
+| T2.3 | Implement AI-assisted substitution (single/all) with placeholder-safe updates | In Progress | Validate AI JSON in `handlers/translation_handler.py` (`_handle_glossary_occurrence_update_success`) and ensure prompts in `translation_prompts/prompts.json` cover edge cases. |
+| T3 | Prompt editor modal for AI requests (preview/edit/save per query) | Completed | Prompt editor dialog invoked for translation, variations, glossary fill, and occurrence updates with Ctrl override & save-to-prompts support. |
+| T3.1 | Catalogue AI entry points + ensure prompts live in JSON definitions | TODO | Audit `translation_prompts/prompts.json`, plugin overrides (e.g., `plugins/.../translation_prompts/prompts.json`), and `handlers/translation/ai_prompt_composer.py` for missing sections. |
 | T3.2 | Build prompt editor UI (view merged prompt, edit, save-to-disk option) | Completed | `PromptEditorDialog` now used across AI calls with save-to-prompts support. |
-| T3.3 | Hook modal into request pipeline with enable/disable toggle & Ctrl override | TODO | Requires settings flag (see T4) and handler changes. |
-| T4 | Settings integration (toggle for prompt editor, persistence, Ctrl override) | TODO | Needs updates to `settings.json`, `settings_dialog.py`, and runtime checks before launching prompt editor. |
+| T3.3 | Hook modal into request pipeline with enable/disable toggle & Ctrl override | Completed | `_maybe_edit_prompt` handles Ctrl override and global toggle across AI flows. |
+| T4 | Settings integration (toggle for prompt editor, persistence, Ctrl override) | Completed | Settings checkbox added, persisted via `SettingsManager`, toolbar icon updated. |
 | T5 | Testing & QA (AI Fill, occurrence updates, prompt editor flows, regression) | TODO | Define manual scripts once upstream tasks land. |
 
 ## Next Iteration Goals
 1. Finish T1: validate AI Fill end-to-end, ensure `_handle_ai_fill_success` applies results without raising, and remove stray debug placeholders (manual run pending).
-2. Extend T2: exercise the new update dialog (manual + AI) against real data; capture gaps (selection, undo, batch UX) and validate prompt edits.
-3. Validate AI prompt edits for chunked/block translations; decide how to expose per-chunk content or limit editing.
+2. Extend T2: exercise the new update dialog (manual + AI) against real data; capture gaps (selection, undo, batch UX) and confirm AI JSON reliability in `handlers/translation_handler.py` & `handlers/translation/glossary_handler.py`.
+3. Validate AI prompt edits for chunked/block translations in `handlers/translation_handler.py` (`_initiate_batch_translation`) and decide UX for chunk prompts (possible `precomposed_prompt` support).
 
 ## Testing Strategy
 - Manual GUI testing for the three AI entry points (block translation, preview translation, glossary notes).

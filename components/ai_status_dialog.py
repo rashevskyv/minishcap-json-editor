@@ -1,5 +1,6 @@
 # components/ai_status_dialog.py ---
 import os
+from typing import Optional
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QHBoxLayout, QWidget, QProgressBar, QDialogButtonBox
 from PyQt5.QtGui import QMovie, QFont, QPalette
 from PyQt5.QtCore import Qt, QSize, pyqtSignal, QEvent
@@ -38,6 +39,15 @@ class AIStatusDialog(QDialog):
         self.title_label.setFont(font)
         self.title_label.setAlignment(Qt.AlignCenter)
         main_layout.addWidget(self.title_label)
+
+        self.subtitle_label = QLabel("", self)
+        subtitle_font = QFont(self.title_label.font())
+        subtitle_font.setPointSize(max(subtitle_font.pointSize() - 2, 8))
+        subtitle_font.setItalic(True)
+        self.subtitle_label.setFont(subtitle_font)
+        self.subtitle_label.setAlignment(Qt.AlignCenter)
+        self.subtitle_label.setVisible(False)
+        main_layout.addWidget(self.subtitle_label)
         main_layout.addSpacing(10)
 
         steps_widget = QWidget(self)
@@ -103,8 +113,9 @@ class AIStatusDialog(QDialog):
         self.movie.stop()
         super().hideEvent(event)
 
-    def start(self, title: str, is_chunked: bool = False):
+    def start(self, title: str, is_chunked: bool = False, model_name: Optional[str] = None):
         self.title_label.setText(title)
+        self._set_model_name(model_name)
         for i, label in enumerate(self.step_labels):
             self._update_label_style(label, self.STATUS_PENDING, self.steps[i])
 
@@ -122,7 +133,19 @@ class AIStatusDialog(QDialog):
         self.show()
 
     def finish(self):
+        self._set_model_name(None)
         self.hide()
+
+    def _set_model_name(self, model_name: Optional[str]) -> None:
+        text = (model_name or '').strip()
+        if text:
+            if not text.lower().startswith('model:'):
+                text = f"Model: {text}"
+            self.subtitle_label.setText(text)
+            self.subtitle_label.setVisible(True)
+        else:
+            self.subtitle_label.clear()
+            self.subtitle_label.setVisible(False)
 
     def update_step(self, step_index: int, text: str, status: int):
         if 0 <= step_index < len(self.step_labels):
@@ -163,3 +186,4 @@ class AIStatusDialog(QDialog):
         label.setFont(font)
         label.setPalette(palette)
         label.setText(f"{prefix} {text}")
+

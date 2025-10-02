@@ -14,15 +14,28 @@
     "show_multiple_spaces_as_dots": true,
     "space_dot_color_hex": "#808080",
     "theme": "auto",
+    "translation_ai": {
+        "provider": "OpenAI",
+        "api_key": "",
+        "model": "gpt-4o"
+    },
+    "glossary_ai": {
+        "provider": "OpenAI",
+        "api_key": "",
+        "use_translation_api_key": true,
+        "model": "gpt-4o-mini",
+        "chunk_size": 8000
+    },
     "restore_unsaved_on_startup": false,
     "glossary_dialog_state": {
         "geometry": {
-            "x": -1063,
-            "y": 297,
+            "x": 448,
+            "y": 193,
             "width": 1593,
             "height": 1182
         },
         "is_fullscreen": false,
         "is_maximized": false
-    }
+    },
+    "prompt_editor_enabled": false
 }

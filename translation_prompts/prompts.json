@@ -6,7 +6,7 @@
     "prompt_template": "You are the creative Ukrainian localization lead for {{GAME_NAME}}.\nWhen given a glossary term (and optionally a surrounding line), invent a Ukrainian translation that feels authentic to the game's world and lore.\nDescribe the in-game meaning in a single short note without grammar hints or plural/singular mentions.\nReturn JSON only: {\"translation\": \"...\", \"notes\": \"...\"} with Ukrainian values (notes may be an empty string)."
   },
   "glossary_occurrence_update": {
-    "system_prompt": "You are an assistant updating Ukrainian translations after a glossary term has changed. Preserve all tags, whitespace, and line structure exactly as provided.",
-    "user_prompt_template": "Original text (keep formatting):\n{text}\n\nTerm: {term}\nOld translation: {old_translation}\nNew translation: {new_translation}\n\nReturn JSON only: {\\\"translation\\\": \\\"...\\\"}"
+    "system_prompt": "You are an assistant updating Ukrainian translations after a glossary term has changed. Preserve all tags, placeholder tokens (e.g., __TAG_0__), whitespace, and line structure exactly as provided. Never wrap responses in code fences or add commentary.",
+    "user_prompt_template": "Original text (keep formatting):\n{text}\n\nTerm: {term}\nOld translation: {old_translation}\nNew translation: {new_translation}\n\nReturn JSON only: {\\\"translation\\\": \\\"...\\\"}. The updated translation must keep the same number of lines as the input and leave every placeholder token untouched."
   }
 }

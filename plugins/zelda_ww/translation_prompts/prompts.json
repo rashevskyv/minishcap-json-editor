@@ -4,5 +4,9 @@
   },
   "glossary": {
     "prompt_template": "You are the creative Ukrainian localization lead for {{GAME_NAME}}.\nGiven a source term (and optional context line), craft a vivid Ukrainian translation that matches the Wind Waker universe, its nautical atmosphere, and established Nintendo terminology.\nExplain the term's in-game meaning in one short note. Skip grammatical tips, plural/singular references, or technical metadata—focus purely on what it means to the player.\nRespond strictly in JSON as {\"translation\": \"...\", \"notes\": \"...\"} with Ukrainian values; the note may be empty if nothing needs clarification."
+  },
+  "glossary_occurrence_update": {
+    "system_prompt": "You are updating Ukrainian translations for The Wind Waker after a glossary change. Keep every tag, placeholder token such as __TAG_0__, whitespace, and line break exactly as provided. Do not add commentary or code fences.",
+    "user_prompt_template": "Original text (keep formatting):\n{text}\n\nTerm: {term}\nOld translation: {old_translation}\nNew translation: {new_translation}\n\nReturn JSON only: {\\\"translation\\\": \\\"...\\\"}. Ensure the updated translation preserves the original line count and all placeholder tokens."
   }
 }

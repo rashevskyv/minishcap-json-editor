@@ -92,5 +92,5 @@ class CustomListWidget(QListWidget):
                 translate_block.triggered.connect(lambda checked=False, idx=block_idx: translator.translate_current_block(idx))
 
             generate_glossary = menu.addAction(f"AI Build Glossary for '{block_name}'")
-            generate_glossary.triggered.connect(lambda checked=False, idx=block_idx: translator.generate_block_glossary(idx))
+            generate_glossary.triggered.connect(lambda checked=False, idx=block_idx: main_window.build_glossary_with_ai(idx))
         menu.exec_(self.mapToGlobal(pos))

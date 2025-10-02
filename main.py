@@ -186,7 +186,7 @@ class MainWindow(QMainWindow):
         self.undo_paste_action = None
         self.rescan_all_tags_action = None
         self.find_action = None
-        self.auto_fix_action = None 
+        self.auto_fix_action = None
         self.main_vertical_layout = None
         self.auto_fix_button = None 
         self.ai_translate_button = None
@@ -364,6 +364,19 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         self.event_handler.closeEvent(event)
+
+    def build_glossary_with_ai(self, block_idx=None):
+        log_debug("<<<<<<<<<< ACTION: Build Glossary with AI Triggered >>>>>>>>>>")
+        from handlers.translation.glossary_builder_handler import GlossaryBuilderHandler
+
+        target_block_idx = block_idx if block_idx is not None else self.current_block_idx
+
+        if target_block_idx == -1:
+            QMessageBox.information(self, "Build Glossary", "Please select a block first.")
+            return
+        
+        handler = GlossaryBuilderHandler(self)
+        handler.build_glossary_for_block(target_block_idx)
 
 
 if __name__ == '__main__':
