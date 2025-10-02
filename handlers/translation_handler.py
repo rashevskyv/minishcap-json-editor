@@ -580,6 +580,7 @@ class TranslationHandler(BaseHandler):
 
         if task_type == 'translate_block_chunked' and block_idx is not None:
             if not context.get('is_resume', False):
+                self._session_manager.reset()
                 self.translation_progress[block_idx] = {'completed_chunks': set(), 'total_chunks': 0}
             
             context['chunks_to_skip'] = self.translation_progress.get(block_idx, {}).get('completed_chunks', set())
@@ -592,8 +593,6 @@ class TranslationHandler(BaseHandler):
         if context.get('system_prompt_override'):
             system_prompt = context['system_prompt_override']
 
-        combined_system = self.prompt_composer._append_glossary_to_system_prompt(system_prompt, glossary)
-
         context['composer_args'] = {
             'system_prompt': system_prompt, 'glossary_text': glossary,
             'source_items': context['source_items'], 'block_idx': context['block_idx'],
@@ -601,7 +600,14 @@ class TranslationHandler(BaseHandler):
             'retry_reason': context.get('last_error', '')
         }
 
-        if task_type == 'translate_block_chunked' and not context.get('is_resume', False):
+        force_prompt = bool(QApplication.keyboardModifiers() & Qt.ControlModifier)
+        should_edit_prompt = (
+            task_type == 'translate_block_chunked'
+            and block_idx is not None
+            and (force_prompt or not context.get('is_resume', False))
+        )
+
+        if should_edit_prompt:
             preview_system, preview_user, _ = self.prompt_composer.compose_batch_request(**context['composer_args'])
             edited = self._maybe_edit_prompt(
                 title="AI Block Translation Prompt",
@@ -611,7 +617,7 @@ class TranslationHandler(BaseHandler):
             )
             if edited is None:
                 self.ui_handler.finish_ai_operation()
-                if block_idx is not None:
+                if block_idx is not None and not context.get('is_resume', False):
                     self.translation_progress.pop(block_idx, None)
                     self.pre_translation_state.pop(block_idx, None)
                 return
@@ -630,6 +636,17 @@ class TranslationHandler(BaseHandler):
                 progress_entry['custom_user_header'] = context['custom_user_header']
                 progress_entry['custom_user_label'] = context['custom_user_label']
                 progress_entry['system_prompt_override'] = edited_system
+        final_system_prompt = context['composer_args']['system_prompt']
+        final_glossary = context['composer_args'].get('glossary_text', glossary)
+        combined_system = self.prompt_composer._append_glossary_to_system_prompt(final_system_prompt, final_glossary)
+        if task_type == 'translate_block_chunked':
+            session_state = self._session_manager.ensure_session(
+                provider_key=self._active_provider_key or '',
+                system_content=combined_system,
+                supports_sessions=self._provider_supports_sessions,
+            )
+            if session_state:
+                context['session_state'] = session_state
         self._run_ai_task(provider, context)
 
     def _handle_chunk_translated(self, chunk_index: int, chunk_text: str, context: dict):

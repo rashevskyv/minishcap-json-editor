@@ -114,7 +114,9 @@ class AIWorker(QObject):
                 chunks = [source_items[i:i + CHUNK_SIZE] for i in range(0, len(source_items), CHUNK_SIZE)]
                 chunks_to_skip = self.task_details.get('chunks_to_skip', set())
                 self.total_chunks_calculated.emit(len(chunks), len(chunks_to_skip))
-                
+                session_state = self.task_details.get('session_state')
+                provider_override = self.task_details.get('provider_settings_override', {})
+
                 for i, chunk in enumerate(chunks):
                     if i in chunks_to_skip:
                         log_debug(f"AIWorker: Skipping already translated chunk {i + 1}/{len(chunks)}.")
@@ -127,7 +129,7 @@ class AIWorker(QObject):
 
                     max_retries = self.task_details.get('max_retries', 3)
                     current_retry = 0
-                    
+
                     while current_retry < max_retries:
                         if self.is_cancelled:
                             log_debug("AIWorker: Translation cancelled during retry loop.")
@@ -136,7 +138,7 @@ class AIWorker(QObject):
                         composer_args_for_chunk = self.task_details['composer_args'].copy()
                         composer_args_for_chunk['source_items'] = chunk
                         system, user, p_map_for_chunk = self.prompt_composer.compose_batch_request(**composer_args_for_chunk)
-                        
+
                         custom_header = self.task_details.get('custom_user_header')
                         if custom_header:
                             label = (self.task_details.get('custom_user_label') or 'JSON DATA TO PROCESS:').strip()
@@ -152,25 +154,39 @@ class AIWorker(QObject):
                                 rebuilt += json_section
                                 user = rebuilt
 
-                        messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
-                        
+                        session_payload = None
+                        if session_state:
+                            user_message = {"role": "user", "content": user}
+                            messages, session_payload = session_state.prepare_request(user_message)
+                        else:
+                            messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+
                         self.progress_updated.emit(i + 1)
                         self.step_updated.emit(1, f"Translating chunk {i + 1}/{len(chunks)} (Attempt {current_retry + 1})", AIStatusDialog.STATUS_IN_PROGRESS)
-                        
+
                         try:
-                            response = self.provider.translate(messages, session=None)
-                            
+                            response = self.provider.translate(messages, session=session_payload, settings_override=provider_override)
+
                             if self.is_cancelled:
                                 log_debug("AIWorker: Translation cancelled during network request. Discarding response.")
                                 break
 
                             cleaned_text = self._clean_json_response(response.text)
                             parsed_response = json.loads(cleaned_text)
-                            translated_items = parsed_response.get("translated_strings", [])
-                            
+                            translated_items = parsed_response.get('translated_strings', [])
+
                             if len(translated_items) == len(chunk):
+                                if session_state:
+                                    session_state.record_exchange(
+                                        user_content=user,
+                                        assistant_content=cleaned_text,
+                                        conversation_id=getattr(response, 'conversation_id', None),
+                                    )
                                 task_details_for_chunk = self.task_details.copy()
                                 task_details_for_chunk['placeholder_map'] = p_map_for_chunk
+                                if session_state:
+                                    task_details_for_chunk['session_state'] = session_state
+                                    task_details_for_chunk['session_user_message'] = user
                                 self.chunk_translated.emit(i, cleaned_text, task_details_for_chunk)
                                 break
                             else:
@@ -180,7 +196,7 @@ class AIWorker(QObject):
                         except (TranslationProviderError, json.JSONDecodeError) as e:
                             log_debug(f"AIWorker: Error translating chunk {i}: {e}. Retrying...")
                             current_retry += 1
-                    
+
                     if self.is_cancelled:
                         self.translation_cancelled.emit()
                         return
@@ -188,7 +204,7 @@ class AIWorker(QObject):
                     if current_retry >= max_retries:
                         self.error.emit(f"Failed to translate chunk {i+1} after {current_retry} attempts.", self.task_details)
                         return
-                
+
                 return
 
             dialog_steps = self.task_details['dialog_steps']

@@ -38,11 +38,9 @@ class TranslationSessionState:
         if self.conversation_id:
             return [message_copy], {"conversation_id": self.conversation_id}
         history_copy = [{"role": item["role"], "content": item["content"]} for item in self.history]
-        return [
-            {"role": "system", "content": self.system_content},
-            *history_copy,
-            message_copy,
-        ], None
+        if history_copy:
+            return [*history_copy, message_copy], None
+        return [message_copy], None
 
     def record_exchange(
         self,

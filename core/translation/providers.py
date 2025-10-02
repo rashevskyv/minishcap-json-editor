@@ -77,7 +77,24 @@ class OpenAIChatProvider(BaseTranslationProvider):
             response.raise_for_status()
             data = response.json()
             text = data['choices'][0]['message']['content'] if data.get('choices') else None
-            return ProviderResponse(text=text, raw_payload=data)
+
+            message_id = None
+            conversation_id = None
+            if isinstance(data, dict):
+                message_id = data.get('id')
+                first_choice = data.get('choices')[0] if data.get('choices') else None
+                if isinstance(first_choice, dict):
+                    message = first_choice.get('message') or {}
+                    message_id = message.get('id') or message_id
+                conversation_id = (
+                    data.get('conversation_id')
+                    or data.get('conversationId')
+                    or (data.get('conversation') or {}).get('id')
+                    or (data.get('conversation') or {}).get('conversation_id')
+                    or (data.get('meta') or {}).get('conversation_id')
+                )
+
+            return ProviderResponse(text=text, raw_payload=data, message_id=message_id, conversation_id=conversation_id)
         except Timeout:
             raise TranslationProviderError(f"Request timed out after {timeout} seconds.")
         except requests.RequestException as e:
@@ -221,49 +238,35 @@ class GeminiProvider(BaseTranslationProvider):
         super().__init__(settings)
         self.api_key = self.settings.get('api_key') or os.getenv(str(self.settings.get('api_key_env')))
         self.model = self.settings.get('model')
+        raw_base_url = (self.settings.get('base_url') or "").strip()
+        self._use_openai_compat = bool(raw_base_url) and "generativelanguage.googleapis.com" not in raw_base_url
+        if raw_base_url:
+            self.base_url = raw_base_url.rstrip('/')
+        else:
+            self.base_url = self.BASE_URL
         if not self.api_key:
             raise TranslationProviderError("Gemini API key is not set.")
         if not self.model:
             raise TranslationProviderError("Gemini model is not set.")
 
     def translate(self, messages: List[Dict[str, str]], session: Optional[dict] = None, settings_override: Optional[Dict[str, Any]] = None) -> ProviderResponse:
-        endpoint = f"{self.BASE_URL}/{self.model}:generateContent?key={self.api_key}"
-        headers = {"Content-Type": "application/json"}
-
         current_settings = self.settings.copy()
         if settings_override:
             current_settings.update(settings_override)
-
-        system_prompt = next((m['content'] for m in messages if m['role'] == 'system'), "")
-        user_prompt = next((m['content'] for m in messages if m['role'] == 'user'), "")
-        
-        full_prompt = f"{system_prompt}\n\n{user_prompt}".strip()
-
-        contents = [{"role": "user", "parts": [{"text": full_prompt}]}]
-        body: Dict[str, Any] = {"contents": contents}
-        
-        generation_config = {}
-        if isinstance(current_settings.get('temperature'), (float, int)):
-            generation_config['temperature'] = current_settings['temperature']
-        if generation_config:
-            body['generationConfig'] = generation_config
 
         timeout = 120
         if isinstance(current_settings.get('timeout'), int) and current_settings['timeout'] > 0:
             timeout = current_settings['timeout']
 
+        extra_headers = current_settings.get('extra_headers')
+        headers = {"Content-Type": "application/json"}
+        if isinstance(extra_headers, dict):
+            headers.update(extra_headers)
+
         try:
-            response = requests.post(endpoint, headers=headers, json=body, timeout=timeout)
-            response.raise_for_status()
-            data = response.json()
-            
-            text = None
-            if data.get('candidates'):
-                first_candidate = data['candidates'][0]
-                if first_candidate.get('content', {}).get('parts'):
-                    text = first_candidate['content']['parts'][0].get('text')
-            
-            return ProviderResponse(text=text, raw_payload=data)
+            if self._use_openai_compat:
+                return self._translate_via_openai_compat(messages, headers, current_settings, timeout)
+            return self._translate_via_native_api(messages, headers, current_settings, timeout)
         except Timeout:
             raise TranslationProviderError(f"Request timed out after {timeout} seconds.")
         except requests.RequestException as e:
@@ -271,8 +274,77 @@ class GeminiProvider(BaseTranslationProvider):
             try:
                 error_details = e.response.json()
             except Exception:
-                 error_details = e.response.text if e.response else "No response body"
+                error_details = e.response.text if e.response else "No response body"
             raise TranslationProviderError(f"API request failed: {e}\nDetails: {error_details}")
+
+    def _translate_via_openai_compat(self, messages: List[Dict[str, str]], headers: Dict[str, str], current_settings: Dict[str, Any], timeout: int) -> ProviderResponse:
+        request_headers = dict(headers)
+        if self.api_key:
+            request_headers["Authorization"] = f"Bearer {self.api_key}"
+
+        body: Dict[str, Any] = {"model": self.model, "messages": messages}
+        if isinstance(current_settings.get('temperature'), (float, int)):
+            body['temperature'] = current_settings['temperature']
+        max_tokens = current_settings.get('max_output_tokens')
+        if isinstance(max_tokens, int) and max_tokens > 0:
+            body['max_tokens'] = max_tokens
+
+        endpoint = f"{self.base_url}/chat/completions"
+        response = requests.post(endpoint, headers=request_headers, json=body, timeout=timeout)
+        response.raise_for_status()
+        data = response.json()
+        text = None
+        if data.get('choices'):
+            first_choice = data['choices'][0]
+            message = first_choice.get('message')
+            if isinstance(message, dict):
+                text = message.get('content')
+            if text is None:
+                text = first_choice.get('text')
+        message_id = None
+        conversation_id = None
+        if isinstance(data, dict):
+            message_id = data.get('id')
+            first_choice = data.get('choices')[0] if data.get('choices') else None
+            if isinstance(first_choice, dict):
+                message = first_choice.get('message') or {}
+                message_id = message.get('id') or message_id
+            conversation_id = (
+                data.get('conversation_id')
+                or data.get('conversationId')
+                or (data.get('conversation') or {}).get('id')
+                or (data.get('conversation') or {}).get('conversation_id')
+                or (data.get('meta') or {}).get('conversation_id')
+            )
+        return ProviderResponse(text=text, raw_payload=data, message_id=message_id, conversation_id=conversation_id)
+
+    def _translate_via_native_api(self, messages: List[Dict[str, str]], headers: Dict[str, str], current_settings: Dict[str, Any], timeout: int) -> ProviderResponse:
+        endpoint = f"{self.base_url}/{self.model}:generateContent?key={self.api_key}"
+        system_prompt = next((m['content'] for m in messages if m['role'] == 'system'), "")
+        user_prompt = next((m['content'] for m in messages if m['role'] == 'user'), "")
+
+        full_prompt = f"{system_prompt}\n\n{user_prompt}".strip()
+        contents = [{"role": "user", "parts": [{"text": full_prompt}]}]
+        body: Dict[str, Any] = {"contents": contents}
+
+        generation_config: Dict[str, Any] = {}
+        if isinstance(current_settings.get('temperature'), (float, int)):
+            generation_config['temperature'] = current_settings['temperature']
+        if generation_config:
+            body['generationConfig'] = generation_config
+
+        response = requests.post(endpoint, headers=headers, json=body, timeout=timeout)
+        response.raise_for_status()
+        data = response.json()
+
+        text = None
+        if data.get('candidates'):
+            first_candidate = data['candidates'][0]
+            parts = first_candidate.get('content', {}).get('parts')
+            if parts:
+                text = parts[0].get('text')
+
+        return ProviderResponse(text=text, raw_payload=data)
 
 def create_translation_provider(provider_key: str, settings: Dict[str, Any]) -> BaseTranslationProvider:
     """Factory function to create a translation provider instance."""

@@ -301,8 +301,11 @@ class AIPromptComposer(BaseTranslationHandler):
     def _append_glossary_to_system_prompt(system_prompt: str, glossary_text: str) -> str:
         system_prompt = (system_prompt or '').strip()
         if glossary_text:
+            glossary_marker = 'GLOSSARY (use with absolute priority):'
+            if glossary_marker in system_prompt:
+                return system_prompt
             return (
                 f"{system_prompt}\n\n"
-                f"GLOSSARY (use with absolute priority):\n{glossary_text.strip()}"
+                f"{glossary_marker}\n{glossary_text.strip()}"
             )
         return system_prompt
