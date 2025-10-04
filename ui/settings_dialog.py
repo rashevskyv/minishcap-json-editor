@@ -381,6 +381,9 @@ class SettingsDialog(QDialog):
 
         gemini_group = QGroupBox("Google Gemini API", self.ai_translation_tab)
         gemini_layout = QFormLayout(gemini_group)
+        self.gemini_base_url_edit = QLineEdit(self)
+        self.gemini_base_url_edit.setPlaceholderText("Leave empty for native API")
+        gemini_layout.addRow("Base URL (optional):", self.gemini_base_url_edit)
         self.gemini_api_key_edit = QLineEdit(self); self.gemini_api_key_edit.setEchoMode(QLineEdit.Password); self.gemini_api_key_edit.setPlaceholderText("Gemini API Key"); gemini_layout.addRow("API Key:", self.gemini_api_key_edit)
         self.gemini_model_edit = QLineEdit(self); self.gemini_model_edit.setPlaceholderText("gemini-1.5-flash-latest"); gemini_layout.addRow("Model:", self.gemini_model_edit)
         self.ai_provider_pages.addWidget(gemini_group)
@@ -634,7 +637,7 @@ class SettingsDialog(QDialog):
         self.ollama_keep_alive_edit.setText(ollama_cfg.get('keep_alive', ''))
 
         deepl_cfg = providers_cfg.get('deepl', {}); self.deepl_api_key_edit.setText(deepl_cfg.get('api_key', '')); self.deepl_server_url_edit.setText(deepl_cfg.get('server_url', ''))
-        gemini_cfg = providers_cfg.get('gemini', {}); self.gemini_api_key_edit.setText(gemini_cfg.get('api_key', '')); self.gemini_model_edit.setText(gemini_cfg.get('model', ''))
+        gemini_cfg = providers_cfg.get('gemini', {}); self.gemini_api_key_edit.setText(gemini_cfg.get('api_key', '')); self.gemini_model_edit.setText(gemini_cfg.get('model', '')); self.gemini_base_url_edit.setText(gemini_cfg.get('base_url', ''))
 
         # Load AI Glossary settings
         glossary_ai_cfg = getattr(self.mw, 'glossary_ai', {})
@@ -701,7 +704,7 @@ class SettingsDialog(QDialog):
         })
 
         deepl_cfg = providers_cfg.setdefault('deepl', {}); deepl_cfg.update({'api_key': self.deepl_api_key_edit.text().strip(), 'server_url': self.deepl_server_url_edit.text().strip()})
-        gemini_cfg = providers_cfg.setdefault('gemini', {}); gemini_cfg.update({'api_key': self.gemini_api_key_edit.text().strip(), 'model': self.gemini_model_edit.text().strip()})
+        gemini_cfg = providers_cfg.setdefault('gemini', {}); gemini_cfg.update({'api_key': self.gemini_api_key_edit.text().strip(), 'model': self.gemini_model_edit.text().strip(), 'base_url': self.gemini_base_url_edit.text().strip()})
         
         self.translation_config_snapshot = translation_config_to_save
 

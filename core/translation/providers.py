@@ -244,8 +244,8 @@ class GeminiProvider(BaseTranslationProvider):
             self.base_url = raw_base_url.rstrip('/')
         else:
             self.base_url = self.BASE_URL
-        if not self.api_key:
-            raise TranslationProviderError("Gemini API key is not set.")
+        if not self._use_openai_compat and not self.api_key:
+            raise TranslationProviderError("Gemini API key is not set for native API usage.")
         if not self.model:
             raise TranslationProviderError("Gemini model is not set.")
 
@@ -279,8 +279,8 @@ class GeminiProvider(BaseTranslationProvider):
 
     def _translate_via_openai_compat(self, messages: List[Dict[str, str]], headers: Dict[str, str], current_settings: Dict[str, Any], timeout: int) -> ProviderResponse:
         request_headers = dict(headers)
-        if self.api_key:
-            request_headers["Authorization"] = f"Bearer {self.api_key}"
+        auth_token = self.api_key or "dummy"
+        request_headers["Authorization"] = f"Bearer {auth_token}"
 
         body: Dict[str, Any] = {"model": self.model, "messages": messages}
         if isinstance(current_settings.get('temperature'), (float, int)):
@@ -289,7 +289,7 @@ class GeminiProvider(BaseTranslationProvider):
         if isinstance(max_tokens, int) and max_tokens > 0:
             body['max_tokens'] = max_tokens
 
-        endpoint = f"{self.base_url}/chat/completions"
+        endpoint = f"{self.base_url}/v1/chat/completions"
         response = requests.post(endpoint, headers=request_headers, json=body, timeout=timeout)
         response.raise_for_status()
         data = response.json()

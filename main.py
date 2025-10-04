@@ -396,7 +396,7 @@ if __name__ == '__main__':
     MainWindowUIHandler.apply_theme(app, theme_to_apply)
 
     window = MainWindow()
-    window.show()
+    window.show()gi
     log_debug("Starting Qt event loop...")
     exit_code = app.exec_()
     log_debug(f"Qt event loop finished with exit code: {exit_code}")

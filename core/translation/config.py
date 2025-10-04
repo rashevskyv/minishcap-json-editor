@@ -73,6 +73,7 @@ def build_default_translation_config() -> dict:
                 "model": "gemini-1.5-flash-latest",
                 "temperature": 0.0,
                 "timeout": 120,
+                "base_url": "",
             },
         },
     }
