@@ -1,4 +1,4 @@
-# handlers/translation_handler.py ---
+# handlers/translation/translation_handler.py ---
 import json
 import re
 from pathlib import Path
@@ -112,12 +112,10 @@ class TranslationHandler(BaseHandler):
             self.glossary_handler._handle_occurrence_ai_error("Failed to load prompts.", from_batch)
             return None
 
-        masked_text, placeholder_map = self.prompt_composer.prepare_text_for_translation(current_translation or '', [])
         composer_args = {
             'system_prompt': system_prompt,
             'glossary_text': glossary,
-            'source_text': masked_text,
-            'placeholder_map': placeholder_map,
+            'source_text': current_translation or '',
             'current_translation': current_translation or '',
             'original_text': original_text or '',
             'term': term,
@@ -125,7 +123,7 @@ class TranslationHandler(BaseHandler):
             'new_translation': new_term_translation or '',
             'expected_lines': max(1, (current_translation or '').count('\n') + 1),
         }
-        combined_system, user_prompt, placeholder_map = self.prompt_composer.compose_glossary_occurrence_update_request(**composer_args)
+        combined_system, user_prompt = self.prompt_composer.compose_glossary_occurrence_update_request(**composer_args)
         if prompt_override and all(isinstance(item, str) and item.strip() for item in prompt_override):
             edited_system, edited_user = prompt_override
         else:
@@ -154,7 +152,6 @@ class TranslationHandler(BaseHandler):
             'occurrence': occurrence,
             'dialog': dialog,
             'from_batch': from_batch,
-            'placeholder_map': placeholder_map,
         }
         if not self._attach_session_to_task(
             task_details,
@@ -192,7 +189,6 @@ class TranslationHandler(BaseHandler):
 
         occurrences_list = list(occurrences)
         batch_items = []
-        placeholder_map_by_id: Dict[str, Dict] = {}
         expected_lines_by_id: Dict[str, int] = {}
         occurrence_metadata: List[Dict[str, object]] = []
         occurrence_lookup: Dict[str, object] = {}
@@ -201,8 +197,6 @@ class TranslationHandler(BaseHandler):
             occurrence_id = str(index)
             original_text = self.glossary_handler._get_occurrence_original_text(occurrence) or ""
             current_translation = self.glossary_handler._get_occurrence_translation_text(occurrence) or ""
-            masked_text, placeholder_map = self.prompt_composer.prepare_text_for_translation(current_translation, [])
-            placeholder_map_by_id[occurrence_id] = placeholder_map
             expected_lines = max(1, current_translation.count('\n') + 1)
             expected_lines_by_id[occurrence_id] = expected_lines
             batch_items.append({
@@ -211,7 +205,7 @@ class TranslationHandler(BaseHandler):
                 "string_index": occurrence.string_idx,
                 "line_index": occurrence.line_idx + 1,
                 "original_text": original_text,
-                "current_translation": masked_text,
+                "current_translation": current_translation,
                 "expected_lines": expected_lines,
             })
             occurrence_metadata.append({"id": occurrence_id, "occurrence": occurrence})
@@ -253,7 +247,6 @@ class TranslationHandler(BaseHandler):
             'dialog': dialog,
             'occurrence_metadata': occurrence_metadata,
             'occurrence_lookup': occurrence_lookup,
-            'placeholder_map': placeholder_map_by_id,
             'expected_lines': expected_lines_by_id,
             'from_batch': True,
         }
@@ -295,7 +288,6 @@ class TranslationHandler(BaseHandler):
             'system_prompt': system_prompt,
             'glossary_text': glossary,
             'source_text': source_text,
-            'placeholder_map': {},
             'block_idx': None,
             'string_idx': None,
             'expected_lines': max(1, (current_notes or '').count('\n') + 1),
@@ -303,7 +295,7 @@ class TranslationHandler(BaseHandler):
             'mode_description': 'glossary_notes',
             'request_type': 'glossary_notes_variation',
         }
-        combined_system, user_prompt, _ = self.prompt_composer.compose_variation_request(**composer_args)
+        combined_system, user_prompt = self.prompt_composer.compose_variation_request(**composer_args)
         edited = self._maybe_edit_prompt(
             title="AI Glossary Notes Prompt",
             system_prompt=combined_system,
@@ -326,7 +318,6 @@ class TranslationHandler(BaseHandler):
             'term': term,
             'translation': translation,
             'current_notes': current_notes,
-            'placeholder_map': {},
         }
         if not self._attach_session_to_task(
             task_details,
@@ -363,9 +354,9 @@ class TranslationHandler(BaseHandler):
         save_section: Optional[str] = None,
         save_field: str = 'system_prompt',
     ) -> Optional[tuple[str, str]]:
-        force = bool(QApplication.keyboardModifiers() & Qt.ControlModifier)
+        is_ctrl_pressed = bool(QApplication.keyboardModifiers() & Qt.ControlModifier)
         enabled = getattr(self.mw, 'prompt_editor_enabled', True)
-        if not force and not enabled:
+        if not is_ctrl_pressed and not enabled:
             return system_prompt, user_prompt
 
         allow_save = bool(save_section and self.glossary_handler._current_prompts_path)
@@ -393,7 +384,7 @@ class TranslationHandler(BaseHandler):
     def _should_use_session(self, task_type: str) -> bool:
         if not self._provider_supports_sessions:
             return False
-        return task_type not in {'translate_block_chunked', 'build_glossary'}
+        return True
 
     def _prepare_session_for_request(self, *, system_prompt: str, user_prompt: str, task_type: str) -> Optional[dict]:
         if not self._should_use_session(task_type):
@@ -520,6 +511,7 @@ class TranslationHandler(BaseHandler):
 
     def _handle_translation_cancellation(self):
         log_debug("TranslationHandler: Worker has confirmed cancellation.")
+        self.reset_translation_session()
         self.ui_handler.finish_ai_operation()
 
     def _setup_progress_bar(self, total_chunks: int, completed_chunks: int):
@@ -555,8 +547,31 @@ class TranslationHandler(BaseHandler):
         provider = self._prepare_provider()
         if not provider: return
 
-        base_timeout = self._resolve_base_timeout(provider)
         operation_title = f"AI Translation (Lines {start_line + 1}-{end_line + 1})" if start_line != end_line else f"AI Translation (Line {start_line + 1})"
+        
+        system_prompt, glossary = self.glossary_handler.load_prompts()
+        if not system_prompt:
+            return
+            
+        composer_args = {
+            'system_prompt': system_prompt, 'glossary_text': glossary,
+            'source_items': source_items, 'block_idx': block_idx,
+            'mode_description': f"lines {start_line + 1}-{end_line + 1}"
+        }
+        
+        preview_system, preview_user, p_map = self.prompt_composer.compose_batch_request(**composer_args)
+
+        edited = self._maybe_edit_prompt(
+            title=operation_title,
+            system_prompt=preview_system,
+            user_prompt=preview_user,
+            save_section='translation'
+        )
+
+        if edited is None:
+            return
+        edited_system, edited_user = edited
+
         self.ui_handler.start_ai_operation(operation_title, model_name=self._active_model_name)
 
         task_details = {
@@ -567,7 +582,12 @@ class TranslationHandler(BaseHandler):
             'max_retries': 4,
             'block_idx': block_idx,
             'mode_description': f"lines {start_line + 1}-{end_line + 1}",
-            'timeout_seconds': base_timeout
+            'timeout_seconds': self._resolve_base_timeout(provider),
+            'precomposed_prompt': [
+                {"role": "system", "content": edited_system},
+                {"role": "user", "content": edited_user}
+            ],
+            'placeholder_map': p_map,
         }
         self._initiate_batch_translation(task_details)
 
@@ -683,7 +703,7 @@ class TranslationHandler(BaseHandler):
 
         if task_type == 'translate_block_chunked' and block_idx is not None:
             if not context.get('is_resume', False):
-                self._session_manager.reset()
+                self.reset_translation_session()
                 self.translation_progress[block_idx] = {'completed_chunks': set(), 'total_chunks': 0}
             
             context['chunks_to_skip'] = self.translation_progress.get(block_idx, {}).get('completed_chunks', set())
@@ -696,60 +716,67 @@ class TranslationHandler(BaseHandler):
         if context.get('system_prompt_override'):
             system_prompt = context['system_prompt_override']
 
-        context['composer_args'] = {
+        composer_args = {
             'system_prompt': system_prompt, 'glossary_text': glossary,
             'source_items': context['source_items'], 'block_idx': context['block_idx'],
             'mode_description': context['mode_description'], 'is_retry': (context['attempt'] > 1),
             'retry_reason': context.get('last_error', '')
         }
+        context['composer_args'] = composer_args
 
-        force_prompt = bool(QApplication.keyboardModifiers() & Qt.ControlModifier)
-        should_edit_prompt = (
-            task_type == 'translate_block_chunked'
-            and block_idx is not None
-            and (force_prompt or not context.get('is_resume', False))
-        )
-
-        if should_edit_prompt:
-            preview_system, preview_user, _ = self.prompt_composer.compose_batch_request(**context['composer_args'])
-            edited = self._maybe_edit_prompt(
-                title="AI Block Translation Prompt",
-                system_prompt=preview_system,
-                user_prompt=preview_user,
-                save_section='translation',
+        if 'precomposed_prompt' not in context:
+            force_prompt = bool(QApplication.keyboardModifiers() & Qt.ControlModifier)
+            should_edit_prompt = (
+                task_type == 'translate_block_chunked'
+                and block_idx is not None
+                and (force_prompt or not context.get('is_resume', False))
             )
-            if edited is None:
-                self.ui_handler.finish_ai_operation()
-                if block_idx is not None and not context.get('is_resume', False):
-                    self.translation_progress.pop(block_idx, None)
-                    self.pre_translation_state.pop(block_idx, None)
-                return
-            edited_system, edited_user = edited
-            context['composer_args']['system_prompt'] = edited_system
-            header, sep, json_section = edited_user.partition('JSON DATA TO PROCESS:')
-            if sep:
-                context['custom_user_header'] = header
-                context['custom_user_label'] = sep
-            else:
-                context['custom_user_header'] = edited_user
-                context['custom_user_label'] = 'JSON DATA TO PROCESS:'
-            context['system_prompt_override'] = edited_system
-            if block_idx is not None:
-                progress_entry = self.translation_progress.setdefault(block_idx, {'completed_chunks': set(), 'total_chunks': 0})
-                progress_entry['custom_user_header'] = context['custom_user_header']
-                progress_entry['custom_user_label'] = context['custom_user_label']
-                progress_entry['system_prompt_override'] = edited_system
+            if should_edit_prompt:
+                preview_system, preview_user, _ = self.prompt_composer.compose_batch_request(**composer_args)
+                edited = self._maybe_edit_prompt(
+                    title="AI Block Translation Prompt",
+                    system_prompt=preview_system,
+                    user_prompt=preview_user,
+                    save_section='translation',
+                )
+                if edited is None:
+                    self.ui_handler.finish_ai_operation()
+                    if block_idx is not None and not context.get('is_resume', False):
+                        self.translation_progress.pop(block_idx, None)
+                        self.pre_translation_state.pop(block_idx, None)
+                    return
+                edited_system, edited_user = edited
+                context['composer_args']['system_prompt'] = edited_system
+                header, sep, json_section = edited_user.partition('JSON DATA TO PROCESS:')
+                if sep:
+                    context['custom_user_header'] = header
+                    context['custom_user_label'] = sep
+                else:
+                    context['custom_user_header'] = edited_user
+                    context['custom_user_label'] = 'JSON DATA TO PROCESS:'
+                context['system_prompt_override'] = edited_system
+                if block_idx is not None:
+                    progress_entry = self.translation_progress.setdefault(block_idx, {'completed_chunks': set(), 'total_chunks': 0})
+                    progress_entry['custom_user_header'] = context['custom_user_header']
+                    progress_entry['custom_user_label'] = context['custom_user_label']
+                    progress_entry['system_prompt_override'] = edited_system
+        
         final_system_prompt = context['composer_args']['system_prompt']
-        final_glossary = context['composer_args'].get('glossary_text', glossary)
-        combined_system = self.prompt_composer._append_glossary_to_system_prompt(final_system_prompt, final_glossary)
-        if task_type == 'translate_block_chunked':
-            session_state = self._session_manager.ensure_session(
-                provider_key=self._active_provider_key or '',
-                system_content=combined_system,
-                supports_sessions=self._provider_supports_sessions,
-            )
-            if session_state:
-                context['session_state'] = session_state
+        final_user_prompt, _, p_map = self.prompt_composer.compose_batch_request(**context['composer_args'])
+        context['placeholder_map'] = p_map 
+
+        if not self._attach_session_to_task(
+            context,
+            system_prompt=final_system_prompt,
+            user_prompt=final_user_prompt,
+            task_type=task_type,
+        ):
+             if 'precomposed_prompt' not in context:
+                context['precomposed_prompt'] = [
+                    {"role": "system", "content": final_system_prompt},
+                    {"role": "user", "content": final_user_prompt}
+                ]
+        
         self._run_ai_task(provider, context)
 
     def _handle_chunk_translated(self, chunk_index: int, chunk_text: str, context: dict):
@@ -763,8 +790,7 @@ class TranslationHandler(BaseHandler):
 
             for item in translated_strings:
                 string_idx, translated_text = item["id"], item["translation"]
-                restored_text = self.prompt_composer.restore_placeholders(translated_text, context['placeholder_map'])
-                final_text = self._trim_trailing_whitespace_from_lines(restored_text)
+                final_text = self._trim_trailing_whitespace_from_lines(translated_text)
                 self.data_processor.update_edited_data(block_idx, string_idx, final_text)
             
             if block_idx in self.translation_progress:
@@ -785,6 +811,8 @@ class TranslationHandler(BaseHandler):
                     del self.translation_progress[block_idx]
                 if block_idx in self.pre_translation_state:
                     del self.pre_translation_state[block_idx]
+                
+                self.reset_translation_session()
 
         except (json.JSONDecodeError, ValueError) as e:
             self._handle_ai_error(f"Failed to process chunk {chunk_index + 1}: {e}", context)
@@ -802,8 +830,7 @@ class TranslationHandler(BaseHandler):
             self.ui_handler.update_ai_operation_step(4, self.ui_handler.status_dialog.steps[4], self.ui_handler.status_dialog.STATUS_IN_PROGRESS)
             for item in translated_strings:
                 string_idx, translated_text = item["id"], item["translation"]
-                restored_text = self.prompt_composer.restore_placeholders(translated_text, context['placeholder_map'])
-                final_text = self._trim_trailing_whitespace_from_lines(restored_text)
+                final_text = self._trim_trailing_whitespace_from_lines(translated_text)
                 self.data_processor.update_edited_data(context['block_idx'], string_idx, final_text)
 
             self._record_session_exchange(context=context, assistant_content=cleaned_text, response=response)
@@ -819,8 +846,7 @@ class TranslationHandler(BaseHandler):
     def _handle_single_translation_success(self, response: ProviderResponse, context: dict):
         self.ui_handler.update_ai_operation_step(3, self.ui_handler.status_dialog.steps[3], self.ui_handler.status_dialog.STATUS_IN_PROGRESS)
         cleaned_translation = self._clean_model_output(response)
-        restored_translation = self.prompt_composer.restore_placeholders(cleaned_translation, context['placeholder_map'])
-        trimmed_translation = self._trim_trailing_whitespace_from_lines(restored_translation)
+        trimmed_translation = self._trim_trailing_whitespace_from_lines(cleaned_translation)
         self._record_session_exchange(context=context, assistant_content=cleaned_translation, response=response)
         
         self.ui_handler.update_ai_operation_step(4, self.ui_handler.status_dialog.steps[4], self.ui_handler.status_dialog.STATUS_IN_PROGRESS)
@@ -830,7 +856,6 @@ class TranslationHandler(BaseHandler):
     def _handle_glossary_occurrence_update_success(self, response: ProviderResponse, context: dict) -> None:
         from_batch = context.get('from_batch', False)
         occurrence = context.get('occurrence')
-        placeholder_map = context.get('placeholder_map')
         composer_args = context.get('composer_args') or {}
 
         self.ui_handler.finish_ai_operation()
@@ -846,8 +871,7 @@ class TranslationHandler(BaseHandler):
             self.glossary_handler._handle_occurrence_ai_error("AI response missing string 'translation' field.", from_batch)
             return
 
-        restored = self.prompt_composer.restore_placeholders(translation_value, placeholder_map)
-        trimmed = self._trim_trailing_whitespace_from_lines(restored)
+        trimmed = self._trim_trailing_whitespace_from_lines(translation_value)
 
         expected_lines = composer_args.get('expected_lines') if isinstance(composer_args, dict) else None
         if isinstance(expected_lines, int) and expected_lines > 0:
@@ -857,21 +881,6 @@ class TranslationHandler(BaseHandler):
                     f"AI response returned {actual_lines} lines (expected {expected_lines}).",
                     from_batch,
                 )
-                return
-
-        placeholder_tokens = {}
-        if isinstance(placeholder_map, dict):
-            tags = placeholder_map.get('tags')
-            if isinstance(tags, dict):
-                placeholder_tokens.update(tags)
-            else:
-                for value in placeholder_map.values():
-                    if isinstance(value, dict) and isinstance(value.get('tags'), dict):
-                        placeholder_tokens.update(value['tags'])
-        if placeholder_tokens:
-            leftovers = [token for token in placeholder_tokens if token in trimmed]
-            if leftovers:
-                self.glossary_handler._handle_occurrence_ai_error("AI response did not restore placeholder tokens correctly.", from_batch)
                 return
 
         if occurrence is None:
@@ -889,7 +898,6 @@ class TranslationHandler(BaseHandler):
 
     def _handle_glossary_occurrence_batch_success(self, response: ProviderResponse, context: dict) -> None:
         from_batch = context.get('from_batch', True)
-        placeholder_map = context.get('placeholder_map') or {}
         expected_lines = context.get('expected_lines') or {}
         occurrence_lookup = context.get('occurrence_lookup') or {}
 
@@ -917,11 +925,7 @@ class TranslationHandler(BaseHandler):
             if occ_id is None or not isinstance(translation_value, str):
                 continue
             occ_id = str(occ_id)
-            restored = self.prompt_composer.restore_placeholders(
-                translation_value,
-                placeholder_map.get(occ_id),
-            )
-            trimmed = self._trim_trailing_whitespace_from_lines(restored)
+            trimmed = self._trim_trailing_whitespace_from_lines(translation_value)
             expected = expected_lines.get(occ_id)
             if isinstance(expected, int) and expected > 0:
                 actual = trimmed.count('\\n') + 1
@@ -981,8 +985,7 @@ class TranslationHandler(BaseHandler):
             QMessageBox.information(self.mw, "AI Variation", "Failed to parse variations from AI response.")
             return
             
-        restored = [self.prompt_composer.restore_placeholders(v, context['placeholder_map']) for v in variants_raw]
-        trimmed = [self._trim_trailing_whitespace_from_lines(v) for v in restored]
+        trimmed = [self._trim_trailing_whitespace_from_lines(v) for v in variants_raw]
         
         chosen = self.ui_handler.show_variations_dialog(trimmed)
         if chosen:
@@ -1001,6 +1004,7 @@ class TranslationHandler(BaseHandler):
         log_debug(
             f"AI Error (type={task_type}, attempt={attempt}/{max_attempts}, mode={mode}): {error_message}"
         )
+        self.reset_translation_session()
 
         if context.get('type') == 'fill_glossary':
             self.ui_handler.finish_ai_operation()
@@ -1084,22 +1088,14 @@ class TranslationHandler(BaseHandler):
             self.ui_handler.finish_ai_operation()
             return
         
-        self.ui_handler.start_ai_operation("AI Variation")
-
-        glossary_entries = self._glossary_manager.get_entries_sorted_by_length()
-        prepared_text, placeholder_map = self.prompt_composer.prepare_text_for_translation(
-            original_text, glossary_entries
-        )
-        
         composer_args = {
             'system_prompt': system_prompt, 'glossary_text': glossary,
-            'source_text': prepared_text,
-            'placeholder_map': placeholder_map,
+            'source_text': original_text,
             'block_idx': self.mw.current_block_idx, 'string_idx': self.mw.current_string_idx,
             'expected_lines': len(original_text.split('\n')), 'current_translation': str(current_translation),
             'request_type': 'variation_list'
         }
-        combined_system, user_prompt, _ = self.prompt_composer.compose_variation_request(**composer_args)
+        combined_system, user_prompt = self.prompt_composer.compose_variation_request(**composer_args)
         edited = self._maybe_edit_prompt(
             title="AI Variation Prompt",
             system_prompt=combined_system,
@@ -1109,6 +1105,8 @@ class TranslationHandler(BaseHandler):
         if edited is None:
             return
         edited_system, edited_user = edited
+
+        self.ui_handler.start_ai_operation("AI Variation", model_name=self._active_model_name)
 
         precomposed = [
             {"role": "system", "content": edited_system},
@@ -1121,7 +1119,6 @@ class TranslationHandler(BaseHandler):
             'provider_settings_override': {'temperature': 0.7},
             'attempt': 1,
             'max_retries': 1,
-            'placeholder_map': placeholder_map,
         }
         if not self._attach_session_to_task(
             task_details,
@@ -1130,7 +1127,7 @@ class TranslationHandler(BaseHandler):
             task_type='generate_variation',
         ):
             task_details['precomposed_prompt'] = precomposed
-        self.ui_handler.start_ai_operation("AI Variation", model_name=self._active_model_name)
+        
         self._run_ai_task(provider, task_details)
 
     def _translate_and_apply(self, *, source_text: str, expected_lines: int, mode_description: str, block_idx: int, string_idx: int):
@@ -1141,19 +1138,13 @@ class TranslationHandler(BaseHandler):
         if not system_prompt:
             return
 
-        glossary_entries = self._glossary_manager.get_entries_sorted_by_length()
-        prepared_text, placeholder_map = self.prompt_composer.prepare_text_for_translation(
-            source_text, glossary_entries
-        )
-
         composer_args = {
             'system_prompt': system_prompt, 'glossary_text': glossary,
-            'source_text': prepared_text,
-            'placeholder_map': placeholder_map,
+            'source_text': source_text,
             'block_idx': block_idx, 'string_idx': string_idx, 'expected_lines': expected_lines,
             'current_translation': None, 'request_type': 'translation'
         }
-        combined_system, user_prompt, _ = self.prompt_composer.compose_variation_request(**composer_args)
+        combined_system, user_prompt = self.prompt_composer.compose_variation_request(**composer_args)
         edited = self._maybe_edit_prompt(
             title="AI Translation Prompt",
             system_prompt=combined_system,
@@ -1173,7 +1164,6 @@ class TranslationHandler(BaseHandler):
             'composer_args': composer_args,
             'attempt': 1,
             'max_retries': 1,
-            'placeholder_map': placeholder_map,
         }
         if not self._attach_session_to_task(
             task_details,

@@ -1,3 +1,4 @@
+# --- START OF FILE handlers/translation/ai_prompt_composer.py ---
 from __future__ import annotations
 
 import json
@@ -12,50 +13,6 @@ from utils.logging_utils import log_debug
 class AIPromptComposer(BaseTranslationHandler):
     """Compose prompts for AI translation/variation tasks and manage placeholders."""
 
-    _TAG_PLACEHOLDER_PREFIX = "__TAG_"
-    _PLACEHOLDER_SUFFIX = "__"
-
-    # ------------------------------------------------------------------
-    # Placeholder helpers
-    # ------------------------------------------------------------------
-    def _mask_tags(self, text: str) -> Tuple[str, Dict[str, str]]:
-        placeholder_map: Dict[str, str] = {}
-
-        def _replacer(match) -> str:
-            placeholder = f"{self._TAG_PLACEHOLDER_PREFIX}{len(placeholder_map)}{self._PLACEHOLDER_SUFFIX}"
-            placeholder_map[placeholder] = match.group(0)
-            return placeholder
-
-        masked = ALL_TAGS_PATTERN.sub(_replacer, text or '')
-        return masked, placeholder_map
-
-    def _restore_tag_placeholders(
-        self,
-        translated_text: str,
-        placeholder_map: Optional[Dict],
-        *,
-        key: Optional[int] = None,
-    ) -> str:
-        text = translated_text or ''
-        if not placeholder_map:
-            return text
-
-        tags_map: Dict[str, str] = {}
-        if key is not None and isinstance(placeholder_map, dict):
-            entry = placeholder_map.get(str(key))
-            if isinstance(entry, dict):
-                tags_map = entry.get('tags', entry)
-        elif isinstance(placeholder_map, dict) and 'tags' in placeholder_map:
-            tags_map = placeholder_map.get('tags', {})
-        elif isinstance(placeholder_map, dict):
-            for value in placeholder_map.values():
-                if isinstance(value, dict):
-                    tags_map.update(value.get('tags', value))
-
-        for placeholder, original in tags_map.items():
-            text = text.replace(placeholder, original)
-        return text
-
     # ------------------------------------------------------------------
     # Public API used by translation handler
     # ------------------------------------------------------------------
@@ -64,11 +21,7 @@ class AIPromptComposer(BaseTranslationHandler):
         source_text: str,
         glossary_entries: Sequence[GlossaryEntry],  # kept for possible future use
     ) -> Tuple[str, Dict[str, Dict[str, str]]]:
-        masked_text, tag_map = self._mask_tags(source_text or '')
-        placeholder_map: Dict[str, Dict[str, str]] = {}
-        if tag_map:
-            placeholder_map['tags'] = tag_map
-        return masked_text, placeholder_map
+        return source_text or '', {}
 
     def restore_placeholders(
         self,
@@ -77,7 +30,7 @@ class AIPromptComposer(BaseTranslationHandler):
         *,
         key: Optional[int] = None,
     ) -> str:
-        return self._restore_tag_placeholders(translated_text, placeholder_map, key=key)
+        return translated_text or ''
 
     # ------------------------------------------------------------------
     # Prompt composition helpers
@@ -92,21 +45,9 @@ class AIPromptComposer(BaseTranslationHandler):
         mode_description: str,
         is_retry: bool = False,
         retry_reason: str = '',
-    ) -> Tuple[str, str, Dict[str, Dict[str, Dict[str, str]]]]:
-        processed_items: List[Dict] = []
-        placeholder_map: Dict[str, Dict[str, Dict[str, str]]] = {}
-
-        for item in source_items:
-            item_id = item.get('id')
-            original_text = str(item.get('text') or '')
-            masked_text, tag_map = self._mask_tags(original_text)
-            new_item = dict(item)
-            new_item['text'] = masked_text
-            processed_items.append(new_item)
-            if tag_map and item_id is not None:
-                placeholder_map[str(item_id)] = {'tags': tag_map}
-
-        json_payload_for_ai = {'strings_to_translate': processed_items}
+    ) -> Tuple[str, str, Dict]:
+        placeholder_map: Dict = {}
+        json_payload_for_ai = {'strings_to_translate': source_items}
 
         if not is_retry:
             instructions = [
@@ -167,9 +108,8 @@ class AIPromptComposer(BaseTranslationHandler):
         expected_lines: int,
         current_translation: str,
         request_type: str,
-        placeholder_map: Dict,
         mode_description: str = 'translation variations',
-    ) -> Tuple[str, str, Dict]:
+    ) -> Tuple[str, str]:
         combined_system, user_content = self.compose_messages(
             system_prompt,
             glossary_text,
@@ -181,7 +121,7 @@ class AIPromptComposer(BaseTranslationHandler):
             request_type=request_type,
             current_translation=current_translation,
         )
-        return combined_system, user_content, placeholder_map
+        return combined_system, user_content
 
     def compose_messages(
         self,
@@ -258,14 +198,13 @@ class AIPromptComposer(BaseTranslationHandler):
         glossary_text: str,
         *,
         source_text: str,
-        placeholder_map: Dict,
         current_translation: str,
         original_text: str,
         term: str,
         old_translation: str,
         new_translation: str,
         expected_lines: int,
-    ) -> Tuple[str, str, Dict]:
+    ) -> Tuple[str, str]:
         combined_system = self._append_glossary_to_system_prompt(system_prompt, glossary_text)
 
         instructions = [
@@ -292,7 +231,7 @@ class AIPromptComposer(BaseTranslationHandler):
             "\n".join(f"- {item}" for item in instructions),
         ]
         user_content = "\n".join(user_sections)
-        return combined_system, user_content, placeholder_map or {}
+        return combined_system, user_content
 
     def compose_glossary_occurrence_batch_request(
         self,

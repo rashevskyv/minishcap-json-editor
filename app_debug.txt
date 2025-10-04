@@ -1,69 +1,69 @@
-2025-10-04 14:21:05,499 - DEBUG - logging_utils - log_debug - ================= Application Start =================
-2025-10-04 14:21:05,508 - DEBUG - logging_utils - log_debug - Applied Light Theme.
-2025-10-04 14:21:05,508 - DEBUG - logging_utils - log_debug - ++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++
-2025-10-04 14:21:05,508 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Core Components...
-2025-10-04 14:21:05,508 - DEBUG - logging_utils - log_debug - --> SettingsManager: load_settings from settings.json
-2025-10-04 14:21:05,509 - DEBUG - logging_utils - log_debug - Global settings loaded.
-2025-10-04 14:21:05,509 - DEBUG - logging_utils - log_debug - Plugin settings loaded from 'plugins\zelda_ww\config.json'.
-2025-10-04 14:21:05,509 - DEBUG - logging_utils - log_debug -   [LOAD STATE] Loaded Block Idx: 0, String Idx: 269, Cursor Pos: 16
-2025-10-04 14:21:05,510 - DEBUG - logging_utils - log_debug - --> SettingsManager: Loading all font maps from: plugins\zelda_ww\fonts
-2025-10-04 14:21:05,510 - DEBUG - logging_utils - log_debug -   Successfully loaded and parsed font map 'CKingMain.json'. Count: 386
-2025-10-04 14:21:05,511 - DEBUG - logging_utils - log_debug -   Successfully loaded and parsed font map 'CKingMainL.json'. Count: 268
-2025-10-04 14:21:05,514 - DEBUG - logging_utils - log_debug -   Successfully loaded and parsed font map 'CKingMsg.json'. Count: 1830
-2025-10-04 14:21:05,514 - DEBUG - logging_utils - log_debug - Set default font_map to 'CKingMsg.json'.
-2025-10-04 14:21:05,514 - DEBUG - logging_utils - log_debug - Loaded 27 font override entries from 'plugins\zelda_ww\font_map.json'.
-2025-10-04 14:21:05,514 - DEBUG - logging_utils - log_debug - Applied 27 font override entries.
-2025-10-04 14:21:05,514 - DEBUG - logging_utils - log_debug - <-- SettingsManager: load_settings finished
-2025-10-04 14:21:05,515 - DEBUG - logging_utils - log_debug - Updater 'StringSettingsUpdater' initialized.
-2025-10-04 14:21:05,515 - DEBUG - logging_utils - log_debug - UIHandler 'MainWindowUIHandler' initialized.
-2025-10-04 14:21:05,515 - DEBUG - logging_utils - log_debug - PluginHandler 'MainWindowPluginHandler' initialized.
-2025-10-04 14:21:05,515 - DEBUG - logging_utils - log_debug - EventHandler 'MainWindowEventHandler' initialized.
-2025-10-04 14:21:05,515 - DEBUG - logging_utils - log_debug - BlockHandler 'MainWindowBlockHandler' initialized.
-2025-10-04 14:21:05,515 - DEBUG - logging_utils - log_debug - MainWindow: Loading game plugin...
-2025-10-04 14:21:05,515 - DEBUG - logging_utils - log_debug - --> MainWindowPluginHandler: load_game_plugin called.
-2025-10-04 14:21:05,515 - DEBUG - logging_utils - log_debug -     Attempting to load plugin: 'zelda_ww'
-2025-10-04 14:21:05,515 - DEBUG - logging_utils - log_debug -     Importing module: plugins.zelda_ww.rules
-2025-10-04 14:21:05,516 - DEBUG - logging_utils - log_debug -     Successfully loaded and instantiated game rules: GameRules from plugins.zelda_ww.rules
-2025-10-04 14:21:05,516 - DEBUG - logging_utils - log_debug - <-- MainWindowPluginHandler: load_game_plugin finished.
-2025-10-04 14:21:05,517 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Handlers (Pre-UI setup)...
-2025-10-04 14:21:05,517 - DEBUG - logging_utils - log_debug - Handler 'ListSelectionHandler' initialized.
-2025-10-04 14:21:05,517 - DEBUG - logging_utils - log_debug - Handler 'TextOperationHandler' initialized.
-2025-10-04 14:21:05,517 - DEBUG - logging_utils - log_debug - Handler 'AppActionHandler' initialized.
-2025-10-04 14:21:05,517 - DEBUG - logging_utils - log_debug - Handler 'SearchHandler' initialized.
-2025-10-04 14:21:05,517 - DEBUG - logging_utils - log_debug - Handler 'StringSettingsHandler' initialized.
-2025-10-04 14:21:05,517 - DEBUG - logging_utils - log_debug - Handler 'TranslationHandler' initialized.
-2025-10-04 14:21:05,517 - DEBUG - logging_utils - log_debug - Handler 'TextAnalysisHandler' initialized.
-2025-10-04 14:21:05,517 - DEBUG - logging_utils - log_debug - MainWindow: Setting up UI...
-2025-10-04 14:21:05,517 - DEBUG - logging_utils - log_debug - setup_main_window_ui: Starting UI setup.
-2025-10-04 14:21:05,518 - DEBUG - logging_utils - log_debug - CustomListWidget INITIALIZED, parent: <__main__.MainWindow object at 0x00000254EB08C550>
-2025-10-04 14:21:05,518 - DEBUG - logging_utils - log_debug - CustomListWidget: Item delegate set to <components.CustomListItemDelegate.CustomListItemDelegate object at 0x00000254EB08D360>
-2025-10-04 14:21:05,523 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
-2025-10-04 14:21:05,523 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-2025-10-04 14:21:05,523 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
-2025-10-04 14:21:05,524 - DEBUG - logging_utils - log_debug - Loaded 2 syntax highlighting rules from game plugin.
-2025-10-04 14:21:05,635 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
-2025-10-04 14:21:05,636 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-2025-10-04 14:21:05,636 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
-2025-10-04 14:21:05,636 - DEBUG - logging_utils - log_debug - Loaded 2 syntax highlighting rules from game plugin.
-2025-10-04 14:21:05,642 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
-2025-10-04 14:21:05,643 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
-2025-10-04 14:21:05,643 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
-2025-10-04 14:21:05,643 - DEBUG - logging_utils - log_debug - Loaded 2 syntax highlighting rules from game plugin.
-2025-10-04 14:21:05,649 - DEBUG - logging_utils - log_debug - setup_main_window_ui: UI setup complete.
-2025-10-04 14:21:05,667 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 269 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
-2025-10-04 14:21:05,667 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Handlers and dynamic UI from plugin (Post-UI setup)...
-2025-10-04 14:21:05,667 - DEBUG - logging_utils - log_debug - MainWindow: Connecting Signals...
-2025-10-04 14:21:05,668 - DEBUG - logging_utils - log_debug - --> MainWindowEventHandler: connect_signals() started
-2025-10-04 14:21:05,668 - DEBUG - logging_utils - log_debug - --> MainWindowEventHandler: connect_signals() finished
-2025-10-04 14:21:05,668 - DEBUG - logging_utils - log_debug - MainWindowHelper: restore_state_after_settings_load called.
-2025-10-04 14:21:05,668 - DEBUG - logging_utils - log_debug - Restored window geometry from settings: {'x': 340, 'y': 53, 'width': 1681, 'height': 1277}
-2025-10-04 14:21:05,668 - DEBUG - logging_utils - log_debug - MainWindowHelper: Attempting to load initial file from settings: D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt
-2025-10-04 14:21:05,668 - DEBUG - logging_utils - log_debug - --> AppActionHandler: load_all_data_for_path START. Original: 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt', Manual Edit Path: 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt', InitialLoad: True
-2025-10-04 14:21:05,668 - DEBUG - logging_utils - log_debug - load_text_file: Attempting to load 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt'
-2025-10-04 14:21:05,669 - DEBUG - logging_utils - log_debug - load_text_file: UTF-8 decoding failed for 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt'. Trying UTF-16.
-2025-10-04 14:21:05,669 - DEBUG - logging_utils - log_debug - load_text_file: Successfully loaded 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt' with UTF-16.
-2025-10-04 14:21:05,670 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Starting load_data_from_json_obj. Input type: <class 'str'>
-2025-10-04 14:21:05,670 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: File content (first 200 chars): Now saving...
+2025-10-05 00:24:27,871 - DEBUG - logging_utils - log_debug - ================= Application Start =================
+2025-10-05 00:24:27,881 - DEBUG - logging_utils - log_debug - Applied Light Theme.
+2025-10-05 00:24:27,881 - DEBUG - logging_utils - log_debug - ++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++
+2025-10-05 00:24:27,882 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Core Components...
+2025-10-05 00:24:27,882 - DEBUG - logging_utils - log_debug - --> SettingsManager: load_settings from settings.json
+2025-10-05 00:24:27,882 - DEBUG - logging_utils - log_debug - Global settings loaded.
+2025-10-05 00:24:27,882 - DEBUG - logging_utils - log_debug - Plugin settings loaded from 'plugins\zelda_ww\config.json'.
+2025-10-05 00:24:27,883 - DEBUG - logging_utils - log_debug -   [LOAD STATE] Loaded Block Idx: 0, String Idx: 181, Cursor Pos: 16
+2025-10-05 00:24:27,883 - DEBUG - logging_utils - log_debug - --> SettingsManager: Loading all font maps from: plugins\zelda_ww\fonts
+2025-10-05 00:24:27,884 - DEBUG - logging_utils - log_debug -   Successfully loaded and parsed font map 'CKingMain.json'. Count: 386
+2025-10-05 00:24:27,885 - DEBUG - logging_utils - log_debug -   Successfully loaded and parsed font map 'CKingMainL.json'. Count: 268
+2025-10-05 00:24:27,888 - DEBUG - logging_utils - log_debug -   Successfully loaded and parsed font map 'CKingMsg.json'. Count: 1830
+2025-10-05 00:24:27,888 - DEBUG - logging_utils - log_debug - Set default font_map to 'CKingMsg.json'.
+2025-10-05 00:24:27,888 - DEBUG - logging_utils - log_debug - Loaded 27 font override entries from 'plugins\zelda_ww\font_map.json'.
+2025-10-05 00:24:27,889 - DEBUG - logging_utils - log_debug - Applied 27 font override entries.
+2025-10-05 00:24:27,889 - DEBUG - logging_utils - log_debug - <-- SettingsManager: load_settings finished
+2025-10-05 00:24:27,889 - DEBUG - logging_utils - log_debug - Updater 'StringSettingsUpdater' initialized.
+2025-10-05 00:24:27,889 - DEBUG - logging_utils - log_debug - UIHandler 'MainWindowUIHandler' initialized.
+2025-10-05 00:24:27,889 - DEBUG - logging_utils - log_debug - PluginHandler 'MainWindowPluginHandler' initialized.
+2025-10-05 00:24:27,889 - DEBUG - logging_utils - log_debug - EventHandler 'MainWindowEventHandler' initialized.
+2025-10-05 00:24:27,889 - DEBUG - logging_utils - log_debug - BlockHandler 'MainWindowBlockHandler' initialized.
+2025-10-05 00:24:27,889 - DEBUG - logging_utils - log_debug - MainWindow: Loading game plugin...
+2025-10-05 00:24:27,889 - DEBUG - logging_utils - log_debug - --> MainWindowPluginHandler: load_game_plugin called.
+2025-10-05 00:24:27,889 - DEBUG - logging_utils - log_debug -     Attempting to load plugin: 'zelda_ww'
+2025-10-05 00:24:27,889 - DEBUG - logging_utils - log_debug -     Importing module: plugins.zelda_ww.rules
+2025-10-05 00:24:27,891 - DEBUG - logging_utils - log_debug -     Successfully loaded and instantiated game rules: GameRules from plugins.zelda_ww.rules
+2025-10-05 00:24:27,891 - DEBUG - logging_utils - log_debug - <-- MainWindowPluginHandler: load_game_plugin finished.
+2025-10-05 00:24:27,892 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Handlers (Pre-UI setup)...
+2025-10-05 00:24:27,892 - DEBUG - logging_utils - log_debug - Handler 'ListSelectionHandler' initialized.
+2025-10-05 00:24:27,892 - DEBUG - logging_utils - log_debug - Handler 'TextOperationHandler' initialized.
+2025-10-05 00:24:27,892 - DEBUG - logging_utils - log_debug - Handler 'AppActionHandler' initialized.
+2025-10-05 00:24:27,892 - DEBUG - logging_utils - log_debug - Handler 'SearchHandler' initialized.
+2025-10-05 00:24:27,892 - DEBUG - logging_utils - log_debug - Handler 'StringSettingsHandler' initialized.
+2025-10-05 00:24:27,892 - DEBUG - logging_utils - log_debug - Handler 'TranslationHandler' initialized.
+2025-10-05 00:24:27,892 - DEBUG - logging_utils - log_debug - Handler 'TextAnalysisHandler' initialized.
+2025-10-05 00:24:27,892 - DEBUG - logging_utils - log_debug - MainWindow: Setting up UI...
+2025-10-05 00:24:27,892 - DEBUG - logging_utils - log_debug - setup_main_window_ui: Starting UI setup.
+2025-10-05 00:24:27,894 - DEBUG - logging_utils - log_debug - CustomListWidget INITIALIZED, parent: <__main__.MainWindow object at 0x00000193F4EE4550>
+2025-10-05 00:24:27,894 - DEBUG - logging_utils - log_debug - CustomListWidget: Item delegate set to <components.CustomListItemDelegate.CustomListItemDelegate object at 0x00000193F4EE5360>
+2025-10-05 00:24:27,901 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
+2025-10-05 00:24:27,901 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+2025-10-05 00:24:27,901 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
+2025-10-05 00:24:27,901 - DEBUG - logging_utils - log_debug - Loaded 2 syntax highlighting rules from game plugin.
+2025-10-05 00:24:28,012 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
+2025-10-05 00:24:28,012 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+2025-10-05 00:24:28,012 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
+2025-10-05 00:24:28,012 - DEBUG - logging_utils - log_debug - Loaded 2 syntax highlighting rules from game plugin.
+2025-10-05 00:24:28,019 - DEBUG - logging_utils - log_debug - JsonTagHighlighter initialized.
+2025-10-05 00:24:28,019 - DEBUG - logging_utils - log_debug - JsonTagHighlighter: Could not get editor widget or palette, using default black text color.
+2025-10-05 00:24:28,019 - DEBUG - logging_utils - log_debug - JsonTagHighlighter reconfiguring styles...
+2025-10-05 00:24:28,020 - DEBUG - logging_utils - log_debug - Loaded 2 syntax highlighting rules from game plugin.
+2025-10-05 00:24:28,027 - DEBUG - logging_utils - log_debug - setup_main_window_ui: UI setup complete.
+2025-10-05 00:24:28,044 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 269 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
+2025-10-05 00:24:28,044 - DEBUG - logging_utils - log_debug - MainWindow: Initializing Handlers and dynamic UI from plugin (Post-UI setup)...
+2025-10-05 00:24:28,045 - DEBUG - logging_utils - log_debug - MainWindow: Connecting Signals...
+2025-10-05 00:24:28,045 - DEBUG - logging_utils - log_debug - --> MainWindowEventHandler: connect_signals() started
+2025-10-05 00:24:28,045 - DEBUG - logging_utils - log_debug - --> MainWindowEventHandler: connect_signals() finished
+2025-10-05 00:24:28,046 - DEBUG - logging_utils - log_debug - MainWindowHelper: restore_state_after_settings_load called.
+2025-10-05 00:24:28,046 - DEBUG - logging_utils - log_debug - Restored window geometry from settings: {'x': 340, 'y': 53, 'width': 1681, 'height': 1277}
+2025-10-05 00:24:28,046 - DEBUG - logging_utils - log_debug - MainWindowHelper: Attempting to load initial file from settings: D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt
+2025-10-05 00:24:28,046 - DEBUG - logging_utils - log_debug - --> AppActionHandler: load_all_data_for_path START. Original: 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt', Manual Edit Path: 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt', InitialLoad: True
+2025-10-05 00:24:28,046 - DEBUG - logging_utils - log_debug - load_text_file: Attempting to load 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt'
+2025-10-05 00:24:28,046 - DEBUG - logging_utils - log_debug - load_text_file: UTF-8 decoding failed for 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt'. Trying UTF-16.
+2025-10-05 00:24:28,047 - DEBUG - logging_utils - log_debug - load_text_file: Successfully loaded 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt' with UTF-16.
+2025-10-05 00:24:28,047 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Starting load_data_from_json_obj. Input type: <class 'str'>
+2025-10-05 00:24:28,047 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: File content (first 200 chars): Now saving...
 Do not touch the Memory Card or
 the POWER Button.
 {END}
@@ -76,15 +76,15 @@ Fairy Island[/C][White]?[/C]
 {END}
 
 Warp to [Red]Tingle Island[/C][Whit
-2025-10-04 14:21:05,670 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Split by '{END}' resulted in 1003 segments.
-2025-10-04 14:21:05,670 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Popping last empty segment. Original last segment: '
+2025-10-05 00:24:28,047 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Split by '{END}' resulted in 1003 segments.
+2025-10-05 00:24:28,047 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Popping last empty segment. Original last segment: '
 '
-2025-10-04 14:21:05,670 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: After processing, 1002 strings remain.
-2025-10-04 14:21:05,670 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Loaded 1002 strings from TXT file into one block named 'Block 0'.
-2025-10-04 14:21:05,670 - DEBUG - logging_utils - log_debug - load_text_file: Attempting to load 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt'
-2025-10-04 14:21:05,671 - DEBUG - logging_utils - log_debug - load_text_file: Successfully loaded 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt' with UTF-8.
-2025-10-04 14:21:05,671 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Starting load_data_from_json_obj. Input type: <class 'str'>
-2025-10-04 14:21:05,671 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: File content (first 200 chars): Йде збереження...
+2025-10-05 00:24:28,048 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: After processing, 1002 strings remain.
+2025-10-05 00:24:28,048 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Loaded 1002 strings from TXT file into one block named 'Block 0'.
+2025-10-05 00:24:28,048 - DEBUG - logging_utils - log_debug - load_text_file: Attempting to load 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt'
+2025-10-05 00:24:28,048 - DEBUG - logging_utils - log_debug - load_text_file: Successfully loaded 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt' with UTF-8.
+2025-10-05 00:24:28,048 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Starting load_data_from_json_obj. Input type: <class 'str'>
+2025-10-05 00:24:28,048 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: File content (first 200 chars): Йде збереження...
 Не торкайтеся картки пам’яті або
 кнопки POWER.{END}
 
@@ -94,34 +94,153 @@ Warp to [Red]Tingle Island[/C][Whit
 Острів Фей[/C][White]?[/C]{END}
 
 Телепортуватися на [Red]Острів 
-2025-10-04 14:21:05,671 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Split by '{END}' resulted in 1003 segments.
-2025-10-04 14:21:05,671 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Popping last empty segment. Original last segment: '
+2025-10-05 00:24:28,048 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Split by '{END}' resulted in 1003 segments.
+2025-10-05 00:24:28,049 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Popping last empty segment. Original last segment: '
 '
-2025-10-04 14:21:05,672 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: After processing, 1002 strings remain.
-2025-10-04 14:21:05,672 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Loaded 1002 strings from TXT file into one block named 'message_orig.txt'.
-2025-10-04 14:21:05,672 - DEBUG - logging_utils - log_debug - Performing initial silent scan for all issues...
-2025-10-04 14:21:05,888 - DEBUG - logging_utils - log_debug - Initial scan complete. Found problems in 1546 sublines.
-2025-10-04 14:21:05,889 - DEBUG - logging_utils - log_debug - <-- AppActionHandler: load_all_data_for_path FINISHED (Success)
-2025-10-04 14:21:05,889 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Attempting restore with Block Idx: 0, String Idx: 269
-2025-10-04 14:21:05,889 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Block index 0 is valid. Setting current row...
-2025-10-04 14:21:05,889 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Manually calling block_selected for item 'Block 0 (1 Width, 277 EmptyOddL, 17 1Word, 1254 Short)'
-2025-10-04 14:21:06,159 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] String index 269 is valid. Calling string_selected_from_preview...
-2025-10-04 14:21:06,381 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Setting cursor position. Target: 16 (from saved 16, doc len: 16)
-2025-10-04 14:21:06,382 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Cursor position set. Actual final position: 16
-2025-10-04 14:21:06,382 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Setting scollbars. Edited V/H: 0/0, Preview V: 269, Original V/H: 0/0
-2025-10-04 14:21:06,382 - DEBUG - logging_utils - log_debug - MainWindowHelper: Restored selection to block 0, string 269, cursor 16
-2025-10-04 14:21:06,382 - DEBUG - logging_utils - log_debug - MainWindowHelper: Search history loaded into panel. Last query (if any) set in SearchHandler: 
-2025-10-04 14:21:06,382 - DEBUG - logging_utils - log_debug - MainWindowUIHandler: Applying font. General: Family='Segoe UI', Editor: Family='Consolas', Size=13
-2025-10-04 14:21:06,424 - DEBUG - logging_utils - log_debug - ListSelectionHandler.block_selected: current_item is None. Attempting to restore selection to 0.
-2025-10-04 14:21:06,864 - DEBUG - logging_utils - log_debug - Applying text wrap settings: Preview wrap: False, Editors wrap: False
-2025-10-04 14:21:06,864 - DEBUG - logging_utils - log_debug - Rebuilt unsaved_block_indices: set()
-2025-10-04 14:21:06,865 - DEBUG - logging_utils - log_debug - ++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++
-2025-10-04 14:21:06,994 - DEBUG - logging_utils - log_debug - Starting Qt event loop...
-2025-10-04 14:21:06,996 - DEBUG - logging_utils - log_debug - MainWindowUIHandler: Forcing window focus.
-2025-10-04 14:21:11,939 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 269 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
-2025-10-04 14:21:11,939 - DEBUG - logging_utils - log_debug - Composed request for AI. Type=translation, System prompt size=25491, User content size=458
-2025-10-04 14:21:11,956 - DEBUG - logging_utils - log_debug - AIWorker: Thread started for task type 'translate_single'.
-2025-10-04 14:21:11,957 - DEBUG - logging_utils - log_debug - Composed request for AI. Type=translation, System prompt size=25491, User content size=458
-2025-10-04 14:21:16,888 - DEBUG - logging_utils - log_debug - AIWorker: Cancellation requested.
-2025-10-04 14:21:17,640 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 269 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
-2025-10-04 14:21:17,641 - DEBUG - logging_utils - log_debug - Composed request for AI. Type=translation, System prompt size=25491, User content size=458
+2025-10-05 00:24:28,049 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: After processing, 1002 strings remain.
+2025-10-05 00:24:28,049 - DEBUG - logging_utils - log_debug - Wind Waker Plugin: Loaded 1002 strings from TXT file into one block named 'message_orig.txt'.
+2025-10-05 00:24:28,050 - DEBUG - logging_utils - log_debug - Performing initial silent scan for all issues...
+2025-10-05 00:24:28,265 - DEBUG - logging_utils - log_debug - Initial scan complete. Found problems in 1546 sublines.
+2025-10-05 00:24:28,266 - DEBUG - logging_utils - log_debug - <-- AppActionHandler: load_all_data_for_path FINISHED (Success)
+2025-10-05 00:24:28,266 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Attempting restore with Block Idx: 0, String Idx: 181
+2025-10-05 00:24:28,266 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Block index 0 is valid. Setting current row...
+2025-10-05 00:24:28,266 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Manually calling block_selected for item 'Block 0 (1 Width, 277 EmptyOddL, 17 1Word, 1254 Short)'
+2025-10-05 00:24:28,545 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] String index 181 is valid. Calling string_selected_from_preview...
+2025-10-05 00:24:28,768 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Setting cursor position. Target: 16 (from saved 16, doc len: 219)
+2025-10-05 00:24:28,768 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Cursor position set. Actual final position: 16
+2025-10-05 00:24:28,768 - DEBUG - logging_utils - log_debug -   [RESTORE STATE] Setting scollbars. Edited V/H: 0/0, Preview V: 176, Original V/H: 0/0
+2025-10-05 00:24:28,768 - DEBUG - logging_utils - log_debug - MainWindowHelper: Restored selection to block 0, string 181, cursor 16
+2025-10-05 00:24:28,768 - DEBUG - logging_utils - log_debug - MainWindowHelper: Search history loaded into panel. Last query (if any) set in SearchHandler: 
+2025-10-05 00:24:28,769 - DEBUG - logging_utils - log_debug - MainWindowUIHandler: Applying font. General: Family='Segoe UI', Editor: Family='Consolas', Size=13
+2025-10-05 00:24:28,811 - DEBUG - logging_utils - log_debug - ListSelectionHandler.block_selected: current_item is None. Attempting to restore selection to 0.
+2025-10-05 00:24:29,260 - DEBUG - logging_utils - log_debug - Applying text wrap settings: Preview wrap: False, Editors wrap: False
+2025-10-05 00:24:29,264 - DEBUG - logging_utils - log_debug - Rebuilt unsaved_block_indices: set()
+2025-10-05 00:24:29,264 - DEBUG - logging_utils - log_debug - ++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++
+2025-10-05 00:24:29,410 - DEBUG - logging_utils - log_debug - Starting Qt event loop...
+2025-10-05 00:24:29,411 - DEBUG - logging_utils - log_debug - MainWindowUIHandler: Forcing window focus.
+2025-10-05 00:24:31,092 - DEBUG - logging_utils - log_debug - LNETMouseHandlers: showContextMenu for editor: preview_text_edit at pos PyQt5.QtCore.QPoint(350, 130)
+2025-10-05 00:24:31,092 - DEBUG - logging_utils - log_debug - LNET (preview_text_edit): populateContextMenu called.
+2025-10-05 00:24:31,092 - DEBUG - logging_utils - log_debug - LNETMouseHandlers: Executing menu for preview_text_edit.
+2025-10-05 00:24:32,295 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 269 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
+2025-10-05 00:24:32,296 - DEBUG - logging_utils - log_debug - Composed batch request for AI. System prompt size: 25686, User content size: 1836
+2025-10-05 00:24:32,315 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 269 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
+2025-10-05 00:24:32,316 - DEBUG - logging_utils - log_debug - Composed batch request for AI. System prompt size: 25686, User content size: 1836
+2025-10-05 00:24:32,316 - DEBUG - logging_utils - log_debug - AIWorker: Thread started for task type 'translate_preview'.
+2025-10-05 00:24:32,317 - DEBUG - logging_utils - log_debug - Composed batch request for AI. System prompt size: 25686, User content size: 1836
+2025-10-05 00:24:49,247 - DEBUG - logging_utils - log_debug - AIWorker: Task finished, emitting 'finished' signal.
+2025-10-05 00:24:49,247 - DEBUG - logging_utils - log_debug - DSP.update_edited_data: Unsaved changes status changed to True
+2025-10-05 00:24:49,751 - DEBUG - logging_utils - log_debug - ListSelectionHandler.block_selected: current_item is None. Attempting to restore selection to 0.
+2025-10-05 00:25:01,383 - DEBUG - logging_utils - log_debug - Starting block AI translation for block 0 with timeout 1200s (base 120s); lines=1002
+2025-10-05 00:25:01,392 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 269 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
+2025-10-05 00:25:01,396 - DEBUG - logging_utils - log_debug - Composed batch request for AI. System prompt size: 25686, User content size: 192242
+2025-10-05 00:25:01,398 - DEBUG - logging_utils - log_debug - Composed batch request for AI. System prompt size: 25686, User content size: 192242
+2025-10-05 00:25:01,398 - DEBUG - logging_utils - log_debug - AIWorker: Thread started for task type 'translate_block_chunked'.
+2025-10-05 00:25:01,398 - DEBUG - logging_utils - log_debug - Composed batch request for AI. System prompt size: 25686, User content size: 1652
+2025-10-05 00:25:24,723 - DEBUG - logging_utils - log_debug - Composed batch request for AI. System prompt size: 25686, User content size: 2437
+2025-10-05 00:25:24,723 - DEBUG - logging_utils - log_debug - Received translated chunk 0. Raw AI response:
+{
+  "translated_strings": [
+    {
+      "id": 0,
+      "translation": "Збереження...\nНе торкайтеся карти пам'яті або\nкнопки POWER."
+    },
+    {
+      "id": 1,
+      "translation": "Не вдалося зберегти гру."
+    },
+    {
+      "id": 2,
+      "translation": "Перенестися на [Red]Південний\nОстрів Фей[/C][White]?[/C]"
+    },
+    {
+      "id": 3,
+      "translation": "Перенестися на [Red]Острів Тінгла[/C][White]?[/C]"
+    },
+    {
+      "id": 4,
+      "translation": "Перенестися в [Red]цю область[/C][White]?[/C]"
+    },
+    {
+      "id": 5,
+      "translation": "Перенестися на [Red]Острови\nМатері та Дитини[/C][White]?[/C]"
+    },
+    {
+      "id": 6,
+      "translation": "Перенестися на [Red]Острів Вітрових Нестів[/C][White]?[/C]"
+    },
+    {
+      "id": 7,
+      "translation": "Перенестися на [Red]Острів Драконівського Гнізда[/C][White]?[/C]"
+    },
+    {
+      "id": 8,
+      "translation": "Перенестися на [Red]Острів Великої Риби[/C][White]?[/C]"
+    },
+    {
+      "id": 9,
+      "translation": "Перенестися до [Red]Вежі\nБогів[/C][White]?[/C]"
+    }
+  ]
+}
+2025-10-05 00:26:04,178 - DEBUG - logging_utils - log_debug - AIWorker: Error translating chunk 1: API request failed: 502 Server Error: Bad Gateway for url: http://127.0.0.1:2048/v1/chat/completions
+Details: {'detail': '[dnka7dl] 辅助流处理错误 (内部超时)'}. Retrying...
+2025-10-05 00:26:04,178 - DEBUG - logging_utils - log_debug - Composed batch request for AI. System prompt size: 25686, User content size: 2437
+2025-10-05 00:26:14,062 - DEBUG - logging_utils - log_debug - Composed batch request for AI. System prompt size: 25686, User content size: 3655
+2025-10-05 00:26:14,062 - DEBUG - logging_utils - log_debug - Received translated chunk 1. Raw AI response:
+{
+  "translated_strings": [
+    {
+      "id": 10,
+      "translation": "Перенестися до [Red]Лісового Убежища[/C][White]?[/C]"
+    },
+    {
+      "id": 11,
+      "translation": "Перенестися на [Red]Острів Виходу[/C][White]?[/C]"
+    },
+    {
+      "id": 12,
+      "translation": "[ChM1]Ви отримали [Green]Зелену Рупію[/C][White]![ChM2]\n[02_184]Вона варта [/C][Purple]1 Рупії[/C][White]!\nКраще збирати їх побільше![/C]"
+    },
+    {
+      "id": 13,
+      "translation": "[ChM1]Ви отримали [Blue]Синю Рупію[/C][White]![ChM2]\n[02_184]Вона варта [/C][Purple]5 Рупій[/C][White].\nНепогано, еге ж?[/C]"
+    },
+    {
+      "id": 14,
+      "translation": "[ChM1]Ви отримали [Yellow]Жовту Рупію[/C][White]![ChM2]\n[02_184]Вона варта [/C][Purple]10 Рупій[/C][White].\nЗовсім непогано![/C]"
+    },
+    {
+      "id": 15,
+      "translation": "[ChM1]Ви отримали [Red]Червону Рупію[/C][White]![ChM2]\n[02_184]Це [/C][Purple]20 Рупій[/C][White].\nЯкий приємний сюрприз![/C]"
+    },
+    {
+      "id": 16,
+      "translation": "[ChM1]Ви отримали [Purple]Пурпурну Рупію[/C][White]![ChM2]\n[02_184]Вона варта [/C][Purple]50 Рупій[/C][White].\nЦе просто чудово![/C]"
+    },
+    {
+      "id": 17,
+      "translation": "[ChM1]Ви отримали [Orange]Помаранчеву Рупію[/C][White]![ChM2]\n[02_184]Лише одна така варта\n[/C][Purple]100 Рупій[/C][White]! Ви аж сяєте від щастя![/C]"
+    },
+    {
+      "id": 18,
+      "translation": "[ChM1]Ви отримали [Red]Частину Серця[/C][White]![ChM2]\n[02_184]Зберіть чотири такі, щоб скласти\nновий Контейнер для Серця. Більше\nКонтейнерів для Серця — більше життя![/C]"
+    },
+    {
+      "id": 19,
+      "translation": "[ChM1]Ви отримали [Red]Контейнер для Серця[/C][White]![ChM2]\n[02_184]Ваш рівень здоров'я збільшився на\n[/C][Red]одиницю[/C][White]! Крім того, ваше здоров'я\nповністю відновлено![/C]"
+    }
+  ]
+}
+2025-10-05 00:26:39,498 - DEBUG - logging_utils - log_debug - AIWorker: Cancellation requested.
+2025-10-05 00:26:41,780 - DEBUG - logging_utils - log_debug - AIWorker: Cancellation requested.
+2025-10-05 00:26:51,455 - DEBUG - logging_utils - log_debug - --> MainWindowEventHandler: closeEvent received.
+2025-10-05 00:26:51,455 - DEBUG - logging_utils - log_debug - MainWindowHelper: prepare_to_close called.
+2025-10-05 00:26:51,455 - DEBUG - logging_utils - log_debug -   [SAVE STATE] Block Idx: 0, String Idx: 181
+2025-10-05 00:26:51,455 - DEBUG - logging_utils - log_debug -   [SAVE STATE] Cursor Pos: 16, Scroll V/H: 0/0
+2025-10-05 00:26:51,455 - DEBUG - logging_utils - log_debug - MainWindowHelper: Updated search_history_to_save: 0 items
+2025-10-05 00:26:51,455 - DEBUG - logging_utils - log_debug - --> AppActionHandler: handle_close_event called.
+2025-10-05 00:26:52,452 - DEBUG - logging_utils - log_debug - <-- AppActionHandler: handle_close_event finished.
+2025-10-05 00:26:52,452 - DEBUG - logging_utils - log_debug - Close accepted. Settings save skipped due to unsaved changes (handled by dialog) or restart in progress.
+2025-10-05 00:26:52,452 - DEBUG - logging_utils - log_debug - <-- MainWindowEventHandler: closeEvent finished.
+2025-10-05 00:26:52,464 - DEBUG - logging_utils - log_debug - Qt event loop finished with exit code: 0
+2025-10-05 00:26:52,464 - DEBUG - logging_utils - log_debug - ================= Application End =================
