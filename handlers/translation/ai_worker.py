@@ -137,7 +137,7 @@ class AIWorker(QObject):
 
                         composer_args_for_chunk = self.task_details['composer_args'].copy()
                         composer_args_for_chunk['source_items'] = chunk
-                        system, user, p_map_for_chunk = self.prompt_composer.compose_batch_request(**composer_args_for_chunk)
+                        system, user, _ = self.prompt_composer.compose_batch_request(**composer_args_for_chunk)
 
                         custom_header = self.task_details.get('custom_user_header')
                         if custom_header:
@@ -183,7 +183,6 @@ class AIWorker(QObject):
                                         conversation_id=getattr(response, 'conversation_id', None),
                                     )
                                 task_details_for_chunk = self.task_details.copy()
-                                task_details_for_chunk['placeholder_map'] = p_map_for_chunk
                                 if session_state:
                                     task_details_for_chunk['session_state'] = session_state
                                     task_details_for_chunk['session_user_message'] = user
@@ -217,9 +216,7 @@ class AIWorker(QObject):
             if precomposed and not session_info:
                 messages = precomposed
             elif task_type == 'translate_preview':
-                system, user, p_map = self.prompt_composer.compose_batch_request(**self.task_details['composer_args'])
-                if 'placeholder_map' not in self.task_details:
-                    self.task_details['placeholder_map'] = p_map
+                system, user, _ = self.prompt_composer.compose_batch_request(**self.task_details['composer_args'])
                 if session_info and session_info.get('state'):
                     user_message = {'role': 'user', 'content': user}
                     session_info['user_message'] = user_message
@@ -229,9 +226,7 @@ class AIWorker(QObject):
                     messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
 
             elif task_type in ['translate_single', 'generate_variation', 'glossary_notes_variation']:
-                system, user, p_map = self.prompt_composer.compose_variation_request(**self.task_details['composer_args'])
-                if 'placeholder_map' not in self.task_details:
-                    self.task_details['placeholder_map'] = p_map
+                system, user = self.prompt_composer.compose_variation_request(**self.task_details['composer_args'])
                 if session_info and session_info.get('state'):
                     user_message = {'role': 'user', 'content': user}
                     session_info['user_message'] = user_message
@@ -250,9 +245,7 @@ class AIWorker(QObject):
                 else:
                     messages = [{"role": "system", "content": system}, {"role": "user", "content": user}]
             elif task_type == 'glossary_occurrence_update':
-                system, user, p_map = self.prompt_composer.compose_glossary_occurrence_update_request(**self.task_details['composer_args'])
-                if 'placeholder_map' not in self.task_details:
-                    self.task_details['placeholder_map'] = p_map
+                system, user = self.prompt_composer.compose_glossary_occurrence_update_request(**self.task_details['composer_args'])
                 if session_info and session_info.get('state'):
                     user_message = {'role': 'user', 'content': user}
                     session_info['user_message'] = user_message
@@ -297,4 +290,3 @@ class AIWorker(QObject):
         finally:
             log_debug("AIWorker: Task finished, emitting 'finished' signal.")
             self.finished.emit()
-
