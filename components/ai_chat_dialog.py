@@ -100,21 +100,67 @@ class AIChatDialog(QDialog):
 
     def _set_theme_styles(self):
         is_dark = self.palette().window().color().lightness() < 128
-        user_bg = "#2E2E2E" if is_dark else "#F0F0F0"
-        ai_bg = "#383838" if is_dark else "#F9F9F9"
+        user_bg = "#3A3A3A" if is_dark else "#E8F0FE"
+        ai_bg = "#2E2E2E" if is_dark else "#F7F7F7"
+        code_bg = "#4A4A4A" if is_dark else "#E0E0E0"
+        code_border = "#5A5A5A" if is_dark else "#CCCCCC"
         
+        user_prefix_color = "#8AB4F8" if is_dark else "#1A73E8"
+        ai_prefix_color = "#92C594" if is_dark else "#1E8E3E"
+
         style = f"""
-            .user-message {{
-                background-color: {user_bg};
-                border-radius: 5px;
-                padding: 8px;
+            .message-table {{
+                border-spacing: 0;
                 margin-bottom: 8px;
+                width: 100%;
+                border-radius: 5px;
+                overflow: hidden;
             }}
-            .ai-message {{
-                background-color: {ai_bg};
-                border-radius: 5px;
+            .user-message-row td {{
+                background-color: {user_bg};
                 padding: 8px;
+            }}
+            .ai-message-row td {{
+                background-color: {ai_bg};
+                padding: 8px;
+            }}
+            .prefix-cell {{
+                width: 1px;
+                vertical-align: top;
+                padding-right: 8px !important;
+            }}
+            .content-cell {{
+                width: 100%;
+                vertical-align: top;
+            }}
+            .chat-prefix-user, .chat-prefix-ai {{
+                font-weight: bold;
+                white-space: nowrap;
+            }}
+            .chat-prefix-user {{
+                color: {user_prefix_color};
+            }}
+            .chat-prefix-ai {{
+                color: {ai_prefix_color};
+            }}
+            code {{
+                background-color: {code_bg};
+                border: 1px solid {code_border};
+                border-radius: 3px;
+                padding: 1px 3px;
+                font-family: Consolas, monospace;
+            }}
+            p {{
+                margin-top: 0;
                 margin-bottom: 8px;
+                padding: 0;
+            }}
+            p:last-child {{
+                margin-bottom: 0;
+            }}
+            ul, ol {{
+                margin-top: 5px;
+                margin-bottom: 5px;
             }}
         """
         for i in range(self.tabs.count()):
@@ -167,29 +213,13 @@ class AIChatDialog(QDialog):
                 tab.history_view.append(html_text)
     
     def start_ai_message(self, tab_index: int):
-        if 0 <= tab_index < self.tabs.count():
-            tab = self.tabs.widget(tab_index)
-            if isinstance(tab, _ChatTab):
-                tab.history_view.append("<div class='ai-message'><b>AI:</b><br>")
+        pass
 
     def append_stream_chunk(self, tab_index: int, chunk: str):
-        if 0 <= tab_index < self.tabs.count():
-            tab = self.tabs.widget(tab_index)
-            if isinstance(tab, _ChatTab):
-                cursor = tab.history_view.textCursor()
-                cursor.movePosition(QTextCursor.End)
-                cursor.insertText(chunk.replace('\n', '<br>'))
-                tab.history_view.ensureCursorVisible()
+        pass
 
     def finalize_ai_message(self, tab_index: int):
-        if 0 <= tab_index < self.tabs.count():
-            tab = self.tabs.widget(tab_index)
-            if isinstance(tab, _ChatTab):
-                cursor = tab.history_view.textCursor()
-                cursor.movePosition(QTextCursor.End)
-                cursor.insertHtml("</div>")
-                tab.history_view.ensureCursorVisible()
-
+        pass
 
     def set_thinking_state(self, tab_index: int, is_thinking: bool):
         if 0 <= tab_index < self.tabs.count():
@@ -197,3 +227,17 @@ class AIChatDialog(QDialog):
             if isinstance(tab, _ChatTab):
                 tab.input_edit.setReadOnly(is_thinking)
                 tab.send_button.setEnabled(not is_thinking)
+                if is_thinking:
+                    tab.history_view.append("<div class='ai-message'><i>AI is thinking...</i></div>")
+                    cursor = tab.history_view.textCursor()
+                    cursor.movePosition(QTextCursor.End)
+                    tab.history_view.setTextCursor(cursor)
+                else:
+                    cursor = tab.history_view.textCursor()
+                    cursor.movePosition(QTextCursor.End)
+                    cursor.select(QTextCursor.BlockUnderCursor)
+                    html = cursor.selection().toHtml()
+                    if "<i>AI is thinking...</i>" in html:
+                        cursor.removeSelectedText()
+                        cursor.deletePreviousChar()
+                    cursor.movePosition(QTextCursor.End)
