@@ -46,6 +46,9 @@ class TranslationHandler(BaseHandler):
         self.ui_handler = TranslationUIHandler(self)
 
         self._glossary_manager = self.glossary_handler.glossary_manager
+        
+        self.start_new_session = True
+        log_debug(f"TranslationHandler.__init__: start_new_session initialized to {self.start_new_session}")
 
         QTimer.singleShot(0, self.glossary_handler.install_menu_actions)
     
@@ -342,6 +345,8 @@ class TranslationHandler(BaseHandler):
         self._session_manager.reset()
         self._cached_system_prompt = None
         self._cached_glossary = None
+        self.start_new_session = True
+        log_debug(f"TranslationHandler.reset_translation_session: Manual reset. start_new_session set to {self.start_new_session}")
         if self.mw.statusBar:
             self.mw.statusBar.showMessage("AI session reset.", 4000)
 
@@ -394,6 +399,7 @@ class TranslationHandler(BaseHandler):
         return True
 
     def _prepare_session_for_request(self, *, base_system_prompt: str, full_system_prompt: str, user_prompt: str, task_type: str) -> Optional[dict]:
+        log_debug(f"Preparing session, start_new_session is {self.start_new_session}")
         if not self._should_use_session(task_type):
             return None
         state = self._session_manager.ensure_session(
@@ -401,9 +407,14 @@ class TranslationHandler(BaseHandler):
             base_system_prompt=base_system_prompt,
             full_system_prompt=full_system_prompt,
             supports_sessions=self._provider_supports_sessions,
+            start_new_session=self.start_new_session,
         )
         if not state:
             return None
+        
+        self.start_new_session = False
+        log_debug(f"Session established. start_new_session set to {self.start_new_session}")
+        
         return {
             'state': state,
             'user_message': {'role': 'user', 'content': user_prompt},
@@ -607,6 +618,9 @@ class TranslationHandler(BaseHandler):
         if target_block_idx is None or target_block_idx == -1:
             QMessageBox.information(self.mw, "AI Translation", "Select a block to translate.")
             return
+        
+        self.start_new_session = True
+        log_debug(f"TranslationHandler.translate_current_block: Block translation initiated. start_new_session set to {self.start_new_session}")
 
         data_source = getattr(self.mw, 'data', None)
         if not isinstance(data_source, list) or not (0 <= target_block_idx < len(data_source)):

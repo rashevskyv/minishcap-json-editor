@@ -1,5 +1,4 @@
 # --- START OF FILE core/translation/session_manager.py ---
-
 """Session manager for chat-based translation providers."""
 from __future__ import annotations
 
@@ -77,18 +76,16 @@ class TranslationSessionManager:
         base_system_prompt: str,
         full_system_prompt: str,
         supports_sessions: bool,
+        start_new_session: bool = False,
     ) -> Optional[TranslationSessionState]:
         if not supports_sessions:
             self._state = None
             return None
 
         normalized_base = base_system_prompt.strip()
-        if self._state:
-            if (
-                self._state.provider_key != provider_key
-                or self._state.base_system_prompt != normalized_base
-            ):
-                self._state = None
+        
+        if start_new_session or not self._state or self._state.provider_key != provider_key:
+            self._state = None
 
         if not self._state:
             self._state = TranslationSessionState(
