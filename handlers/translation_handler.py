@@ -157,7 +157,8 @@ class TranslationHandler(BaseHandler):
         }
         if not self._attach_session_to_task(
             task_details,
-            system_prompt=edited_system,
+            base_system_prompt=system_prompt,
+            full_system_prompt=edited_system,
             user_prompt=edited_user,
             task_type='glossary_occurrence_batch_update',
         ):
@@ -255,7 +256,8 @@ class TranslationHandler(BaseHandler):
         }
         if not self._attach_session_to_task(
             task_details,
-            system_prompt=edited_system,
+            base_system_prompt=system_prompt,
+            full_system_prompt=edited_system,
             user_prompt=edited_user,
             task_type='glossary_occurrence_batch_update',
         ):
@@ -325,7 +327,8 @@ class TranslationHandler(BaseHandler):
         }
         if not self._attach_session_to_task(
             task_details,
-            system_prompt=edited_system,
+            base_system_prompt=system_prompt,
+            full_system_prompt=edited_system,
             user_prompt=edited_user,
             task_type='glossary_notes_variation',
         ):
@@ -390,12 +393,13 @@ class TranslationHandler(BaseHandler):
             return False
         return True
 
-    def _prepare_session_for_request(self, *, system_prompt: str, user_prompt: str, task_type: str) -> Optional[dict]:
+    def _prepare_session_for_request(self, *, base_system_prompt: str, full_system_prompt: str, user_prompt: str, task_type: str) -> Optional[dict]:
         if not self._should_use_session(task_type):
             return None
         state = self._session_manager.ensure_session(
             provider_key=self._active_provider_key or '',
-            system_content=system_prompt,
+            base_system_prompt=base_system_prompt,
+            full_system_prompt=full_system_prompt,
             supports_sessions=self._provider_supports_sessions,
         )
         if not state:
@@ -405,9 +409,10 @@ class TranslationHandler(BaseHandler):
             'user_message': {'role': 'user', 'content': user_prompt},
         }
 
-    def _attach_session_to_task(self, task_details: dict, *, system_prompt: str, user_prompt: str, task_type: str) -> bool:
+    def _attach_session_to_task(self, task_details: dict, *, base_system_prompt: str, full_system_prompt: str, user_prompt: str, task_type: str) -> bool:
         session_info = self._prepare_session_for_request(
-            system_prompt=system_prompt,
+            base_system_prompt=base_system_prompt,
+            full_system_prompt=full_system_prompt,
             user_prompt=user_prompt,
             task_type=task_type,
         )
@@ -775,7 +780,8 @@ class TranslationHandler(BaseHandler):
 
         if not self._attach_session_to_task(
             context,
-            system_prompt=final_system_prompt,
+            base_system_prompt=system_prompt,
+            full_system_prompt=final_system_prompt,
             user_prompt=final_user_prompt,
             task_type=task_type,
         ):
@@ -936,7 +942,7 @@ class TranslationHandler(BaseHandler):
             trimmed = self._trim_trailing_whitespace_from_lines(translation_value)
             expected = expected_lines.get(occ_id)
             if isinstance(expected, int) and expected > 0:
-                actual = trimmed.count('\\n') + 1
+                actual = trimmed.count('\n') + 1
                 if actual != expected:
                     self.glossary_handler._handle_occurrence_ai_error(
                         f"AI response for occurrence {occ_id} returned {actual} lines (expected {expected}).",
@@ -1132,7 +1138,8 @@ class TranslationHandler(BaseHandler):
         }
         if not self._attach_session_to_task(
             task_details,
-            system_prompt=edited_system,
+            base_system_prompt=system_prompt,
+            full_system_prompt=edited_system,
             user_prompt=edited_user,
             task_type='generate_variation',
         ):
@@ -1179,7 +1186,8 @@ class TranslationHandler(BaseHandler):
         }
         if not self._attach_session_to_task(
             task_details,
-            system_prompt=edited_system,
+            base_system_prompt=system_prompt,
+            full_system_prompt=edited_system,
             user_prompt=edited_user,
             task_type='translate_single',
         ):

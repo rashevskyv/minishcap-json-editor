@@ -390,7 +390,7 @@ if __name__ == '__main__':
     except FileNotFoundError:
         log_debug("settings.json not found, using default theme.")
     except Exception as e:
-        log_debug(f"Error reading settings.json for theme: {e}")
+        log_debug(f"Error reading settings.json for theme: {e}") 
         
     theme_to_apply = temp_settings.get("theme", "auto")
     MainWindowUIHandler.apply_theme(app, theme_to_apply)

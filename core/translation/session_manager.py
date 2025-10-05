@@ -15,7 +15,8 @@ class TranslationSessionState:
     """Active provider session state."""
 
     provider_key: str
-    system_content: str
+    base_system_prompt: str
+    current_system_prompt: str
     conversation_id: Optional[str] = None
     bootstrapped: bool = False
     glossary_sent: bool = False
@@ -33,7 +34,7 @@ class TranslationSessionState:
         message_copy = {"role": user_message["role"], "content": user_message["content"]}
         if not self.bootstrapped:
             return [
-                {"role": "system", "content": self.system_content},
+                {"role": "system", "content": self.current_system_prompt},
                 message_copy,
             ], None
         if self.conversation_id:
@@ -73,26 +74,32 @@ class TranslationSessionManager:
         self,
         *,
         provider_key: str,
-        system_content: str,
+        base_system_prompt: str,
+        full_system_prompt: str,
         supports_sessions: bool,
     ) -> Optional[TranslationSessionState]:
         if not supports_sessions:
             self._state = None
             return None
 
-        normalized = system_content.strip()
+        normalized_base = base_system_prompt.strip()
         if self._state:
             if (
                 self._state.provider_key != provider_key
-                or self._state.system_content != normalized
+                or self._state.base_system_prompt != normalized_base
             ):
                 self._state = None
 
         if not self._state:
             self._state = TranslationSessionState(
                 provider_key=provider_key,
-                system_content=normalized,
+                base_system_prompt=normalized_base,
+                current_system_prompt=full_system_prompt.strip(),
             )
+        else:
+            # Update the current prompt for the existing session
+            self._state.current_system_prompt = full_system_prompt.strip()
+            
         return self._state
 
     def get_state(self) -> Optional[TranslationSessionState]:
