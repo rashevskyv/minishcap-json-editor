@@ -31,6 +31,7 @@ from handlers.string_settings_handler import StringSettingsHandler
 
 from handlers.translation_handler import TranslationHandler
 from handlers.text_analysis_handler import TextAnalysisHandler
+from handlers.ai_chat_handler import AIChatHandler
 
 from core.settings_manager import SettingsManager
 from core.data_state_processor import DataStateProcessor
@@ -180,13 +181,14 @@ class MainWindow(QMainWindow):
         self.main_splitter = None; self.right_splitter = None; self.bottom_right_splitter = None
         self.open_action = None; self.open_changes_action = None; self.save_action = None;
         self.save_as_action = None; self.reload_action = None; self.revert_action = None;
-        self.reload_tag_mappings_action = None; self.open_settings_action = None
+        self.reload_tag_mappings_action = None; self.open_settings_action = None;
         self.exit_action = None; self.paste_block_action = None;
         self.undo_typing_action = None; self.redo_typing_action = None;
         self.undo_paste_action = None
         self.rescan_all_tags_action = None
         self.find_action = None
         self.auto_fix_action = None
+        self.open_ai_chat_action = None
         self.main_vertical_layout = None
         self.auto_fix_button = None 
         self.ai_translate_button = None
@@ -233,6 +235,7 @@ class MainWindow(QMainWindow):
         self.string_settings_handler = StringSettingsHandler(self, self.data_processor, self.ui_updater)
         self.translation_handler = TranslationHandler(self, self.data_processor, self.ui_updater)
         self.text_analysis_handler = TextAnalysisHandler(self, self.data_processor, self.ui_updater)
+        self.ai_chat_handler = AIChatHandler(self, self.data_processor, self.ui_updater)
 
 
         log_debug("MainWindow: Setting up UI...")
@@ -390,7 +393,7 @@ if __name__ == '__main__':
     except FileNotFoundError:
         log_debug("settings.json not found, using default theme.")
     except Exception as e:
-        log_debug(f"Error reading settings.json for theme: {e}") 
+        log_debug(f"Error reading settings.json for theme: {e}")
         
     theme_to_apply = temp_settings.get("theme", "auto")
     MainWindowUIHandler.apply_theme(app, theme_to_apply)

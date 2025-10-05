@@ -1,5 +1,4 @@
 # --- START OF FILE core/translation/providers.py ---
-
 import json
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Sequence
@@ -29,6 +28,12 @@ class BaseTranslationProvider:
 
     def translate(self, messages: List[Dict[str, str]], session: Optional[dict] = None, settings_override: Optional[Dict[str, Any]] = None) -> ProviderResponse:
         raise NotImplementedError
+
+    def translate_stream(self, messages: List[Dict[str, str]], session: Optional[dict] = None, settings_override: Optional[Dict[str, Any]] = None):
+        # Fallback to non-streaming if not implemented
+        response = self.translate(messages, session, settings_override)
+        if response.text:
+            yield response.text
 
 class OpenAIChatProvider(BaseTranslationProvider):
     supports_sessions = True
@@ -99,6 +104,43 @@ class OpenAIChatProvider(BaseTranslationProvider):
             raise TranslationProviderError(f"Request timed out after {timeout} seconds.")
         except requests.RequestException as e:
             raise TranslationProviderError(f"API request failed: {e}")
+    
+    def translate_stream(self, messages: List[Dict[str, str]], session: Optional[dict] = None, settings_override: Optional[Dict[str, Any]] = None):
+        endpoint = f"{self.base_url}/chat/completions"
+        headers = {"Authorization": f"Bearer {self.api_key}", "Content-Type": "application/json"}
+        current_settings = self.settings.copy()
+        if settings_override:
+            current_settings.update(settings_override)
+
+        body = self._prepare_body(messages, current_settings)
+        body['stream'] = True
+
+        timeout = 60
+        if isinstance(current_settings.get('timeout'), int) and current_settings['timeout'] > 0:
+            timeout = current_settings['timeout']
+        
+        try:
+            with requests.post(endpoint, headers=headers, json=body, stream=True, timeout=timeout) as response:
+                response.raise_for_status()
+                for line in response.iter_lines():
+                    if line:
+                        line_str = line.decode('utf-8')
+                        if line_str.startswith('data: '):
+                            json_str = line_str[6:]
+                            if json_str.strip() == '[DONE]':
+                                break
+                            try:
+                                data = json.loads(json_str)
+                                if 'choices' in data and data['choices']:
+                                    delta = data['choices'][0].get('delta', {})
+                                    content = delta.get('content')
+                                    if content:
+                                        yield content
+                            except json.JSONDecodeError:
+                                log_debug(f"Stream decode error for line: {json_str}")
+                                continue
+        except requests.RequestException as e:
+            raise TranslationProviderError(f"API stream request failed: {e}")
 
 class OpenAIResponsesProvider(BaseTranslationProvider):
     supports_sessions = True
@@ -169,6 +211,12 @@ class OllamaChatProvider(BaseTranslationProvider):
             raise TranslationProviderError("Ollama model is not set.")
 
     def translate(self, messages: List[Dict[str, str]], session: Optional[dict] = None, settings_override: Optional[Dict[str, Any]] = None) -> ProviderResponse:
+        full_text = ""
+        for chunk in self.translate_stream(messages, session, settings_override):
+            full_text += chunk
+        return ProviderResponse(text=full_text)
+
+    def translate_stream(self, messages: List[Dict[str, str]], session: Optional[dict] = None, settings_override: Optional[Dict[str, Any]] = None):
         endpoint = f"{self.base_url}/api/chat"
         headers = {"Content-Type": "application/json"}
 
@@ -183,7 +231,7 @@ class OllamaChatProvider(BaseTranslationProvider):
         system_prompt = next((m['content'] for m in messages if m['role'] == 'system'), None)
         user_prompts = [m for m in messages if m['role'] != 'system']
 
-        body: Dict[str, Any] = {"model": self.model, "messages": user_prompts, "stream": False}
+        body: Dict[str, Any] = {"model": self.model, "messages": user_prompts, "stream": True}
         if system_prompt:
             body['system'] = system_prompt
         
@@ -201,15 +249,20 @@ class OllamaChatProvider(BaseTranslationProvider):
             timeout = current_settings['timeout']
 
         try:
-            response = requests.post(endpoint, headers=headers, json=body, timeout=timeout)
-            response.raise_for_status()
-            data = response.json()
-            text = data['message']['content'] if data.get('message') else None
-            return ProviderResponse(text=text, raw_payload=data)
-        except Timeout:
-            raise TranslationProviderError(f"Request timed out after {timeout} seconds.")
+            with requests.post(endpoint, headers=headers, json=body, stream=True, timeout=timeout) as response:
+                response.raise_for_status()
+                for line in response.iter_lines():
+                    if line:
+                        try:
+                            data = json.loads(line.decode('utf-8'))
+                            content = data.get('message', {}).get('content')
+                            if content:
+                                yield content
+                        except json.JSONDecodeError:
+                            log_debug(f"Ollama stream decode error for line: {line}")
+                            continue
         except requests.RequestException as e:
-            raise TranslationProviderError(f"API request failed: {e}")
+            raise TranslationProviderError(f"API stream request failed: {e}")
 
 class ChatMockProvider(OpenAIChatProvider):
     """Provider for the ChatMock development server."""
@@ -277,6 +330,35 @@ class GeminiProvider(BaseTranslationProvider):
                 error_details = e.response.text if e.response else "No response body"
             raise TranslationProviderError(f"API request failed: {e}\nDetails: {error_details}")
 
+    def translate_stream(self, messages: List[Dict[str, str]], session: Optional[dict] = None, settings_override: Optional[Dict[str, Any]] = None):
+        current_settings = self.settings.copy()
+        if settings_override:
+            current_settings.update(settings_override)
+
+        timeout = 120
+        if isinstance(current_settings.get('timeout'), int) and current_settings['timeout'] > 0:
+            timeout = current_settings['timeout']
+
+        extra_headers = current_settings.get('extra_headers')
+        headers = {"Content-Type": "application/json"}
+        if isinstance(extra_headers, dict):
+            headers.update(extra_headers)
+
+        try:
+            if self._use_openai_compat:
+                # Assuming the compatible endpoint also supports OpenAI's stream format
+                compat_provider = OpenAIChatProvider(self.settings)
+                yield from compat_provider.translate_stream(messages, session, settings_override)
+            else:
+                yield from self._translate_via_native_stream(messages, headers, current_settings, timeout)
+        except requests.RequestException as e:
+            error_details = ""
+            try:
+                error_details = e.response.json()
+            except Exception:
+                error_details = e.response.text if e.response else "No response body"
+            raise TranslationProviderError(f"API request failed: {e}\nDetails: {error_details}")
+
     def _translate_via_openai_compat(self, messages: List[Dict[str, str]], headers: Dict[str, str], current_settings: Dict[str, Any], timeout: int) -> ProviderResponse:
         request_headers = dict(headers)
         auth_token = self.api_key or "dummy"
@@ -317,7 +399,7 @@ class GeminiProvider(BaseTranslationProvider):
                 or (data.get('meta') or {}).get('conversation_id')
             )
         return ProviderResponse(text=text, raw_payload=data, message_id=message_id, conversation_id=conversation_id)
-
+        
     def _translate_via_native_api(self, messages: List[Dict[str, str]], headers: Dict[str, str], current_settings: Dict[str, Any], timeout: int) -> ProviderResponse:
         endpoint = f"{self.base_url}/{self.model}:generateContent?key={self.api_key}"
         system_prompt = next((m['content'] for m in messages if m['role'] == 'system'), "")
@@ -345,6 +427,37 @@ class GeminiProvider(BaseTranslationProvider):
                 text = parts[0].get('text')
 
         return ProviderResponse(text=text, raw_payload=data)
+
+    def _translate_via_native_stream(self, messages: List[Dict[str, str]], headers: Dict[str, str], current_settings: Dict[str, Any], timeout: int):
+        endpoint = f"{self.base_url}/{self.model}:streamGenerateContent?key={self.api_key}"
+        system_prompt = next((m['content'] for m in messages if m['role'] == 'system'), "")
+        user_prompt = next((m['content'] for m in messages if m['role'] == 'user'), "")
+
+        full_prompt = f"{system_prompt}\n\n{user_prompt}".strip()
+        contents = [{"role": "user", "parts": [{"text": full_prompt}]}]
+        body: Dict[str, Any] = {"contents": contents}
+
+        generation_config: Dict[str, Any] = {}
+        if isinstance(current_settings.get('temperature'), (float, int)):
+            generation_config['temperature'] = current_settings['temperature']
+        if generation_config:
+            body['generationConfig'] = generation_config
+
+        with requests.post(endpoint, headers=headers, json=body, stream=True, timeout=timeout) as response:
+            response.raise_for_status()
+            for line in response.iter_lines():
+                if line:
+                    line_str = line.decode('utf-8').strip()
+                    if line_str.startswith('"text":'):
+                        # This is a simplified parser for Gemini's stream format
+                        # It might need to be more robust for production
+                        try:
+                            # Extract the content between the quotes
+                            content = line_str.split(':', 1)[1].strip()
+                            if content.startswith('"') and content.endswith('"'):
+                                yield json.loads(content)
+                        except (json.JSONDecodeError, IndexError):
+                            continue
 
 def create_translation_provider(provider_key: str, settings: Dict[str, Any]) -> BaseTranslationProvider:
     """Factory function to create a translation provider instance."""

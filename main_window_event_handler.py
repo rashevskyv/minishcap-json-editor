@@ -46,6 +46,8 @@ class MainWindowEventHandler:
             self.mw.reload_tag_mappings_action.triggered.connect(self.mw.actions.trigger_reload_tag_mappings)
         if hasattr(self.mw, 'find_action'):
             self.mw.find_action.triggered.connect(self.mw.helper.toggle_search_panel)
+        if hasattr(self.mw, 'open_ai_chat_action'):
+            self.mw.open_ai_chat_action.triggered.connect(self.mw.ai_chat_handler.show_chat_window)
         if hasattr(self.mw, 'search_panel_widget'):
             self.mw.search_panel_widget.close_requested.connect(self.mw.helper.hide_search_panel)
             self.mw.search_panel_widget.find_next_requested.connect(self.mw.helper.handle_panel_find_next)

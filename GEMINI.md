@@ -44,3 +44,34 @@ The flag is automatically flipped to `False` after the first successful request 
 2.  **First Translation:** `_prepare_session_for_request` sees `True`, calls `ensure_session` with the `True` flag. A new session is created. `start_new_session` becomes `False`.
 3.  **Glossary Change & "AI All":** `_attach_session_to_task` is called. `start_new_session` is now `False`. `_prepare_session_for_request` calls `ensure_session` with `False`. The manager sees no need to reset and simply updates the current system prompt for the existing session.
 4.  **Manual Reset:** `reset_translation_session` is called. `start_new_session` becomes `True`. The next request will again start a new session.
+
+# AI Chat Window
+
+The application includes a non-modal AI Chat window for direct interaction with language models, designed to assist with translation, context clarification, and linguistic questions.
+
+## Features
+
+-   **Multi-Session Support**: The chat window uses a tabbed interface (`QTabWidget`). Each tab represents a separate, independent conversation session with its own history.
+-   **Model Selection**: Within each tab, a dropdown menu allows the user to select any AI provider and model configured in the AI Translation settings.
+-   **Context Seeding**: A chat can be initiated with pre-filled context:
+    -   **From Toolbar**: Clicking the "AI Chat" icon on the main toolbar opens the chat window with a new, empty tab.
+    -   **From Context Menu**: Right-clicking in any text editor (`preview`, `original`, `edited`) and selecting "Discuss with AI..." will open a new chat tab containing the selected text or the current string's content.
+-   **Interaction**: Messages are sent by pressing `Ctrl+Enter`.
+
+## Implementation Details
+
+### Key Files
+
+1.  **`components/ai_chat_dialog.py`**: Defines the `AIChatDialog` class, which builds the UI for the chat window, including the tab widget, input/output fields, and model selector.
+2.  **`handlers/ai_chat_handler.py`**: Contains the `AIChatHandler` class, which manages the chat dialog's lifecycle, state, and communication with the AI.
+3.  **`main.py` & `ui_setup.py`**: Integration points for creating the handler instance and adding the toolbar action.
+4.  **`components/LNET_mouse_handlers.py`**: The `populateContextMenu` method is extended to include the "Discuss with AI..." action.
+
+### Session Management
+
+-   The `AIChatHandler` maintains a dictionary of `TranslationSessionManager` instances, with each key corresponding to a tab index.
+-   When a new tab is created, a new `TranslationSessionManager` is instantiated for it.
+-   When a tab is closed, its corresponding session manager is destroyed, clearing its history.
+-   A simple, generic system prompt (e.g., "You are a helpful linguistic assistant") is used for chat sessions, separate from the more complex translation prompts.
+
+This architecture ensures that chat conversations are isolated from each other and from the main translation tasks, providing a flexible and powerful tool for the user.

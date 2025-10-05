@@ -295,6 +295,10 @@ def setup_main_window_ui(main_window):
     # Slightly larger icon size for better readability
     main_window.main_toolbar.setIconSize(QSize(24, 24))
 
+    main_window.open_ai_chat_action = QAction(style.standardIcon(QStyle.SP_DialogHelpButton), 'Open AI Chat', main_window)
+    main_window.open_ai_chat_action.setToolTip("Open a chat window to discuss translations with AI (Ctrl+Shift+C)")
+    main_window.open_ai_chat_action.setShortcut('Ctrl+Shift+C')
+
     main_window.main_toolbar.addAction(main_window.open_action)
     main_window.main_toolbar.addAction(main_window.save_action)
     main_window.main_toolbar.addSeparator()
@@ -302,6 +306,8 @@ def setup_main_window_ui(main_window):
     main_window.main_toolbar.addAction(main_window.redo_typing_action)
     main_window.main_toolbar.addSeparator()
     main_window.main_toolbar.addAction(main_window.find_action)
+    main_window.main_toolbar.addSeparator()
+    main_window.main_toolbar.addAction(main_window.open_ai_chat_action)
     main_window.main_toolbar.addSeparator()
     main_window.main_toolbar.addAction(main_window.open_settings_action)
 

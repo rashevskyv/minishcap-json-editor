@@ -16,6 +16,7 @@ class AIWorker(QObject):
     total_chunks_calculated = pyqtSignal(int, int)
     translation_cancelled = pyqtSignal()
     progress_updated = pyqtSignal(int)
+    chunk_received = pyqtSignal(dict, str)
 
     def __init__(self, provider: BaseTranslationProvider, prompt_composer: AIPromptComposer, task_details: Dict[str, Any]):
         super().__init__()
@@ -49,6 +50,24 @@ class AIWorker(QObject):
         try:
             task_type = self.task_details.get('type')
             messages: List[Dict[str, str]] = []
+
+            if task_type == 'chat_message_stream':
+                state = self.task_details.get('session_state')
+                user_message = {"role": "user", "content": self.task_details.get('session_user_message')}
+                messages, session_payload = state.prepare_request(user_message)
+
+                full_response_text = ""
+                for chunk in self.provider.translate_stream(messages, session=session_payload):
+                    if self.is_cancelled:
+                        self.translation_cancelled.emit()
+                        return
+                    self.chunk_received.emit(self.task_details, chunk)
+                    full_response_text += chunk
+                
+                # Emit success with the full response for history logging
+                final_response = ProviderResponse(text=full_response_text)
+                self.success.emit(final_response, self.task_details)
+                return
 
             if task_type == 'build_glossary':
                 system_prompt = self.task_details.get('system_prompt', '')

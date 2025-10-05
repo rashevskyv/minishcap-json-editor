@@ -1209,9 +1209,10 @@ class TranslationHandler(BaseHandler):
         self.ui_handler.start_ai_operation("AI Translation", model_name=self._active_model_name)
         self._run_ai_task(provider, task_details)
         
-    def _prepare_provider(self):
+    def _prepare_provider(self, provider_key_override: Optional[str] = None):
         config = getattr(self.mw, 'translation_config', None) or build_default_translation_config()
-        provider_key = config.get('provider', 'disabled')
+        provider_key = provider_key_override if provider_key_override is not None else config.get('provider', 'disabled')
+        
         if not provider_key or provider_key == 'disabled':
             QMessageBox.information(self.mw, "AI Translation", "The AI provider is disabled in the settings.")
             return None
@@ -1223,14 +1224,18 @@ class TranslationHandler(BaseHandler):
 
         try:
             provider = create_translation_provider(provider_key, provider_settings)
-            self._active_provider_key = provider_key
-            self._active_model_name = provider_settings.get('model') if isinstance(provider_settings, dict) else None
-            self._provider_supports_sessions = bool(getattr(provider, 'supports_sessions', False))
-            if not self._provider_supports_sessions:
-                self._session_manager.reset()
+            
+            if provider_key_override is None:
+                self._active_provider_key = provider_key
+                self._active_model_name = provider_settings.get('model') if isinstance(provider_settings, dict) else None
+                self._provider_supports_sessions = bool(getattr(provider, 'supports_sessions', False))
+                if not self._provider_supports_sessions:
+                    self._session_manager.reset()
+
             return provider
         except TranslationProviderError as exc:
-            self._provider_supports_sessions = False
+            if provider_key_override is None:
+                self._provider_supports_sessions = False
             QMessageBox.critical(self.mw, "AI Translation", str(exc))
             return None
 

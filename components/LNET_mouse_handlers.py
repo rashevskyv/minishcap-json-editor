@@ -92,6 +92,33 @@ class LNETMouseHandlers:
         else:
             log_debug(f"LNETMouseHandlers: Editor {self.editor.objectName()} has no populateContextMenu method.")
 
+        main_window = self.editor.window()
+        if isinstance(main_window, QMainWindow):
+            ai_chat_handler = getattr(main_window, 'ai_chat_handler', None)
+            if ai_chat_handler:
+                menu.addSeparator()
+                discuss_action = menu.addAction("Discuss with AI...")
+                
+                text_to_discuss = ""
+                cursor = self.editor.textCursor()
+                if cursor.hasSelection():
+                    text_to_discuss = cursor.selectedText().replace('\u2029', '\n')
+                else:
+                    if self.editor.objectName() == "preview_text_edit":
+                        clicked_cursor = self.editor.cursorForPosition(pos)
+                        line_num = clicked_cursor.blockNumber()
+                        if main_window.current_block_idx != -1:
+                            orig_text = main_window.data_processor._get_string_from_source(main_window.current_block_idx, line_num, main_window.data, "context_menu")
+                            edited_text, _ = main_window.data_processor.get_current_string_text(main_window.current_block_idx, line_num)
+                            text_to_discuss = f"Original:\n---\n{orig_text}\n---\n\nTranslated:\n---\n{edited_text}\n---"
+                    else: # original_text_edit or edited_text_edit
+                        text_to_discuss = self.editor.toPlainText().replace('\u2029', '\n')
+                
+                if text_to_discuss.strip():
+                    discuss_action.triggered.connect(lambda checked=False, text=text_to_discuss: ai_chat_handler.show_chat_window(text))
+                else:
+                    discuss_action.setEnabled(False)
+
         log_debug(f"LNETMouseHandlers: Executing menu for {self.editor.objectName()}.")
         menu.exec_(self.editor.mapToGlobal(pos))
 
