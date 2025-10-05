@@ -292,7 +292,7 @@ class AIPromptComposer(BaseTranslationHandler):
     ) -> str:
         """Prepare the system prompt with the full glossary or just updates."""
         system_prompt = (system_prompt or "").strip()
-        glossary_manager = self.mw.glossary_manager
+        glossary_manager = self.mw._glossary_manager
         if not glossary_manager:
             return system_prompt
 
