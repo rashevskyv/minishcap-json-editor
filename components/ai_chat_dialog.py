@@ -39,10 +39,10 @@ class _ChatTab(QWidget):
         input_layout = QHBoxLayout()
         self.input_edit = QPlainTextEdit(self)
         self.input_edit.setFixedHeight(100)
-        self.input_edit.setPlaceholderText("Введіть ваше повідомлення... (Ctrl+Enter для відправки)")
+        self.input_edit.setPlaceholderText("Enter your message... (Ctrl+Enter to send)")
         input_layout.addWidget(self.input_edit)
 
-        self.send_button = QPushButton("Надіслати", self)
+        self.send_button = QPushButton("Send", self)
         self.send_button.setFixedSize(80, 100)
         self.send_button.setStyleSheet("""
             QPushButton {
@@ -50,6 +50,7 @@ class _ChatTab(QWidget):
                 color: white;
                 border-radius: 5px;
                 font-weight: bold;
+                padding: 3px;
             }
             QPushButton:hover {
                 background-color: #005a9e;
@@ -89,12 +90,37 @@ class AIChatDialog(QDialog):
 
         self.tabs.tabBar().installEventFilter(self)
 
-        add_tab_button = QPushButton("+")
-        add_tab_button.setToolTip("Нова сесія чату")
-        self.tabs.setCornerWidget(add_tab_button, Qt.TopLeftCorner)
-
-        add_tab_button.clicked.connect(self.add_new_tab)
+        self.add_tab_button = QPushButton("+")
+        self.add_tab_button.setToolTip("New Chat Session")
+        self.tabs.setCornerWidget(self.add_tab_button, Qt.TopLeftCorner)
+        
         self.tabs.tabCloseRequested.connect(self.remove_tab)
+        
+        self._set_theme_styles()
+
+    def _set_theme_styles(self):
+        is_dark = self.palette().window().color().lightness() < 128
+        user_bg = "#2E2E2E" if is_dark else "#F0F0F0"
+        ai_bg = "#383838" if is_dark else "#F9F9F9"
+        
+        style = f"""
+            .user-message {{
+                background-color: {user_bg};
+                border-radius: 5px;
+                padding: 8px;
+                margin-bottom: 8px;
+            }}
+            .ai-message {{
+                background-color: {ai_bg};
+                border-radius: 5px;
+                padding: 8px;
+                margin-bottom: 8px;
+            }}
+        """
+        for i in range(self.tabs.count()):
+            tab = self.tabs.widget(i)
+            if isinstance(tab, _ChatTab):
+                tab.history_view.document().setDefaultStyleSheet(style)
 
     def eventFilter(self, obj, event):
         if obj == self.tabs.tabBar() and event.type() == QEvent.MouseButtonPress and event.button() == Qt.MiddleButton:
@@ -104,16 +130,14 @@ class AIChatDialog(QDialog):
                 return True
         return super().eventFilter(obj, event)
 
-    def add_new_tab(self, initial_text: str = ""):
+    def add_new_tab(self):
         tab_index = self.tabs.count()
         new_tab = _ChatTab(self)
         self.tabs.addTab(new_tab, f"Chat {tab_index + 1}")
         
-        if initial_text:
-            new_tab.input_edit.setPlainText(initial_text)
-            self.append_to_history(tab_index, f"<b>User (context):</b><pre>{initial_text}</pre>")
-
-        new_tab.message_sent.connect(lambda: self._emit_message_sent(tab_index))
+        self._set_theme_styles()
+        
+        new_tab.message_sent.connect(lambda: self._emit_message_sent(self.tabs.indexOf(new_tab)))
         self.tabs.setCurrentIndex(tab_index)
         return new_tab
 
@@ -127,6 +151,7 @@ class AIChatDialog(QDialog):
             self.close()
 
     def _emit_message_sent(self, tab_index):
+        if tab_index < 0: return
         tab = self.tabs.widget(tab_index)
         if isinstance(tab, _ChatTab):
             message = tab.input_edit.toPlainText().strip()
@@ -145,7 +170,7 @@ class AIChatDialog(QDialog):
         if 0 <= tab_index < self.tabs.count():
             tab = self.tabs.widget(tab_index)
             if isinstance(tab, _ChatTab):
-                tab.history_view.append("<b>AI:</b>")
+                tab.history_view.append("<div class='ai-message'><b>AI:</b><br>")
 
     def append_stream_chunk(self, tab_index: int, chunk: str):
         if 0 <= tab_index < self.tabs.count():
@@ -157,8 +182,14 @@ class AIChatDialog(QDialog):
                 tab.history_view.ensureCursorVisible()
 
     def finalize_ai_message(self, tab_index: int):
-        # Can be used later for any post-streaming actions
-        pass
+        if 0 <= tab_index < self.tabs.count():
+            tab = self.tabs.widget(tab_index)
+            if isinstance(tab, _ChatTab):
+                cursor = tab.history_view.textCursor()
+                cursor.movePosition(QTextCursor.End)
+                cursor.insertHtml("</div>")
+                tab.history_view.ensureCursorVisible()
+
 
     def set_thinking_state(self, tab_index: int, is_thinking: bool):
         if 0 <= tab_index < self.tabs.count():
@@ -166,11 +197,3 @@ class AIChatDialog(QDialog):
             if isinstance(tab, _ChatTab):
                 tab.input_edit.setReadOnly(is_thinking)
                 tab.send_button.setEnabled(not is_thinking)
-                if is_thinking:
-                    # Remove "thinking..." as we will now stream
-                    cursor = tab.history_view.textCursor()
-                    cursor.movePosition(QTextCursor.End)
-                    cursor.select(QTextCursor.BlockUnderCursor)
-                    if "<i>AI is thinking...</i>" in cursor.selectedText():
-                        cursor.removeSelectedText()
-                    cursor.movePosition(QTextCursor.End)

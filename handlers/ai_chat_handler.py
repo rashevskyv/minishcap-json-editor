@@ -2,6 +2,7 @@
 from typing import Dict, Optional
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtCore import QThread
+from PyQt5.QtGui import QTextCursor
 from .base_handler import BaseHandler
 from components.ai_chat_dialog import AIChatDialog
 from core.translation.session_manager import TranslationSessionManager
@@ -36,39 +37,71 @@ class AIChatHandler(BaseHandler):
             self.dialog = AIChatDialog(self.mw)
             self.dialog.message_sent.connect(self._handle_send_message)
             self.dialog.tabs.tabCloseRequested.connect(self._handle_tab_closed)
+            self.dialog.add_tab_button.clicked.connect(self._add_new_chat_session)
+            
+            self._add_new_chat_session()
 
-        new_tab = self.dialog.add_new_tab(initial_text)
+        if initial_text:
+            current_tab = self.dialog.tabs.currentWidget()
+            if current_tab:
+                current_content = current_tab.input_edit.toPlainText()
+                separator = "\n\n" if current_content.strip() else ""
+                context_block = f"--- Context ---\n{initial_text.strip()}\n---"
+                current_tab.input_edit.setPlainText(current_content + separator + context_block)
+                current_tab.input_edit.moveCursor(QTextCursor.End)
+        
+        self.dialog.show()
+        self.dialog.raise_()
+        self.dialog.activateWindow()
+        
+        current_tab = self.dialog.tabs.currentWidget()
+        if current_tab:
+            current_tab.input_edit.setFocus()
+
+    def _add_new_chat_session(self):
+        if not self.dialog: return
+
+        new_tab = self.dialog.add_new_tab()
         providers = self._get_available_providers()
         new_tab.populate_models(providers)
         
         tab_index = self.dialog.tabs.indexOf(new_tab)
         self.sessions[tab_index] = TranslationSessionManager()
 
-        self.dialog.show()
-        self.dialog.raise_()
-        self.dialog.activateWindow()
-
     def _handle_tab_closed(self, index: int):
-        if index in self.sessions:
-            del self.sessions[index]
-            log_debug(f"AI Chat: Session for tab {index} has been removed.")
+        session_key = self.dialog.tabs.widget(index)
+        if session_key in self.sessions:
+            del self.sessions[session_key]
+            log_debug(f"AI Chat: Session for tab widget {session_key} has been removed.")
+        else:
+            # Fallback for index-based removal if widget mapping fails
+            if index in self.sessions:
+                del self.sessions[index]
+                log_debug(f"AI Chat: Session for tab index {index} has been removed.")
 
     def _handle_send_message(self, tab_index, message, provider_key):
         if self.dialog:
-            self.dialog.append_to_history(tab_index, f"<b>User:</b><pre>{escape(message)}</pre>")
+            self.dialog.append_to_history(tab_index, f"<div class='user-message'><b>User:</b><div style='white-space: pre-wrap; word-wrap: break-word;'>{escape(message)}</div></div>")
             self.dialog.set_thinking_state(tab_index, True)
 
         provider = self.mw.translation_handler._prepare_provider(provider_key)
         if not provider:
-            self.dialog.append_to_history(tab_index, f"<b style='color:red;'>Error:</b> Could not create AI provider '{provider_key}'.")
+            self.dialog.append_to_history(tab_index, f"<div class='ai-message' style='color:red;'><b>Error:</b> Could not create AI provider '{provider_key}'.</div>")
             self.dialog.set_thinking_state(tab_index, False)
             return
 
         session_manager = self.sessions.get(tab_index)
         if not session_manager:
-            self.dialog.append_to_history(tab_index, f"<b style='color:red;'>Error:</b> No session found for this tab.")
-            self.dialog.set_thinking_state(tab_index, False)
-            return
+            # Re-create session if it was lost
+            session_manager = TranslationSessionManager()
+            self.sessions[tab_index] = session_manager
+            log_debug(f"AI Chat: Re-created missing session for tab index {tab_index}.")
+
+
+        use_stream = True
+        if provider_key == 'gemini' and provider.settings.get('base_url'):
+            use_stream = False
+            log_debug("AI Chat: Gemini with base_url detected, disabling streaming.")
 
         state = session_manager.ensure_session(
             provider_key=provider_key,
@@ -81,7 +114,7 @@ class AIChatHandler(BaseHandler):
         messages, session_payload = state.prepare_request({"role": "user", "content": message})
         
         task_details = {
-            'type': 'chat_message_stream',
+            'type': 'chat_message_stream' if use_stream else 'chat_message',
             'tab_index': tab_index,
             'session_state': state,
             'session_user_message': message,
@@ -97,12 +130,16 @@ class AIChatHandler(BaseHandler):
         self._worker.moveToThread(self._thread)
 
         self._thread.started.connect(self._worker.run)
-        self._worker.chunk_received.connect(self._on_ai_chunk_received)
-        self._worker.success.connect(self._on_ai_stream_finished)
+        if use_stream:
+            self._worker.chunk_received.connect(self._on_ai_chunk_received)
+            self._worker.success.connect(self._on_ai_stream_finished)
+            self.dialog.start_ai_message(tab_index)
+        else:
+            self._worker.success.connect(self._on_ai_chat_success)
+        
         self._worker.error.connect(self._on_ai_error)
         self._worker.finished.connect(self._cleanup_worker)
 
-        self.dialog.start_ai_message(tab_index)
         self._thread.start()
 
     def _on_ai_chunk_received(self, context: dict, chunk: str):
@@ -124,15 +161,14 @@ class AIChatHandler(BaseHandler):
                     conversation_id=response.conversation_id
                 )
 
-    def _on_ai_success(self, response: ProviderResponse, context: dict):
-        # This will now only be called for non-streaming tasks, if any
+    def _on_ai_chat_success(self, response: ProviderResponse, context: dict):
         tab_index = context.get('tab_index')
         if self.dialog and tab_index is not None:
             self.dialog.set_thinking_state(tab_index, False)
             ai_response_text = response.text or "[No response]"
             
             processed_html = escape(ai_response_text).replace('\n', '<br>')
-            self.dialog.append_to_history(tab_index, f"<b>AI:</b><br>{processed_html}")
+            self.dialog.append_to_history(tab_index, f"<div class='ai-message'><b>AI:</b><br>{processed_html}</div>")
             
             state = context.get('session_state')
             user_content = context.get('session_user_message')
@@ -143,7 +179,7 @@ class AIChatHandler(BaseHandler):
         tab_index = context.get('tab_index')
         if self.dialog and tab_index is not None:
             self.dialog.set_thinking_state(tab_index, False)
-            self.dialog.append_to_history(tab_index, f"<b style='color:red;'>Error:</b><pre>{escape(message)}</pre>")
+            self.dialog.append_to_history(tab_index, f"<div class='ai-message' style='color:red;'><b>Error:</b><div style='white-space: pre-wrap; word-wrap: break-word;'>{escape(message)}</div></div>")
 
     def _cleanup_worker(self):
         tab_index = self._worker.task_details.get('tab_index') if self._worker else None

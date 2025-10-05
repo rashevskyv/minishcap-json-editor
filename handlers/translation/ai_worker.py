@@ -64,9 +64,17 @@ class AIWorker(QObject):
                     self.chunk_received.emit(self.task_details, chunk)
                     full_response_text += chunk
                 
-                # Emit success with the full response for history logging
                 final_response = ProviderResponse(text=full_response_text)
                 self.success.emit(final_response, self.task_details)
+                return
+            
+            elif task_type == 'chat_message':
+                state = self.task_details.get('session_state')
+                user_message = {"role": "user", "content": self.task_details.get('session_user_message')}
+                messages, session_payload = state.prepare_request(user_message)
+                
+                response = self.provider.translate(messages, session=session_payload)
+                self.success.emit(response, self.task_details)
                 return
 
             if task_type == 'build_glossary':
