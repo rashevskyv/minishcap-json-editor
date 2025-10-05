@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 
 from .base_translation_handler import BaseTranslationHandler
 from core.glossary_manager import GlossaryEntry
+from core.translation.session_manager import TranslationSessionState
 from utils.utils import ALL_TAGS_PATTERN
 from utils.logging_utils import log_debug
 
@@ -38,11 +39,11 @@ class AIPromptComposer(BaseTranslationHandler):
     def compose_batch_request(
         self,
         system_prompt: str,
-        glossary_text: str,
         source_items: List[Dict],
         *,
         block_idx: Optional[int],
         mode_description: str,
+        session_state: Optional[TranslationSessionState] = None,
         is_retry: bool = False,
         retry_reason: str = '',
     ) -> Tuple[str, str, Dict]:
@@ -73,7 +74,7 @@ class AIPromptComposer(BaseTranslationHandler):
                 'Do not add any explanations or text outside the JSON object.',
             ]
 
-        combined_system = self._append_glossary_to_system_prompt(system_prompt, glossary_text)
+        combined_system = self._prepare_glossary_for_prompt(system_prompt, session_state)
 
         game_name = self.mw.current_game_rules.get_display_name() if self.mw.current_game_rules else 'Unknown game'
         context_lines = [
@@ -100,7 +101,6 @@ class AIPromptComposer(BaseTranslationHandler):
     def compose_variation_request(
         self,
         system_prompt: str,
-        glossary_text: str,
         source_text: str,
         *,
         block_idx: Optional[int],
@@ -108,11 +108,11 @@ class AIPromptComposer(BaseTranslationHandler):
         expected_lines: int,
         current_translation: str,
         request_type: str,
+        session_state: Optional[TranslationSessionState] = None,
         mode_description: str = 'translation variations',
     ) -> Tuple[str, str]:
         combined_system, user_content = self.compose_messages(
             system_prompt,
-            glossary_text,
             source_text,
             block_idx=block_idx,
             string_idx=string_idx,
@@ -120,23 +120,24 @@ class AIPromptComposer(BaseTranslationHandler):
             mode_description=mode_description,
             request_type=request_type,
             current_translation=current_translation,
+            session_state=session_state,
         )
         return combined_system, user_content
 
     def compose_messages(
         self,
         system_prompt: str,
-        glossary_text: str,
         source_text: str,
         *,
         block_idx: Optional[int],
         string_idx: Optional[int],
         expected_lines: int,
         mode_description: str,
+        session_state: Optional[TranslationSessionState] = None,
         request_type: str = 'translation',
         current_translation: Optional[str] = None,
     ) -> Tuple[str, str]:
-        combined_system = self._append_glossary_to_system_prompt(system_prompt, glossary_text)
+        combined_system = self._prepare_glossary_for_prompt(system_prompt, session_state)
 
         context_lines: List[str] = []
         game_name = self.mw.current_game_rules.get_display_name() if self.mw.current_game_rules else 'Unknown game'
@@ -195,7 +196,6 @@ class AIPromptComposer(BaseTranslationHandler):
     def compose_glossary_occurrence_update_request(
         self,
         system_prompt: str,
-        glossary_text: str,
         *,
         source_text: str,
         current_translation: str,
@@ -204,8 +204,9 @@ class AIPromptComposer(BaseTranslationHandler):
         old_translation: str,
         new_translation: str,
         expected_lines: int,
+        session_state: Optional[TranslationSessionState] = None,
     ) -> Tuple[str, str]:
-        combined_system = self._append_glossary_to_system_prompt(system_prompt, glossary_text)
+        combined_system = self._prepare_glossary_for_prompt(system_prompt, session_state)
 
         instructions = [
             "Update the existing Ukrainian translation to reflect the new glossary term translation.",
@@ -236,14 +237,14 @@ class AIPromptComposer(BaseTranslationHandler):
     def compose_glossary_occurrence_batch_request(
         self,
         system_prompt: str,
-        glossary_text: str,
         *,
         term: str,
         old_translation: str,
         new_translation: str,
         batch_items: List[Dict],
+        session_state: Optional[TranslationSessionState] = None,
     ) -> Tuple[str, str]:
-        combined_system = self._append_glossary_to_system_prompt(system_prompt, glossary_text)
+        combined_system = self._prepare_glossary_for_prompt(system_prompt, session_state)
 
         instructions = [
             "For each object in the JSON payload, update the Ukrainian translation to use the new glossary translation.",
@@ -274,14 +275,62 @@ class AIPromptComposer(BaseTranslationHandler):
         return system_prompt.strip(), user_content
 
     @staticmethod
-    def _append_glossary_to_system_prompt(system_prompt: str, glossary_text: str) -> str:
-        system_prompt = (system_prompt or '').strip()
-        if glossary_text:
-            glossary_marker = 'GLOSSARY (use with absolute priority):'
-            if glossary_marker in system_prompt:
-                return system_prompt
-            return (
-                f"{system_prompt}\n\n"
-                f"{glossary_marker}\n{glossary_text.strip()}"
-            )
-        return system_prompt
+    def _glossary_entries_to_text(entries: Sequence[GlossaryEntry]) -> str:
+        """Format glossary entries into a markdown table."""
+        if not entries:
+            return ""
+        lines = ["| Original | Translation | Notes |", "|---|---|---|"]
+        for entry in entries:
+            lines.append(f"| {entry.original} | {entry.translation} | {entry.notes} |")
+        return "\n".join(lines)
+
+
+    def _prepare_glossary_for_prompt(
+        self,
+        system_prompt: str,
+        session_state: Optional[TranslationSessionState],
+    ) -> str:
+        """Prepare the system prompt with the full glossary or just updates."""
+        system_prompt = (system_prompt or "").strip()
+        glossary_manager = self.mw.glossary_manager
+        if not glossary_manager:
+            return system_prompt
+
+        # Case 1: No session or glossary already sent, but there are updates.
+        if session_state and session_state.glossary_sent:
+            changes = glossary_manager.get_session_changes()
+            if not changes:
+                return system_prompt  # No updates to send
+
+            added_updated = [v for v in changes.values() if v is not None]
+            deleted_keys = [k for k, v in changes.items() if v is None]
+
+            update_sections = []
+            if added_updated:
+                update_sections.append(
+                    "GLOSSARY UPDATES (add or modify these terms):\n"
+                    + self._glossary_entries_to_text(added_updated)
+                )
+            if deleted_keys:
+                deleted_list = ", ".join(f'"{key}"' for key in deleted_keys)
+                update_sections.append(f"GLOSSARY DELETIONS (remove these terms):\n{deleted_list}")
+
+            # Append updates and clear them from the manager
+            if update_sections:
+                system_prompt += "\n\n" + "\n\n".join(update_sections)
+            glossary_manager.clear_session_changes()
+            return system_prompt
+
+        # Case 2: First time sending in a session, or no session. Send full glossary.
+        full_glossary_text = self._glossary_entries_to_text(glossary_manager.get_entries())
+        if not full_glossary_text:
+            return system_prompt  # Nothing to send
+
+        if session_state:
+            session_state.glossary_sent = True
+        glossary_manager.clear_session_changes()  # Clear any pending changes
+
+        return (
+            f"{system_prompt}\n\n"
+            f"GLOSSARY (use with absolute priority):\n{full_glossary_text}"
+        )

@@ -18,6 +18,7 @@ class TranslationSessionState:
     system_content: str
     conversation_id: Optional[str] = None
     bootstrapped: bool = False
+    glossary_sent: bool = False
     history: List[Dict[str, str]] = field(default_factory=list)
     session_instructions: str = ""
     bootstrap_viewed: bool = False

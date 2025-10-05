@@ -58,6 +58,7 @@ class GlossaryManager:
         self._occurrence_index: Dict[str, List[GlossaryOccurrence]] = {}
         self._header_lines: List[str] = []
         self._section_order: List[str] = []
+        self._session_changes: Dict[str, Optional[GlossaryEntry]] = {}
 
     @staticmethod
     def normalize_term(value: str) -> str:
@@ -186,8 +187,17 @@ class GlossaryManager:
             return []
         return list(self._occurrence_index.get(entry.original, []))
 
-    def get_occurrence_map(self) -> Dict[str, List[GlossaryOccurrence]]:
+    def get_occurrence_map(self) -> Dict[str, List[GlossGlosOccurrence]]:
         return {key: list(value) for key, value in self._occurrence_index.items()}
+
+    def get_session_changes(self) -> Dict[str, Optional[GlossaryEntry]]:
+        """Return a copy of the session's glossary modifications."""
+        return self._session_changes.copy()
+
+    def clear_session_changes(self) -> None:
+        """Clear the tracked session glossary modifications."""
+        self._session_changes.clear()
+
 
     def add_entry(self, original: str, translation: str, notes: str, section: Optional[str] = None) -> Optional[GlossaryEntry]:
         original_key = (original or '').strip()
@@ -202,6 +212,7 @@ class GlossaryManager:
             notes=notes.strip(),
             section=section,
         )
+        self._session_changes[original_key] = new_entry
         new_entries = list(self._entries)
         new_entries.append(new_entry)
         self._entries = new_entries
@@ -228,6 +239,7 @@ class GlossaryManager:
                 new_entries[idx] = updated_entry
                 self._entries = new_entries
                 self._occurrence_index = {}
+                self._session_changes[original_key] = updated_entry
                 self._persist()
                 return updated_entry
         return None
@@ -243,6 +255,7 @@ class GlossaryManager:
         del new_entries[index]
         self._entries = new_entries
         self._occurrence_index = {}
+        self._session_changes[original_key] = None
         self._persist()
         return True
 

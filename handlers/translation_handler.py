@@ -107,14 +107,15 @@ class TranslationHandler(BaseHandler):
             self.glossary_handler._handle_occurrence_ai_error("AI provider is not configured.", from_batch)
             return None
 
-        system_prompt, glossary = self.glossary_handler.load_prompts()
+        system_prompt, _ = self.glossary_handler.load_prompts()
         if not system_prompt:
             self.glossary_handler._handle_occurrence_ai_error("Failed to load prompts.", from_batch)
             return None
 
+        session_state = self._session_manager.get_state()
+
         composer_args = {
             'system_prompt': system_prompt,
-            'glossary_text': glossary,
             'source_text': current_translation or '',
             'current_translation': current_translation or '',
             'original_text': original_text or '',
@@ -122,6 +123,7 @@ class TranslationHandler(BaseHandler):
             'old_translation': old_term_translation or '',
             'new_translation': new_term_translation or '',
             'expected_lines': max(1, (current_translation or '').count('\n') + 1),
+            'session_state': session_state,
         }
         combined_system, user_prompt = self.prompt_composer.compose_glossary_occurrence_update_request(**composer_args)
         if prompt_override and all(isinstance(item, str) and item.strip() for item in prompt_override):
@@ -182,11 +184,12 @@ class TranslationHandler(BaseHandler):
         if not provider:
             return False
 
-        system_prompt, glossary = self.glossary_handler.load_prompts()
+        system_prompt, _ = self.glossary_handler.load_prompts()
         if not system_prompt:
             self.glossary_handler._handle_occurrence_ai_error("Failed to load prompts.", True)
             return False
 
+        session_state = self._session_manager.get_state()
         occurrences_list = list(occurrences)
         batch_items = []
         expected_lines_by_id: Dict[str, int] = {}
@@ -213,11 +216,11 @@ class TranslationHandler(BaseHandler):
 
         combined_system, user_prompt = self.prompt_composer.compose_glossary_occurrence_batch_request(
             system_prompt=system_prompt,
-            glossary_text=glossary,
             term=term,
             old_translation=old_term_translation,
             new_translation=new_term_translation,
             batch_items=batch_items,
+            session_state=session_state,
         )
 
         edited = self._maybe_edit_prompt(
@@ -275,10 +278,11 @@ class TranslationHandler(BaseHandler):
         if not provider:
             return False
 
-        system_prompt, glossary = self.glossary_handler.load_prompts()
+        system_prompt, _ = self.glossary_handler.load_prompts()
         if not system_prompt:
             return False
 
+        session_state = self._session_manager.get_state()
         source_sections = [f"Term: {term}", f"Translation: {translation or '[empty]'}"]
         if context_line:
             source_sections.append(f"Context: {context_line}")
@@ -286,7 +290,6 @@ class TranslationHandler(BaseHandler):
 
         composer_args = {
             'system_prompt': system_prompt,
-            'glossary_text': glossary,
             'source_text': source_text,
             'block_idx': None,
             'string_idx': None,
@@ -294,6 +297,7 @@ class TranslationHandler(BaseHandler):
             'current_translation': current_notes or '',
             'mode_description': 'glossary_notes',
             'request_type': 'glossary_notes_variation',
+            'session_state': session_state,
         }
         combined_system, user_prompt = self.prompt_composer.compose_variation_request(**composer_args)
         edited = self._maybe_edit_prompt(
@@ -549,14 +553,16 @@ class TranslationHandler(BaseHandler):
 
         operation_title = f"AI Translation (Lines {start_line + 1}-{end_line + 1})" if start_line != end_line else f"AI Translation (Line {start_line + 1})"
         
-        system_prompt, glossary = self.glossary_handler.load_prompts()
+        system_prompt, _ = self.glossary_handler.load_prompts()
         if not system_prompt:
             return
-            
+
+        session_state = self._session_manager.get_state()
         composer_args = {
-            'system_prompt': system_prompt, 'glossary_text': glossary,
+            'system_prompt': system_prompt,
             'source_items': source_items, 'block_idx': block_idx,
-            'mode_description': f"lines {start_line + 1}-{end_line + 1}"
+            'mode_description': f"lines {start_line + 1}-{end_line + 1}",
+            'session_state': session_state,
         }
         
         preview_system, preview_user, p_map = self.prompt_composer.compose_batch_request(**composer_args)
@@ -708,7 +714,7 @@ class TranslationHandler(BaseHandler):
             
             context['chunks_to_skip'] = self.translation_progress.get(block_idx, {}).get('completed_chunks', set())
 
-        system_prompt, glossary = self.glossary_handler.load_prompts()
+        system_prompt, _ = self.glossary_handler.load_prompts()
         if not system_prompt:
             self.ui_handler.finish_ai_operation()
             return
@@ -716,11 +722,13 @@ class TranslationHandler(BaseHandler):
         if context.get('system_prompt_override'):
             system_prompt = context['system_prompt_override']
 
+        session_state = self._session_manager.get_state()
         composer_args = {
-            'system_prompt': system_prompt, 'glossary_text': glossary,
+            'system_prompt': system_prompt,
             'source_items': context['source_items'], 'block_idx': context['block_idx'],
             'mode_description': context['mode_description'], 'is_retry': (context['attempt'] > 1),
-            'retry_reason': context.get('last_error', '')
+            'retry_reason': context.get('last_error', ''),
+            'session_state': session_state,
         }
         context['composer_args'] = composer_args
 
@@ -1083,17 +1091,19 @@ class TranslationHandler(BaseHandler):
         provider = self._prepare_provider()
         if not provider: return
 
-        system_prompt, glossary = self.glossary_handler.load_prompts()
+        system_prompt, _ = self.glossary_handler.load_prompts()
         if not system_prompt:
             self.ui_handler.finish_ai_operation()
             return
         
+        session_state = self._session_manager.get_state()
         composer_args = {
-            'system_prompt': system_prompt, 'glossary_text': glossary,
+            'system_prompt': system_prompt,
             'source_text': original_text,
             'block_idx': self.mw.current_block_idx, 'string_idx': self.mw.current_string_idx,
             'expected_lines': len(original_text.split('\n')), 'current_translation': str(current_translation),
-            'request_type': 'variation_list'
+            'request_type': 'variation_list',
+            'session_state': session_state,
         }
         combined_system, user_prompt = self.prompt_composer.compose_variation_request(**composer_args)
         edited = self._maybe_edit_prompt(
@@ -1134,15 +1144,17 @@ class TranslationHandler(BaseHandler):
         provider = self._prepare_provider()
         if not provider: return
 
-        system_prompt, glossary = self.glossary_handler.load_prompts()
+        system_prompt, _ = self.glossary_handler.load_prompts()
         if not system_prompt:
             return
 
+        session_state = self._session_manager.get_state()
         composer_args = {
-            'system_prompt': system_prompt, 'glossary_text': glossary,
+            'system_prompt': system_prompt,
             'source_text': source_text,
             'block_idx': block_idx, 'string_idx': string_idx, 'expected_lines': expected_lines,
-            'current_translation': None, 'request_type': 'translation'
+            'current_translation': None, 'request_type': 'translation',
+            'session_state': session_state,
         }
         combined_system, user_prompt = self.prompt_composer.compose_variation_request(**composer_args)
         edited = self._maybe_edit_prompt(
