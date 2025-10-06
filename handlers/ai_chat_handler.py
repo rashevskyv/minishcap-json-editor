@@ -93,7 +93,7 @@ class AIChatHandler(BaseHandler):
             </table>
             """
             self.dialog.append_to_history(tab_index, html)
-            self.dialog.set_thinking_state(tab_index, True)
+            self.dialog.set_input_enabled(tab_index, False)
 
         provider = self.mw.translation_handler._prepare_provider(provider_key)
         if not provider:
@@ -108,7 +108,7 @@ class AIChatHandler(BaseHandler):
             </table>
             """
             self.dialog.append_to_history(tab_index, error_html)
-            self.dialog.set_thinking_state(tab_index, False)
+            self.dialog.set_input_enabled(tab_index, True)
             return
 
         session_manager = self.sessions.get(tab_index)
@@ -132,17 +132,26 @@ class AIChatHandler(BaseHandler):
 
         messages, session_payload = state.prepare_request({"role": "user", "content": message})
         
+        content_end_pos_before = 0
+        if use_stream and self.dialog:
+            tab = self.dialog.tabs.widget(tab_index)
+            if tab:
+                cursor = tab.history_view.textCursor()
+                cursor.movePosition(QTextCursor.End)
+                content_end_pos_before = cursor.position()
+
         task_details = {
             'type': 'chat_message_stream' if use_stream else 'chat_message',
             'tab_index': tab_index,
             'session_state': state,
             'session_user_message': message,
             'web_search_enabled': web_search_enabled,
+            'content_end_pos_before': content_end_pos_before
         }
 
         if self._thread and self._thread.isRunning():
             log_warning("AI Chat: An AI task is already running. Please wait.")
-            self.dialog.set_thinking_state(tab_index, False)
+            self.dialog.set_input_enabled(tab_index, True)
             return
 
         self._thread = QThread()
@@ -154,7 +163,6 @@ class AIChatHandler(BaseHandler):
             self._stream_buffer[tab_index] = ""
             self._worker.chunk_received.connect(self._on_ai_chunk_received)
             self._worker.success.connect(self._on_ai_stream_finished)
-            self.dialog.start_ai_message(tab_index)
         else:
             self._worker.success.connect(self._on_ai_chat_success)
         
@@ -184,28 +192,22 @@ class AIChatHandler(BaseHandler):
         return modified_text
 
     def _format_ai_response_for_display(self, text: str, annotations: Optional[List[Dict[str, Any]]]) -> str:
-        text_with_links = self._process_annotations(text, annotations) if annotations else escape(text)
+        text_with_citations = self._process_annotations(text, annotations) if annotations else text
         
-        text_no_leading_whitespace = text_with_links.lstrip()
-        
-        def wrap_tags(match):
-            return f"<code>{match.group(0)}</code>"
-        
-        # We need to be careful not to double-escape if we already have links
-        if not annotations:
-            text_with_code_tags = re.sub(r'(\[[^\]]*\]|\{[^}]*\})', wrap_tags, text_no_leading_whitespace)
-        else:
-            text_with_code_tags = text_no_leading_whitespace
-
-        html_output = markdown.markdown(text_with_code_tags, extensions=['nl2br', 'fenced_code'])
+        html_output = markdown.markdown(text_with_citations, extensions=['nl2br', 'fenced_code'])
         
         return html_output
 
     def _on_ai_chunk_received(self, context: dict, chunk: str):
         tab_index = context.get('tab_index')
         if self.dialog and tab_index is not None:
-            self.dialog.append_stream_chunk(tab_index, escape(chunk))
-            self._stream_buffer[tab_index] = self._stream_buffer.get(tab_index, "") + chunk
+            tab = self.dialog.tabs.widget(tab_index)
+            if tab:
+                cursor = tab.history_view.textCursor()
+                cursor.movePosition(QTextCursor.End)
+                cursor.insertText(escape(chunk))
+                tab.history_view.ensureCursorVisible()
+                self._stream_buffer[tab_index] = self._stream_buffer.get(tab_index, "") + chunk
     
     def _on_ai_stream_finished(self, response: ProviderResponse, context: dict):
         tab_index = context.get('tab_index')
@@ -213,15 +215,15 @@ class AIChatHandler(BaseHandler):
             full_response = self._stream_buffer.get(tab_index, "")
             formatted_html = self._format_ai_response_for_display(full_response, response.annotations)
             
-            self.dialog.set_thinking_state(tab_index, False)
-            
-            cursor = self.dialog.tabs.widget(tab_index).history_view.textCursor()
-            cursor.movePosition(QTextCursor.End)
-            cursor.select(QTextCursor.BlockUnderCursor)
-            cursor.removeSelectedText()
-            cursor.deletePreviousChar()
-            
-            html = f"""
+            tab = self.dialog.tabs.widget(tab_index)
+            if tab:
+                content_end_pos_before = context.get('content_end_pos_before', 0)
+                cursor = tab.history_view.textCursor()
+                cursor.setPosition(content_end_pos_before)
+                cursor.movePosition(QTextCursor.End, QTextCursor.KeepAnchor)
+                cursor.removeSelectedText()
+
+            final_html = f"""
             <table class="message-table ai-message">
               <tr>
                 <td>
@@ -231,8 +233,7 @@ class AIChatHandler(BaseHandler):
               </tr>
             </table>
             """
-            self.dialog.append_to_history(tab_index, html)
-
+            self.dialog.append_to_history(tab_index, final_html)
             self._stream_buffer[tab_index] = ""
             
             state = context.get('session_state')
@@ -247,7 +248,7 @@ class AIChatHandler(BaseHandler):
     def _on_ai_chat_success(self, response: ProviderResponse, context: dict):
         tab_index = context.get('tab_index')
         if self.dialog and tab_index is not None:
-            self.dialog.set_thinking_state(tab_index, False)
+            self.dialog.set_input_enabled(tab_index, True)
             ai_response_text = response.text or "[No response]"
             
             formatted_html = self._format_ai_response_for_display(ai_response_text, response.annotations)
@@ -271,7 +272,16 @@ class AIChatHandler(BaseHandler):
     def _on_ai_error(self, message: str, context: dict):
         tab_index = context.get('tab_index')
         if self.dialog and tab_index is not None:
-            self.dialog.set_thinking_state(tab_index, False)
+            content_end_pos_before = context.get('content_end_pos_before', 0)
+            if content_end_pos_before > 0:
+                tab = self.dialog.tabs.widget(tab_index)
+                if tab:
+                    cursor = tab.history_view.textCursor()
+                    cursor.setPosition(content_end_pos_before)
+                    cursor.movePosition(QTextCursor.End, QTextCursor.KeepAnchor)
+                    cursor.removeSelectedText()
+
+            self.dialog.set_input_enabled(tab_index, True)
             html = f"""
             <table class="message-table ai-message">
               <tr>
@@ -287,7 +297,7 @@ class AIChatHandler(BaseHandler):
     def _cleanup_worker(self):
         tab_index = self._worker.task_details.get('tab_index') if self._worker else None
         if self.dialog and tab_index is not None:
-            self.dialog.set_thinking_state(tab_index, False)
+            self.dialog.set_input_enabled(tab_index, True)
             
         if self._thread:
             if self._thread.isRunning():

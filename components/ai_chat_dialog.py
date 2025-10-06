@@ -214,33 +214,10 @@ class AIChatDialog(QDialog):
             tab = self.tabs.widget(tab_index)
             if isinstance(tab, _ChatTab):
                 tab.history_view.append(html_text)
-    
-    def start_ai_message(self, tab_index: int):
-        pass
 
-    def append_stream_chunk(self, tab_index: int, chunk: str):
-        pass
-
-    def finalize_ai_message(self, tab_index: int):
-        pass
-
-    def set_thinking_state(self, tab_index: int, is_thinking: bool):
+    def set_input_enabled(self, tab_index: int, enabled: bool):
         if 0 <= tab_index < self.tabs.count():
             tab = self.tabs.widget(tab_index)
             if isinstance(tab, _ChatTab):
-                tab.input_edit.setReadOnly(is_thinking)
-                tab.send_button.setEnabled(not is_thinking)
-                if is_thinking:
-                    tab.history_view.append("<div class='ai-message'><i>AI is thinking...</i></div>")
-                    cursor = tab.history_view.textCursor()
-                    cursor.movePosition(QTextCursor.End)
-                    tab.history_view.setTextCursor(cursor)
-                else:
-                    cursor = tab.history_view.textCursor()
-                    cursor.movePosition(QTextCursor.End)
-                    cursor.select(QTextCursor.BlockUnderCursor)
-                    html = cursor.selection().toHtml()
-                    if "<i>AI is thinking...</i>" in html:
-                        cursor.removeSelectedText()
-                        cursor.deletePreviousChar()
-                    cursor.movePosition(QTextCursor.End)
+                tab.input_edit.setReadOnly(not enabled)
+                tab.send_button.setEnabled(enabled)
