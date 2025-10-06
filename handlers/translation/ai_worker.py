@@ -1,4 +1,4 @@
-# handlers/translation/ai_worker.py ---
+# --- START OF FILE handlers/translation/ai_worker.py ---
 from PyQt5.QtCore import QObject, pyqtSignal
 from typing import List, Dict, Optional, Any
 import json
@@ -50,6 +50,9 @@ class AIWorker(QObject):
         try:
             task_type = self.task_details.get('type')
             messages: List[Dict[str, str]] = []
+            settings_override = {}
+            if self.task_details.get('web_search_enabled'):
+                settings_override['web_search_enabled'] = True
 
             if task_type == 'chat_message_stream':
                 state = self.task_details.get('session_state')
@@ -57,7 +60,7 @@ class AIWorker(QObject):
                 messages, session_payload = state.prepare_request(user_message)
 
                 full_response_text = ""
-                for chunk in self.provider.translate_stream(messages, session=session_payload):
+                for chunk in self.provider.translate_stream(messages, session=session_payload, settings_override=settings_override):
                     if self.is_cancelled:
                         self.translation_cancelled.emit()
                         return
@@ -73,7 +76,7 @@ class AIWorker(QObject):
                 user_message = {"role": "user", "content": self.task_details.get('session_user_message')}
                 messages, session_payload = state.prepare_request(user_message)
                 
-                response = self.provider.translate(messages, session=session_payload)
+                response = self.provider.translate(messages, session=session_payload, settings_override=settings_override)
                 self.success.emit(response, self.task_details)
                 return
 
@@ -300,6 +303,8 @@ class AIWorker(QObject):
             self.step_updated.emit(2, dialog_steps[2], AIStatusDialog.STATUS_IN_PROGRESS)
             
             provider_settings_override = self.task_details.get('provider_settings_override', {})
+            provider_settings_override.update(settings_override)
+
             response = self.provider.translate(messages, session=session_payload, settings_override=provider_settings_override)
 
             if self.is_cancelled:

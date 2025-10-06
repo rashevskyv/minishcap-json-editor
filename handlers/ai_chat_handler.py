@@ -1,5 +1,5 @@
 # --- START OF FILE handlers/ai_chat_handler.py ---
-from typing import Dict, Optional
+from typing import Dict, Optional, List, Any
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtCore import QThread
 from PyQt5.QtGui import QTextCursor
@@ -80,7 +80,7 @@ class AIChatHandler(BaseHandler):
                 del self.sessions[index]
                 log_debug(f"AI Chat: Session for tab index {index} has been removed.")
 
-    def _handle_send_message(self, tab_index, message, provider_key):
+    def _handle_send_message(self, tab_index, message, provider_key, web_search_enabled):
         if self.dialog:
             html = f"""
             <table class="message-table user-message">
@@ -137,6 +137,7 @@ class AIChatHandler(BaseHandler):
             'tab_index': tab_index,
             'session_state': state,
             'session_user_message': message,
+            'web_search_enabled': web_search_enabled,
         }
 
         if self._thread and self._thread.isRunning():
@@ -161,15 +162,41 @@ class AIChatHandler(BaseHandler):
         self._worker.finished.connect(self._cleanup_worker)
 
         self._thread.start()
+    
+    def _process_annotations(self, text: str, annotations: List[Dict[str, Any]]) -> str:
+        if not annotations:
+            return text
+        
+        modified_text = text
+        for ann in sorted(annotations, key=lambda x: x['start_index'], reverse=True):
+            start = ann.get('start_index')
+            end = ann.get('end_index')
+            url = ann.get('url')
+            title = ann.get('title', url)
+            
+            if start is None or end is None or not url:
+                continue
 
-    def _format_ai_response_for_display(self, text: str) -> str:
-        text_no_leading_whitespace = text.lstrip()
+            link = f'<a href="{escape(url)}" title="{escape(title)}">'
+            modified_text = modified_text[:end] + '</a>' + modified_text[end:]
+            modified_text = modified_text[:start] + link + modified_text[start:]
+            
+        return modified_text
+
+    def _format_ai_response_for_display(self, text: str, annotations: Optional[List[Dict[str, Any]]]) -> str:
+        text_with_links = self._process_annotations(text, annotations) if annotations else escape(text)
+        
+        text_no_leading_whitespace = text_with_links.lstrip()
         
         def wrap_tags(match):
             return f"<code>{match.group(0)}</code>"
         
-        text_with_code_tags = re.sub(r'(\[[^\]]*\]|\{[^}]*\})', wrap_tags, escape(text_no_leading_whitespace))
-        
+        # We need to be careful not to double-escape if we already have links
+        if not annotations:
+            text_with_code_tags = re.sub(r'(\[[^\]]*\]|\{[^}]*\})', wrap_tags, text_no_leading_whitespace)
+        else:
+            text_with_code_tags = text_no_leading_whitespace
+
         html_output = markdown.markdown(text_with_code_tags, extensions=['nl2br', 'fenced_code'])
         
         return html_output
@@ -184,7 +211,7 @@ class AIChatHandler(BaseHandler):
         tab_index = context.get('tab_index')
         if self.dialog and tab_index is not None:
             full_response = self._stream_buffer.get(tab_index, "")
-            formatted_html = self._format_ai_response_for_display(full_response)
+            formatted_html = self._format_ai_response_for_display(full_response, response.annotations)
             
             self.dialog.set_thinking_state(tab_index, False)
             
@@ -223,7 +250,7 @@ class AIChatHandler(BaseHandler):
             self.dialog.set_thinking_state(tab_index, False)
             ai_response_text = response.text or "[No response]"
             
-            formatted_html = self._format_ai_response_for_display(ai_response_text)
+            formatted_html = self._format_ai_response_for_display(ai_response_text, response.annotations)
             html = f"""
             <table class="message-table ai-message">
               <tr>

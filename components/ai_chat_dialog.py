@@ -2,6 +2,7 @@
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QTabWidget, QWidget, QTextBrowser,
     QPlainTextEdit, QComboBox, QPushButton, QHBoxLayout, QDialogButtonBox,
+    QCheckBox
 )
 from PyQt5.QtCore import Qt, pyqtSignal, QEvent, QObject
 from PyQt5.QtGui import QTextCursor
@@ -30,6 +31,9 @@ class _ChatTab(QWidget):
         controls_layout = QHBoxLayout()
         self.model_combo = QComboBox(self)
         controls_layout.addWidget(self.model_combo)
+        self.web_search_checkbox = QCheckBox("Web Search", self)
+        controls_layout.addWidget(self.web_search_checkbox)
+        controls_layout.addStretch(1)
         layout.addLayout(controls_layout)
 
         self.history_view = QTextBrowser(self)
@@ -74,7 +78,7 @@ class _ChatTab(QWidget):
 
 
 class AIChatDialog(QDialog):
-    message_sent = pyqtSignal(int, str, str)  # tab_index, message, provider_key
+    message_sent = pyqtSignal(int, str, str, bool)  # tab_index, message, provider_key, web_search_enabled
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -200,8 +204,9 @@ class AIChatDialog(QDialog):
         if isinstance(tab, _ChatTab):
             message = tab.input_edit.toPlainText().strip()
             provider_key = tab.model_combo.currentData()
+            web_search_enabled = tab.web_search_checkbox.isChecked()
             if message and provider_key:
-                self.message_sent.emit(tab_index, message, provider_key)
+                self.message_sent.emit(tab_index, message, provider_key, web_search_enabled)
                 tab.input_edit.clear()
 
     def append_to_history(self, tab_index: int, html_text: str):

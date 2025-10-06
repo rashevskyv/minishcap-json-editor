@@ -19,6 +19,7 @@ class ProviderResponse:
     raw_payload: Any = None
     message_id: Optional[str] = None
     conversation_id: Optional[str] = None
+    annotations: Optional[List[Dict[str, Any]]] = None
 
 class BaseTranslationProvider:
     supports_sessions = False
@@ -50,6 +51,11 @@ class OpenAIChatProvider(BaseTranslationProvider):
 
     def _prepare_body(self, messages: List[Dict[str, str]], current_settings: Dict[str, Any]) -> Dict[str, Any]:
         body: Dict[str, Any] = {"model": self.model, "messages": messages}
+        
+        if current_settings.get('web_search_enabled'):
+            if self.model.startswith('gpt-4'):
+                body['model'] = f"{self.model}-search-preview"
+
         if isinstance(current_settings.get('temperature'), (float, int)):
             body['temperature'] = current_settings['temperature']
         if isinstance(current_settings.get('max_output_tokens'), int) and current_settings['max_output_tokens'] > 0:
@@ -173,6 +179,9 @@ class OpenAIResponsesProvider(BaseTranslationProvider):
             "reasoning": {"effort": current_settings.get("reasoning_effort", "low")},
             "text": {"verbosity": current_settings.get("text_verbosity", "low")}
         }
+
+        if current_settings.get('web_search_enabled'):
+            body['tools'] = [{"type": "web_search"}]
         
         timeout = 120
         if isinstance(current_settings.get('timeout'), int) and current_settings['timeout'] > 0:
@@ -185,16 +194,20 @@ class OpenAIResponsesProvider(BaseTranslationProvider):
             data = response.json()
             
             text = None
+            annotations = None
             if data and isinstance(data.get('output'), list) and len(data['output']) > 1:
-                message_part = data['output'][1]
-                if (message_part.get('type') == 'message' and
+                # Assuming the 'message' is the second item as per docs
+                message_part = next((item for item in data['output'] if item.get('type') == 'message'), None)
+
+                if (message_part and
                         isinstance(message_part.get('content'), list) and
                         message_part['content']):
                     text_content = message_part['content'][0]
                     if text_content.get('type') == 'output_text':
                         text = text_content.get('text')
+                        annotations = text_content.get('annotations')
             
-            return ProviderResponse(text=text, raw_payload=data)
+            return ProviderResponse(text=text, raw_payload=data, annotations=annotations)
         except Timeout:
             raise TranslationProviderError(f"Request timed out after {timeout} seconds.")
         except requests.RequestException as e:
