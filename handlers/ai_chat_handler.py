@@ -83,10 +83,12 @@ class AIChatHandler(BaseHandler):
     def _handle_send_message(self, tab_index, message, provider_key):
         if self.dialog:
             html = f"""
-            <table class='message-table'>
-              <tr class='user-message-row'>
-                <td class='prefix-cell'><b class='chat-prefix-user'>User:</b></td>
-                <td class='content-cell'>{escape(message)}</td>
+            <table class="message-table user-message">
+              <tr>
+                <td>
+                  <div class='chat-prefix chat-prefix-user'>User</div>
+                  <div class='chat-content'>{escape(message)}</div>
+                </td>
               </tr>
             </table>
             """
@@ -96,10 +98,12 @@ class AIChatHandler(BaseHandler):
         provider = self.mw.translation_handler._prepare_provider(provider_key)
         if not provider:
             error_html = f"""
-            <table class='message-table'>
-              <tr class='ai-message-row'>
-                <td class='prefix-cell'><b class='chat-prefix-ai' style='color:red;'>Error:</b></td>
-                <td class='content-cell' style='color:red;'>Could not create AI provider '{provider_key}'.</td>
+            <table class="message-table ai-message">
+              <tr>
+                <td>
+                  <div class='chat-prefix chat-prefix-ai' style='color:red;'>Error</div>
+                  <div class='chat-content' style='color:red;'>Could not create AI provider '{provider_key}'.</div>
+                </td>
               </tr>
             </table>
             """
@@ -191,10 +195,12 @@ class AIChatHandler(BaseHandler):
             cursor.deletePreviousChar()
             
             html = f"""
-            <table class='message-table'>
-              <tr class='ai-message-row'>
-                <td class='prefix-cell'><b class='chat-prefix-ai'>AI:</b></td>
-                <td class='content-cell'>{formatted_html}</td>
+            <table class="message-table ai-message">
+              <tr>
+                <td>
+                  <div class='chat-prefix chat-prefix-ai'>AI</div>
+                  <div class='chat-content'>{formatted_html}</div>
+                </td>
               </tr>
             </table>
             """
@@ -219,10 +225,12 @@ class AIChatHandler(BaseHandler):
             
             formatted_html = self._format_ai_response_for_display(ai_response_text)
             html = f"""
-            <table class='message-table'>
-              <tr class='ai-message-row'>
-                <td class='prefix-cell'><b class='chat-prefix-ai'>AI:</b></td>
-                <td class='content-cell'>{formatted_html}</td>
+            <table class="message-table ai-message">
+              <tr>
+                <td>
+                  <div class='chat-prefix chat-prefix-ai'>AI</div>
+                  <div class='chat-content'>{formatted_html}</div>
+                </td>
               </tr>
             </table>
             """
@@ -238,10 +246,12 @@ class AIChatHandler(BaseHandler):
         if self.dialog and tab_index is not None:
             self.dialog.set_thinking_state(tab_index, False)
             html = f"""
-            <table class='message-table'>
-              <tr class='ai-message-row'>
-                <td class='prefix-cell'><b class='chat-prefix-ai' style='color:red;'>Error:</b></td>
-                <td class='content-cell' style='color:red;'>{escape(message)}</td>
+            <table class="message-table ai-message">
+              <tr>
+                <td>
+                  <div class='chat-prefix chat-prefix-ai' style='color:red;'>Error</div>
+                  <div class='chat-content' style='color:red;'>{escape(message)}</div>
+                </td>
               </tr>
             </table>
             """

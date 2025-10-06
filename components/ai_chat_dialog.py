@@ -110,38 +110,36 @@ class AIChatDialog(QDialog):
 
         style = f"""
             .message-table {{
+                width: 100%;
                 border-spacing: 0;
                 margin-bottom: 8px;
-                width: 100%;
+            }}
+            .user-message td, .ai-message td {{
+                padding: 8px;
                 border-radius: 5px;
-                overflow: hidden;
             }}
-            .user-message-row td {{
+            .user-message td {{
                 background-color: {user_bg};
-                padding: 8px;
             }}
-            .ai-message-row td {{
+            .ai-message td {{
                 background-color: {ai_bg};
-                padding: 8px;
             }}
-            .prefix-cell {{
-                width: 1px;
-                vertical-align: top;
-                padding-right: 8px !important;
-            }}
-            .content-cell {{
-                width: 100%;
-                vertical-align: top;
-            }}
-            .chat-prefix-user, .chat-prefix-ai {{
+            .chat-prefix {{
                 font-weight: bold;
-                white-space: nowrap;
+                margin-bottom: 4px;
+            }}
+            .chat-prefix::after {{
+                content: ':';
             }}
             .chat-prefix-user {{
                 color: {user_prefix_color};
             }}
             .chat-prefix-ai {{
                 color: {ai_prefix_color};
+            }}
+            .chat-content {{
+                white-space: pre-wrap;
+                word-wrap: break-word;
             }}
             code {{
                 background-color: {code_bg};
