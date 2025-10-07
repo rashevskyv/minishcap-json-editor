@@ -55,7 +55,7 @@ class GlossaryBuilderHandler:
             providers_cfg = translation_config.get('providers', {}) or {}
 
         provider_key_map = {
-            'OpenAI': ['openai_chat', 'chatmock', 'openai_responses'],
+            'OpenAI': ['openai_chat', 'chatmock', 'openai_responses', 'perplexity'],
             'Gemini': ['gemini'],
             'Ollama': ['ollama_chat']
         }

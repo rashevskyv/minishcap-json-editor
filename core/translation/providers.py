@@ -315,6 +315,30 @@ class GeminiProvider(BaseTranslationProvider):
         if not self.model:
             raise TranslationProviderError("Gemini model is not set.")
 
+    def start_new_chat_session(self):
+        """If using a custom base URL, attempts to start a new chat session."""
+        if not self._use_openai_compat:
+            log_debug("New chat session request is only applicable for custom base URLs (OpenAI compatibility mode).")
+            return
+
+        try:
+            # Construct the URL for the new-chat endpoint
+            # Assumes the base_url is something like http://host:port
+            new_chat_url = f"{self.base_url}/api/new-chat"
+            
+            log_debug(f"Requesting new chat session from: {new_chat_url}")
+            response = requests.post(new_chat_url, timeout=10) # 10-second timeout
+            response.raise_for_status()
+            
+            response_data = response.json()
+            if response_data.get("success"):
+                log_debug("Successfully created a new chat session via API.")
+            else:
+                log_debug(f"API indicated failure in creating new chat session: {response_data.get('message')}")
+
+        except requests.RequestException as e:
+            log_debug(f"Failed to request a new chat session: {e}")
+
     def translate(self, messages: List[Dict[str, str]], session: Optional[dict] = None, settings_override: Optional[Dict[str, Any]] = None) -> ProviderResponse:
         current_settings = self.settings.copy()
         if settings_override:
@@ -486,6 +510,8 @@ def create_translation_provider(provider_key: str, settings: Dict[str, Any]) -> 
         return DeepLProvider(settings)
     if provider_key == 'gemini':
         return GeminiProvider(settings)
+    if provider_key == 'perplexity':
+        return OpenAIChatProvider(settings)
     raise TranslationProviderError(f"Unknown provider key: {provider_key}")
 
 def get_provider_for_config(config: Dict[str, Any]) -> BaseTranslationProvider:

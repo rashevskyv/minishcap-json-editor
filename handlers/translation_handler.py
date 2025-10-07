@@ -14,6 +14,7 @@ from core.translation.providers import (
     TranslationProviderError,
     create_translation_provider,
     BaseTranslationProvider,
+    GeminiProvider,
 )
 from core.translation.session_manager import TranslationSessionManager
 from .translation.glossary_handler import GlossaryHandler
@@ -38,6 +39,7 @@ class TranslationHandler(BaseHandler):
         self._active_provider_key: Optional[str] = None
         self.thread: Optional[QThread] = None
         self.worker: Optional[AIWorker] = None
+        self.is_ai_running = False
         self.translation_progress: Dict[int, Dict[str, Union[set, int]]] = {}
         self.pre_translation_state: Dict[int, List[str]] = {}
 
@@ -347,6 +349,17 @@ class TranslationHandler(BaseHandler):
         self._cached_glossary = None
         self.start_new_session = True
         log_debug(f"TranslationHandler.reset_translation_session: Manual reset. start_new_session set to {self.start_new_session}")
+
+        config = getattr(self.mw, 'translation_config', None)
+        if config and config.get('provider') == 'gemini':
+            provider_settings = config.get('providers', {}).get('gemini', {})
+            if provider_settings:
+                try:
+                    provider = GeminiProvider(provider_settings)
+                    provider.start_new_chat_session()
+                except Exception as e:
+                    log_debug(f"Could not start new chat session on reset: {e}")
+
         if self.mw.statusBar:
             self.mw.statusBar.showMessage("AI session reset.", 4000)
 
@@ -455,6 +468,7 @@ class TranslationHandler(BaseHandler):
             dialog_obj.set_notes_variation_busy(busy)
 
     def _run_ai_task(self, provider: BaseTranslationProvider, task_details: dict):
+        self.is_ai_running = True
         self.thread = QThread()
         task_details['dialog_steps'] = self.ui_handler.status_dialog.steps
         self.worker = AIWorker(provider, self.prompt_composer, task_details)
@@ -467,6 +481,7 @@ class TranslationHandler(BaseHandler):
         self.thread.finished.connect(self.thread.deleteLater)
         self.thread.finished.connect(lambda: setattr(self, 'thread', None))
         self.thread.finished.connect(lambda: setattr(self, 'worker', None))
+        self.thread.finished.connect(lambda: setattr(self, 'is_ai_running', False))
 
         task_type = task_details.get('type')
         if task_type == 'translate_preview':
@@ -543,6 +558,9 @@ class TranslationHandler(BaseHandler):
         self.ui_handler.status_dialog.setup_progress_bar(total_chunks, completed_chunks)
 
     def translate_current_string(self):
+        if self.is_ai_running:
+            QMessageBox.information(self.mw, "AI Busy", "An AI task is already running. Please wait for it to complete.")
+            return
         if self.mw.current_block_idx == -1 or self.mw.current_string_idx == -1: return
         self._translate_and_apply(
             source_text=str(self.glossary_handler._get_original_string(self.mw.current_block_idx, self.mw.current_string_idx)),
@@ -553,6 +571,9 @@ class TranslationHandler(BaseHandler):
         )
 
     def translate_preview_selection(self, context_menu_pos: QPoint):
+        if self.is_ai_running:
+            QMessageBox.information(self.mw, "AI Busy", "An AI task is already running. Please wait for it to complete.")
+            return
         block_idx = self.mw.current_block_idx
         if block_idx == -1: return
 
@@ -614,6 +635,9 @@ class TranslationHandler(BaseHandler):
         self._initiate_batch_translation(task_details)
 
     def translate_current_block(self, block_idx: Optional[int] = None) -> None:
+        if self.is_ai_running:
+            QMessageBox.information(self.mw, "AI Busy", "An AI task is already running. Please wait for it to complete.")
+            return
         target_block_idx = self.mw.current_block_idx if block_idx is None else block_idx
         if target_block_idx is None or target_block_idx == -1:
             QMessageBox.information(self.mw, "AI Translation", "Select a block to translate.")
@@ -1034,6 +1058,11 @@ class TranslationHandler(BaseHandler):
         )
         self.reset_translation_session()
 
+        if task_type == 'translate_block_chunked':
+            provider = context.get('provider')
+            if isinstance(provider, GeminiProvider):
+                provider.start_new_chat_session()
+
         if context.get('type') == 'fill_glossary':
             self.ui_handler.finish_ai_operation()
             self.glossary_handler._handle_ai_fill_error(error_message, context)
@@ -1101,6 +1130,9 @@ class TranslationHandler(BaseHandler):
 
 
     def generate_variation_for_current_string(self):
+        if self.is_ai_running:
+            QMessageBox.information(self.mw, "AI Busy", "An AI task is already running. Please wait for it to complete.")
+            return
         if self.mw.current_block_idx == -1 or self.mw.current_string_idx == -1: return
         original_text = str(self.glossary_handler._get_original_string(self.mw.current_block_idx, self.mw.current_string_idx))
         current_translation, _ = self.data_processor.get_current_string_text(self.mw.current_block_idx, self.mw.current_string_idx)

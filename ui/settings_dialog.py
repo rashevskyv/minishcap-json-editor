@@ -82,7 +82,8 @@ class SettingsDialog(QDialog):
             "chatmock": 1,
             "ollama_chat": 3,
             "deepl": 4,
-            "gemini": 5
+            "gemini": 5,
+            "perplexity": 6
         }
 
         main_layout = QVBoxLayout(self)
@@ -314,6 +315,7 @@ class SettingsDialog(QDialog):
         self.translation_provider_combo.addItem("Ollama Chat", "ollama_chat")
         self.translation_provider_combo.addItem("DeepL", "deepl")
         self.translation_provider_combo.addItem("Gemini", "gemini")
+        self.translation_provider_combo.addItem("Perplexity", "perplexity")
         provider_form.addRow("Active Provider:", self.translation_provider_combo)
         layout.addLayout(provider_form)
 
@@ -387,6 +389,29 @@ class SettingsDialog(QDialog):
         self.gemini_api_key_edit = QLineEdit(self); self.gemini_api_key_edit.setEchoMode(QLineEdit.Password); self.gemini_api_key_edit.setPlaceholderText("Gemini API Key"); gemini_layout.addRow("API Key:", self.gemini_api_key_edit)
         self.gemini_model_edit = QLineEdit(self); self.gemini_model_edit.setPlaceholderText("gemini-1.5-flash-latest"); gemini_layout.addRow("Model:", self.gemini_model_edit)
         self.ai_provider_pages.addWidget(gemini_group)
+
+        perplexity_group = QGroupBox("Perplexity API", self.ai_translation_tab)
+        perplexity_layout = QFormLayout(perplexity_group)
+        self.perplexity_api_key_edit = QLineEdit(self)
+        self.perplexity_api_key_edit.setEchoMode(QLineEdit.Password)
+        self.perplexity_api_key_edit.setPlaceholderText("Bearer token")
+        perplexity_layout.addRow("API Key:", self.perplexity_api_key_edit)
+        self.perplexity_base_url_edit = QLineEdit(self)
+        self.perplexity_base_url_edit.setPlaceholderText("https://api.perplexity.ai")
+        perplexity_layout.addRow("Base URL:", self.perplexity_base_url_edit)
+        self.perplexity_model_edit = QLineEdit(self)
+        self.perplexity_model_edit.setPlaceholderText("sonar-medium-8x7b-chat")
+        perplexity_layout.addRow("Model:", self.perplexity_model_edit)
+        self.perplexity_temperature_spin = QDoubleSpinBox(self)
+        self.perplexity_temperature_spin.setRange(0.0, 2.0); self.perplexity_temperature_spin.setDecimals(2); self.perplexity_temperature_spin.setSingleStep(0.05); self.perplexity_temperature_spin.setValue(0.0)
+        perplexity_layout.addRow("Temperature:", self.perplexity_temperature_spin)
+        self.perplexity_max_tokens_spin = QSpinBox(self)
+        self.perplexity_max_tokens_spin.setRange(0, 200000); self.perplexity_max_tokens_spin.setSingleStep(100); self.perplexity_max_tokens_spin.setSpecialValueText("Provider default"); self.perplexity_max_tokens_spin.setValue(0)
+        perplexity_layout.addRow("Max Output Tokens:", self.perplexity_max_tokens_spin)
+        self.perplexity_timeout_spin = QSpinBox(self)
+        self.perplexity_timeout_spin.setRange(1, 600); self.perplexity_timeout_spin.setSuffix(" s"); self.perplexity_timeout_spin.setValue(60)
+        perplexity_layout.addRow("Request Timeout:", self.perplexity_timeout_spin)
+        self.ai_provider_pages.addWidget(perplexity_group)
 
         self.translation_provider_combo.currentIndexChanged.connect(self.on_provider_changed)
         self.openai_api_key_edit.textChanged.connect(self._refresh_glossary_api_key_from_translation)
@@ -639,6 +664,17 @@ class SettingsDialog(QDialog):
         deepl_cfg = providers_cfg.get('deepl', {}); self.deepl_api_key_edit.setText(deepl_cfg.get('api_key', '')); self.deepl_server_url_edit.setText(deepl_cfg.get('server_url', ''))
         gemini_cfg = providers_cfg.get('gemini', {}); self.gemini_api_key_edit.setText(gemini_cfg.get('api_key', '')); self.gemini_model_edit.setText(gemini_cfg.get('model', '')); self.gemini_base_url_edit.setText(gemini_cfg.get('base_url', ''))
 
+        perplexity_cfg = providers_cfg.get('perplexity', {})
+        self.perplexity_api_key_edit.setText(perplexity_cfg.get('api_key', ''))
+        self.perplexity_base_url_edit.setText(perplexity_cfg.get('base_url', ''))
+        self.perplexity_model_edit.setText(perplexity_cfg.get('model', ''))
+        try: self.perplexity_temperature_spin.setValue(float(perplexity_cfg.get('temperature', 0.0)))
+        except (TypeError, ValueError): self.perplexity_temperature_spin.setValue(0.0)
+        try: self.perplexity_max_tokens_spin.setValue(int(perplexity_cfg.get('max_output_tokens', 0) or 0))
+        except (TypeError, ValueError): self.perplexity_max_tokens_spin.setValue(0)
+        try: self.perplexity_timeout_spin.setValue(int(perplexity_cfg.get('timeout', 60) or 60))
+        except (TypeError, ValueError): self.perplexity_timeout_spin.setValue(60)
+
         # Load AI Glossary settings
         glossary_ai_cfg = getattr(self.mw, 'glossary_ai', {})
         glossary_provider = glossary_ai_cfg.get('provider', 'OpenAI')
@@ -706,6 +742,15 @@ class SettingsDialog(QDialog):
         deepl_cfg = providers_cfg.setdefault('deepl', {}); deepl_cfg.update({'api_key': self.deepl_api_key_edit.text().strip(), 'server_url': self.deepl_server_url_edit.text().strip()})
         gemini_cfg = providers_cfg.setdefault('gemini', {}); gemini_cfg.update({'api_key': self.gemini_api_key_edit.text().strip(), 'model': self.gemini_model_edit.text().strip(), 'base_url': self.gemini_base_url_edit.text().strip()})
         
+        perplexity_cfg = providers_cfg.setdefault('perplexity', {}); perplexity_cfg.update({
+            'api_key': self.perplexity_api_key_edit.text().strip(),
+            'base_url': self.perplexity_base_url_edit.text().strip(),
+            'model': self.perplexity_model_edit.text().strip(),
+            'temperature': float(self.perplexity_temperature_spin.value()),
+            'max_output_tokens': int(self.perplexity_max_tokens_spin.value()),
+            'timeout': int(self.perplexity_timeout_spin.value())
+        })
+
         self.translation_config_snapshot = translation_config_to_save
 
         glossary_provider = self.glossary_provider_combo.currentText()
