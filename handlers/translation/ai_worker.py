@@ -206,12 +206,10 @@ class AIWorker(QObject):
                             translated_items = parsed_response.get('translated_strings', [])
 
                             if len(translated_items) == len(chunk):
-                                if session_state:
-                                    session_state.record_exchange(
-                                        user_content=user,
-                                        assistant_content=cleaned_text,
-                                        conversation_id=getattr(response, 'conversation_id', None),
-                                    )
+                                if session_state and not session_state.bootstrapped:
+                                    log_debug(f"AIWorker: First chunk (index {i}) of block translation successful. Marking session as bootstrapped.")
+                                    session_state.bootstrapped = True
+
                                 task_details_for_chunk = self.task_details.copy()
                                 if session_state:
                                     task_details_for_chunk['session_state'] = session_state

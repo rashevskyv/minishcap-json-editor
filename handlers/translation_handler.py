@@ -1,4 +1,5 @@
-# handlers/translation/translation_handler.py ---
+# handlers/translation/translation_handler.py
+
 import json
 import re
 from pathlib import Path
@@ -22,7 +23,7 @@ from .translation.ai_prompt_composer import AIPromptComposer
 from .translation.translation_ui_handler import TranslationUIHandler
 from .translation.ai_worker import AIWorker
 from components.prompt_editor_dialog import PromptEditorDialog
-from utils.logging_utils import log_debug
+from utils.logging_utils import log_debug, log_warning
 from utils.utils import convert_spaces_to_dots_for_display
 
 
@@ -42,6 +43,7 @@ class TranslationHandler(BaseHandler):
         self.is_ai_running = False
         self.translation_progress: Dict[int, Dict[str, Union[set, int]]] = {}
         self.pre_translation_state: Dict[int, List[str]] = {}
+        self._retry_context: Optional[Dict] = None
 
         self.glossary_handler = GlossaryHandler(self)
         self.prompt_composer = AIPromptComposer(self)
@@ -467,6 +469,30 @@ class TranslationHandler(BaseHandler):
         elif hasattr(dialog_obj, 'set_notes_variation_busy'):
             dialog_obj.set_notes_variation_busy(busy)
 
+    def _cleanup_and_retry(self):
+        log_debug("TranslationHandler: Worker thread finished. Cleaning up.")
+        if self.worker:
+            self.worker.deleteLater()
+            self.worker = None
+        if self.thread:
+            self.thread.deleteLater()
+            self.thread = None
+        
+        self.is_ai_running = False
+
+        if self._retry_context:
+            log_debug("TranslationHandler: A retry context was found. Initiating retry.")
+            retry_context = self._retry_context
+            self._retry_context = None
+            
+            task_type = retry_context.get('type')
+            if task_type in ['translate_preview', 'translate_block_chunked']:
+                QTimer.singleShot(0, lambda: self._initiate_batch_translation(retry_context))
+            else:
+                log_warning(f"A retry was requested for an unhandled task type: {task_type}")
+                self.ui_handler.finish_ai_operation()
+                QMessageBox.critical(self.mw, "AI Operation Failed", f"Retry logic not implemented for task '{task_type}'.")
+
     def _run_ai_task(self, provider: BaseTranslationProvider, task_details: dict):
         self.is_ai_running = True
         self.thread = QThread()
@@ -477,11 +503,7 @@ class TranslationHandler(BaseHandler):
         self.thread.started.connect(self.worker.run)
         self.worker.step_updated.connect(self.ui_handler.update_ai_operation_step)
         self.worker.finished.connect(self.thread.quit)
-        self.worker.finished.connect(self.worker.deleteLater)
-        self.thread.finished.connect(self.thread.deleteLater)
-        self.thread.finished.connect(lambda: setattr(self, 'thread', None))
-        self.thread.finished.connect(lambda: setattr(self, 'worker', None))
-        self.thread.finished.connect(lambda: setattr(self, 'is_ai_running', False))
+        self.thread.finished.connect(self._cleanup_and_retry)
 
         task_type = task_details.get('type')
         if task_type == 'translate_preview':
@@ -510,6 +532,7 @@ class TranslationHandler(BaseHandler):
 
     def prompt_for_revert_after_cancel(self):
         if not self.worker:
+            self.ui_handler.finish_ai_operation()
             return
 
         block_idx = self.worker.task_details.get('block_idx')
@@ -547,7 +570,7 @@ class TranslationHandler(BaseHandler):
     def _handle_translation_cancellation(self):
         log_debug("TranslationHandler: Worker has confirmed cancellation.")
         self.reset_translation_session()
-        self.ui_handler.finish_ai_operation()
+        self.prompt_for_revert_after_cancel()
 
     def _setup_progress_bar(self, total_chunks: int, completed_chunks: int):
         block_idx = self.worker.task_details.get('block_idx')
@@ -685,7 +708,8 @@ class TranslationHandler(BaseHandler):
             'block_idx': target_block_idx,
             'mode_description': f"block {target_block_idx + 1}",
             'provider_settings_override': {'timeout': block_timeout},
-            'timeout_seconds': block_timeout
+            'timeout_seconds': block_timeout,
+            'session_reset_attempted': False
         }
         self._initiate_batch_translation(task_details)
 
@@ -726,7 +750,8 @@ class TranslationHandler(BaseHandler):
             'mode_description': f"block {target_block_idx + 1}",
             'provider_settings_override': {'timeout': block_timeout},
             'timeout_seconds': block_timeout,
-            'is_resume': True
+            'is_resume': True,
+            'session_reset_attempted': progress_entry.get('session_reset_attempted', False)
         }
         if progress_entry.get('custom_user_header'):
             task_details['custom_user_header'] = progress_entry.get('custom_user_header')
@@ -853,7 +878,7 @@ class TranslationHandler(BaseHandler):
             self.ui_handler.status_dialog.update_progress(self.translated_chunks_count)
             
             total_chunks = self.translation_progress.get(block_idx, {}).get('total_chunks', -1)
-            if self.translated_chunks_count == total_chunks:
+            if total_chunks != -1 and self.translated_chunks_count == total_chunks:
                 self.ui_handler.finish_ai_operation()
                 self.ui_updater.update_text_views()
                 if hasattr(self.mw, 'app_action_handler'):
@@ -1058,31 +1083,16 @@ class TranslationHandler(BaseHandler):
         )
         self.reset_translation_session()
 
-        if task_type == 'translate_block_chunked':
-            provider = context.get('provider')
-            if isinstance(provider, GeminiProvider):
-                provider.start_new_chat_session()
-
-        if context.get('type') == 'fill_glossary':
+        if task_type in ['fill_glossary', 'glossary_occurrence_update', 'glossary_occurrence_batch_update', 'glossary_notes_variation']:
             self.ui_handler.finish_ai_operation()
-            self.glossary_handler._handle_ai_fill_error(error_message, context)
-            return
-
-        if context.get('type') == 'glossary_occurrence_update':
-            self.ui_handler.finish_ai_operation()
-            self.glossary_handler._handle_occurrence_ai_error(error_message, context.get('from_batch', False))
-            return
-
-        if context.get('type') == 'glossary_occurrence_batch_update':
-            self.ui_handler.finish_ai_operation()
-            self.glossary_handler._handle_occurrence_ai_error(error_message, True)
-            return
-
-        if context.get('type') == 'glossary_notes_variation':
-            self.ui_handler.finish_ai_operation()
-            self._set_notes_dialog_busy(context.get('dialog'), False)
-            message = error_message or "AI request failed."
-            QMessageBox.warning(self.mw, "AI Glossary Notes", message)
+            if task_type == 'fill_glossary':
+                self.glossary_handler._handle_ai_fill_error(error_message, context)
+            elif task_type in ['glossary_occurrence_update', 'glossary_occurrence_batch_update']:
+                self.glossary_handler._handle_occurrence_ai_error(error_message, context.get('from_batch', False))
+            elif task_type == 'glossary_notes_variation':
+                self._set_notes_dialog_busy(context.get('dialog'), False)
+                message = error_message or "AI request failed."
+                QMessageBox.warning(self.mw, "AI Glossary Notes", message)
             return
 
         is_timeout = 'timed out' in error_message.lower()
@@ -1090,44 +1100,39 @@ class TranslationHandler(BaseHandler):
         next_attempt = attempt + 1
         context['attempt'] = next_attempt
 
-        if (next_attempt <= max_attempts) and task_type == 'translate_preview':
-            if is_timeout:
-                message = (
-                    f"AI translation timed out after {timeout_seconds or '?'} seconds while processing {mode}."
-                    "\n\nWould you like to wait longer and retry?"
-                )
-                user_choice = QMessageBox.question(
-                    self.mw,
-                    "AI Translation Timeout",
-                    message,
-                    QMessageBox.Yes | QMessageBox.No,
-                    QMessageBox.Yes
-                )
-                if user_choice != QMessageBox.Yes:
-                    log_debug("User cancelled AI retry after timeout.")
-                    self.ui_handler.finish_ai_operation()
-                    QMessageBox.information(
-                        self.mw,
-                        "AI Translation",
-                        "Translation cancelled after timeout."
-                    )
+        if next_attempt <= max_attempts:
+            if task_type == 'translate_block_chunked' and not context.get('session_reset_attempted', False):
+                provider = context.get('provider')
+                if isinstance(provider, GeminiProvider):
+                    log_debug("Block translation failed. Attempting Gemini session reset and retrying.")
+                    provider.start_new_chat_session()
+                    context['session_reset_attempted'] = True
+                    context['attempt'] = 1
+                    
+                    block_idx = context.get('block_idx')
+                    if block_idx is not None and block_idx in self.translation_progress:
+                        self.translation_progress[block_idx]['session_reset_attempted'] = True
+                    
+                    self._retry_context = context
                     return
-                log_debug("Retrying AI translation after user confirmation post-timeout.")
-            QTimer.singleShot(0, lambda: self._initiate_batch_translation(context))
-            return
+
+            if is_timeout:
+                message = f"AI translation timed out after {timeout_seconds or '?'} seconds while processing {mode}.\n\nWould you like to wait longer and retry?"
+                user_choice = QMessageBox.question(self.mw, "AI Translation Timeout", message, QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+                if user_choice != QMessageBox.Yes:
+                    pass
+                else:
+                    log_debug("Retrying AI translation after user confirmation post-timeout.")
+                    self._retry_context = context
+                    return
+            else:
+                 log_debug(f"Scheduling retry for AI task. Attempt {next_attempt}/{max_attempts}")
+                 self._retry_context = context
+                 return
 
         self.ui_handler.finish_ai_operation()
-        failure_message = (
-            f"Operation failed after {max_attempts} attempts while processing {mode}."
-            "\n\n"
-            f"Last error: {error_message}"
-        )
-        QMessageBox.critical(
-            self.mw,
-            "AI Operation Failed",
-            failure_message
-        )
-
+        failure_message = f"Operation failed after {max_attempts} attempts while processing {mode}.\n\nLast error: {error_message}"
+        QMessageBox.critical(self.mw, "AI Operation Failed", failure_message)
 
     def generate_variation_for_current_string(self):
         if self.is_ai_running:
