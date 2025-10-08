@@ -18,11 +18,11 @@
     "original_file_path": "D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt",
     "edited_file_path": "D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt",
     "last_selected_block_index": 0,
-    "last_selected_string_index": 791,
-    "last_cursor_position_in_edited": 20,
+    "last_selected_string_index": 119,
+    "last_cursor_position_in_edited": 65,
     "last_edited_text_edit_scroll_value_v": 0,
     "last_edited_text_edit_scroll_value_h": 0,
-    "last_preview_text_edit_scroll_value_v": 784,
+    "last_preview_text_edit_scroll_value_v": 116,
     "last_original_text_edit_scroll_value_v": 0,
     "last_original_text_edit_scroll_value_h": 0,
     "search_history": [],
@@ -123,6 +123,14 @@
                 "temperature": 0.0,
                 "timeout": 120,
                 "base_url": "http://127.0.0.1:2048/"
+            },
+            "perplexity": {
+                "api_key": "",
+                "base_url": "",
+                "model": "",
+                "temperature": 0.0,
+                "max_output_tokens": 0,
+                "timeout": 60
             }
         }
     }

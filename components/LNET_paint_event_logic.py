@@ -29,6 +29,12 @@ class LNETPaintEventLogic:
                     doc_visual_line_index += temp_block.layout().lineCount()
                 temp_block = temp_block.next()
 
+            main_window = self.editor.window()
+            page_size = 2
+            if isinstance(main_window, QMainWindow) and hasattr(main_window, 'current_game_rules') and main_window.current_game_rules:
+                if hasattr(main_window.current_game_rules, 'get_editor_page_size'):
+                    page_size = main_window.current_game_rules.get_editor_page_size()
+
             while block.isValid() and block.layout():
                 layout = block.layout()
                 block_rect = self.editor.blockBoundingGeometry(block).translated(viewport_offset)
@@ -38,7 +44,7 @@ class LNETPaintEventLogic:
                     if not line.isValid():
                         continue
                     
-                    if (doc_visual_line_index + 1) % 2 == 0: 
+                    if (doc_visual_line_index + 1) % page_size == 0: 
                          line_bottom_y_in_viewport = block_rect.top() + line.rect().bottom()
                          
                          has_next_line_in_block = (i < layout.lineCount() - 1)

@@ -1,5 +1,5 @@
 # --- START OF FILE plugins/zelda_ww/problem_analyzer.py ---
-from typing import Optional, Set, Dict, Any
+from typing import Optional, Set, Dict, Any, List
 import re
 
 from utils.logging_utils import log_debug
@@ -52,30 +52,6 @@ class ProblemAnalyzer:
 
         return (threshold - width_current_rstripped) >= (width_first_word_next + space_width)
 
-    def _check_empty_odd_subline_display_zww(self,
-                                             subline_text: str,
-                                             subline_qtextblock_number_in_editor: int,
-                                             is_single_subline_in_document: bool,
-                                             is_logically_single_and_empty_data_string: bool,
-                                             is_target_for_debug: bool = False) -> bool:
-        if is_logically_single_and_empty_data_string:
-            return False
-
-        if is_single_subline_in_document:
-            return False
-
-        is_odd_qtextblock_editor = (subline_qtextblock_number_in_editor + 1) % 2 != 0
-        if not is_odd_qtextblock_editor:
-            return False
-
-        if ANY_TAG_PATTERN_WW.search(subline_text):
-            return False
-
-        text_no_tags_for_empty_check = remove_all_tags_ww(subline_text)
-        stripped_text_no_tags_for_empty_check = text_no_tags_for_empty_check.strip()
-        is_content_empty_or_zero = not stripped_text_no_tags_for_empty_check or stripped_text_no_tags_for_empty_check == "0"
-        return is_content_empty_or_zero
-
     def _check_single_word_subline_zww(self, subline_text: str) -> bool:
         text_no_tags = remove_all_tags_ww(subline_text).strip()
         if not text_no_tags: 
@@ -94,67 +70,51 @@ class ProblemAnalyzer:
 
         return False
 
+    def check_for_empty_first_line_of_page(self, text: str) -> List[int]:
+        lines = text.split('\n')
+        problem_lines = []
+        for i in range(len(lines)):
+            if i % 4 == 0:
+                is_first_line_empty = not lines[i].strip()
+                if is_first_line_empty:
+                    page_lines = lines[i : i + 4]
+                    if len(page_lines) > 1:
+                        has_content_after = any(line.strip() for line in page_lines[1:])
+                        if has_content_after:
+                            problem_lines.append(i)
+        return problem_lines
 
-    def analyze_subline(self,
-                        text: str,
-                        next_text: Optional[str],
-                        subline_number_in_data_string: int, 
-                        qtextblock_number_in_editor: int,   
-                        is_last_subline_in_data_string: bool,
-                        editor_font_map: dict,
-                        editor_line_width_threshold: int,
-                        full_data_string_text_for_logical_check: str,
-                        is_target_for_debug: bool = False) -> Set[str]:
-
-        found_problems = set()
-
-        pixel_width_subline = self.mw.current_game_rules.calculate_string_width_override(text.rstrip(), editor_font_map)
-        if pixel_width_subline > editor_line_width_threshold:
-            found_problems.add(self.problem_ids.PROBLEM_WIDTH_EXCEEDED)
-
-        is_single_doc_block_for_display_check = False
-        if self.mw:
-            active_editor = getattr(self.mw, 'edited_text_edit', None)
-            original_text_edit = getattr(self.mw, 'original_text_edit', None)
-            if original_text_edit and original_text_edit.hasFocus():
-                active_editor = original_text_edit
-
-            if active_editor and hasattr(active_editor, 'document') and active_editor.document():
-                 is_single_doc_block_for_display_check = (active_editor.document().blockCount() == 1)
-
-        is_logically_single_and_empty_data_string_check = (full_data_string_text_for_logical_check == "" and subline_number_in_data_string == 0 and is_last_subline_in_data_string)
-
-        if self._check_empty_odd_subline_display_zww(text, 
-                                                     qtextblock_number_in_editor,
-                                                     is_single_doc_block_for_display_check,
-                                                     is_logically_single_and_empty_data_string_check,
-                                                     is_target_for_debug):
-             found_problems.add(self.problem_ids.PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY)
-
-        if next_text is not None:
-            if self._check_short_line_zww(text, next_text, editor_font_map, editor_line_width_threshold):
-                found_problems.add(self.problem_ids.PROBLEM_SHORT_LINE)
-
-        is_odd_logical_subline = (subline_number_in_data_string + 1) % 2 != 0
-        is_only_logical_subline_in_data_string = (subline_number_in_data_string == 0 and is_last_subline_in_data_string)
-
-        if is_odd_logical_subline and not is_only_logical_subline_in_data_string:
-            if not ANY_TAG_PATTERN_WW.search(text):
-                text_no_tags_for_logical_empty_check = remove_all_tags_ww(text)
-                stripped_text_no_tags_for_logical_empty_check = text_no_tags_for_logical_empty_check.strip()
-                is_content_empty_or_zero_logical = not stripped_text_no_tags_for_logical_empty_check or stripped_text_no_tags_for_logical_empty_check == "0"
-                if is_content_empty_or_zero_logical:
-                    found_problems.add(self.problem_ids.PROBLEM_EMPTY_ODD_SUBLINE_LOGICAL)
+    def analyze_data_string(self, data_string: str, font_map: dict, threshold: int) -> List[Set[str]]:
+        sublines = data_string.split('\n')
+        problems_per_subline = [set() for _ in sublines]
         
-        if subline_number_in_data_string > 0 and is_odd_logical_subline:
-            if self._check_single_word_subline_zww(text):
-                found_problems.add(self.problem_ids.PROBLEM_SINGLE_WORD_SUBLINE)
+        empty_first_lines = self.check_for_empty_first_line_of_page(data_string)
+        for line_idx in empty_first_lines:
+            if line_idx < len(problems_per_subline):
+                problems_per_subline[line_idx].add(self.problem_ids.PROBLEM_EMPTY_FIRST_LINE_OF_PAGE)
 
+        for i, subline in enumerate(sublines):
+            pixel_width_subline = self.mw.current_game_rules.calculate_string_width_override(subline.rstrip(), font_map)
+            if pixel_width_subline > threshold:
+                problems_per_subline[i].add(self.problem_ids.PROBLEM_WIDTH_EXCEEDED)
+            
+            next_subline = sublines[i + 1] if i + 1 < len(sublines) else None
+            if next_subline is not None:
+                if self._check_short_line_zww(subline, next_subline, font_map, threshold):
+                    problems_per_subline[i].add(self.problem_ids.PROBLEM_SHORT_LINE)
 
-        for tag_match in ANY_TAG_PATTERN_WW.finditer(text):
-            tag = tag_match.group(0)
-            if not self.tag_manager.is_tag_legitimate(tag):
-                found_problems.add(self.problem_ids.PROBLEM_TAG_WARNING)
-                break
+            is_odd_logical_subline = (i + 1) % 2 != 0
+            if i > 0 and is_odd_logical_subline:
+                if self._check_single_word_subline_zww(subline):
+                    problems_per_subline[i].add(self.problem_ids.PROBLEM_SINGLE_WORD_SUBLINE)
 
-        return found_problems
+            for tag_match in ANY_TAG_PATTERN_WW.finditer(subline):
+                tag = tag_match.group(0)
+                if not self.tag_manager.is_tag_legitimate(tag):
+                    problems_per_subline[i].add(self.problem_ids.PROBLEM_TAG_WARNING)
+                    break
+        
+        return problems_per_subline
+
+    def analyze_subline(self, *args, **kwargs) -> Set[str]:
+        return set()

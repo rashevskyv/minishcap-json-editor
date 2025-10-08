@@ -92,3 +92,6 @@ class BaseGameRules:
 
     def calculate_string_width_override(self, text: str, font_map: dict, default_char_width: int) -> Optional[int]:
         return None
+
+    def get_editor_page_size(self) -> int:
+        return 2

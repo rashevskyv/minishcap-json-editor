@@ -14,7 +14,8 @@ from .config import (
     PROBLEM_SHORT_LINE,
     PROBLEM_EMPTY_ODD_SUBLINE_LOGICAL,
     PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY,
-    PROBLEM_SINGLE_WORD_SUBLINE
+    PROBLEM_SINGLE_WORD_SUBLINE,
+    PROBLEM_EMPTY_FIRST_LINE_OF_PAGE
 )
 from .tag_manager import TagManager
 from .problem_analyzer import ProblemAnalyzer
@@ -28,6 +29,7 @@ class ProblemIDs:
     PROBLEM_EMPTY_ODD_SUBLINE_LOGICAL = PROBLEM_EMPTY_ODD_SUBLINE_LOGICAL
     PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY = PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY
     PROBLEM_SINGLE_WORD_SUBLINE = PROBLEM_SINGLE_WORD_SUBLINE
+    PROBLEM_EMPTY_FIRST_LINE_OF_PAGE = PROBLEM_EMPTY_FIRST_LINE_OF_PAGE
 
 class GameRules(BaseGameRules):
     def __init__(self, main_window_ref=None):
@@ -144,6 +146,7 @@ class GameRules(BaseGameRules):
         if problem_id == PROBLEM_EMPTY_ODD_SUBLINE_LOGICAL: return "EmptyOddL"
         if problem_id == PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY: return "EmptyOddD"
         if problem_id == PROBLEM_SINGLE_WORD_SUBLINE: return "1Word"
+        if problem_id == PROBLEM_EMPTY_FIRST_LINE_OF_PAGE: return "Empty1st"
         return super().get_short_problem_name(problem_id)
         
     def get_text_representation_for_preview(self, data_string: str) -> str:
@@ -160,3 +163,6 @@ class GameRules(BaseGameRules):
     def get_enter_char(self) -> str: return '\n'
     def get_shift_enter_char(self) -> str: return '\n'
     def get_ctrl_enter_char(self) -> str: return '\n'
+    
+    def get_editor_page_size(self) -> int:
+        return 4

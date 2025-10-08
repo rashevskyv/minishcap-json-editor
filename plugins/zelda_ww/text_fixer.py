@@ -187,15 +187,30 @@ class TextFixer:
         final_text = "".join(result_parts)
         return final_text, final_text != original_text
 
+    def fix_empty_first_line_of_page(self, text: str) -> Tuple[str, bool]:
+        lines = text.split('\n')
+        problem_indices = self.problem_analyzer.check_for_empty_first_line_of_page(text)
+        if not problem_indices:
+            return text, False
+
+        indices_to_remove = set(problem_indices)
+        
+        new_lines = [line for i, line in enumerate(lines) if i not in indices_to_remove]
+        
+        new_text = '\n'.join(new_lines)
+        return new_text, new_text != text
+
     def autofix_data_string(self,
                             data_string: str,
                             editor_font_map: dict,
                             editor_line_width_threshold: int) -> Tuple[str, bool]:
         
         original_text = str(data_string)
-        modified_text, changed = self._fix_empty_odd_sublines_zww(original_text)
         
-        # Застосовуємо виправлення в циклі, доки є зміни
+        text_after_page_fix, page_fix_changed = self.fix_empty_first_line_of_page(original_text)
+        
+        modified_text, changed = self._fix_empty_odd_sublines_zww(text_after_page_fix)
+        
         max_iterations = 10
         for _ in range(max_iterations):
             text_before_pass = modified_text

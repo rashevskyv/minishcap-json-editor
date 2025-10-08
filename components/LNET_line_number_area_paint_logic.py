@@ -108,7 +108,7 @@ class LNETLineNumberAreaPaintLogic:
 
                 filtered_problems = {p_id for p_id in problem_ids_for_this_qtextblock if detection_config.get(p_id, True)}
                 
-                if is_editor and filtered_problems:
+                if self.editor.objectName() == "edited_text_edit" and filtered_problems:
                     sorted_subline_problem_ids = sorted(
                         list(filtered_problems),
                         key=lambda pid: problem_definitions.get(pid, {}).get("priority", 99)
@@ -127,7 +127,7 @@ class LNETLineNumberAreaPaintLogic:
                 painter.drawText(QRect(0, top, number_part_width - 3, line_height), Qt.AlignRight | Qt.AlignVCenter, display_number_for_line_area)
 
                 if extra_part_width > 0:
-                    if is_editor and self.mw and hasattr(self.mw, 'all_font_maps') and self.mw.all_font_maps:
+                    if self.editor.objectName() == "edited_text_edit" and self.mw and hasattr(self.mw, 'all_font_maps') and self.mw.all_font_maps:
                         font_map_for_line = self.mw.helper.get_font_map_for_string(current_block_idx_data_mw, current_string_idx_data_mw)
                         
                         q_block_text_raw_dots_paint_text = current_q_block.text()
