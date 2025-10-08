@@ -187,8 +187,21 @@ class GlossaryManager:
             return []
         return list(self._occurrence_index.get(entry.original, []))
 
-    def get_occurrence_map(self) -> Dict[str, List[GlossGlosOccurrence]]:
+    def get_occurrence_map(self) -> Dict[str, List[GlossaryOccurrence]]:
         return {key: list(value) for key, value in self._occurrence_index.items()}
+
+    def get_relevant_terms(self, text: str) -> List[GlossaryEntry]:
+        """Find all glossary entries that appear in the given text."""
+        if not text:
+            return []
+        matches = self.find_matches(text)
+        seen_originals = set()
+        relevant_entries = []
+        for match in matches:
+            if match.entry.original not in seen_originals:
+                relevant_entries.append(match.entry)
+                seen_originals.add(match.entry.original)
+        return relevant_entries
 
     def get_session_changes(self) -> Dict[str, Optional[GlossaryEntry]]:
         """Return a copy of the session's glossary modifications."""

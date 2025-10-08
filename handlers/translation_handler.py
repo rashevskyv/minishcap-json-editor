@@ -620,7 +620,9 @@ class TranslationHandler(BaseHandler):
         session_state = self._session_manager.get_state()
         composer_args = {
             'system_prompt': system_prompt,
-            'source_items': source_items, 'block_idx': block_idx,
+            'source_items': source_items,
+            'all_source_items': source_items,
+            'block_idx': block_idx,
             'mode_description': f"lines {start_line + 1}-{end_line + 1}",
             'session_state': session_state,
         }
@@ -793,7 +795,9 @@ class TranslationHandler(BaseHandler):
         session_state = self._session_manager.get_state()
         composer_args = {
             'system_prompt': system_prompt,
-            'source_items': context['source_items'], 'block_idx': context['block_idx'],
+            'source_items': context['source_items'],
+            'all_source_items': context['source_items'],
+            'block_idx': context['block_idx'],
             'mode_description': context['mode_description'], 'is_retry': (context['attempt'] > 1),
             'retry_reason': context.get('last_error', ''),
             'session_state': session_state,
@@ -838,6 +842,7 @@ class TranslationHandler(BaseHandler):
                     progress_entry['system_prompt_override'] = edited_system
         
         final_system_prompt = context['composer_args']['system_prompt']
+        context['composer_args']['all_source_items'] = context['source_items']
         final_user_prompt, _, p_map = self.prompt_composer.compose_batch_request(**context['composer_args'])
         context['placeholder_map'] = p_map 
 

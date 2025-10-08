@@ -167,6 +167,7 @@ class AIWorker(QObject):
 
                         composer_args_for_chunk = self.task_details['composer_args'].copy()
                         composer_args_for_chunk['source_items'] = chunk
+                        composer_args_for_chunk['all_source_items'] = source_items
                         system, user, _ = self.prompt_composer.compose_batch_request(**composer_args_for_chunk)
 
                         custom_header = self.task_details.get('custom_user_header')

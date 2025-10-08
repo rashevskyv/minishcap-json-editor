@@ -40,6 +40,7 @@ class AIPromptComposer(BaseTranslationHandler):
         self,
         system_prompt: str,
         source_items: List[Dict],
+        all_source_items: List[Dict],
         *,
         block_idx: Optional[int],
         mode_description: str,
@@ -48,11 +49,49 @@ class AIPromptComposer(BaseTranslationHandler):
         retry_reason: str = '',
     ) -> Tuple[str, str, Dict]:
         placeholder_map: Dict = {}
-        json_payload_for_ai = {'strings_to_translate': source_items}
+        
+        # Create a map for quick lookup of items by id
+        all_items_map = {item['id']: item for item in all_source_items}
+        all_item_ids = [item['id'] for item in all_source_items]
+
+        items_with_context = []
+        glossary_manager = self.main_handler._glossary_manager
+
+        for item in source_items:
+            item_id = item['id']
+            current_text = item.get('text', '')
+            
+            try:
+                current_idx = all_item_ids.index(item_id)
+                prev_idx = current_idx - 1
+                next_idx = current_idx + 1
+
+                context_before = all_source_items[prev_idx]['text'] if prev_idx >= 0 else ''
+                context_after = all_source_items[next_idx]['text'] if next_idx < len(all_source_items) else ''
+            except ValueError:
+                context_before, context_after = '', ''
+
+            # Find relevant glossary terms
+            relevant_glossary_entries = []
+            if glossary_manager:
+                combined_text = '\n'.join([context_before, current_text, context_after])
+                relevant_glossary_entries = glossary_manager.get_relevant_terms(combined_text)
+
+            item_for_ai = {
+                'id': item_id,
+                'text': current_text,
+                'context_before': context_before,
+                'context_after': context_after,
+                'relevant_glossary': self._glossary_entries_to_text(relevant_glossary_entries)
+            }
+            items_with_context.append(item_for_ai)
+
+        json_payload_for_ai = {'strings_to_translate': items_with_context}
 
         if not is_retry:
             instructions = [
                 'Translate the "text" field for each object in the "strings_to_translate" array into Ukrainian.',
+                'Use "context_before", "context_after", and "relevant_glossary" to maintain consistency.',
                 'Return a single, valid JSON object with a "translated_strings" key.',
                 'The value of "translated_strings" must be an array of objects.',
                 'Each object in the returned array must have the original "id" (integer) and a "translation" (string) field.',
@@ -66,6 +105,7 @@ class AIPromptComposer(BaseTranslationHandler):
                 f'Error: {retry_reason}',
                 'Follow these instructions carefully:',
                 'Translate the "text" field for each object in the "strings_to_translate" array into Ukrainian.',
+                'Use "context_before", "context_after", and "relevant_glossary" to maintain consistency.',
                 'Return a single, valid JSON object with a "translated_strings" key.',
                 'The value of "translated_strings" must be an array of objects.',
                 'Each object must have the original "id" and a "translation" field.',
@@ -74,7 +114,15 @@ class AIPromptComposer(BaseTranslationHandler):
                 'Do not add any explanations or text outside the JSON object.',
             ]
 
-        combined_system = self._prepare_glossary_for_prompt(system_prompt, session_state)
+        # Add a note about text unity to the system prompt
+        system_prompt_addition = (
+            "IMPORTANT: All text chunks you receive in a single request are part of a larger, "
+            "cohesive block of text. Ensure your translations are consistent in style, tone, "
+            "and terminology across all chunks."
+        )
+        
+        final_system_prompt = f"{system_prompt}\n\n{system_prompt_addition}"
+        combined_system = self._prepare_glossary_for_prompt(final_system_prompt, session_state, is_batch_translation=True)
 
         game_name = self.mw.current_game_rules.get_display_name() if self.mw.current_game_rules else 'Unknown game'
         context_lines = [
@@ -289,11 +337,16 @@ class AIPromptComposer(BaseTranslationHandler):
         self,
         system_prompt: str,
         session_state: Optional[TranslationSessionState],
+        is_batch_translation: bool = False,
     ) -> str:
         """Prepare the system prompt with the full glossary or just updates."""
         system_prompt = (system_prompt or "").strip()
         glossary_manager = self.main_handler._glossary_manager
         if not glossary_manager:
+            return system_prompt
+
+        # For batch translation, we assume relevant glossary is in the user prompt.
+        if is_batch_translation:
             return system_prompt
 
         # Case 1: No session or glossary already sent, but there are updates.
