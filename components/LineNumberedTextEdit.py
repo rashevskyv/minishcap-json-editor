@@ -2,8 +2,8 @@
 from PyQt5.QtWidgets import (QPlainTextEdit, QMainWindow, QMenu, QApplication, QAction,
                              QWidget, QHBoxLayout, QPushButton, QWidgetAction, QDialog,
                              QVBoxLayout, QComboBox, QDialogButtonBox, QLabel, QSpinBox, QToolTip)
-from PyQt5.QtGui import (QPainter, QFont, QPaintEvent, QKeyEvent, QKeySequence, QMouseEvent, QIcon, QPixmap, QColor, QTextLine, QTextCursor) 
-from PyQt5.QtCore import Qt, QRect, QSize, QRectF, pyqtSignal, QPoint
+from PyQt5.QtGui import (QPainter, QFont, QPaintEvent, QKeyEvent, QKeySequence, QMouseEvent, QIcon, QPixmap, QColor, QTextLine, QTextCursor, QDrag) 
+from PyQt5.QtCore import Qt, QRect, QSize, QRectF, pyqtSignal, QPoint, QMimeData, QByteArray
 from typing import Optional, List, Tuple
 import os
 
@@ -37,6 +37,7 @@ from .LNET_line_number_area_paint_logic import LNETLineNumberAreaPaintLogic
 
 class LineNumberedTextEdit(QPlainTextEdit):
     lineClicked = pyqtSignal(int)
+    selectionChanged = pyqtSignal(list)
     addTagMappingRequest = pyqtSignal(str, str)
     calculateLineWidthRequest = pyqtSignal(int)
 
@@ -44,6 +45,10 @@ class LineNumberedTextEdit(QPlainTextEdit):
         super().__init__(parent)
         self.widget_id = str(id(self))[-6:]
         
+        self._selected_lines = set()
+        self._last_clicked_line = -1
+        self.drag_start_pos = None
+
         self.editor_player_tag = EDITOR_PLAYER_TAG_CONST
         self.original_player_tag = ORIGINAL_PLAYER_TAG_CONST
         self.font_map = {}
@@ -154,7 +159,40 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
         self._hovered_glossary_entry = entry
 
+        if self.objectName() == "preview_text_edit" and event.buttons() == Qt.LeftButton and self._selected_lines:
+            if self.drag_start_pos is not None and (event.pos() - self.drag_start_pos).manhattanLength() > QApplication.startDragDistance():
+                drag = QDrag(self)
+                mime_data = QMimeData()
+                
+                data = QByteArray()
+                data.append(str(sorted(list(self._selected_lines))).encode('utf-8'))
+                mime_data.setData("application/x-selected-lines", data)
+                
+                drag.setMimeData(mime_data)
+                drag.exec_(Qt.MoveAction)
+                self.drag_start_pos = None
+
         super().mouseMoveEvent(event)
+
+    def get_selected_lines(self):
+        return sorted(list(self._selected_lines))
+
+    def set_selected_lines(self, lines: List[int]):
+        self._selected_lines = set(lines)
+        self._update_selection_highlight()
+        self._emit_selection_changed()
+
+    def clear_selection(self):
+        self._selected_lines.clear()
+        self._last_clicked_line = -1
+        self._update_selection_highlight()
+        self._emit_selection_changed()
+
+    def _update_selection_highlight(self):
+        self.highlight_interface.setPreviewSelectedLineHighlight(list(self._selected_lines))
+
+    def _emit_selection_changed(self):
+        self.selectionChanged.emit(self.get_selected_lines())
 
     def leaveEvent(self, event) -> None:
         if self._current_glossary_tooltip:
@@ -660,11 +698,12 @@ class LineNumberedTextEdit(QPlainTextEdit):
     def hasEmptyOddSublineHighlight(self, block_number = None) -> bool:
         return self.highlight_interface.hasEmptyOddSublineHighlight(block_number)
 
-    def setPreviewSelectedLineHighlight(self, line_number: int):
-        self.highlight_interface.setPreviewSelectedLineHighlight(line_number)
+    def setPreviewSelectedLineHighlight(self, line_numbers: List[int]):
+        self._selected_lines = set(line_numbers)
+        self._update_selection_highlight()
 
     def clearPreviewSelectedLineHighlight(self):
-        self.highlight_interface.clearPreviewSelectedLineHighlight()
+        self.clear_selection()
 
     def setLinkedCursorPosition(self, line_number: int, column_number: int):
         self.highlight_interface.setLinkedCursorPosition(line_number, column_number)

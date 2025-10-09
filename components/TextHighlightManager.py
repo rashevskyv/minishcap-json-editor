@@ -147,9 +147,9 @@ class TextHighlightManager:
                 selection = self._create_block_background_selection(block, self.editor.preview_selected_line_color, use_full_width=True)
                 if selection:
                     new_selections.append(selection)
-        if list(self._preview_selected_line_selections) != list(new_selections):
-            self._preview_selected_line_selections = new_selections
-            self.applyHighlights()
+        
+        self._preview_selected_line_selections = new_selections
+        self.applyHighlights()
 
     def clearPreviewSelectedLineHighlight(self):
         if self._preview_selected_line_selections:
