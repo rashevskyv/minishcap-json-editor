@@ -78,6 +78,7 @@ class TextHighlightManager:
         if self._tag_interaction_selections: all_selections.extend(list(self._tag_interaction_selections)) 
         
         self.editor.setExtraSelections(all_selections)
+        self.editor.viewport().update()
         if hasattr(self.editor, 'lineNumberArea'): 
             self.editor.lineNumberArea.update()
 
@@ -150,6 +151,30 @@ class TextHighlightManager:
         
         self._preview_selected_line_selections = new_selections
         self.applyHighlights()
+
+    def set_background_for_lines(self, lines_to_highlight: set, lines_to_clear: set):
+        doc = self.editor.document()
+        cursor = QTextCursor(doc)
+
+        # Clear highlights first
+        for line_number in lines_to_clear:
+            if 0 <= line_number < doc.blockCount():
+                block = doc.findBlockByNumber(line_number)
+                if block.isValid():
+                    cursor.setPosition(block.position())
+                    block_format = block.blockFormat()
+                    block_format.clearBackground()
+                    cursor.setBlockFormat(block_format)
+        
+        # Set new highlights
+        for line_number in lines_to_highlight:
+            if 0 <= line_number < doc.blockCount():
+                block = doc.findBlockByNumber(line_number)
+                if block.isValid():
+                    cursor.setPosition(block.position())
+                    block_format = block.blockFormat()
+                    block_format.setBackground(self.editor.preview_selected_line_color)
+                    cursor.setBlockFormat(block_format)
 
     def clearPreviewSelectedLineHighlight(self):
         if self._preview_selected_line_selections:

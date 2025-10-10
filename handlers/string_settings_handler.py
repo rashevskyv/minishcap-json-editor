@@ -134,6 +134,54 @@ class StringSettingsHandler(BaseHandler):
         
         self._apply_and_rescan()
 
+    def apply_font_to_lines(self, line_indices, font_file):
+        block_idx = self.mw.current_block_idx
+        if block_idx == -1:
+            return
+            
+        log_debug(f"Applying font '{font_file}' to lines {line_indices} in block {block_idx}")
+        for line_idx in line_indices:
+            key = (block_idx, line_idx)
+            if key not in self.mw.string_metadata:
+                if font_file == "default": continue
+                self.mw.string_metadata[key] = {}
+            
+            if font_file == "default":
+                if "font_file" in self.mw.string_metadata[key]:
+                    del self.mw.string_metadata[key]["font_file"]
+            else:
+                self.mw.string_metadata[key]["font_file"] = font_file
+            
+            if not self.mw.string_metadata[key]:
+                del self.mw.string_metadata[key]
+        
+        self._apply_and_rescan()
+
+    def apply_width_to_lines(self, line_indices, width):
+        block_idx = self.mw.current_block_idx
+        if block_idx == -1:
+            return
+
+        log_debug(f"Applying width '{width}' to lines {line_indices} in block {block_idx}")
+        is_default_width = (width == 0 or width == self.mw.line_width_warning_threshold_pixels)
+
+        for line_idx in line_indices:
+            key = (block_idx, line_idx)
+            if key not in self.mw.string_metadata:
+                if is_default_width: continue
+                self.mw.string_metadata[key] = {}
+
+            if is_default_width:
+                if "width" in self.mw.string_metadata[key]:
+                    del self.mw.string_metadata[key]["width"]
+            else:
+                self.mw.string_metadata[key]["width"] = width
+
+            if not self.mw.string_metadata[key]:
+                del self.mw.string_metadata[key]
+        
+        self._apply_and_rescan()
+
     def apply_width_to_range(self, start_line, end_line, width):
         block_idx = self.mw.current_block_idx
         if block_idx == -1:

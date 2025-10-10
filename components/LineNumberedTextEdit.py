@@ -47,6 +47,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
         
         self._selected_lines = set()
         self._last_clicked_line = -1
+        self._previously_selected_lines = set()
         self.drag_start_pos = None
 
         self.editor_player_tag = EDITOR_PLAYER_TAG_CONST
@@ -189,7 +190,12 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self._emit_selection_changed()
 
     def _update_selection_highlight(self):
-        self.highlight_interface.setPreviewSelectedLineHighlight(list(self._selected_lines))
+        lines_to_highlight = self._selected_lines - self._previously_selected_lines
+        lines_to_clear = self._previously_selected_lines - self._selected_lines
+        
+        self.highlightManager.set_background_for_lines(lines_to_highlight, lines_to_clear)
+        
+        self._previously_selected_lines = self._selected_lines.copy()
 
     def _emit_selection_changed(self):
         self.selectionChanged.emit(self.get_selected_lines())
@@ -264,28 +270,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
         btn.clicked.connect(on_button_clicked)
         
         return btn
-    
-    def _get_selected_line_range(self) -> Optional[Tuple[int, int]]:
-        cursor = self.textCursor()
-        if not cursor.hasSelection():
-            return None
-
-        start_pos = cursor.selectionStart()
-        end_pos = cursor.selectionEnd()
-
-        start_block = self.document().findBlock(start_pos)
-        end_block = self.document().findBlock(end_pos)
-
-        start_line = start_block.blockNumber()
-        end_line = end_block.blockNumber()
-        
-        if end_pos > start_pos and end_pos == end_block.position() and start_block.blockNumber() != end_block.blockNumber():
-            end_line -= 1
-        
-        if end_line < start_line:
-            end_line = start_line
-            
-        return start_line, end_line
 
     def populateContextMenu(self, menu: QMenu, position_in_widget_coords):
         log_debug(f"LNET ({self.objectName()}): populateContextMenu called.")
@@ -388,12 +372,15 @@ class LineNumberedTextEdit(QPlainTextEdit):
             if not custom_actions_added: menu.addSeparator(); custom_actions_added = True
             
             translator = getattr(main_window, 'translation_handler', None)
-            selection_range = self._get_selected_line_range()
+            selected_lines = self.get_selected_lines()
             
             if translator:
-                if selection_range:
-                    start, end = selection_range
-                    action_text = f"AI Translate Lines {start + 1}-{end + 1} (UA)" if start != end else f"AI Translate Line {start + 1} (UA)"
+                if selected_lines:
+                    num_selected = len(selected_lines)
+                    if num_selected > 1:
+                        action_text = f"AI Translate {num_selected} Lines (UA)"
+                    else:
+                        action_text = f"AI Translate Line {selected_lines[0] + 1} (UA)"
                 else:
                     cursor = self.cursorForPosition(position_in_widget_coords)
                     line_num = cursor.blockNumber()
@@ -405,14 +392,13 @@ class LineNumberedTextEdit(QPlainTextEdit):
                 translate_block_action = menu.addAction("AI Translate Entire Block (UA)")
                 translate_block_action.triggered.connect(lambda: translator.translate_current_block())
             
-            if selection_range:
-                start, end = selection_range
-                if start != end:
-                    menu.addSeparator()
-                    set_font_action = menu.addAction(f"Set Font for Lines {start + 1}-{end + 1}...")
-                    set_font_action.triggered.connect(self.handle_mass_set_font)
-                    set_width_action = menu.addAction(f"Set Width for Lines {start + 1}-{end + 1}...")
-                    set_width_action.triggered.connect(self.handle_mass_set_width)
+            if len(selected_lines) > 1:
+                num_selected = len(selected_lines)
+                menu.addSeparator()
+                set_font_action = menu.addAction(f"Set Font for {num_selected} Lines...")
+                set_font_action.triggered.connect(self.handle_mass_set_font)
+                set_width_action = menu.addAction(f"Set Width for {num_selected} Lines...")
+                set_width_action.triggered.connect(self.handle_mass_set_width)
 
     def _update_auxiliary_widths(self):
         current_font_metrics = self.fontMetrics()
@@ -698,11 +684,8 @@ class LineNumberedTextEdit(QPlainTextEdit):
     def hasEmptyOddSublineHighlight(self, block_number = None) -> bool:
         return self.highlight_interface.hasEmptyOddSublineHighlight(block_number)
 
-    def setPreviewSelectedLineHighlight(self, line_numbers: List[int]):
-        self._selected_lines = set(line_numbers)
-        self._update_selection_highlight()
-
     def clearPreviewSelectedLineHighlight(self):
+        self.highlightManager.set_background_for_lines(set(), self._previously_selected_lines)
         self.clear_selection()
 
     def setLinkedCursorPosition(self, line_number: int, column_number: int):
@@ -727,26 +710,24 @@ class LineNumberedTextEdit(QPlainTextEdit):
         return self.hasProblemHighlight(line_number)
 
     def handle_mass_set_font(self):
-        selection_range = self._get_selected_line_range()
-        if not selection_range: return
-        start_line, end_line = selection_range
+        selected_lines = self.get_selected_lines()
+        if not selected_lines: return
 
         main_window = self.window()
         dialog = MassFontDialog(main_window)
         if dialog.exec_():
             font_file = dialog.get_selected_font()
-            main_window.string_settings_handler.apply_font_to_range(start_line, end_line, font_file)
+            main_window.string_settings_handler.apply_font_to_lines(selected_lines, font_file)
 
     def handle_mass_set_width(self):
-        selection_range = self._get_selected_line_range()
-        if not selection_range: return
-        start_line, end_line = selection_range
+        selected_lines = self.get_selected_lines()
+        if not selected_lines: return
 
         main_window = self.window()
         dialog = MassWidthDialog(main_window)
         if dialog.exec_():
             width = dialog.get_width()
-            main_window.string_settings_handler.apply_width_to_range(start_line, end_line, width)
+            main_window.string_settings_handler.apply_width_to_lines(selected_lines, width)
 
 class MassFontDialog(QDialog):
     def __init__(self, parent=None):

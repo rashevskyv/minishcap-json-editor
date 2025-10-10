@@ -37,5 +37,5 @@
         "is_fullscreen": false,
         "is_maximized": false
     },
-    "prompt_editor_enabled": false
+    "prompt_editor_enabled": true
 }

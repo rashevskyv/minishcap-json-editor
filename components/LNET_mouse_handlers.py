@@ -124,6 +124,12 @@ class LNETMouseHandlers:
 
 
     def mouseReleaseEvent(self, event: QMouseEvent):
+        if self.editor.objectName() == "preview_text_edit":
+            if event.button() == Qt.LeftButton:
+                self.editor.drag_start_pos = None
+            event.accept()
+            return
+
         self.editor.super_mouseReleaseEvent(event) # Викликаємо батьківський метод з LineNumberedTextEdit
         if event.button() == Qt.LeftButton:
             text_cursor_at_click = self.editor.cursorForPosition(event.pos())
@@ -185,16 +191,16 @@ class LNETMouseHandlers:
                     event.accept(); return
 
     def mousePressEvent(self, event: QMouseEvent):
-        self.editor.super_mousePressEvent(event)
-        
-        cursor = self.editor.cursorForPosition(event.pos())
-        block_number = cursor.blockNumber()
-        
         if self.editor.objectName() == "preview_text_edit":
+            cursor = self.editor.cursorForPosition(event.pos())
+            block_number = cursor.blockNumber()
+
             if event.button() == Qt.LeftButton:
+                self.editor.setTextCursor(cursor)
+                
                 self.editor.drag_start_pos = event.pos()
                 modifiers = event.modifiers()
-                
+
                 if modifiers & Qt.ShiftModifier and self.editor._last_clicked_line != -1:
                     start_line = self.editor._last_clicked_line
                     end_line = block_number
@@ -203,8 +209,7 @@ class LNETMouseHandlers:
                         self.editor._selected_lines.clear()
 
                     line_range = range(min(start_line, end_line), max(start_line, end_line) + 1)
-                    for line in line_range:
-                        self.editor._selected_lines.add(line)
+                    self.editor._selected_lines.update(line_range)
 
                 elif modifiers & Qt.ControlModifier:
                     if block_number in self.editor._selected_lines:
@@ -220,12 +225,19 @@ class LNETMouseHandlers:
 
                 self.editor._update_selection_highlight()
                 self.editor._emit_selection_changed()
+                event.accept()
+                return 
 
             elif event.button() == Qt.RightButton:
                 if block_number not in self.editor._selected_lines:
+                    self.editor.setTextCursor(cursor)
                     self.editor.clear_selection()
                     self.editor._selected_lines.add(block_number)
                     self.editor._last_clicked_line = block_number
                     self.editor._update_selection_highlight()
                     self.editor._emit_selection_changed()
                     self.editor.lineClicked.emit(block_number)
+                event.accept()
+                return
+
+        self.editor.super_mousePressEvent(event)

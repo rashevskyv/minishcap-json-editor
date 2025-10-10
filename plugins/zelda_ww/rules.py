@@ -85,12 +85,9 @@ class GameRules(BaseGameRules):
         
         content_parts = []
         for s in strings_to_save:
-            content_parts.append(s + "{END}\n")
+            content_parts.append(s + "\n{END}\n\n")
         
-        content = "\n".join(content_parts)
-        
-        if content:
-            content += "\n"
+        content = "".join(content_parts)
             
         return content
 
@@ -110,16 +107,21 @@ class GameRules(BaseGameRules):
         return self.tag_manager.is_tag_legitimate(tag_to_check)
 
     def analyze_subline(self, text: str, next_text: Optional[str], subline_number_in_data_string: int, qtextblock_number_in_editor: int, is_last_subline_in_data_string: bool, editor_font_map: dict, editor_line_width_threshold: int, full_data_string_text_for_logical_check: str, is_target_for_debug: bool = False) -> set:
+        
+        all_problems = self.problem_analyzer.analyze_data_string(full_data_string_text_for_logical_check, editor_font_map, editor_line_width_threshold)
+
+        if subline_number_in_data_string < len(all_problems):
+            # Add line-specific problems that are not part of the full string analysis
+            line_specific_problems = self.problem_analyzer.analyze_subline(
+                text, next_text, subline_number_in_data_string, qtextblock_number_in_editor, is_last_subline_in_data_string,
+                editor_font_map, editor_line_width_threshold, full_data_string_text_for_logical_check, is_target_for_debug
+            )
+            all_problems[subline_number_in_data_string].update(line_specific_problems)
+            return all_problems[subline_number_in_data_string]
+
         return self.problem_analyzer.analyze_subline(
-            text=text,
-            next_text=next_text,
-            subline_number_in_data_string=subline_number_in_data_string,
-            qtextblock_number_in_editor=qtextblock_number_in_editor,
-            is_last_subline_in_data_string=is_last_subline_in_data_string,
-            editor_font_map=editor_font_map,
-            editor_line_width_threshold=editor_line_width_threshold,
-            full_data_string_text_for_logical_check=full_data_string_text_for_logical_check,
-            is_target_for_debug=is_target_for_debug
+            text, next_text, subline_number_in_data_string, qtextblock_number_in_editor, is_last_subline_in_data_string,
+            editor_font_map, editor_line_width_threshold, full_data_string_text_for_logical_check, is_target_for_debug
         )
 
     def autofix_data_string(self, data_string: str, editor_font_map: dict, editor_line_width_threshold: int) -> Tuple[str, bool]:
