@@ -1,23 +1,28 @@
-# --- START OF FILE main_window_actions.py ---
+# --- START OF FILE handlers/main_window_actions.py ---
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from PyQt5.QtWidgets import QApplication, QMessageBox
-from utils.logging_utils import log_debug
+from utils.logging_utils import log_info
 import copy
 import os
 import json
 from ui.settings_dialog import SettingsDialog
 
+if TYPE_CHECKING:
+    from main import MainWindow
+
 class MainWindowActions:
-    def __init__(self, main_window):
+    def __init__(self, main_window: MainWindow):
         self.mw = main_window
         self.helper = main_window.helper
     
     def open_settings_dialog(self):
-        log_debug("<<<<<<<<<< ACTION: Open Settings Dialog Triggered >>>>>>>>>>")
+        log_info("Opening settings dialog...")
         
         dialog = SettingsDialog(self.mw)
         
         if not dialog.exec_():
-            log_debug("Settings dialog cancelled.")
+            log_info("Settings dialog cancelled.")
             return
 
         new_settings = dialog.get_settings()
@@ -25,7 +30,7 @@ class MainWindowActions:
         font_file_changed = new_settings.get('default_font_file') != self.mw.default_font_file
         
         if dialog.plugin_changed_requires_restart or dialog.theme_changed_requires_restart or font_file_changed:
-            log_debug(f"Restart required. Plugin change: {dialog.plugin_changed_requires_restart}, Theme change: {dialog.theme_changed_requires_restart}, Font file change: {font_file_changed}")
+            log_info(f"Restart required. Plugin change: {dialog.plugin_changed_requires_restart}, Theme change: {dialog.theme_changed_requires_restart}, Font file change: {font_file_changed}")
             
             self.mw.current_font_size = new_settings.get('font_size')
             self.mw.show_multiple_spaces_as_dots = new_settings.get('show_multiple_spaces_as_dots')
@@ -37,14 +42,14 @@ class MainWindowActions:
 
             self.mw.active_game_plugin = new_settings.get('active_game_plugin')
             self.mw.theme = new_settings.get('theme')
-            log_debug(f"Set new active plugin: {self.mw.active_game_plugin}, theme: {self.mw.theme}, font file: {self.mw.default_font_file}")
+            log_info(f"Set new active plugin: {self.mw.active_game_plugin}, theme: {self.mw.theme}, font file: {self.mw.default_font_file}")
             
             self.mw.settings_manager._save_global_settings()
             
             self.mw.is_restart_in_progress = True
             self.helper.restart_application()
         else:
-            log_debug("Settings changed without restart. Applying settings.")
+            log_info("Settings changed without restart. Applying settings.")
             
             initial_paths = (self.mw.json_path, self.mw.edited_json_path)
             restore_session_before = self.mw.restore_unsaved_on_startup
@@ -72,7 +77,7 @@ class MainWindowActions:
                     if hasattr(self.mw, 'edited_text_edit'):
                         self.mw.edited_text_edit.viewport().update()
 
-                    log_debug("User discarded unsaved changes after disabling session restore.")
+                    log_info("User discarded unsaved changes after disabling session restore.")
 
             self.mw.settings_manager.save_settings()
 
@@ -82,28 +87,28 @@ class MainWindowActions:
             self.mw.ui_handler.update_editor_rules_properties()
             
             if dialog.rules_changed_requires_rescan:
-                log_debug("Rules were changed. Triggering a full rescan of all issues.")
+                log_info("Rules were changed. Triggering a full rescan of all issues.")
                 QMessageBox.information(self.mw, "Settings Changed", "Rules have been updated. Rescanning all issues...")
                 if hasattr(self.mw, 'app_action_handler'):
                     self.mw.app_action_handler.rescan_all_tags()
 
 
     def trigger_save_action(self):
-        log_debug("<<<<<<<<<< ACTION: Save Triggered (via MainWindowActions) >>>>>>>>>>")
+        log_info("Save action triggered.")
         if self.mw.app_action_handler.save_data_action(ask_confirmation=True):
              self.helper.rebuild_unsaved_block_indices()
 
     def trigger_revert_action(self):
-        log_debug("<<<<<<<<<< ACTION: Revert Changes File Triggered (via MainWindowActions) >>>>>>>>>>")
+        log_info("Revert changes file action triggered.")
         if self.mw.data_processor.revert_edited_file_to_original():
-            log_debug("Revert successful, UI updated by DataStateProcessor.")
+            log_info("Revert successful.")
             self.helper.rebuild_unsaved_block_indices()
             if hasattr(self.mw.ui_updater, 'clear_all_problem_block_highlights_and_text'):
                 self.mw.ui_updater.clear_all_problem_block_highlights_and_text()
-        else: log_debug("Revert was cancelled or failed.")
+        else: log_info("Revert was cancelled or failed.")
 
     def trigger_undo_paste_action(self):
-        log_debug("<<<<<<<<<< ACTION: Undo Paste Block Triggered (via MainWindowActions) >>>>>>>>>>")
+        log_info("Undo Paste Block action triggered.")
         if not self.mw.can_undo_paste:
             QMessageBox.information(self.mw, "Undo Paste", "Nothing to undo for the last paste operation.")
             if hasattr(self.mw, 'statusBar'): self.mw.statusBar.showMessage("Nothing to undo for paste.", 2000)
@@ -164,7 +169,7 @@ class MainWindowActions:
         if hasattr(self.mw, 'statusBar'): self.mw.statusBar.showMessage("Last paste operation undone.", 2000)
 
     def trigger_reload_tag_mappings(self):
-        log_debug("<<<<<<<<<< ACTION: Reload Tag Mappings Triggered (via MainWindowActions) >>>>>>>>>>")
+        log_info("Reload Tag Mappings action triggered.")
         
         if not self.mw.settings_manager: return
         plugin_config_path = self.mw.settings_manager._get_plugin_config_path()
@@ -189,7 +194,7 @@ class MainWindowActions:
             QMessageBox.critical(self.mw, "Reload Error", f"Failed to read plugin config:\n{e}")
 
     def handle_add_tag_mapping_request(self, bracket_tag: str, curly_tag: str):
-        log_debug(f"MainWindowActions: Received request to map '{bracket_tag}' -> '{curly_tag}'")
+        log_info(f"Received request to map '{bracket_tag}' -> '{curly_tag}'")
         if not bracket_tag or not curly_tag:
             QMessageBox.warning(self.mw, "Add Tag Mapping Error", "Both tags must be non-empty.")
             return
@@ -205,11 +210,11 @@ class MainWindowActions:
                                          QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
             self.mw.default_tag_mappings[bracket_tag] = curly_tag
-            log_debug(f"  Added/Updated mapping: {bracket_tag} -> {curly_tag}. Total mappings: {len(self.mw.default_tag_mappings)}")
+            log_info(f"Added/Updated mapping: {bracket_tag} -> {curly_tag}. Total mappings: {len(self.mw.default_tag_mappings)}")
             QMessageBox.information(self.mw, "Tag Mapping Added",
                                     f"Mapping '{bracket_tag}' -> '{curly_tag}' has been added/updated.\n"
                                     "This change will be saved to the plugin's config file when settings are saved.")
             if self.mw.current_block_idx != -1:
                 if QMessageBox.question(self.mw, "Rescan Block", "Rescan the current block with the new mapping now?", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes) == QMessageBox.Yes:
                     self.mw.app_action_handler.rescan_issues_for_single_block(self.mw.current_block_idx, use_default_mappings=True)
-        else: log_debug("  User cancelled overwrite or no action taken.")
+        else: log_info("User cancelled overwrite or no action taken.")

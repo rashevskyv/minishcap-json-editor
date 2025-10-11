@@ -39,7 +39,7 @@ from core.translation.config import build_default_translation_config
 
 from plugins.base_game_rules import BaseGameRules
 
-from utils.logging_utils import log_debug, log_info, log_warning, log_error
+from utils.logging_utils import log_info, log_warning, log_error
 from utils.constants import (
     EDITOR_PLAYER_TAG, ORIGINAL_PLAYER_TAG,
     DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS,
@@ -63,7 +63,7 @@ from main_window_block_handler import MainWindowBlockHandler
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        log_debug("++++++++++++++++++++ MainWindow: Initializing ++++++++++++++++++++")
+        log_info("Initializing main window...")
 
         self.EDITOR_PLAYER_TAG = EDITOR_PLAYER_TAG
         self.ORIGINAL_PLAYER_TAG = ORIGINAL_PLAYER_TAG
@@ -207,7 +207,6 @@ class MainWindow(QMainWindow):
         self.plugin_actions = {}
 
 
-        log_debug("MainWindow: Initializing Core Components...")
         self.settings_manager = SettingsManager(self)
         self.settings_manager.load_settings()
 
@@ -222,12 +221,10 @@ class MainWindow(QMainWindow):
         self.event_handler = MainWindowEventHandler(self)
         self.block_handler = MainWindowBlockHandler(self)
 
-        log_debug("MainWindow: Loading game plugin...")
         self.load_game_plugin() 
         if self.current_game_rules:
             self.default_tag_mappings = self.current_game_rules.get_default_tag_mappings()
 
-        log_debug("MainWindow: Initializing Handlers (Pre-UI setup)...")
         self.list_selection_handler = ListSelectionHandler(self, self.data_processor, self.ui_updater)
         self.editor_operation_handler = TextOperationHandler(self, self.data_processor, self.ui_updater)
         self.app_action_handler = AppActionHandler(self, self.data_processor, self.ui_updater, self.current_game_rules) 
@@ -238,7 +235,6 @@ class MainWindow(QMainWindow):
         self.ai_chat_handler = AIChatHandler(self, self.data_processor, self.ui_updater)
 
 
-        log_debug("MainWindow: Setting up UI...")
         setup_main_window_ui(self)
 
         if hasattr(self, 'open_glossary_button'):
@@ -250,7 +246,7 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'text_analysis_handler'):
             self.text_analysis_handler.ensure_menu_action()
 
-        log_debug("MainWindow: Initializing Handlers and dynamic UI from plugin (Post-UI setup)...")
+        log_info("Initializing dynamic UI from plugin...")
         self.setup_plugin_ui()
 
         self.search_panel_widget = SearchPanelWidget(self)
@@ -258,7 +254,6 @@ class MainWindow(QMainWindow):
         self.search_panel_widget.setVisible(False)
 
 
-        log_debug("MainWindow: Connecting Signals...")
         self.connect_signals()
 
         self.event_filter = MainWindowEventFilter(self)
@@ -291,7 +286,7 @@ class MainWindow(QMainWindow):
 
         QTimer.singleShot(100, self.force_focus)
 
-        log_debug("++++++++++++++++++++ MainWindow: Initialization Complete ++++++++++++++++++++")
+        log_info("Main window initialization complete.")
     
     def force_focus(self):
         self.ui_handler.force_focus()
@@ -369,7 +364,7 @@ class MainWindow(QMainWindow):
         self.event_handler.closeEvent(event)
 
     def build_glossary_with_ai(self, block_idx=None):
-        log_debug("<<<<<<<<<< ACTION: Build Glossary with AI Triggered >>>>>>>>>>")
+        log_info("Build Glossary with AI action triggered.")
         from handlers.translation.glossary_builder_handler import GlossaryBuilderHandler
 
         target_block_idx = block_idx if block_idx is not None else self.current_block_idx
@@ -383,7 +378,7 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == '__main__':
-    log_debug("================= Application Start =================")
+    log_info("================= Application Start =================")
     app = QApplication(sys.argv)
     
     temp_settings = {}
@@ -391,17 +386,17 @@ if __name__ == '__main__':
         with open("settings.json", 'r') as f:
             temp_settings = json.load(f)
     except FileNotFoundError:
-        log_debug("settings.json not found, using default theme.")
+        pass
     except Exception as e:
-        log_debug(f"Error reading settings.json for theme: {e}")
+        log_warning(f"Error reading settings.json for theme: {e}")
         
     theme_to_apply = temp_settings.get("theme", "auto")
     MainWindowUIHandler.apply_theme(app, theme_to_apply)
 
     window = MainWindow()
     window.show()
-    log_debug("Starting Qt event loop...")
+    log_info("Starting Qt event loop...")
     exit_code = app.exec_()
-    log_debug(f"Qt event loop finished with exit code: {exit_code}")
-    log_debug("================= Application End =================")
+    log_info(f"Qt event loop finished with exit code: {exit_code}")
+    log_info("================= Application End =================")
     sys.exit(exit_code)

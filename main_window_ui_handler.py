@@ -1,21 +1,24 @@
 # --- START OF FILE main_window_ui_handler.py ---
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from PyQt5.QtWidgets import QWidget, QApplication, QLabel
 from PyQt5.QtGui import QFont, QPalette, QColor, QTextOption
 from PyQt5.QtCore import Qt
 from ui.themes import DARK_THEME_STYLESHEET, LIGHT_THEME_STYLESHEET
 from utils.constants import DT_PREVIEW_SELECTED_LINE_COLOR, LT_PREVIEW_SELECTED_LINE_COLOR
 from typing import List
-from utils.logging_utils import log_debug
+from utils.logging_utils import log_info
 from components.CustomListWidget import CustomListWidget
 from components.CustomListItemDelegate import CustomListItemDelegate
 
+if TYPE_CHECKING:
+    from main import MainWindow
+
 class MainWindowUIHandler:
-    def __init__(self, main_window):
+    def __init__(self, main_window: MainWindow):
         self.mw = main_window
-        log_debug(f"UIHandler '{self.__class__.__name__}' initialized.")
 
     def update_editor_rules_properties(self):
-        log_debug("MainWindowUIHandler: Updating editor rule properties (e.g., width thresholds).")
         for editor in [self.mw.preview_text_edit, self.mw.original_text_edit, self.mw.edited_text_edit]:
             if editor:
                 editor.line_width_warning_threshold_pixels = self.mw.line_width_warning_threshold_pixels
@@ -23,12 +26,9 @@ class MainWindowUIHandler:
                 if hasattr(editor, '_update_auxiliary_widths'):
                     editor._update_auxiliary_widths()
                 editor.viewport().update()
-        log_debug("MainWindowUIHandler: Editor rule properties updated.")
 
     def apply_font_size(self):
-        log_debug(f"MainWindowUIHandler: Applying font. General: Family='{self.mw.general_font_family}', Editor: Family='{self.mw.editor_font_family}', Size={self.mw.current_font_size}")
         if self.mw.current_font_size <= 0:
-            log_debug("MainWindowUIHandler: Invalid font size, skipping application.")
             return
 
         general_font = QFont(self.mw.general_font_family, self.mw.current_font_size)
@@ -76,8 +76,8 @@ class MainWindowUIHandler:
                     if hasattr(widget, 'updateLineNumberAreaWidth'):
                         widget.updateLineNumberAreaWidth(0)
                     widget.viewport().update()
-                except Exception as e:
-                    log_debug(f"Error applying editor font to widget {widget.objectName() if hasattr(widget, 'objectName') else type(widget)}: {e}")
+                except Exception:
+                    pass
 
         for widget in general_ui_widgets:
             if widget and widget not in editor_widgets:
@@ -87,8 +87,8 @@ class MainWindowUIHandler:
                     if hasattr(widget, 'adjustSize'): widget.adjustSize()
                     if isinstance(widget, CustomListWidget):
                         widget.viewport().update()
-                except Exception as e:
-                    log_debug(f"Error applying general font to widget {widget.objectName() if hasattr(widget, 'objectName') else type(widget)}: {e}")
+                except Exception:
+                    pass
 
 
         if self.mw.block_list_widget and self.mw.block_list_widget.itemDelegate():
@@ -102,8 +102,6 @@ class MainWindowUIHandler:
         self.mw.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
 
     def apply_text_wrap_settings(self):
-        log_debug(f"MainWindowUIHandler: Applying text wrap settings. Preview: {self.mw.preview_wrap_lines}, Editors: {self.mw.editors_wrap_lines}")
-        
         if hasattr(self.mw, 'preview_text_edit') and self.mw.preview_text_edit:
             if self.mw.preview_wrap_lines:
                 self.mw.preview_text_edit.setWordWrapMode(QTextOption.WrapAtWordBoundaryOrAnywhere)
@@ -118,7 +116,6 @@ class MainWindowUIHandler:
                     editor.setWordWrapMode(QTextOption.NoWrap)
 
     def reconfigure_all_highlighters(self):
-        log_debug("MainWindowUIHandler: Reconfiguring all highlighters.")
         # Compose CSS for newline; highlighter supports CSS parsing
         nl_color = getattr(self.mw, 'newline_color_rgba', "#A020F0")
         nl_css_parts = [f"color: {nl_color}"]
@@ -142,7 +139,6 @@ class MainWindowUIHandler:
                 editor.highlighter.reconfigure_styles(**common_args)
 
     def force_focus(self):
-        log_debug("MainWindowUIHandler: Forcing window focus.")
         self.mw.activateWindow()
         self.mw.raise_()
         
@@ -165,11 +161,11 @@ class MainWindowUIHandler:
             palette.setColor(QPalette.HighlightedText, Qt.white)
             app.setPalette(palette)
             app.setStyleSheet(DARK_THEME_STYLESHEET)
-            log_debug("Applied Dark Theme.")
+            log_info("Applied Dark Theme.")
         else: # 'auto' or 'light'
             palette = QPalette()
             palette.setColor(QPalette.Highlight, QColor(LT_PREVIEW_SELECTED_LINE_COLOR))
             palette.setColor(QPalette.HighlightedText, QColor(Qt.black))
             app.setPalette(palette)
             app.setStyleSheet(LIGHT_THEME_STYLESHEET)
-            log_debug("Applied Light Theme.")
+            log_info("Applied Light Theme.")

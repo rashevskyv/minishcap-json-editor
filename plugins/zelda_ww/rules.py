@@ -4,7 +4,7 @@ import re
 from typing import Any, Tuple, Dict, List, Set, Optional
 
 from plugins.base_game_rules import BaseGameRules
-from utils.logging_utils import log_debug
+from utils.logging_utils import log_info, log_warning
 from utils.utils import calculate_string_width, convert_spaces_to_dots_for_display
 
 from .config import (
@@ -41,26 +41,16 @@ class GameRules(BaseGameRules):
         self.text_fixer = TextFixer(main_window_ref, self.tag_manager, self.problem_analyzer)
 
     def load_data_from_json_obj(self, file_content: Any) -> Tuple[list, dict]:
-        log_debug(f"Wind Waker Plugin: Starting load_data_from_json_obj. Input type: {type(file_content)}")
         if not isinstance(file_content, str):
-            log_debug(f"Wind Waker Plugin: Expected file content as a string, but got {type(file_content)}")
+            log_warning(f"Wind Waker Plugin: Expected file content as a string, but got {type(file_content)}")
             return [], {}
 
-        log_debug(f"Wind Waker Plugin: File content (first 200 chars): {file_content[:200]}")
-
         strings = re.split(r'\{END\}\r?\n', file_content)
-        log_debug(f"Wind Waker Plugin: Split by '{{END}}' resulted in {len(strings)} segments.")
-
-        if len(strings) <= 1:
-            log_debug("Wind Waker Plugin: WARNING - separator '{END}' not found or file is empty.")
-
+        
         if strings and (not strings[-1] or strings[-1].isspace()):
-            log_debug(f"Wind Waker Plugin: Popping last empty segment. Original last segment: '{strings[-1]}'")
             strings.pop()
             
         processed_strings = [s.strip().replace('\r\n', '\n').replace('\r', '\n') for s in strings]
-        log_debug(f"Wind Waker Plugin: After processing, {len(processed_strings)} strings remain.")
-
         data_for_app = [processed_strings]
         
         block_name = "Block 0"
@@ -69,16 +59,13 @@ class GameRules(BaseGameRules):
             
         block_names = {"0": block_name}
         
-        log_debug(f"Wind Waker Plugin: Loaded {len(processed_strings)} strings from TXT file into one block named '{block_name}'.")
+        log_info(f"Wind Waker Plugin: Loaded {len(processed_strings)} strings from TXT file into block '{block_name}'.")
         
-        if not processed_strings:
-            log_debug("Wind Waker Plugin: CRITICAL - No strings were processed. Returning empty data.")
-
         return data_for_app, block_names
 
     def save_data_to_json_obj(self, data: list, block_names: dict) -> Any:
         if not data or not isinstance(data[0], list):
-            log_debug(f"Wind Waker Plugin: Save data is in unexpected format. Expected list of lists.")
+            log_warning(f"Wind Waker Plugin: Save data is in unexpected format. Expected list of lists.")
             return ""
 
         strings_to_save = data[0]

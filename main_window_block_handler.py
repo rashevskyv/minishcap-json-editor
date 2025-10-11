@@ -1,10 +1,14 @@
 # --- START OF FILE main_window_block_handler.py ---
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from utils.logging_utils import log_debug
 
+if TYPE_CHECKING:
+    from main import MainWindow
+
 class MainWindowBlockHandler:
-    def __init__(self, main_window):
+    def __init__(self, main_window: MainWindow):
         self.mw = main_window
-        log_debug(f"BlockHandler '{self.__class__.__name__}' initialized.")
 
     def get_block_color_markers(self, block_idx: int) -> set:
         return self.mw.block_color_markers.get(str(block_idx), set())

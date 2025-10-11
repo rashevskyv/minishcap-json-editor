@@ -1,16 +1,19 @@
 # --- START OF FILE handlers/main_window_event_handler.py ---
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from PyQt5.QtGui import QTextCursor, QKeyEvent
 from PyQt5.QtCore import Qt
-from utils.logging_utils import log_debug
+from utils.logging_utils import log_debug, log_info
 from utils.utils import ALL_TAGS_PATTERN
 
+if TYPE_CHECKING:
+    from main import MainWindow
+
 class MainWindowEventHandler:
-    def __init__(self, main_window):
+    def __init__(self, main_window: MainWindow):
         self.mw = main_window
-        log_debug(f"EventHandler '{self.__class__.__name__}' initialized.")
 
     def connect_signals(self):
-        log_debug("--> MainWindowEventHandler: connect_signals() started")
         if hasattr(self.mw, 'open_settings_action'): self.mw.open_settings_action.triggered.connect(self.mw.actions.open_settings_dialog)
         if hasattr(self.mw, 'block_list_widget'):
             self.mw.block_list_widget.currentItemChanged.connect(self.mw.list_selection_handler.block_selected)
@@ -74,26 +77,18 @@ class MainWindowEventHandler:
         if hasattr(self.mw, 'apply_width_button'):
             self.mw.apply_width_button.clicked.connect(self.mw.string_settings_handler.apply_settings_change)
 
-        log_debug("--> MainWindowEventHandler: connect_signals() finished")
-
     def keyPressEvent(self, event: QKeyEvent):
         super(self.mw.__class__, self.mw).keyPressEvent(event)
         
     def closeEvent(self, event):
-        log_debug("--> MainWindowEventHandler: closeEvent received.")
+        log_info("Close event received.")
         self.mw.helper.prepare_to_close()
         self.mw.app_action_handler.handle_close_event(event)
         
         if event.isAccepted():
             if not self.mw.unsaved_changes and not self.mw.is_restart_in_progress:
-                log_debug("Close accepted (no unsaved changes, not a restart). Saving editor settings via SettingsManager.")
                 self.mw.settings_manager.save_settings()
-            else:
-                log_debug("Close accepted. Settings save skipped due to unsaved changes (handled by dialog) or restart in progress.")
             super(self.mw.__class__, self.mw).closeEvent(event)
-        else:
-            log_debug("Close ignored by user or handler.")
-        log_debug("<-- MainWindowEventHandler: closeEvent finished.")
 
     def handle_edited_cursor_position_changed(self):
         if self.mw.is_adjusting_cursor or self.mw.is_programmatically_changing_text:

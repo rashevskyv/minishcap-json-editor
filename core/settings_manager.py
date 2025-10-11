@@ -6,7 +6,7 @@ from typing import Dict, Optional, List
 from PyQt5.QtCore import QByteArray, QRect, QTimer
 from PyQt5.QtWidgets import QMessageBox
 from PyQt5.QtGui import QFont
-from utils.logging_utils import log_debug
+from utils.logging_utils import log_debug, log_info, log_warning
 from utils.constants import (
     DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS,
     DEFAULT_LINE_WIDTH_WARNING_THRESHOLD
@@ -26,7 +26,7 @@ class SettingsManager:
         return os.path.join("plugins", plugin_name, "config.json")
 
     def load_settings(self):
-        log_debug(f"--> SettingsManager: load_settings from {self.settings_file_path}")
+        log_info(f"Loading settings from {self.settings_file_path}...")
         self._load_global_settings()
         self._load_plugin_settings()
         self.load_all_font_maps()
@@ -43,7 +43,7 @@ class SettingsManager:
                 self.mw.ui_updater.populate_blocks()
                 self.mw.ui_updater.populate_strings_for_block(-1)
 
-        log_debug("<-- SettingsManager: load_settings finished")
+        log_info("Settings loading finished.")
 
     def _load_global_settings(self):
         default_font_size = QFont().pointSize() if QFont().pointSize() > 0 else 10
@@ -99,7 +99,7 @@ class SettingsManager:
             self.mw.window_was_maximized_at_save = settings_data.get("window_was_maximized", False)
             log_debug("Global settings loaded.")
         except Exception as e:
-            log_debug(f"Error loading global settings: {e}")
+            log_warning(f"Error loading global settings: {e}")
 
     def _load_plugin_settings(self):
         plugin_config_path = self._get_plugin_config_path()
@@ -143,7 +143,7 @@ class SettingsManager:
         self.mw.search_history_to_save = []
 
         if not plugin_config_path or not os.path.exists(plugin_config_path):
-            log_debug(f"Plugin config not found at '{plugin_config_path}'. Using defaults.")
+            log_warning(f"Plugin config not found at '{plugin_config_path}'. Using defaults.")
             return
 
         try:
@@ -158,7 +158,7 @@ class SettingsManager:
             try:
                 self.mw.string_metadata = {eval(k): v for k, v in loaded_metadata_str_keys.items()}
             except Exception as e:
-                log_debug(f"Error deserializing string_metadata keys: {e}. Metadata will be empty.")
+                log_warning(f"Error deserializing string_metadata keys: {e}. Metadata will be empty.")
                 self.mw.string_metadata = {}
             
             for key, value in plugin_data.items():
@@ -224,9 +224,8 @@ class SettingsManager:
                 self.mw.translation_config = build_default_translation_config()
 
             log_debug(f"Plugin settings loaded from '{plugin_config_path}'.")
-            log_debug(f"  [LOAD STATE] Loaded Block Idx: {self.mw.last_selected_block_index}, String Idx: {self.mw.last_selected_string_index}, Cursor Pos: {self.mw.last_cursor_position_in_edited}")
         except Exception as e:
-            log_debug(f"Error loading plugin settings from '{plugin_config_path}': {e}")
+            log_warning(f"Error loading plugin settings from '{plugin_config_path}': {e}")
 
     def save_settings(self):
         log_debug("Saving all settings...")
@@ -240,7 +239,7 @@ class SettingsManager:
                 with open(self.settings_file_path, 'r', encoding='utf-8') as f:
                     global_data = json.load(f)
         except Exception as e:
-             log_debug(f"Could not read existing global settings, will create a new one. Error: {e}")
+             log_warning(f"Could not read existing global settings, will create a new one. Error: {e}")
 
         global_data.update({
             "font_size": self.mw.current_font_size,
@@ -269,14 +268,14 @@ class SettingsManager:
             if self.mw.main_splitter: global_data["main_splitter_state"] = base64.b64encode(self.mw.main_splitter.saveState().data()).decode('ascii')
             if self.mw.right_splitter: global_data["right_splitter_state"] = base64.b64encode(self.mw.right_splitter.saveState().data()).decode('ascii')
             if self.mw.bottom_right_splitter: global_data["bottom_right_splitter_state"] = base64.b64encode(self.mw.bottom_right_splitter.saveState().data()).decode('ascii')
-        except Exception as e: log_debug(f"WARN: Failed to save splitter state(s): {e}")
+        except Exception as e: log_warning(f"Failed to save splitter state(s): {e}")
 
         try:
             with open(self.settings_file_path, 'w', encoding='utf-8') as f:
                 json.dump(global_data, f, indent=4, ensure_ascii=False)
             log_debug("Global settings saved.")
         except Exception as e:
-            log_debug(f"ERROR saving global settings: {e}")
+            log_warning(f"ERROR saving global settings: {e}")
 
     def _save_plugin_settings(self):
         plugin_config_path = self._get_plugin_config_path()
@@ -288,7 +287,7 @@ class SettingsManager:
                 with open(plugin_config_path, 'r', encoding='utf-8') as f:
                     plugin_data = json.load(f)
         except Exception as e:
-            log_debug(f"Could not read existing plugin config, will create a new one. Error: {e}")
+            log_warning(f"Could not read existing plugin config, will create a new one. Error: {e}")
 
         plugin_data_to_save = {
             "default_tag_mappings": self.mw.default_tag_mappings,
@@ -328,14 +327,12 @@ class SettingsManager:
         
         plugin_data.update(plugin_data_to_save)
         
-        log_debug(f"  [SAVE STATE TO DICT] Block Idx: {plugin_data_to_save['last_selected_block_index']}, String Idx: {plugin_data_to_save['last_selected_string_index']}, Cursor Pos: {plugin_data_to_save['last_cursor_position_in_edited']}")
-
         try:
             with open(plugin_config_path, 'w', encoding='utf-8') as f:
                 json.dump(plugin_data, f, indent=4, ensure_ascii=False)
             log_debug(f"Plugin settings saved to '{plugin_config_path}'.")
         except Exception as e:
-            log_debug(f"ERROR saving plugin settings to '{plugin_config_path}': {e}")
+            log_warning(f"ERROR saving plugin settings to '{plugin_config_path}': {e}")
             QMessageBox.critical(self.mw, "Save Error", f"Could not save plugin configuration to\n{plugin_config_path}")
 
     def save_block_names(self):
@@ -350,7 +347,7 @@ class SettingsManager:
                 with open(plugin_config_path, 'r', encoding='utf-8') as f:
                     plugin_data = json.load(f)
         except Exception as e:
-            log_debug(f"Could not read existing plugin config at {plugin_config_path} to save block names. A new one will be created. Error: {e}")
+            log_warning(f"Could not read existing plugin config at {plugin_config_path} to save block names. A new one will be created. Error: {e}")
 
         plugin_data["block_names"] = self.mw.block_names
         
@@ -359,7 +356,7 @@ class SettingsManager:
                 json.dump(plugin_data, f, indent=4, ensure_ascii=False)
             log_debug(f"Block names saved successfully to '{plugin_config_path}'.")
         except Exception as e:
-            log_debug(f"ERROR saving block names to '{plugin_config_path}': {e}")
+            log_warning(f"ERROR saving block names to '{plugin_config_path}': {e}")
             QMessageBox.critical(self.mw, "Save Error", f"Could not save block names to\n{plugin_config_path}")
 
     def load_unsaved_session(self):
@@ -377,7 +374,7 @@ class SettingsManager:
                     deserialized_data = {eval(k): v for k, v in session_data_str_keys.items()}
                     self.mw.edited_data = deserialized_data
                     self.mw.unsaved_changes = bool(self.mw.edited_data)
-                    log_debug(f"Successfully loaded {len(self.mw.edited_data)} unsaved items from session.")
+                    log_info(f"Successfully loaded {len(self.mw.edited_data)} unsaved items from session.")
                     if self.mw.unsaved_changes:
                         QTimer.singleShot(0, self.mw.helper.rebuild_unsaved_block_indices)
                         QTimer.singleShot(0, self.mw.ui_updater.update_title)
@@ -386,7 +383,7 @@ class SettingsManager:
                 log_debug("Restore unsaved session is disabled in settings. Skipping load.")
 
         except Exception as e:
-            log_debug(f"Error loading unsaved session data: {e}")
+            log_warning(f"Error loading unsaved session data: {e}")
 
     def _parse_new_font_format(self, font_data):
         """РџР°СЂСЃРёС‚СЊ РЅРѕРІРёР№ С„РѕСЂРјР°С‚ С„Р°Р№Р»Сѓ С€СЂРёС„С‚Сѓ С– РїРѕРІРµСЂС‚Р°С” font_map."""
@@ -411,16 +408,16 @@ class SettingsManager:
         self.mw.icon_sequences = []
 
         if not plugin_name:
-            log_debug("No active plugin. Character width calculations will use fallback.")
+            log_warning("No active plugin. Character width calculations will use fallback.")
             return
 
         fonts_dir = os.path.join("plugins", plugin_name, "fonts")
         if not os.path.isdir(fonts_dir):
-            log_debug(f"Fonts directory not found at '{fonts_dir}'.")
+            log_warning(f"Fonts directory not found at '{fonts_dir}'.")
             self.mw.icon_sequences = []
             return
         
-        log_debug(f"--> SettingsManager: Loading all font maps from: {fonts_dir}")
+        log_debug(f"Loading all font maps from: {fonts_dir}")
         for filename in os.listdir(fonts_dir):
             if not filename.lower().endswith(".json"):
                 continue
@@ -436,10 +433,10 @@ class SettingsManager:
                     parsed_map = raw_font_data
                 
                 self.mw.all_font_maps[filename] = parsed_map
-                log_debug(f"  Successfully loaded and parsed font map '{filename}'. Count: {len(parsed_map)}")
+                log_debug(f"Successfully loaded font map '{filename}'.")
 
             except Exception as e:
-                log_debug(f"  ERROR reading or parsing font map file '{filename}': {e}.")
+                log_warning(f"Error reading or parsing font map file '{filename}': {e}.")
 
         default_font_filename = getattr(self.mw, 'default_font_file', None)
         if default_font_filename and default_font_filename in self.mw.all_font_maps:
@@ -448,9 +445,9 @@ class SettingsManager:
         elif self.mw.all_font_maps:
             first_font = next(iter(self.mw.all_font_maps))
             self.mw.font_map = self.mw.all_font_maps[first_font]
-            log_debug(f"Default font file not found, using first available font as default: '{first_font}'.")
+            log_info(f"Default font file not found, using first available font as default: '{first_font}'.")
         else:
-            log_debug("No font maps loaded for the plugin.")
+            log_warning("No font maps loaded for the plugin.")
 
         overrides = self._load_font_overrides(plugin_name)
         if overrides:
@@ -472,11 +469,11 @@ class SettingsManager:
             with open(override_path, 'r', encoding='utf-8') as f:
                 raw_data = json.load(f)
         except Exception as exc:
-            log_debug(f"Failed to read font override map '{override_path}': {exc}")
+            log_warning(f"Failed to read font override map '{override_path}': {exc}")
             return overrides
 
         if not isinstance(raw_data, dict):
-            log_debug(f"Font override map '{override_path}' is not a dict. Skipping.")
+            log_warning(f"Font override map '{override_path}' is not a dict. Skipping.")
             return overrides
 
         for key, value in raw_data.items():
@@ -536,4 +533,3 @@ class SettingsManager:
                     if isinstance(value, dict) and 'width' in value:
                         sequences.add(key)
         self.mw.icon_sequences = sorted(sequences, key=len, reverse=True)
-

@@ -39,7 +39,6 @@ class JsonTagHighlighter(QSyntaxHighlighter):
 
     def __init__(self, parent: QTextDocument, main_window_ref=None):
         super().__init__(parent)
-        log_debug("JsonTagHighlighter initialized.")
         self.mw = main_window_ref
         self._glossary_manager: Optional[GlossaryManager] = None
         self._glossary_enabled = False
@@ -59,8 +58,6 @@ class JsonTagHighlighter(QSyntaxHighlighter):
             editor_widget = parent.parent() if parent else None
             if editor_widget and isinstance(editor_widget, QWidget) and hasattr(editor_widget, 'palette'):
                 self.default_text_color = editor_widget.palette().color(editor_widget.foregroundRole())
-            else:
-                log_debug("JsonTagHighlighter: Could not get editor widget or palette, using default black text color.")
 
         self.custom_rules = []
         self.curly_tag_format = QTextCharFormat()
@@ -134,7 +131,6 @@ class JsonTagHighlighter(QSyntaxHighlighter):
                            show_multiple_spaces_as_dots=True,
                            space_dot_color_hex="#BBBBBB",
                            bracket_tag_color_hex="#FF8C00"):
-        log_debug(f"JsonTagHighlighter reconfiguring styles...")
         
         doc = self.document()
         editor_widget = doc.parent() if doc else None
@@ -155,7 +151,6 @@ class JsonTagHighlighter(QSyntaxHighlighter):
             plugin_rules = self.mw.current_game_rules.get_syntax_highlighting_rules()
             if plugin_rules:
                 self.custom_rules = plugin_rules
-                log_debug(f"Loaded {len(self.custom_rules)} syntax highlighting rules from game plugin.")
 
         self._apply_css_to_format(self.curly_tag_format, tag_css_str)
         try:

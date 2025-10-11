@@ -4,7 +4,7 @@ from typing import Optional
 from PyQt5.QtWidgets import QMessageBox, QFileDialog, QProgressDialog, QPlainTextEdit
 from PyQt5.QtCore import Qt
 from .base_handler import BaseHandler
-from utils.logging_utils import log_debug
+from utils.logging_utils import log_debug, log_info
 from utils.utils import convert_dots_to_spaces_from_editor, calculate_string_width, remove_all_tags, ALL_TAGS_PATTERN, convert_spaces_to_dots_for_display
 from core.tag_utils import apply_default_mappings_only
 from core.data_manager import load_json_file, load_text_file
@@ -58,18 +58,15 @@ class AppActionHandler(BaseHandler):
 
 
     def _perform_initial_silent_scan_all_issues(self):
-        log_debug("Performing initial silent scan for all issues...")
         self.mw.problems_per_subline.clear()
         if not self.mw.data:
             return
         
         for block_idx in range(len(self.mw.data)):
             self._perform_issues_scan_for_block(block_idx)
-        log_debug(f"Initial scan complete. Found problems in {len(self.mw.problems_per_subline)} sublines.")
 
 
     def save_data_action(self, ask_confirmation=True):
-        log_debug(f"--> AppActionHandler: save_data_action called. ask_confirmation={ask_confirmation}, current unsaved={self.mw.unsaved_changes}")
         if self.mw.json_path and not self.mw.edited_json_path:
             self.mw.edited_json_path = self._derive_edited_path(self.mw.json_path)
         current_block_idx_before_save = self.mw.current_block_idx; current_string_idx_before_save = self.mw.current_string_idx
@@ -88,7 +85,6 @@ class AppActionHandler(BaseHandler):
         return save_success
 
     def handle_close_event(self, event):
-        log_debug("--> AppActionHandler: handle_close_event called.")
         if self.mw.unsaved_changes:
             reply = QMessageBox.question(self.mw, 'Unsaved Changes', "Save changes before exiting?", QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel, QMessageBox.Cancel)
             if reply == QMessageBox.Save:
@@ -97,7 +93,6 @@ class AppActionHandler(BaseHandler):
             elif reply == QMessageBox.Discard: event.accept()
             else: event.ignore()
         else: event.accept()
-        log_debug("<-- AppActionHandler: handle_close_event finished.")
     
     def rescan_issues_for_single_block(self, block_idx: int = -1, show_message_on_completion: bool = True, use_default_mappings: bool = True):
         target_block_idx = block_idx if block_idx != -1 else self.mw.current_block_idx
@@ -111,7 +106,7 @@ class AppActionHandler(BaseHandler):
 
 
     def rescan_all_tags(self): 
-        log_debug("<<<<<<<<<< ACTION: Rescan All Issues Triggered >>>>>>>>>>") 
+        log_info("Rescan All Issues action triggered.") 
         self._perform_initial_silent_scan_all_issues()
         self.ui_updater.populate_blocks()
         self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
@@ -123,7 +118,7 @@ class AppActionHandler(BaseHandler):
         return os.path.join(dir_name, f"{base}_edited{ext}")
 
     def open_file_dialog_action(self):
-        log_debug("--> AppActionHandler: Open File Dialog Triggered")
+        log_info("Open File Dialog action triggered.")
         if self.mw.unsaved_changes:
             reply = QMessageBox.question(self.mw, 'Unsaved Changes', "Save before opening new file?", QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel, QMessageBox.Cancel)
             if reply == QMessageBox.Save:
@@ -133,10 +128,9 @@ class AppActionHandler(BaseHandler):
         path, _ = QFileDialog.getOpenFileName(self.mw, "Open Original File", start_dir, "Supported Files (*.json *.txt);;JSON (*.json);;Text files (*.txt);;All (*)")
         if path:
             self.load_all_data_for_path(path, manually_set_edited_path=None, is_initial_load_from_settings=False)
-        log_debug("<-- AppActionHandler: Open File Dialog Finished")
 
     def open_changes_file_dialog_action(self):
-        log_debug("--> AppActionHandler: Open Changes File Dialog Triggered")
+        log_info("Open Changes File Dialog action triggered.")
         if not self.mw.json_path: QMessageBox.warning(self.mw, "Open Changes File", "Please open an original file first."); return
         start_dir = os.path.dirname(self.mw.edited_json_path) if self.mw.edited_json_path else (os.path.dirname(self.mw.json_path) if self.mw.json_path else "")
         path, _ = QFileDialog.getOpenFileName(self.mw, "Open Changes (Edited) File", start_dir, "Supported Files (*.json *.txt);;JSON Files (*.json);;Text Files (*.txt);;All Files (*)")
@@ -176,10 +170,8 @@ class AppActionHandler(BaseHandler):
                  self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
 
 
-        log_debug("<-- AppActionHandler: Open Changes File finished.")
-
     def save_as_dialog_action(self):
-        log_debug("--> AppActionHandler: Save As Dialog Triggered")
+        log_info("Save As Dialog action triggered.")
         if not self.mw.json_path: QMessageBox.warning(self.mw, "Save As Error", "No original file open."); return
         current_edited_path = self.mw.edited_json_path if self.mw.edited_json_path else self._derive_edited_path(self.mw.json_path)
         if not current_edited_path: current_edited_path = os.path.join(os.path.dirname(self.mw.json_path) if self.mw.json_path else ".", "untitled_edited.json")
@@ -195,10 +187,9 @@ class AppActionHandler(BaseHandler):
                 QMessageBox.critical(self.mw, "Save As Error", f"Failed to save to:\n{self.mw.edited_json_path}")
                 self.mw.edited_json_path = original_edited_path_backup
                 self.ui_updater.update_statusbar_paths()
-        log_debug("<-- AppActionHandler: Save As Finished")
 
     def load_all_data_for_path(self, original_file_path, manually_set_edited_path=None, is_initial_load_from_settings=False):
-        log_debug(f"--> AppActionHandler: load_all_data_for_path START. Original: '{original_file_path}', Manual Edit Path: '{manually_set_edited_path}', InitialLoad: {is_initial_load_from_settings}")
+        log_info(f"Loading all data for path: '{original_file_path}'")
         self.mw.is_programmatically_changing_text = True
         
         if not self.mw.current_game_rules:
@@ -283,20 +274,17 @@ class AppActionHandler(BaseHandler):
             self.ui_updater.populate_strings_for_block(-1)
             
         self.mw.is_programmatically_changing_text = False
-        log_debug(f"<-- AppActionHandler: load_all_data_for_path FINISHED (Success)")
 
     def reload_original_data_action(self):
-        log_debug("--> AppActionHandler: Reload Original Triggered")
+        log_info("Reload Original action triggered.")
         if not self.mw.json_path: QMessageBox.information(self.mw, "Reload", "No file open."); return
         if self.mw.unsaved_changes:
             reply = QMessageBox.question(self.mw, 'Unsaved Changes', "Reloading will discard current unsaved edits in memory. Proceed?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.No: return
         current_edited_path_before_reload = self.mw.edited_json_path
         self.load_all_data_for_path(self.mw.json_path, manually_set_edited_path=current_edited_path_before_reload, is_initial_load_from_settings=False)
-        log_debug("<-- AppActionHandler: Reload Original Finished")
 
     def calculate_widths_for_block_action(self, block_idx: int):
-        log_debug(f"--> AppActionHandler: calculate_widths_for_block_action. Block: {block_idx}")
         if block_idx < 0 or not self.mw.data or block_idx >= len(self.mw.data) or not isinstance(self.mw.data[block_idx], list):
             QMessageBox.warning(self.mw, "Calculate Widths Error", "Invalid block selected or no data.")
             return
@@ -324,7 +312,7 @@ class AppActionHandler(BaseHandler):
         for data_str_idx in range(num_strings):
             progress.setValue(data_str_idx)
             if progress.wasCanceled():
-                log_debug("Width calculation for block cancelled by user.")
+                log_info("Width calculation for block cancelled by user.")
                 return
 
             current_text_data_line, source = self.data_processor.get_current_string_text(block_idx, data_str_idx)
@@ -394,5 +382,3 @@ class AppActionHandler(BaseHandler):
             text_edit_for_size.setMinimumWidth(700)
             text_edit_for_size.setMinimumHeight(500)
         result_dialog.exec_()
-
-        log_debug(f"<-- AppActionHandler: calculate_widths_for_block_action finished for block {block_idx}")

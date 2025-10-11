@@ -2,13 +2,11 @@
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QMenu, QAction
 from PyQt5.QtCore import Qt, QPoint, QSize
 from PyQt5.QtGui import QIcon, QPixmap, QPainter, QColor
-from utils.logging_utils import log_debug
 from .CustomListItemDelegate import CustomListItemDelegate
 
 class CustomListWidget(QListWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        log_debug(f"CustomListWidget INITIALIZED, parent: {parent}") 
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.show_context_menu)
         
@@ -16,7 +14,6 @@ class CustomListWidget(QListWidget):
         
         delegate = CustomListItemDelegate(self)
         self.setItemDelegate(delegate)
-        log_debug(f"CustomListWidget: Item delegate set to {delegate}") 
 
         self.color_marker_definitions = {
             "red": QColor(Qt.red),

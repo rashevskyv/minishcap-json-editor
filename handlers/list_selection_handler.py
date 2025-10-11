@@ -34,7 +34,6 @@ class ListSelectionHandler(BaseHandler):
         if not current_item and not self.mw.is_loading_data:
             if not self._restoring_selection and self.mw.current_block_idx != -1:
                 self._restoring_selection = True
-                log_debug(f"ListSelectionHandler.block_selected: current_item is None. Attempting to restore selection to {self.mw.current_block_idx}.")
                 QTimer.singleShot(0, self._restore_block_selection)
             return
 

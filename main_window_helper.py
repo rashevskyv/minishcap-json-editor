@@ -1,13 +1,18 @@
-# --- START OF FILE main_window_helper.py ---
+# --- START OF FILE handlers/main_window_helper.py ---
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from PyQt5.QtWidgets import QMessageBox, QApplication
 from PyQt5.QtCore import QRect, QProcess
-from utils.logging_utils import log_debug
+from utils.logging_utils import log_debug, log_info
 import copy
 import os
 import sys
 
+if TYPE_CHECKING:
+    from main import MainWindow
+
 class MainWindowHelper:
-    def __init__(self, main_window):
+    def __init__(self, main_window: MainWindow):
         self.mw = main_window
 
     def get_font_map_for_string(self, block_idx: int, string_idx: int) -> dict:
@@ -21,7 +26,7 @@ class MainWindowHelper:
         return self.mw.font_map
 
     def restart_application(self):
-        log_debug("Restarting application...")
+        log_info("Restarting application...")
         self.mw.close()
         QProcess.startDetached(sys.executable, sys.argv)
 
@@ -29,7 +34,6 @@ class MainWindowHelper:
         self.mw.unsaved_block_indices.clear()
         for block_idx, _ in self.mw.edited_data.keys():
             self.mw.unsaved_block_indices.add(block_idx)
-        log_debug(f"Rebuilt unsaved_block_indices: {self.mw.unsaved_block_indices}")
         if hasattr(self.mw, 'block_list_widget'):
              self.mw.block_list_widget.viewport().update()
 
@@ -117,7 +121,6 @@ class MainWindowHelper:
                     editor_widget.updateLineNumberAreaWidth(0)
 
     def apply_text_wrap_settings(self):
-        log_debug(f"Applying text wrap settings: Preview wrap: {self.mw.preview_wrap_lines}, Editors wrap: {self.mw.editors_wrap_lines}")
         preview_wrap_mode = self.mw.preview_text_edit.WidgetWidth if self.mw.preview_wrap_lines else self.mw.preview_text_edit.NoWrap
         editors_wrap_mode = self.mw.edited_text_edit.WidgetWidth if self.mw.editors_wrap_lines else self.mw.edited_text_edit.NoWrap
         if hasattr(self.mw, 'preview_text_edit'): self.mw.preview_text_edit.setLineWrapMode(preview_wrap_mode)
@@ -125,7 +128,6 @@ class MainWindowHelper:
         if hasattr(self.mw, 'edited_text_edit'): self.mw.edited_text_edit.setLineWrapMode(editors_wrap_mode)
 
     def reconfigure_all_highlighters(self):
-        log_debug("MainWindowHelper: Reconfiguring all highlighters...")
         # Compose newline CSS
         nl_color = getattr(self.mw, 'newline_color_rgba', "#A020F0")
         nl_css_parts = [f"color: {nl_color}"]
@@ -147,20 +149,15 @@ class MainWindowHelper:
             if text_edit.highlighter:
                 text_edit.highlighter.reconfigure_styles(**common_args)
                 text_edit.highlighter.rehighlight()
-        log_debug("MainWindowHelper: Highlighter reconfiguration attempt complete.")
 
     def prepare_to_close(self):
-        log_debug("MainWindowHelper: prepare_to_close called.")
         self.mw.last_selected_block_index = self.mw.current_block_idx
         self.mw.last_selected_string_index = self.mw.current_string_idx
         
-        log_debug(f"  [SAVE STATE] Block Idx: {self.mw.last_selected_block_index}, String Idx: {self.mw.last_selected_string_index}")
-
         if self.mw.edited_text_edit:
             self.mw.last_cursor_position_in_edited = self.mw.edited_text_edit.textCursor().position()
             self.mw.last_edited_text_edit_scroll_value_v = self.mw.edited_text_edit.verticalScrollBar().value()
             self.mw.last_edited_text_edit_scroll_value_h = self.mw.edited_text_edit.horizontalScrollBar().value()
-            log_debug(f"  [SAVE STATE] Cursor Pos: {self.mw.last_cursor_position_in_edited}, Scroll V/H: {self.mw.last_edited_text_edit_scroll_value_v}/{self.mw.last_edited_text_edit_scroll_value_h}")
         
         if self.mw.preview_text_edit:
             self.mw.last_preview_text_edit_scroll_value_v = self.mw.preview_text_edit.verticalScrollBar().value()
@@ -170,7 +167,6 @@ class MainWindowHelper:
 
         if self.mw.search_panel_widget:
             self.mw.search_history_to_save = self.mw.search_panel_widget.get_history()
-            log_debug(f"MainWindowHelper: Updated search_history_to_save: {len(self.mw.search_history_to_save)} items")
         
         self.mw.window_was_maximized_on_close = self.mw.isMaximized()
         if self.mw.window_was_maximized_on_close:
@@ -180,56 +176,44 @@ class MainWindowHelper:
 
 
     def restore_state_after_settings_load(self):
-        log_debug("MainWindowHelper: restore_state_after_settings_load called.")
+        log_info("Restoring state after settings load.")
         
         if hasattr(self.mw, 'window_geometry_to_restore') and self.mw.window_geometry_to_restore:
             geom_dict = self.mw.window_geometry_to_restore
             if all(k in geom_dict for k in ('x', 'y', 'width', 'height')):
                 self.mw.setGeometry(geom_dict['x'], geom_dict['y'], geom_dict['width'], geom_dict['height'])
-                log_debug(f"Restored window geometry from settings: {geom_dict}")
             if hasattr(self.mw, 'window_was_maximized_at_save') and self.mw.window_was_maximized_at_save:
                 self.mw.showMaximized()
-                log_debug("Window was maximized, restored to maximized state.")
 
 
         if self.mw.initial_load_path and os.path.exists(self.mw.initial_load_path):
-            log_debug(f"MainWindowHelper: Attempting to load initial file from settings: {self.mw.initial_load_path}")
+            log_info(f"Attempting to load initial file from settings: {self.mw.initial_load_path}")
             self.mw.app_action_handler.load_all_data_for_path(self.mw.initial_load_path, self.mw.initial_edited_load_path, is_initial_load_from_settings=True)
 
-            log_debug(f"  [RESTORE STATE] Attempting restore with Block Idx: {self.mw.last_selected_block_index}, String Idx: {self.mw.last_selected_string_index}")
-
             if self.mw.data and 0 <= self.mw.last_selected_block_index < len(self.mw.data):
-                log_debug(f"  [RESTORE STATE] Block index {self.mw.last_selected_block_index} is valid. Setting current row...")
                 self.mw.block_list_widget.currentItemChanged.disconnect()
                 self.mw.block_list_widget.setCurrentRow(self.mw.last_selected_block_index)
                 
                 selected_item = self.mw.block_list_widget.item(self.mw.last_selected_block_index)
                 if selected_item:
-                    log_debug(f"  [RESTORE STATE] Manually calling block_selected for item '{selected_item.text()}'")
                     self.mw.list_selection_handler.block_selected(selected_item, None)
-                else:
-                    log_debug(f"  [RESTORE STATE] WARNING: Could not get item for row {self.mw.last_selected_block_index}")
 
                 self.mw.block_list_widget.currentItemChanged.connect(self.mw.list_selection_handler.block_selected)
                 QApplication.processEvents()
                 
                 if self.mw.current_block_idx == self.mw.last_selected_block_index and \
                    0 <= self.mw.last_selected_string_index < len(self.mw.data[self.mw.last_selected_block_index]):
-                    log_debug(f"  [RESTORE STATE] String index {self.mw.last_selected_string_index} is valid. Calling string_selected_from_preview...")
                     self.mw.list_selection_handler.string_selected_from_preview(self.mw.last_selected_string_index)
                     QApplication.processEvents()
                     if self.mw.edited_text_edit:
                         doc_len = self.mw.edited_text_edit.document().characterCount() -1
                         pos_to_set = min(self.mw.last_cursor_position_in_edited, doc_len if doc_len >= 0 else 0)
                         
-                        log_debug(f"  [RESTORE STATE] Setting cursor position. Target: {pos_to_set} (from saved {self.mw.last_cursor_position_in_edited}, doc len: {doc_len})")
                         cursor = self.mw.edited_text_edit.textCursor()
                         cursor.setPosition(pos_to_set)
                         self.mw.edited_text_edit.setTextCursor(cursor)
                         self.mw.edited_text_edit.ensureCursorVisible()
-                        log_debug(f"  [RESTORE STATE] Cursor position set. Actual final position: {self.mw.edited_text_edit.textCursor().position()}")
 
-                        log_debug(f"  [RESTORE STATE] Setting scollbars. Edited V/H: {self.mw.last_edited_text_edit_scroll_value_v}/{self.mw.last_edited_text_edit_scroll_value_h}, Preview V: {self.mw.last_preview_text_edit_scroll_value_v}, Original V/H: {self.mw.last_original_text_edit_scroll_value_v}/{self.mw.last_original_text_edit_scroll_value_h}")
                         self.mw.edited_text_edit.verticalScrollBar().setValue(self.mw.last_edited_text_edit_scroll_value_v)
                         self.mw.edited_text_edit.horizontalScrollBar().setValue(self.mw.last_edited_text_edit_scroll_value_h)
                         if self.mw.preview_text_edit:
@@ -237,13 +221,8 @@ class MainWindowHelper:
                         if self.mw.original_text_edit:
                             self.mw.original_text_edit.verticalScrollBar().setValue(self.mw.last_original_text_edit_scroll_value_v)
                             self.mw.original_text_edit.horizontalScrollBar().setValue(self.mw.last_original_text_edit_scroll_value_h)
-                    log_debug(f"MainWindowHelper: Restored selection to block {self.mw.last_selected_block_index}, string {self.mw.last_selected_string_index}, cursor {self.mw.last_cursor_position_in_edited}")
-                else:
-                    log_debug(f"MainWindowHelper: last_selected_string_index ({self.mw.last_selected_string_index}) is out of bounds for block {self.mw.last_selected_block_index}. Skipping string/cursor restore.")
-            else:
-                log_debug(f"MainWindowHelper: last_selected_block_index ({self.mw.last_selected_block_index}) is out of bounds or no data. Skipping selection restore.")
         elif not self.mw.json_path:
-             log_debug("MainWindowHelper: No file auto-loaded, updating initial UI state.")
+             log_info("No file auto-loaded, updating initial UI state.")
              self.mw.ui_updater.update_title(); self.mw.ui_updater.update_statusbar_paths()
              self.mw.ui_updater.populate_blocks()
              self.mw.ui_updater.populate_strings_for_block(-1)
@@ -257,4 +236,3 @@ class MainWindowHelper:
                 self.mw.search_handler.is_case_sensitive = cs
                 self.mw.search_handler.search_in_original = so
                 self.mw.search_handler.ignore_tags_newlines = it
-            log_debug(f"MainWindowHelper: Search history loaded into panel. Last query (if any) set in SearchHandler: {self.mw.search_handler.current_query}")
