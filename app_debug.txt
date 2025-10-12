@@ -1,35 +1,54 @@
-2025-10-12 00:06:16,479 - INFO - logging_utils - log_info - ================= Application Start =================
-2025-10-12 00:06:16,490 - INFO - logging_utils - log_info - Applied Light Theme.
-2025-10-12 00:06:16,490 - INFO - logging_utils - log_info - Initializing main window...
-2025-10-12 00:06:16,490 - INFO - logging_utils - log_info - Loading settings from settings.json...
-2025-10-12 00:06:16,490 - DEBUG - logging_utils - log_debug - Global settings loaded.
-2025-10-12 00:06:16,491 - DEBUG - logging_utils - log_debug - Plugin settings loaded from 'plugins\zelda_ww\config.json'.
-2025-10-12 00:06:16,491 - DEBUG - logging_utils - log_debug - Loading all font maps from: plugins\zelda_ww\fonts
-2025-10-12 00:06:16,492 - DEBUG - logging_utils - log_debug - Successfully loaded font map 'CKingMain.json'.
-2025-10-12 00:06:16,492 - DEBUG - logging_utils - log_debug - Successfully loaded font map 'CKingMainL.json'.
-2025-10-12 00:06:16,496 - DEBUG - logging_utils - log_debug - Successfully loaded font map 'CKingMsg.json'.
-2025-10-12 00:06:16,496 - DEBUG - logging_utils - log_debug - Set default font_map to 'CKingMsg.json'.
-2025-10-12 00:06:16,496 - DEBUG - logging_utils - log_debug - Loaded 27 font override entries from 'plugins\zelda_ww\font_map.json'.
-2025-10-12 00:06:16,496 - DEBUG - logging_utils - log_debug - Applied 27 font override entries.
-2025-10-12 00:06:16,497 - INFO - logging_utils - log_info - Settings loading finished.
-2025-10-12 00:06:16,497 - INFO - logging_utils - log_info - Attempting to load plugin: 'zelda_ww'
-2025-10-12 00:06:16,498 - INFO - logging_utils - log_info - Successfully loaded and instantiated game rules: GameRules
-2025-10-12 00:06:16,498 - DEBUG - logging_utils - log_debug - TranslationHandler.__init__: start_new_session initialized to True
-2025-10-12 00:06:16,651 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 270 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
-2025-10-12 00:06:16,651 - INFO - logging_utils - log_info - Initializing dynamic UI from plugin...
-2025-10-12 00:06:16,652 - INFO - logging_utils - log_info - Restoring state after settings load.
-2025-10-12 00:06:16,652 - INFO - logging_utils - log_info - Attempting to load initial file from settings: D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt
-2025-10-12 00:06:16,652 - INFO - logging_utils - log_info - Loading all data for path: 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt'
-2025-10-12 00:06:16,652 - INFO - logging_utils - log_info - Loading text file: 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt'
-2025-10-12 00:06:16,653 - DEBUG - logging_utils - log_debug - UTF-8 decoding failed for 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt'. Trying UTF-16.
-2025-10-12 00:06:16,654 - INFO - logging_utils - log_info - Wind Waker Plugin: Loaded 1002 strings from TXT file into block 'Block 0'.
-2025-10-12 00:06:16,654 - INFO - logging_utils - log_info - Loading text file: 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt'
-2025-10-12 00:06:16,655 - INFO - logging_utils - log_info - Wind Waker Plugin: Loaded 1002 strings from TXT file into block 'message_orig.txt'.
-2025-10-12 00:06:17,420 - INFO - logging_utils - log_info - Main window initialization complete.
-2025-10-12 00:06:17,575 - INFO - logging_utils - log_info - Starting Qt event loop...
-2025-10-12 00:06:20,135 - INFO - logging_utils - log_info - Close event received.
-2025-10-12 00:06:20,135 - DEBUG - logging_utils - log_debug - Saving all settings...
-2025-10-12 00:06:20,136 - DEBUG - logging_utils - log_debug - Global settings saved.
-2025-10-12 00:06:20,136 - DEBUG - logging_utils - log_debug - Plugin settings saved to 'plugins\zelda_ww\config.json'.
-2025-10-12 00:06:20,153 - INFO - logging_utils - log_info - Qt event loop finished with exit code: 0
-2025-10-12 00:06:20,153 - INFO - logging_utils - log_info - ================= Application End =================
+2025-10-12 10:59:28,070 - INFO - logging_utils - log_info - ================= Application Start =================
+2025-10-12 10:59:28,081 - INFO - logging_utils - log_info - Applied Light Theme.
+2025-10-12 10:59:28,081 - INFO - logging_utils - log_info - Initializing main window...
+2025-10-12 10:59:28,082 - INFO - logging_utils - log_info - Loading settings from settings.json...
+2025-10-12 10:59:28,082 - DEBUG - logging_utils - log_debug - Global settings loaded.
+2025-10-12 10:59:28,082 - DEBUG - logging_utils - log_debug - Plugin settings loaded from 'plugins\zelda_ww\config.json'.
+2025-10-12 10:59:28,082 - DEBUG - logging_utils - log_debug - Loading all font maps from: plugins\zelda_ww\fonts
+2025-10-12 10:59:28,083 - DEBUG - logging_utils - log_debug - Successfully loaded font map 'CKingMain.json'.
+2025-10-12 10:59:28,084 - DEBUG - logging_utils - log_debug - Successfully loaded font map 'CKingMainL.json'.
+2025-10-12 10:59:28,087 - DEBUG - logging_utils - log_debug - Successfully loaded font map 'CKingMsg.json'.
+2025-10-12 10:59:28,087 - DEBUG - logging_utils - log_debug - Set default font_map to 'CKingMsg.json'.
+2025-10-12 10:59:28,087 - DEBUG - logging_utils - log_debug - Loaded 27 font override entries from 'plugins\zelda_ww\font_map.json'.
+2025-10-12 10:59:28,088 - DEBUG - logging_utils - log_debug - Applied 27 font override entries.
+2025-10-12 10:59:28,088 - INFO - logging_utils - log_info - Settings loading finished.
+2025-10-12 10:59:28,088 - DEBUG - logging_utils - log_debug - Attempting to initialize spellchecker...
+2025-10-12 10:59:28,088 - DEBUG - logging_utils - log_debug - Loading dictionary from basename: 'resources/spellchecker\uk'
+2025-10-12 10:59:29,450 - DEBUG - logging_utils - log_debug - spylls Dictionary object created successfully for language 'uk'.
+2025-10-12 10:59:29,450 - INFO - logging_utils - log_info - Attempting to load plugin: 'zelda_ww'
+2025-10-12 10:59:29,452 - INFO - logging_utils - log_info - Successfully loaded and instantiated game rules: GameRules
+2025-10-12 10:59:29,452 - DEBUG - logging_utils - log_debug - TranslationHandler.__init__: start_new_session initialized to True
+2025-10-12 10:59:29,677 - DEBUG - logging_utils - log_debug - GlossaryManager: loaded 270 entries for plugin zelda_ww from plugins\zelda_ww\translation_prompts\glossary.md
+2025-10-12 10:59:29,678 - INFO - logging_utils - log_info - Initializing dynamic UI from plugin...
+2025-10-12 10:59:29,679 - INFO - logging_utils - log_info - Restoring state after settings load.
+2025-10-12 10:59:29,679 - INFO - logging_utils - log_info - Attempting to load initial file from settings: D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt
+2025-10-12 10:59:29,679 - INFO - logging_utils - log_info - Loading all data for path: 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt'
+2025-10-12 10:59:29,679 - INFO - logging_utils - log_info - Loading text file: 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt'
+2025-10-12 10:59:29,679 - DEBUG - logging_utils - log_debug - UTF-8 decoding failed for 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt'. Trying UTF-16.
+2025-10-12 10:59:29,680 - INFO - logging_utils - log_info - Wind Waker Plugin: Loaded 1002 strings from TXT file into block 'Block 0'.
+2025-10-12 10:59:29,681 - INFO - logging_utils - log_info - Loading text file: 'D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt'
+2025-10-12 10:59:29,682 - INFO - logging_utils - log_info - Wind Waker Plugin: Loaded 1002 strings from TXT file into block 'message_orig.txt'.
+2025-10-12 10:59:30,426 - INFO - logging_utils - log_info - Main window initialization complete.
+2025-10-12 10:59:30,597 - INFO - logging_utils - log_info - Starting Qt event loop...
+2025-10-12 10:59:32,070 - INFO - logging_utils - log_info - Opening settings dialog...
+2025-10-12 10:59:32,075 - DEBUG - logging_utils - log_debug - Found local dictionaries: ['en', 'uk']
+2025-10-12 10:59:32,095 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-10-12 10:59:32,095 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-10-12 10:59:32,095 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-10-12 10:59:32,095 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-10-12 10:59:32,096 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-10-12 10:59:32,096 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-10-12 10:59:32,096 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-10-12 10:59:32,096 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-10-12 10:59:32,096 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-10-12 10:59:32,096 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-10-12 10:59:32,096 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-10-12 10:59:32,097 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-10-12 10:59:32,097 - DEBUG - logging_utils - log_debug - SettingsDialog: Rules changed, marked for rescan.
+2025-10-12 10:59:33,651 - INFO - logging_utils - log_info - Settings dialog cancelled.
+2025-10-12 10:59:35,277 - INFO - logging_utils - log_info - Close event received.
+2025-10-12 10:59:35,277 - DEBUG - logging_utils - log_debug - Saving all settings...
+2025-10-12 10:59:35,278 - DEBUG - logging_utils - log_debug - Global settings saved.
+2025-10-12 10:59:35,279 - DEBUG - logging_utils - log_debug - Plugin settings saved to 'plugins\zelda_ww\config.json'.
+2025-10-12 10:59:35,290 - INFO - logging_utils - log_info - Qt event loop finished with exit code: 0
+2025-10-12 10:59:35,291 - INFO - logging_utils - log_info - ================= Application End =================

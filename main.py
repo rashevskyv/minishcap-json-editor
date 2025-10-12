@@ -1,4 +1,4 @@
-# --- START OF FILE main.py ---
+# /home/runner/work/RAG_project/RAG_project/main.py
 import sys
 import os
 import json
@@ -36,6 +36,7 @@ from handlers.ai_chat_handler import AIChatHandler
 from core.settings_manager import SettingsManager
 from core.data_state_processor import DataStateProcessor
 from core.translation.config import build_default_translation_config
+from core.spellchecker_manager import SpellcheckerManager
 
 from plugins.base_game_rules import BaseGameRules
 
@@ -215,6 +216,7 @@ class MainWindow(QMainWindow):
         self.data_processor = DataStateProcessor(self)
         self.ui_updater = UIUpdater(self, self.data_processor)
         self.string_settings_updater = StringSettingsUpdater(self, self.data_processor)
+        self.spellchecker_manager = SpellcheckerManager(self)
 
         self.ui_handler = MainWindowUIHandler(self)
         self.plugin_handler = MainWindowPluginHandler(self)

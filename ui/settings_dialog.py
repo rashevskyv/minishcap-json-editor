@@ -1,4 +1,4 @@
-# --- START OF FILE ui/settings_dialog.py ---
+# /home/runner/work/RAG_project/RAG_project/ui/settings_dialog.py
 import os
 import json
 from PyQt5.QtWidgets import (
@@ -12,7 +12,9 @@ from PyQt5.QtGui import QColor, QPalette
 from PyQt5.QtCore import pyqtSignal, Qt
 from utils.logging_utils import log_debug
 from components.labeled_spinbox import LabeledSpinBox
+from components.dictionary_manager_dialog import DictionaryManagerDialog
 from core.translation.config import build_default_translation_config, merge_translation_config
+import pycountry
 
 class ColorPickerButton(QPushButton):
     colorChanged = pyqtSignal(QColor)
@@ -93,16 +95,19 @@ class SettingsDialog(QDialog):
         
         self.general_tab = QWidget()
         self.plugin_tab = QWidget()
+        self.spelling_tab = QWidget()
         self.ai_translation_tab = QWidget()
         self.ai_glossary_tab = QWidget()
 
         self.tabs.addTab(self.general_tab, "Global")
         self.tabs.addTab(self.plugin_tab, "Plugin")
+        self.tabs.addTab(self.spelling_tab, "Spelling")
         self.tabs.addTab(self.ai_translation_tab, "AI Translation")
         self.tabs.addTab(self.ai_glossary_tab, "AI Glossary")
         
         self.setup_general_tab()
         self.setup_plugin_tab()
+        self.setup_spelling_tab()
         self.setup_ai_translation_tab()
         self.setup_ai_glossary_tab()
 
@@ -112,6 +117,14 @@ class SettingsDialog(QDialog):
         main_layout.addWidget(self.button_box)
 
         self.load_initial_settings()
+
+    def _get_lang_name(self, code):
+        try:
+            lang_code_part = code.split('_')[0]
+            lang = pycountry.languages.get(alpha_2=lang_code_part)
+            return lang.name if lang else code
+        except Exception:
+            return code
 
     def _create_path_selector(self, line_edit: QLineEdit):
         widget = QWidget()
@@ -194,6 +207,40 @@ class SettingsDialog(QDialog):
         self.autofix_checkboxes.clear()
         self._setup_detection_subtab(detection_tab)
         self._setup_autofix_subtab(autofix_tab)
+
+    def setup_spelling_tab(self):
+        layout = QFormLayout(self.spelling_tab)
+        
+        self.spellcheck_enabled_checkbox = QCheckBox("Enable spell checking", self)
+        layout.addRow(self.spellcheck_enabled_checkbox)
+        
+        self.spellcheck_language_combo = QComboBox(self)
+        layout.addRow("Dictionary Language:", self.spellcheck_language_combo)
+        
+        manage_button = QPushButton("Manage Dictionaries...", self)
+        manage_button.clicked.connect(self._open_dictionary_manager)
+        layout.addRow(manage_button)
+        
+        self.populate_spellchecker_languages()
+
+    def _open_dictionary_manager(self):
+        dialog = DictionaryManagerDialog(self)
+        dialog.exec_()
+        self.populate_spellchecker_languages()
+
+    def populate_spellchecker_languages(self):
+        current_lang_data = self.spellcheck_language_combo.currentData()
+        self.spellcheck_language_combo.clear()
+        if self.mw and self.mw.spellchecker_manager:
+            available_dicts = self.mw.spellchecker_manager.scan_local_dictionaries()
+            for lang_code in sorted(available_dicts.keys()):
+                display_name = self._get_lang_name(lang_code)
+                self.spellcheck_language_combo.addItem(f"{display_name} ({lang_code})", lang_code)
+        
+        if current_lang_data:
+            index = self.spellcheck_language_combo.findData(current_lang_data)
+            if index != -1:
+                self.spellcheck_language_combo.setCurrentIndex(index)
 
     def _populate_font_list(self, plugin_dir_name: str):
         self.font_file_combo.clear()
@@ -698,6 +745,13 @@ class SettingsDialog(QDialog):
 
         self.glossary_model_edit.setText(glossary_ai_cfg.get('model', 'gpt-4o'))
         self.glossary_chunk_size_spin.setValue(glossary_ai_cfg.get('chunk_size', 8000))
+        
+        # Load Spellchecker settings
+        self.spellcheck_enabled_checkbox.setChecked(getattr(self.mw, 'spellchecker_enabled', False))
+        current_lang = getattr(self.mw, 'spellchecker_language', 'uk')
+        lang_index = self.spellcheck_language_combo.findData(current_lang)
+        if lang_index != -1:
+            self.spellcheck_language_combo.setCurrentIndex(lang_index)
 
         self.on_provider_changed(self.translation_provider_combo.currentIndex())
         self.rules_changed_requires_rescan = False
@@ -781,5 +835,7 @@ class SettingsDialog(QDialog):
             'tag_bold': self.tag_bold_chk.isChecked(), 'tag_italic': self.tag_italic_chk.isChecked(), 'tag_underline': self.tag_underline_chk.isChecked(),
             'game_dialog_max_width_pixels': self.game_dialog_width_spinbox.value(), 'line_width_warning_threshold_pixels': self.width_warning_spinbox.value(),
             'autofix_enabled': autofix_settings, 'translation_config': translation_config_to_save, 'detection_enabled': detection_settings,
-            'glossary_ai': glossary_ai_settings
+            'glossary_ai': glossary_ai_settings,
+            'spellchecker_enabled': self.spellcheck_enabled_checkbox.isChecked(),
+            'spellchecker_language': self.spellcheck_language_combo.currentData(),
         }

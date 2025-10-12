@@ -1,4 +1,4 @@
-# --- START OF FILE handlers/main_window_actions.py ---
+# /home/runner/work/RAG_project/RAG_project/handlers/main_window_actions.py
 from __future__ import annotations
 from typing import TYPE_CHECKING
 from PyQt5.QtWidgets import QApplication, QMessageBox
@@ -29,6 +29,9 @@ class MainWindowActions:
         
         font_file_changed = new_settings.get('default_font_file') != self.mw.default_font_file
         
+        spellchecker_lang_changed = new_settings.get('spellchecker_language') != self.mw.spellchecker_manager.language
+        spellchecker_enabled_changed = new_settings.get('spellchecker_enabled') != self.mw.spellchecker_manager.enabled
+
         if dialog.plugin_changed_requires_restart or dialog.theme_changed_requires_restart or font_file_changed:
             log_info(f"Restart required. Plugin change: {dialog.plugin_changed_requires_restart}, Theme change: {dialog.theme_changed_requires_restart}, Font file change: {font_file_changed}")
             
@@ -78,6 +81,16 @@ class MainWindowActions:
                         self.mw.edited_text_edit.viewport().update()
 
                     log_info("User discarded unsaved changes after disabling session restore.")
+
+            if spellchecker_enabled_changed:
+                self.mw.spellchecker_manager.set_enabled(new_settings.get('spellchecker_enabled', False))
+            
+            if spellchecker_lang_changed:
+                self.mw.spellchecker_manager.reload_dictionary(new_settings.get('spellchecker_language', 'uk'))
+            
+            if spellchecker_enabled_changed or spellchecker_lang_changed:
+                if hasattr(self.mw, 'edited_text_edit'):
+                    self.mw.edited_text_edit.highlighter.rehighlight()
 
             self.mw.settings_manager.save_settings()
 

@@ -1,4 +1,4 @@
-# --- START OF FILE core/settings_manager.py ---
+# /home/runner/work/RAG_project/RAG_project/core/settings_manager.py
 import json
 import os
 import base64
@@ -60,6 +60,8 @@ class SettingsManager:
             "theme": "auto",
             "restore_unsaved_on_startup": False,
             "prompt_editor_enabled": True,
+            "spellchecker_enabled": False,
+            "spellchecker_language": "uk",
             "translation_ai": {
                 "provider": "OpenAI", "api_key": "", "model": "gpt-4o"
             },
@@ -251,7 +253,9 @@ class SettingsManager:
             "restore_unsaved_on_startup": self.mw.restore_unsaved_on_startup,
             "prompt_editor_enabled": getattr(self.mw, 'prompt_editor_enabled', True),
             "translation_ai": getattr(self.mw, 'translation_ai', {}),
-            "glossary_ai": getattr(self.mw, 'glossary_ai', {})
+            "glossary_ai": getattr(self.mw, 'glossary_ai', {}),
+            "spellchecker_enabled": getattr(self.mw, 'spellchecker_enabled', False),
+            "spellchecker_language": getattr(self.mw, 'spellchecker_language', 'uk'),
         })
 
         if self.mw.restore_unsaved_on_startup and self.mw.edited_data:

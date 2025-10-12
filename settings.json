@@ -37,5 +37,7 @@
         "is_fullscreen": false,
         "is_maximized": false
     },
-    "prompt_editor_enabled": true
+    "prompt_editor_enabled": true,
+    "spellchecker_enabled": true,
+    "spellchecker_language": "uk"
 }
