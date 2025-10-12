@@ -41,6 +41,7 @@ class SpellcheckerManager:
             self.hunspell = Dictionary.from_files(dictionary_basename)
             log_debug(f"spylls Dictionary object created successfully for language '{dictionary_name}'.")
             self._load_user_dictionary()
+            self._load_glossary_words()
 
         except Exception as e:
             log_error(f"Failed to initialize spylls for '{self.language}': {e}", exc_info=True)
@@ -98,6 +99,36 @@ class SpellcheckerManager:
         except Exception as e:
             log_warning(f"Failed to load user dictionary: {e}")
 
+    def _load_glossary_words(self):
+        """Load all words from glossary translations into custom dictionary."""
+        if not hasattr(self.mw, 'translation_handler') or not self.mw.translation_handler:
+            return
+
+        glossary_manager = getattr(self.mw.translation_handler, 'glossary_manager', None)
+        if not glossary_manager:
+            return
+
+        # Get all glossary entries
+        entries = glossary_manager.get_entries()
+        if not entries:
+            return
+
+        # Extract all words from translations and add them to custom_words
+        word_pattern = re.compile(r"[a-zA-Zа-яА-ЯіїІїЄєґҐ']+")
+        glossary_words_count = 0
+
+        for entry in entries:
+            # Extract words from translation
+            translation_words = word_pattern.findall(entry.translation)
+            for word in translation_words:
+                # Strip apostrophes and normalize
+                cleaned_word = word.strip("'").lower()
+                if len(cleaned_word) >= MIN_WORD_LENGTH and cleaned_word not in self.custom_words:
+                    self.custom_words.add(cleaned_word)
+                    glossary_words_count += 1
+
+        log_debug(f"Loaded {glossary_words_count} words from glossary into spellchecker dictionary.")
+
     def add_to_custom_dictionary(self, word: str):
         if not self.hunspell:
             return
@@ -137,48 +168,14 @@ class SpellcheckerManager:
         if not WORD_PATTERN.match(cleaned_word):
             return False
 
-        # Check if word is in custom dictionary
+        # Check if word is in custom dictionary (includes glossary words)
         if cleaned_word.lower() in self.custom_words:
             log_debug(f"Spellchecking word '{cleaned_word}': Found in custom dictionary. Misspelled = False")
-            return False
-
-        # Check if word is in glossary (translation terms)
-        if self._is_in_glossary(cleaned_word):
-            log_debug(f"Spellchecking word '{cleaned_word}': Found in glossary. Misspelled = False")
             return False
 
         is_correct = self.hunspell.lookup(cleaned_word)
         log_debug(f"Spellchecking word '{cleaned_word}': Correct = {is_correct}. Misspelled = {not is_correct}")
         return not is_correct
-
-    def _is_in_glossary(self, word: str) -> bool:
-        """Check if word appears in any glossary translation."""
-        if not hasattr(self.mw, 'translation_handler') or not self.mw.translation_handler:
-            return False
-
-        glossary_manager = getattr(self.mw.translation_handler, 'glossary_manager', None)
-        if not glossary_manager:
-            return False
-
-        # Get all glossary entries
-        entries = glossary_manager.get_entries()
-        if not entries:
-            return False
-
-        word_lower = word.lower()
-        # Check if word appears in any translation
-        for entry in entries:
-            # Check if word matches the translation or is part of it
-            translation_lower = entry.translation.lower()
-            # Exact match or word boundary match
-            if word_lower == translation_lower:
-                return True
-            # Check if word appears as a separate word in multi-word translation
-            translation_words = translation_lower.split()
-            if word_lower in translation_words:
-                return True
-
-        return False
 
     def get_suggestions(self, word: str) -> List[str]:
         if not self.enabled or not self.hunspell:
