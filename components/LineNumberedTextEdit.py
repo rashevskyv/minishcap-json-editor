@@ -2,7 +2,7 @@
 from PyQt5.QtWidgets import (QPlainTextEdit, QMainWindow, QMenu, QApplication, QAction,
                              QWidget, QHBoxLayout, QPushButton, QWidgetAction, QDialog,
                              QVBoxLayout, QComboBox, QDialogButtonBox, QLabel, QSpinBox, QToolTip)
-from PyQt5.QtGui import (QPainter, QFont, QPaintEvent, QKeyEvent, QKeySequence, QMouseEvent, QIcon, QPixmap, QColor, QTextLine, QTextCursor, QDrag) 
+from PyQt5.QtGui import (QPainter, QFont, QPaintEvent, QKeyEvent, QKeySequence, QMouseEvent, QIcon, QPixmap, QColor, QTextLine, QTextCursor, QDrag)
 from PyQt5.QtCore import Qt, QRect, QSize, QRectF, pyqtSignal, QPoint, QMimeData, QByteArray
 from typing import Optional, List, Tuple
 import os
@@ -13,6 +13,7 @@ from utils.logging_utils import log_debug
 from utils.syntax_highlighter import JsonTagHighlighter
 from core.glossary_manager import GlossaryEntry
 from utils.utils import SPACE_DOT_SYMBOL
+from dialogs.spellcheck_dialog import SpellcheckDialog
 from utils.constants import (
     EDITOR_PLAYER_TAG as EDITOR_PLAYER_TAG_CONST,
     ORIGINAL_PLAYER_TAG as ORIGINAL_PLAYER_TAG_CONST,
@@ -146,6 +147,96 @@ class LineNumberedTextEdit(QPlainTextEdit):
         """Replace the word selected by the given cursor with the replacement text."""
         if word_cursor.hasSelection():
             word_cursor.insertText(replacement)
+
+    def _open_spellcheck_dialog_for_selection(self, position_in_widget_coords: QPoint) -> None:
+        """Open spellcheck dialog for selected lines or line at cursor."""
+        main_window = self.window()
+        if not isinstance(main_window, QMainWindow):
+            return
+
+        spellchecker_manager = getattr(main_window, 'spellchecker_manager', None)
+        if not spellchecker_manager:
+            return
+
+        # Get text to spellcheck
+        selected_lines = self.get_selected_lines()
+        starting_line_number = 0
+        if selected_lines:
+            # Get text from selected lines
+            text_parts = []
+            for line_num in selected_lines:
+                block = self.document().findBlockByNumber(line_num)
+                if block.isValid():
+                    text_parts.append(block.text())
+            text_to_check = '\n'.join(text_parts)
+            starting_line_number = selected_lines[0]
+        else:
+            # Get text from line at cursor
+            cursor = self.cursorForPosition(position_in_widget_coords)
+            block = cursor.block()
+            if not block.isValid():
+                return
+            text_to_check = block.text()
+            starting_line_number = cursor.blockNumber()
+
+        if not text_to_check.strip():
+            return
+
+        # Open dialog with starting line number
+        dialog = SpellcheckDialog(self, text_to_check, spellchecker_manager, starting_line_number)
+        if dialog.exec_():
+            corrected_text = dialog.get_corrected_text()
+            # Update edited_text_edit with corrected text
+            if hasattr(main_window, 'edited_text_edit') and main_window.edited_text_edit:
+                self._apply_corrected_text_to_editor(corrected_text, selected_lines if selected_lines else [cursor.blockNumber()])
+
+    def _open_spellcheck_dialog_for_block(self) -> None:
+        """Open spellcheck dialog for entire current block."""
+        main_window = self.window()
+        if not isinstance(main_window, QMainWindow):
+            return
+
+        spellchecker_manager = getattr(main_window, 'spellchecker_manager', None)
+        if not spellchecker_manager:
+            return
+
+        # Get all text from preview_text_edit (entire block)
+        text_to_check = self.toPlainText()
+        if not text_to_check.strip():
+            return
+
+        # Open dialog starting from line 0
+        dialog = SpellcheckDialog(self, text_to_check, spellchecker_manager, starting_line_number=0)
+        if dialog.exec_():
+            corrected_text = dialog.get_corrected_text()
+            # Update edited_text_edit with corrected text
+            if hasattr(main_window, 'edited_text_edit') and main_window.edited_text_edit:
+                # Get all line numbers
+                all_lines = list(range(self.document().blockCount()))
+                self._apply_corrected_text_to_editor(corrected_text, all_lines)
+
+    def _apply_corrected_text_to_editor(self, corrected_text: str, line_numbers: List[int]) -> None:
+        """Apply corrected text back to the edited_text_edit."""
+        main_window = self.window()
+        if not isinstance(main_window, QMainWindow):
+            return
+
+        if not hasattr(main_window, 'edited_text_edit') or not main_window.edited_text_edit:
+            return
+
+        edited_text_edit = main_window.edited_text_edit
+
+        # Split corrected text by lines
+        corrected_lines = corrected_text.split('\n')
+
+        # Update each line in edited_text_edit
+        for i, line_num in enumerate(line_numbers):
+            if i < len(corrected_lines):
+                block = edited_text_edit.document().findBlockByNumber(line_num)
+                if block.isValid():
+                    cursor = QTextCursor(block)
+                    cursor.select(QTextCursor.BlockUnderCursor)
+                    cursor.insertText(corrected_lines[i])
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         entry = self._find_glossary_entry_at(event.pos())
@@ -347,10 +438,12 @@ class LineNumberedTextEdit(QPlainTextEdit):
                 if not has_selection:
                     cursor_at_pos = self.cursorForPosition(position_in_widget_coords)
                     cursor_at_pos.select(QTextCursor.WordUnderCursor)
-                    word_under_cursor = cursor_at_pos.selectedText().strip()
+                    # Strip spaces, apostrophes, and middle dots
+                    word_under_cursor = cursor_at_pos.selectedText().strip().strip("'·")
                     word_cursor = cursor_at_pos
                 else:
-                    word_under_cursor = cursor.selectedText().strip()
+                    # Strip spaces, apostrophes, and middle dots
+                    word_under_cursor = cursor.selectedText().strip().strip("'·")
                     word_cursor = cursor
 
                 if word_under_cursor and spellchecker_manager.is_misspelled(word_under_cursor):
@@ -368,6 +461,11 @@ class LineNumberedTextEdit(QPlainTextEdit):
                             suggestion_action.triggered.connect(
                                 lambda checked=False, s=suggestion, c=word_cursor: self._replace_word_at_cursor(c, s)
                             )
+                        menu.addSeparator()
+                    else:
+                        # No suggestions available
+                        no_suggestions_action = menu.addAction("(No suggestions)")
+                        no_suggestions_action.setEnabled(False)
                         menu.addSeparator()
 
                     add_to_dict_action = menu.addAction(f"Add \"{word_under_cursor}\" to Dictionary")
@@ -411,10 +509,10 @@ class LineNumberedTextEdit(QPlainTextEdit):
         
         if self.objectName() == "preview_text_edit":
             if not custom_actions_added: menu.addSeparator(); custom_actions_added = True
-            
+
             translator = getattr(main_window, 'translation_handler', None)
             selected_lines = self.get_selected_lines()
-            
+
             if translator:
                 if selected_lines:
                     num_selected = len(selected_lines)
@@ -426,13 +524,37 @@ class LineNumberedTextEdit(QPlainTextEdit):
                     cursor = self.cursorForPosition(position_in_widget_coords)
                     line_num = cursor.blockNumber()
                     action_text = f"AI Translate Line {line_num + 1} (UA)"
-                
+
                 translate_action = menu.addAction(action_text)
                 translate_action.triggered.connect(lambda: translator.translate_preview_selection(position_in_widget_coords))
 
                 translate_block_action = menu.addAction("AI Translate Entire Block (UA)")
                 translate_block_action.triggered.connect(lambda: translator.translate_current_block())
-            
+
+            # Spellcheck options
+            spellchecker_manager = getattr(main_window, 'spellchecker_manager', None)
+            if spellchecker_manager and spellchecker_manager.enabled:
+                menu.addSeparator()
+
+                if selected_lines:
+                    num_selected = len(selected_lines)
+                    if num_selected > 1:
+                        spellcheck_text = f"Spellcheck {num_selected} Lines"
+                    else:
+                        spellcheck_text = f"Spellcheck Line {selected_lines[0] + 1}"
+                else:
+                    cursor = self.cursorForPosition(position_in_widget_coords)
+                    line_num = cursor.blockNumber()
+                    spellcheck_text = f"Spellcheck Line {line_num + 1}"
+
+                spellcheck_action = menu.addAction(spellcheck_text)
+                spellcheck_action.triggered.connect(
+                    lambda: self._open_spellcheck_dialog_for_selection(position_in_widget_coords)
+                )
+
+                spellcheck_block_action = menu.addAction("Spellcheck Entire Block")
+                spellcheck_block_action.triggered.connect(self._open_spellcheck_dialog_for_block)
+
             if len(selected_lines) > 1:
                 num_selected = len(selected_lines)
                 menu.addSeparator()

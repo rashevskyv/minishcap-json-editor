@@ -101,7 +101,9 @@ class SpellcheckerManager:
     def add_to_custom_dictionary(self, word: str):
         if not self.hunspell:
             return
-        normalized_word = word.lower()
+        # Strip apostrophes and middle dot (·) before adding to dictionary
+        cleaned_word = word.strip("'·")
+        normalized_word = cleaned_word.lower()
         if normalized_word not in self.custom_words:
             self.custom_words.add(normalized_word)
 
@@ -125,7 +127,8 @@ class SpellcheckerManager:
             log_debug(f"-> is_misspelled for '{word}': returning False (hunspell object not initialized).")
             return False
 
-        cleaned_word = word.strip("'")
+        # Strip apostrophes and middle dot (·) which represents spaces in editor
+        cleaned_word = word.strip("'·")
 
         if len(cleaned_word) < MIN_WORD_LENGTH:
             return False
@@ -139,15 +142,52 @@ class SpellcheckerManager:
             log_debug(f"Spellchecking word '{cleaned_word}': Found in custom dictionary. Misspelled = False")
             return False
 
+        # Check if word is in glossary (translation terms)
+        if self._is_in_glossary(cleaned_word):
+            log_debug(f"Spellchecking word '{cleaned_word}': Found in glossary. Misspelled = False")
+            return False
+
         is_correct = self.hunspell.lookup(cleaned_word)
         log_debug(f"Spellchecking word '{cleaned_word}': Correct = {is_correct}. Misspelled = {not is_correct}")
         return not is_correct
+
+    def _is_in_glossary(self, word: str) -> bool:
+        """Check if word appears in any glossary translation."""
+        if not hasattr(self.mw, 'translation_handler') or not self.mw.translation_handler:
+            return False
+
+        glossary_manager = getattr(self.mw.translation_handler, 'glossary_manager', None)
+        if not glossary_manager:
+            return False
+
+        # Get all glossary entries
+        entries = glossary_manager.get_entries()
+        if not entries:
+            return False
+
+        word_lower = word.lower()
+        # Check if word appears in any translation
+        for entry in entries:
+            # Check if word matches the translation or is part of it
+            translation_lower = entry.translation.lower()
+            # Exact match or word boundary match
+            if word_lower == translation_lower:
+                return True
+            # Check if word appears as a separate word in multi-word translation
+            translation_words = translation_lower.split()
+            if word_lower in translation_words:
+                return True
+
+        return False
 
     def get_suggestions(self, word: str) -> List[str]:
         if not self.enabled or not self.hunspell:
             return []
 
+        # Strip apostrophes and middle dot (·) before getting suggestions
+        cleaned_word = word.strip("'·")
+
         # Convert generator to list
-        suggestions = list(self.hunspell.suggest(word.lower()))
-        log_debug(f"Spellchecker: Got {len(suggestions)} suggestions for '{word}': {suggestions[:5]}")
+        suggestions = list(self.hunspell.suggest(cleaned_word.lower()))
+        log_debug(f"Spellchecker: Got {len(suggestions)} suggestions for '{word}' (cleaned: '{cleaned_word}'): {suggestions[:5]}")
         return suggestions
