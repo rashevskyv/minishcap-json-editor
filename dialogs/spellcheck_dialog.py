@@ -71,13 +71,57 @@ class SpellcheckDialog(QDialog):
 
         middle_layout.addWidget(QLabel("Text:"))
 
+        # Create horizontal layout for line numbers and text
+        text_container = QWidget()
+        text_layout = QHBoxLayout(text_container)
+        text_layout.setContentsMargins(0, 0, 0, 0)
+        text_layout.setSpacing(2)
+
+        # Line numbers display
+        self.line_numbers_edit = QTextEdit()
+        self.line_numbers_edit.setReadOnly(True)
+        self.line_numbers_edit.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.line_numbers_edit.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.line_numbers_edit.setFrameStyle(0)
+        font = QFont("Courier New", 10)
+        self.line_numbers_edit.setFont(font)
+
+        # Calculate line numbers
+        line_count = self.current_text.count('\n') + 1
+        line_numbers_text = '\n'.join(str(self.starting_line_number + i + 1) for i in range(line_count))
+        self.line_numbers_edit.setPlainText(line_numbers_text)
+
+        # Set fixed width for line numbers based on max line number
+        max_line_num = self.starting_line_number + line_count
+        digits = len(str(max_line_num))
+        line_numbers_width = digits * 10 + 10  # Approximate width
+        self.line_numbers_edit.setFixedWidth(line_numbers_width)
+
+        # Style line numbers
+        self.line_numbers_edit.setStyleSheet("""
+            QTextEdit {
+                background-color: #f0f0f0;
+                color: #666666;
+                border: none;
+                padding-right: 5px;
+            }
+        """)
+
+        text_layout.addWidget(self.line_numbers_edit)
+
+        # Main text edit
         self.text_edit = QTextEdit()
         self.text_edit.setPlainText(self.current_text)
         self.text_edit.setReadOnly(True)
-        # Set monospace font
-        font = QFont("Courier New", 10)
         self.text_edit.setFont(font)
-        middle_layout.addWidget(self.text_edit)
+        text_layout.addWidget(self.text_edit)
+
+        # Sync scrolling between line numbers and text
+        self.text_edit.verticalScrollBar().valueChanged.connect(
+            self.line_numbers_edit.verticalScrollBar().setValue
+        )
+
+        middle_layout.addWidget(text_container)
 
         splitter.addWidget(middle_widget)
 

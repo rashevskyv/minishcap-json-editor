@@ -190,31 +190,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
             if hasattr(main_window, 'edited_text_edit') and main_window.edited_text_edit:
                 self._apply_corrected_text_to_editor(corrected_text, selected_lines if selected_lines else [cursor.blockNumber()])
 
-    def _open_spellcheck_dialog_for_block(self) -> None:
-        """Open spellcheck dialog for entire current block."""
-        main_window = self.window()
-        if not isinstance(main_window, QMainWindow):
-            return
-
-        spellchecker_manager = getattr(main_window, 'spellchecker_manager', None)
-        if not spellchecker_manager:
-            return
-
-        # Get all text from preview_text_edit (entire block)
-        text_to_check = self.toPlainText()
-        if not text_to_check.strip():
-            return
-
-        # Open dialog starting from line 0
-        dialog = SpellcheckDialog(self, text_to_check, spellchecker_manager, starting_line_number=0)
-        if dialog.exec_():
-            corrected_text = dialog.get_corrected_text()
-            # Update edited_text_edit with corrected text
-            if hasattr(main_window, 'edited_text_edit') and main_window.edited_text_edit:
-                # Get all line numbers
-                all_lines = list(range(self.document().blockCount()))
-                self._apply_corrected_text_to_editor(corrected_text, all_lines)
-
     def _apply_corrected_text_to_editor(self, corrected_text: str, line_numbers: List[int]) -> None:
         """Apply corrected text back to the edited_text_edit."""
         main_window = self.window()
@@ -575,9 +550,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
                 spellcheck_action.triggered.connect(
                     lambda: self._open_spellcheck_dialog_for_selection(position_in_widget_coords)
                 )
-
-                spellcheck_block_action = menu.addAction("Spellcheck Entire Block")
-                spellcheck_block_action.triggered.connect(self._open_spellcheck_dialog_for_block)
 
             if len(selected_lines) > 1:
                 num_selected = len(selected_lines)
