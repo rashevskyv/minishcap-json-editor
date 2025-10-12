@@ -395,10 +395,13 @@ class JsonTagHighlighter(QSyntaxHighlighter):
 
     def _extract_words_from_text(self, text: str) -> List[Tuple[int, int, str]]:
         """Extract words from text, returning (start, end, word) tuples."""
+        # Replace middle dots with spaces for word detection
+        text_with_spaces = text.replace('·', ' ')
+
         # Pattern matches word characters including Cyrillic, apostrophes
         word_pattern = re.compile(r"[a-zA-Zа-яА-ЯіїІїЄєґҐ']+")
         words = []
-        for match in word_pattern.finditer(text):
+        for match in word_pattern.finditer(text_with_spaces):
             words.append((match.start(), match.end(), match.group(0)))
         return words
 

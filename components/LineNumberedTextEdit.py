@@ -438,12 +438,16 @@ class LineNumberedTextEdit(QPlainTextEdit):
                 if not has_selection:
                     cursor_at_pos = self.cursorForPosition(position_in_widget_coords)
                     cursor_at_pos.select(QTextCursor.WordUnderCursor)
-                    # Strip spaces, apostrophes, and middle dots
-                    word_under_cursor = cursor_at_pos.selectedText().strip().strip("'·")
+                    # Replace middle dots with spaces, then extract first word, strip apostrophes
+                    raw_text = cursor_at_pos.selectedText().strip()
+                    text_with_spaces = raw_text.replace('·', ' ')
+                    word_under_cursor = text_with_spaces.split()[0].strip("'") if text_with_spaces.split() else ""
                     word_cursor = cursor_at_pos
                 else:
-                    # Strip spaces, apostrophes, and middle dots
-                    word_under_cursor = cursor.selectedText().strip().strip("'·")
+                    # Replace middle dots with spaces, then extract first word, strip apostrophes
+                    raw_text = cursor.selectedText().strip()
+                    text_with_spaces = raw_text.replace('·', ' ')
+                    word_under_cursor = text_with_spaces.split()[0].strip("'") if text_with_spaces.split() else ""
                     word_cursor = cursor
 
                 if word_under_cursor and spellchecker_manager.is_misspelled(word_under_cursor):

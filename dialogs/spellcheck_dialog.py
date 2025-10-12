@@ -139,7 +139,10 @@ class SpellcheckDialog(QDialog):
         lines = self.current_text.split('\n')
         char_offset = 0
         for line_idx, line in enumerate(lines):
-            for match in word_pattern.finditer(line):
+            # Replace middle dots with spaces for word detection
+            line_with_spaces = line.replace('·', ' ')
+
+            for match in word_pattern.finditer(line_with_spaces):
                 word = match.group(0)
                 if self.spellchecker_manager.is_misspelled(word):
                     start_pos = char_offset + match.start()
