@@ -286,6 +286,20 @@ class MainWindow(QMainWindow):
 
         self.helper.rebuild_unsaved_block_indices()
 
+        # Initialize spellchecker state
+        log_info(f"Checking spellchecker initialization: has spellchecker_enabled={hasattr(self, 'spellchecker_enabled')}, has spellchecker_manager={hasattr(self, 'spellchecker_manager')}")
+        if hasattr(self, 'spellchecker_manager'):
+            spellchecker_enabled = getattr(self, 'spellchecker_enabled', False)
+            spellchecker_language = getattr(self, 'spellchecker_language', 'uk')
+            log_info(f"Initializing spellchecker: enabled={spellchecker_enabled}, language={spellchecker_language}")
+            log_info(f"Spellchecker manager hunspell object: {self.spellchecker_manager.hunspell is not None}")
+            if self.spellchecker_manager.hunspell:
+                log_info(f"Spellchecker dictionary language: {self.spellchecker_manager.language}")
+            self.spellchecker_manager.set_enabled(spellchecker_enabled)
+            log_info(f"Spellchecker initialization complete. Manager enabled state: {self.spellchecker_manager.enabled}")
+        else:
+            log_info("Spellchecker manager not found, skipping initialization")
+
         QTimer.singleShot(100, self.force_focus)
 
         log_info("Main window initialization complete.")

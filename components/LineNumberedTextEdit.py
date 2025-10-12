@@ -98,7 +98,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
         initial_font.setPointSize(font_size_to_set)
         self.setFont(initial_font)
 
-        self.highlighter = JsonTagHighlighter(self.document(), main_window_ref=main_window_ref)
+        self.highlighter = JsonTagHighlighter(self.document(), main_window_ref=main_window_ref, editor_widget_ref=self)
         self._current_glossary_tooltip: Optional[str] = None
         self._hovered_glossary_entry: Optional[GlossaryEntry] = None
         self._glossary_manager = None
@@ -141,6 +141,11 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self._glossary_manager = manager
         if hasattr(self, 'highlighter') and self.highlighter:
             self.highlighter.set_glossary_manager(manager)
+
+    def _replace_word_at_cursor(self, word_cursor: QTextCursor, replacement: str) -> None:
+        """Replace the word selected by the given cursor with the replacement text."""
+        if word_cursor.hasSelection():
+            word_cursor.insertText(replacement)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         entry = self._find_glossary_entry_at(event.pos())
@@ -335,11 +340,47 @@ class LineNumberedTextEdit(QPlainTextEdit):
             cursor = self.textCursor()
             has_selection = cursor.hasSelection()
 
+            # Spellchecker: Show suggestions and add to dictionary
+            spellchecker_manager = getattr(main_window, 'spellchecker_manager', None)
+            if spellchecker_manager and spellchecker_manager.enabled:
+                # Get word under cursor and its position
+                if not has_selection:
+                    cursor_at_pos = self.cursorForPosition(position_in_widget_coords)
+                    cursor_at_pos.select(QTextCursor.WordUnderCursor)
+                    word_under_cursor = cursor_at_pos.selectedText().strip()
+                    word_cursor = cursor_at_pos
+                else:
+                    word_under_cursor = cursor.selectedText().strip()
+                    word_cursor = cursor
+
+                if word_under_cursor and spellchecker_manager.is_misspelled(word_under_cursor):
+                    if not custom_actions_added:
+                        menu.addSeparator()
+                        custom_actions_added = True
+
+                    # Get spelling suggestions
+                    suggestions = spellchecker_manager.get_suggestions(word_under_cursor)
+
+                    if suggestions:
+                        # Limit to first 5 suggestions
+                        for suggestion in suggestions[:5]:
+                            suggestion_action = menu.addAction(f"→ {suggestion}")
+                            suggestion_action.triggered.connect(
+                                lambda checked=False, s=suggestion, c=word_cursor: self._replace_word_at_cursor(c, s)
+                            )
+                        menu.addSeparator()
+
+                    add_to_dict_action = menu.addAction(f"Add \"{word_under_cursor}\" to Dictionary")
+                    add_to_dict_action.triggered.connect(
+                        lambda checked=False, word=word_under_cursor: spellchecker_manager.add_to_custom_dictionary(word)
+                    )
+                    log_debug(f"Added 'Add to Dictionary' context menu item for word: {word_under_cursor}")
+
             if translator and has_selection:
                 if not custom_actions_added:
                     menu.addSeparator()
                     custom_actions_added = True
-                
+
                 variation_action = menu.addAction("AI Variations for Selected")
                 variation_action.triggered.connect(translator.generate_variation_for_selection)
 

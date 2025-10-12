@@ -52,9 +52,21 @@ class SpellcheckerManager:
         self._initialize_spellchecker()
         log_debug(f"Spellchecker reloaded with language='{language}' and custom_dict='{self.custom_dict_path}'.")
 
+        # Trigger rehighlight in edited_text_edit if spellchecker is enabled
+        if self.enabled and hasattr(self.mw, 'edited_text_edit') and self.mw.edited_text_edit:
+            if hasattr(self.mw.edited_text_edit, 'highlighter') and self.mw.edited_text_edit.highlighter:
+                self.mw.edited_text_edit.highlighter.rehighlight()
+                log_debug(f"Rehighlighting after dictionary reload")
+
     def set_enabled(self, enabled: bool):
         self.enabled = enabled
         log_debug(f"Spellchecker {'enabled' if enabled else 'disabled'}.")
+
+        # Update highlighter in edited_text_edit
+        if hasattr(self.mw, 'edited_text_edit') and self.mw.edited_text_edit:
+            if hasattr(self.mw.edited_text_edit, 'highlighter') and self.mw.edited_text_edit.highlighter:
+                self.mw.edited_text_edit.highlighter.set_spellchecker_enabled(enabled)
+                log_debug(f"Spellchecker highlighting updated in edited_text_edit")
 
     def scan_local_dictionaries(self) -> Dict[str, str]:
         """Scans for .dic files and returns a map of language code to full path."""
@@ -73,9 +85,6 @@ class SpellcheckerManager:
         return dictionaries
 
     def _load_user_dictionary(self):
-        if not self.hunspell:
-            return
-        
         custom_dict_path = os.path.join(LOCAL_DICT_PATH, CUSTOM_DICT_FILENAME)
         if not os.path.exists(custom_dict_path):
             os.makedirs(os.path.dirname(custom_dict_path), exist_ok=True)
@@ -84,9 +93,7 @@ class SpellcheckerManager:
             with open(custom_dict_path, 'r', encoding='utf-8') as f:
                 words = [line.strip() for line in f if line.strip()]
                 self.custom_words = set(word.lower() for word in words)
-            
-            for word in self.custom_words:
-                self.hunspell.add(word)
+
             log_debug(f"Loaded {len(self.custom_words)} words from user dictionary.")
         except Exception as e:
             log_warning(f"Failed to load user dictionary: {e}")
@@ -97,15 +104,16 @@ class SpellcheckerManager:
         normalized_word = word.lower()
         if normalized_word not in self.custom_words:
             self.custom_words.add(normalized_word)
-            self.hunspell.add(normalized_word)
-            
+
             custom_dict_path = os.path.join(LOCAL_DICT_PATH, CUSTOM_DICT_FILENAME)
             try:
                 with open(custom_dict_path, 'a', encoding='utf-8') as f:
                     f.write(normalized_word + "\n")
                 log_debug(f"Added '{normalized_word}' to user dictionary file.")
-                if hasattr(self.mw, 'edited_text_edit'):
-                    self.mw.edited_text_edit.highlighter.rehighlight()
+                # Trigger rehighlight to update UI
+                if hasattr(self.mw, 'edited_text_edit') and self.mw.edited_text_edit:
+                    if hasattr(self.mw.edited_text_edit, 'highlighter') and self.mw.edited_text_edit.highlighter:
+                        self.mw.edited_text_edit.highlighter.rehighlight()
             except Exception as e:
                 log_warning(f"Failed to save user dictionary: {e}")
 
@@ -118,14 +126,19 @@ class SpellcheckerManager:
             return False
 
         cleaned_word = word.strip("'")
-        
+
         if len(cleaned_word) < MIN_WORD_LENGTH:
             return False
         if cleaned_word.isdigit():
             return False
         if not WORD_PATTERN.match(cleaned_word):
             return False
-        
+
+        # Check if word is in custom dictionary
+        if cleaned_word.lower() in self.custom_words:
+            log_debug(f"Spellchecking word '{cleaned_word}': Found in custom dictionary. Misspelled = False")
+            return False
+
         is_correct = self.hunspell.lookup(cleaned_word)
         log_debug(f"Spellchecking word '{cleaned_word}': Correct = {is_correct}. Misspelled = {not is_correct}")
         return not is_correct
@@ -133,6 +146,8 @@ class SpellcheckerManager:
     def get_suggestions(self, word: str) -> List[str]:
         if not self.enabled or not self.hunspell:
             return []
-        
-        suggestions = self.hunspell.suggest(word.lower())
-        return suggestions if suggestions else []
+
+        # Convert generator to list
+        suggestions = list(self.hunspell.suggest(word.lower()))
+        log_debug(f"Spellchecker: Got {len(suggestions)} suggestions for '{word}': {suggestions[:5]}")
+        return suggestions

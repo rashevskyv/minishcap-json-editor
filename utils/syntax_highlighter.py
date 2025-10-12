@@ -37,9 +37,10 @@ class JsonTagHighlighter(QSyntaxHighlighter):
     STATE_ORANGE = 8
 
 
-    def __init__(self, parent: QTextDocument, main_window_ref=None):
+    def __init__(self, parent: QTextDocument, main_window_ref=None, editor_widget_ref=None):
         super().__init__(parent)
         self.mw = main_window_ref
+        self._editor_widget_ref = editor_widget_ref  # Store reference to the editor widget
         self._glossary_manager: Optional[GlossaryManager] = None
         self._glossary_enabled = False
         self._glossary_format = QTextCharFormat()
@@ -48,6 +49,10 @@ class JsonTagHighlighter(QSyntaxHighlighter):
         self._icon_sequences_cache: Dict[int, List[Tuple[int, int]]] = {}
         self._icon_cache_revision: Optional[int] = None
         self._icon_sequences_snapshot: Tuple[str, ...] = ()
+
+        # Spellchecker support
+        self._spellchecker_format = QTextCharFormat()
+        self._spellchecker_enabled = False
 
         self.default_text_color = QColor(Qt.black)
         
@@ -96,6 +101,21 @@ class JsonTagHighlighter(QSyntaxHighlighter):
         self._glossary_matches_cache.clear()
         self._glossary_cache_revision = None
         self.rehighlight()
+
+    def set_spellchecker_enabled(self, enabled: bool) -> None:
+        """Enable or disable spellchecker highlighting."""
+        editor_name = 'unknown'
+        if self._editor_widget_ref and hasattr(self._editor_widget_ref, 'objectName'):
+            editor_name = self._editor_widget_ref.objectName()
+
+        log_debug(f"JsonTagHighlighter ({editor_name}): set_spellchecker_enabled called with enabled={enabled}, current state={self._spellchecker_enabled}")
+
+        if self._spellchecker_enabled != enabled:
+            self._spellchecker_enabled = enabled
+            log_debug(f"JsonTagHighlighter ({editor_name}): Spellchecker highlighting state changed to {'enabled' if enabled else 'disabled'}, triggering rehighlight")
+            self.rehighlight()
+        else:
+            log_debug(f"JsonTagHighlighter ({editor_name}): Spellchecker state unchanged, no rehighlight needed")
 
     def _apply_css_to_format(self, char_format, css_str, base_color=None):
         if base_color:
@@ -203,6 +223,15 @@ class JsonTagHighlighter(QSyntaxHighlighter):
         underline_color = QColor("#1a73e8") if current_theme != 'dark' else QColor("#8ab4f8")
         try:
             self._glossary_format.setUnderlineColor(underline_color)
+        except Exception:
+            pass
+
+        # Configure spellchecker format (red wavy underline)
+        self._spellchecker_format = QTextCharFormat()
+        self._spellchecker_format.setFontUnderline(True)
+        self._spellchecker_format.setUnderlineStyle(QTextCharFormat.SpellCheckUnderline)
+        try:
+            self._spellchecker_format.setUnderlineColor(QColor("#FF0000"))
         except Exception:
             pass
 
@@ -351,6 +380,28 @@ class JsonTagHighlighter(QSyntaxHighlighter):
             return False
         return True
 
+    def _should_check_spelling(self) -> bool:
+        """Check if spellchecking should be performed for this widget."""
+        if not self._spellchecker_enabled:
+            return False
+
+        # Use stored editor widget reference
+        if self._editor_widget_ref:
+            editor_name = self._editor_widget_ref.objectName() if hasattr(self._editor_widget_ref, 'objectName') else 'unknown'
+            # Only check spelling in edited_text_edit
+            return hasattr(self._editor_widget_ref, 'objectName') and self._editor_widget_ref.objectName() == 'edited_text_edit'
+
+        return False
+
+    def _extract_words_from_text(self, text: str) -> List[Tuple[int, int, str]]:
+        """Extract words from text, returning (start, end, word) tuples."""
+        # Pattern matches word characters including Cyrillic, apostrophes
+        word_pattern = re.compile(r"[a-zA-Zа-яА-ЯіїІїЄєґҐ']+")
+        words = []
+        for match in word_pattern.finditer(text):
+            words.append((match.start(), match.end(), match.group(0)))
+        return words
+
 
     def highlightBlock(self, text):
         previous_color_state = self.previousBlockState()
@@ -491,5 +542,25 @@ class JsonTagHighlighter(QSyntaxHighlighter):
             self.setCurrentBlockUserData(self.GlossaryBlockData(block_matches))
         else:
             self.setCurrentBlockUserData(None)
+
+        # Spellchecker highlighting
+        if self._should_check_spelling() and self.mw:
+            spellchecker_manager = getattr(self.mw, 'spellchecker_manager', None)
+            if spellchecker_manager and spellchecker_manager.enabled:
+                words = self._extract_words_from_text(text)
+                for start, end, word in words:
+                    if spellchecker_manager.is_misspelled(word):
+                        word_length = end - start
+                        for offset in range(word_length):
+                            index = start + offset
+                            if index >= len(text):
+                                break
+                            existing_format = self.format(index)
+                            existing_format.setFontUnderline(True)
+                            existing_format.setUnderlineStyle(self._spellchecker_format.underlineStyle())
+                            underline_color = self._spellchecker_format.underlineColor()
+                            if underline_color.isValid():
+                                existing_format.setUnderlineColor(underline_color)
+                            self.setFormat(index, 1, existing_format)
 
         self.setCurrentBlockState(current_block_color_state)
