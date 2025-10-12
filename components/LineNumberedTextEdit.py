@@ -437,12 +437,32 @@ class LineNumberedTextEdit(QPlainTextEdit):
                 # Get word under cursor and its position
                 if not has_selection:
                     cursor_at_pos = self.cursorForPosition(position_in_widget_coords)
-                    cursor_at_pos.select(QTextCursor.WordUnderCursor)
-                    # Replace middle dots with spaces, then extract first word, strip apostrophes
-                    raw_text = cursor_at_pos.selectedText().strip()
-                    text_with_spaces = raw_text.replace('·', ' ')
-                    word_under_cursor = text_with_spaces.split()[0].strip("'") if text_with_spaces.split() else ""
-                    word_cursor = cursor_at_pos
+                    click_position = cursor_at_pos.position()
+                    block = cursor_at_pos.block()
+                    block_text = block.text()
+                    position_in_block = click_position - block.position()
+
+                    # Replace middle dots with spaces for word detection
+                    text_with_spaces = block_text.replace('·', ' ')
+
+                    # Find word boundaries at click position using regex
+                    import re
+                    word_pattern = re.compile(r'[a-zA-Zа-яА-ЯіїІїЄєґҐ\']+')
+                    word_under_cursor = ""
+                    word_start = 0
+                    word_end = 0
+
+                    for match in word_pattern.finditer(text_with_spaces):
+                        if match.start() <= position_in_block < match.end():
+                            word_under_cursor = match.group(0).strip("'")
+                            word_start = match.start()
+                            word_end = match.end()
+                            break
+
+                    # Create cursor for the actual word (in original text with middle dots)
+                    word_cursor = QTextCursor(block)
+                    word_cursor.setPosition(block.position() + word_start)
+                    word_cursor.setPosition(block.position() + word_end, QTextCursor.KeepAnchor)
                 else:
                     # Replace middle dots with spaces, then extract first word, strip apostrophes
                     raw_text = cursor.selectedText().strip()
