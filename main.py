@@ -245,6 +245,10 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'translation_handler'):
             self.translation_handler.initialize_glossary_highlighting()
 
+            # Load glossary words into spellchecker after glossary is initialized
+            if hasattr(self, 'spellchecker_manager') and self.spellchecker_manager:
+                self.spellchecker_manager.reload_glossary_words()
+
         if hasattr(self, 'text_analysis_handler'):
             self.text_analysis_handler.ensure_menu_action()
 

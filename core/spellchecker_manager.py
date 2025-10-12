@@ -99,18 +99,37 @@ class SpellcheckerManager:
         except Exception as e:
             log_warning(f"Failed to load user dictionary: {e}")
 
+    def reload_glossary_words(self):
+        """Public method to reload glossary words. Called after glossary is initialized."""
+        self._load_glossary_words()
+
+        # Trigger rehighlight in edited_text_edit if spellchecker is enabled
+        if self.enabled and hasattr(self.mw, 'edited_text_edit') and self.mw.edited_text_edit:
+            if hasattr(self.mw.edited_text_edit, 'highlighter') and self.mw.edited_text_edit.highlighter:
+                self.mw.edited_text_edit.highlighter.rehighlight()
+                log_debug("Rehighlighting after glossary words reload")
+
     def _load_glossary_words(self):
         """Load all words from glossary translations into custom dictionary."""
         if not hasattr(self.mw, 'translation_handler') or not self.mw.translation_handler:
+            log_debug("_load_glossary_words: translation_handler not available yet")
             return
 
-        glossary_manager = getattr(self.mw.translation_handler, 'glossary_manager', None)
+        # Access glossary_manager through glossary_handler
+        glossary_handler = getattr(self.mw.translation_handler, 'glossary_handler', None)
+        if not glossary_handler:
+            log_debug("_load_glossary_words: glossary_handler not available yet")
+            return
+
+        glossary_manager = getattr(glossary_handler, 'glossary_manager', None)
         if not glossary_manager:
+            log_debug("_load_glossary_words: glossary_manager not available yet")
             return
 
         # Get all glossary entries
         entries = glossary_manager.get_entries()
         if not entries:
+            log_debug("_load_glossary_words: no glossary entries found")
             return
 
         # Extract all words from translations and add them to custom_words
