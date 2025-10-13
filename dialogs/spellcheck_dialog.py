@@ -97,24 +97,46 @@ class SpellcheckDialog(QDialog):
         font = QFont("Courier New", 10)
         self.line_numbers_edit.setFont(font)
 
-        # Calculate line numbers using real line numbers if available
+        # Calculate line numbers and build text with spacing between strings
         line_count = self.current_text.count('\n') + 1
+
         if self.line_numbers and len(self.line_numbers) >= line_count:
-            # Use real line numbers from block/document
-            # Show number only for first subline of each string, empty for others
+            # Build text with spacing between different strings
+            text_lines = self.current_text.split('\n')
             line_numbers_list = []
+            text_with_spacing = []
+            new_line_numbers = []  # Updated line_numbers array with spacing
+
             prev_line_num = None
             for i in range(line_count):
                 current_line_num = self.line_numbers[i]
+
                 if current_line_num != prev_line_num:
-                    # First subline of this string - show number
+                    # First subline of this string
+                    if prev_line_num is not None:
+                        # Add spacing between strings (empty line)
+                        line_numbers_list.append('')
+                        text_with_spacing.append('')
+                        new_line_numbers.append(None)  # Placeholder for empty line
+
+                    # Show number for first subline
                     line_numbers_list.append(str(current_line_num))
                     prev_line_num = current_line_num
                 else:
                     # Subsequent subline of same string - show empty
                     line_numbers_list.append('')
+
+                # Add text line
+                text_with_spacing.append(text_lines[i] if i < len(text_lines) else '')
+                new_line_numbers.append(current_line_num)
+
+            # Update current_text and line_numbers to include spacing
+            self.current_text = '\n'.join(text_with_spacing)
+            self.line_numbers = new_line_numbers  # Update for zebra striping
+            self.text_edit.setPlainText(self.current_text)
+
             line_numbers_text = '\n'.join(line_numbers_list)
-            max_line_num = max(self.line_numbers[:line_count])
+            max_line_num = max(n for n in new_line_numbers if n is not None)
         else:
             # Fallback to sequential numbering
             line_numbers_text = '\n'.join(str(self.starting_line_number + i + 1) for i in range(line_count))
@@ -233,11 +255,11 @@ class SpellcheckDialog(QDialog):
             # Fallback: each line is its own string
             string_numbers = list(range(line_count))
 
-        # Create set of unique string numbers in order they appear
+        # Create set of unique string numbers in order they appear (skip None)
         unique_strings = []
         seen = set()
         for snum in string_numbers:
-            if snum not in seen:
+            if snum is not None and snum not in seen:
                 unique_strings.append(snum)
                 seen.add(snum)
 
@@ -252,13 +274,17 @@ class SpellcheckDialog(QDialog):
 
             # Get string number for this subline
             string_num = string_numbers[subline_index]
-            color_idx = string_color_map.get(string_num, 0)
 
-            # Apply color based on string number, not subline index
-            if color_idx == 0:
+            # For empty separator lines (None), use transparent/white background
+            if string_num is None:
                 block_format.setBackground(white_bg)
             else:
-                block_format.setBackground(gray_bg)
+                color_idx = string_color_map.get(string_num, 0)
+                # Apply color based on string number, not subline index
+                if color_idx == 0:
+                    block_format.setBackground(white_bg)
+                else:
+                    block_format.setBackground(gray_bg)
 
             cursor.setBlockFormat(block_format)
             block = block.next()
@@ -286,11 +312,11 @@ class SpellcheckDialog(QDialog):
             # Fallback: each line is its own string
             string_numbers = list(range(line_count))
 
-        # Create set of unique string numbers in order they appear
+        # Create set of unique string numbers in order they appear (skip None)
         unique_strings = []
         seen = set()
         for snum in string_numbers:
-            if snum not in seen:
+            if snum is not None and snum not in seen:
                 unique_strings.append(snum)
                 seen.add(snum)
 
@@ -305,13 +331,17 @@ class SpellcheckDialog(QDialog):
 
             # Get string number for this subline
             string_num = string_numbers[subline_index]
-            color_idx = string_color_map.get(string_num, 0)
 
-            # Apply color based on string number, not subline index
-            if color_idx == 0:
+            # For empty separator lines (None), use transparent/white background
+            if string_num is None:
                 block_format.setBackground(white_bg)
             else:
-                block_format.setBackground(gray_bg)
+                color_idx = string_color_map.get(string_num, 0)
+                # Apply color based on string number, not subline index
+                if color_idx == 0:
+                    block_format.setBackground(white_bg)
+                else:
+                    block_format.setBackground(gray_bg)
 
             cursor.setBlockFormat(block_format)
             block = block.next()
