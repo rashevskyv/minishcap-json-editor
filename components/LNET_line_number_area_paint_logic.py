@@ -73,8 +73,19 @@ class LNETLineNumberAreaPaintLogic:
                 
                 is_preview = self.editor.objectName() == "preview_text_edit"
                 is_editor = self.editor.objectName() in ["original_text_edit", "edited_text_edit"]
-                
-                display_number_for_line_area = str(current_q_block_number_in_editor_doc + 1)
+
+                # Check if custom line numbers are set (e.g., from spellcheck dialog)
+                if hasattr(self.editor, 'custom_line_numbers') and self.editor.custom_line_numbers:
+                    if current_q_block_number_in_editor_doc < len(self.editor.custom_line_numbers):
+                        custom_num = self.editor.custom_line_numbers[current_q_block_number_in_editor_doc]
+                        if custom_num is not None:
+                            display_number_for_line_area = str(custom_num)
+                        else:
+                            display_number_for_line_area = ""  # Empty for sublines or spacers
+                    else:
+                        display_number_for_line_area = str(current_q_block_number_in_editor_doc + 1)
+                else:
+                    display_number_for_line_area = str(current_q_block_number_in_editor_doc + 1)
                 
                 if isinstance(main_window_ref, QMainWindow):
                     is_unsaved = False
@@ -91,19 +102,34 @@ class LNETLineNumberAreaPaintLogic:
                 number_part_rect = QRect(0, top, number_part_width, line_height)
                 extra_info_part_rect = QRect(number_part_width, top, extra_part_width, line_height)
 
-                bg_color_number_area = even_bg_color_const
-                if (current_q_block_number_in_editor_doc + 1) % 2 != 0:
-                    bg_color_number_area = odd_bg_color_const
-                bg_color_extra_info_area = bg_color_number_area
+                # Check if block has custom background color (e.g., zebra striping in spellcheck dialog)
+                block_format = current_q_block.blockFormat()
+                if block_format.hasProperty(block_format.BackgroundBrush):
+                    block_bg_color = block_format.background().color()
+                    if block_bg_color.isValid():
+                        bg_color_number_area = block_bg_color
+                        bg_color_extra_info_area = block_bg_color
+                    else:
+                        # Default zebra striping
+                        bg_color_number_area = even_bg_color_const
+                        if (current_q_block_number_in_editor_doc + 1) % 2 != 0:
+                            bg_color_number_area = odd_bg_color_const
+                        bg_color_extra_info_area = bg_color_number_area
+                else:
+                    # Default zebra striping
+                    bg_color_number_area = even_bg_color_const
+                    if (current_q_block_number_in_editor_doc + 1) % 2 != 0:
+                        bg_color_number_area = odd_bg_color_const
+                    bg_color_extra_info_area = bg_color_number_area
 
                 problem_ids_for_this_qtextblock = set()
-                
+
                 data_line_idx_for_lookup = current_string_idx_data_mw if is_editor else current_q_block_number_in_editor_doc
                 qtextblock_idx_for_lookup = current_q_block_number_in_editor_doc
 
                 problem_key = (current_block_idx_data_mw, data_line_idx_for_lookup, qtextblock_idx_for_lookup)
-                
-                if problem_key in main_window_ref.problems_per_subline:
+
+                if isinstance(main_window_ref, QMainWindow) and hasattr(main_window_ref, 'problems_per_subline') and problem_key in main_window_ref.problems_per_subline:
                     problem_ids_for_this_qtextblock = main_window_ref.problems_per_subline[problem_key]
 
                 filtered_problems = {p_id for p_id in problem_ids_for_this_qtextblock if detection_config.get(p_id, True)}
@@ -163,9 +189,10 @@ class LNETLineNumberAreaPaintLogic:
                         indicators_to_draw_preview = []
                         preview_problem_key = (current_block_idx_data_mw, current_q_block_number_in_editor_doc)
                         aggregated_problems_for_preview_line = set()
-                        for key, problems in main_window_ref.problems_per_subline.items():
-                            if key[0] == preview_problem_key[0] and key[1] == preview_problem_key[1]:
-                                 aggregated_problems_for_preview_line.update(problems)
+                        if hasattr(main_window_ref, 'problems_per_subline'):
+                            for key, problems in main_window_ref.problems_per_subline.items():
+                                if key[0] == preview_problem_key[0] and key[1] == preview_problem_key[1]:
+                                     aggregated_problems_for_preview_line.update(problems)
 
                         filtered_problems_preview = {p_id for p_id in aggregated_problems_for_preview_line if detection_config.get(p_id, True)}
 

@@ -9,11 +9,10 @@ import os
 
 from .LineNumberArea import LineNumberArea
 from .TextHighlightManager import TextHighlightManager
-from utils.logging_utils import log_debug
+from utils.logging_utils import log_debug, log_error
 from utils.syntax_highlighter import JsonTagHighlighter
 from core.glossary_manager import GlossaryEntry
 from utils.utils import SPACE_DOT_SYMBOL
-from dialogs.spellcheck_dialog import SpellcheckDialog
 from utils.constants import (
     EDITOR_PLAYER_TAG as EDITOR_PLAYER_TAG_CONST,
     ORIGINAL_PLAYER_TAG as ORIGINAL_PLAYER_TAG_CONST,
@@ -150,51 +149,82 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
     def _open_spellcheck_dialog_for_selection(self, position_in_widget_coords: QPoint) -> None:
         """Open spellcheck dialog for selected lines from edited_text_edit."""
-        main_window = self.window()
-        if not isinstance(main_window, QMainWindow):
-            return
+        log_debug(f"LineNumberedTextEdit: _open_spellcheck_dialog_for_selection called")
 
-        spellchecker_manager = getattr(main_window, 'spellchecker_manager', None)
-        if not spellchecker_manager:
-            return
-
-        # Get edited_text_edit
-        if not hasattr(main_window, 'edited_text_edit') or not main_window.edited_text_edit:
-            return
-
-        edited_text_edit = main_window.edited_text_edit
-
-        # Get text to spellcheck from edited_text_edit (translation), not preview (original)
-        selected_lines = self.get_selected_lines()
-        starting_line_number = 0
-        if selected_lines:
-            # Get text from selected lines in edited_text_edit
-            text_parts = []
-            for line_num in selected_lines:
-                block = edited_text_edit.document().findBlockByNumber(line_num)
-                if block.isValid():
-                    text_parts.append(block.text())
-            text_to_check = '\n'.join(text_parts)
-            starting_line_number = selected_lines[0]
-        else:
-            # Get text from line at cursor in edited_text_edit
-            cursor = self.cursorForPosition(position_in_widget_coords)
-            line_num = cursor.blockNumber()
-            block = edited_text_edit.document().findBlockByNumber(line_num)
-            if not block.isValid():
+        try:
+            main_window = self.window()
+            if not isinstance(main_window, QMainWindow):
+                log_debug("LineNumberedTextEdit: main_window is not QMainWindow")
                 return
-            text_to_check = block.text()
-            starting_line_number = line_num
 
-        if not text_to_check.strip():
-            return
+            spellchecker_manager = getattr(main_window, 'spellchecker_manager', None)
+            log_debug(f"LineNumberedTextEdit: spellchecker_manager={spellchecker_manager}, enabled={spellchecker_manager.enabled if spellchecker_manager else 'N/A'}")
 
-        # Open dialog with starting line number
-        dialog = SpellcheckDialog(self, text_to_check, spellchecker_manager, starting_line_number)
-        if dialog.exec_():
-            corrected_text = dialog.get_corrected_text()
-            # Update edited_text_edit with corrected text
-            self._apply_corrected_text_to_editor(corrected_text, selected_lines if selected_lines else [starting_line_number])
+            if not spellchecker_manager:
+                log_debug("LineNumberedTextEdit: No spellchecker_manager")
+                return
+
+            # Get edited_text_edit
+            if not hasattr(main_window, 'edited_text_edit') or not main_window.edited_text_edit:
+                log_debug("LineNumberedTextEdit: No edited_text_edit")
+                return
+
+            edited_text_edit = main_window.edited_text_edit
+
+            # Get text to spellcheck from edited_text_edit (translation), not preview (original)
+            selected_lines = self.get_selected_lines()
+            log_debug(f"LineNumberedTextEdit: selected_lines={selected_lines}")
+
+            line_numbers = []
+            if selected_lines:
+                # Get text from selected lines in edited_text_edit
+                text_parts = []
+                for line_num in selected_lines:
+                    block = edited_text_edit.document().findBlockByNumber(line_num)
+                    if block.isValid():
+                        text_parts.append(block.text())
+                        line_numbers.append(line_num)
+                text_to_check = '\n'.join(text_parts)
+            else:
+                # Get text from line at cursor in edited_text_edit
+                cursor = self.cursorForPosition(position_in_widget_coords)
+                line_num = cursor.blockNumber()
+                log_debug(f"LineNumberedTextEdit: line_num at cursor={line_num}")
+
+                block = edited_text_edit.document().findBlockByNumber(line_num)
+                if not block.isValid():
+                    log_debug("LineNumberedTextEdit: Block not valid")
+                    return
+                text_to_check = block.text()
+                line_numbers = [line_num]
+
+            log_debug(f"LineNumberedTextEdit: text_to_check length={len(text_to_check)}, line_numbers={line_numbers}")
+
+            if not text_to_check.strip():
+                log_debug("LineNumberedTextEdit: text_to_check is empty")
+                return
+
+            log_debug("LineNumberedTextEdit: Opening SpellcheckDialog")
+
+            # Import here to avoid circular dependency
+            from dialogs.spellcheck_dialog import SpellcheckDialog
+
+            # Open dialog with real line numbers
+            dialog = SpellcheckDialog(self, text_to_check, spellchecker_manager,
+                                     starting_line_number=0, line_numbers=line_numbers)
+            log_debug("LineNumberedTextEdit: SpellcheckDialog created, calling exec_()")
+
+            if dialog.exec_():
+                log_debug("LineNumberedTextEdit: Dialog accepted, applying corrections")
+                corrected_text = dialog.get_corrected_text()
+                # Update edited_text_edit with corrected text
+                self._apply_corrected_text_to_editor(corrected_text, line_numbers)
+                log_debug("LineNumberedTextEdit: Corrections applied")
+            else:
+                log_debug("LineNumberedTextEdit: Dialog cancelled")
+
+        except Exception as e:
+            log_error(f"LineNumberedTextEdit: Error in _open_spellcheck_dialog_for_selection: {e}", exc_info=True)
 
     def _apply_corrected_text_to_editor(self, corrected_text: str, line_numbers: List[int]) -> None:
         """Apply corrected text back to the edited_text_edit."""

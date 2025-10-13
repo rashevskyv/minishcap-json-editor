@@ -3,8 +3,8 @@
     "active_game_plugin": "zelda_ww",
     "window_was_maximized": false,
     "window_normal_geometry": {
-        "x": 340,
-        "y": 53,
+        "x": 236,
+        "y": 145,
         "width": 2065,
         "height": 1277
     },
@@ -29,8 +29,8 @@
     "restore_unsaved_on_startup": false,
     "glossary_dialog_state": {
         "geometry": {
-            "x": 500,
-            "y": 157,
+            "x": -150,
+            "y": 269,
             "width": 1593,
             "height": 1182
         },

@@ -43,10 +43,14 @@ class LNETPaintEventLogic:
                     line = layout.lineAt(i)
                     if not line.isValid():
                         continue
-                    
-                    if (doc_visual_line_index + 1) % page_size == 0: 
+
+                    # Check if we should draw separator line
+                    # Don't draw lines if custom line numbers are set (e.g., spellcheck dialog)
+                    if not (hasattr(self.editor, 'custom_line_numbers') and self.editor.custom_line_numbers):
+                        # Default behavior: draw line every page_size lines
+                        if (doc_visual_line_index + 1) % page_size == 0:
                          line_bottom_y_in_viewport = block_rect.top() + line.rect().bottom()
-                         
+
                          has_next_line_in_block = (i < layout.lineCount() - 1)
                          has_next_block = block.next().isValid()
 
@@ -54,9 +58,9 @@ class LNETPaintEventLogic:
                             if line_bottom_y_in_viewport >= -PAIR_SEPARATOR_LINE_THICKNESS and \
                                line_bottom_y_in_viewport <= self.editor.viewport().height() + PAIR_SEPARATOR_LINE_THICKNESS:
                                 painter_lines.drawLine(
-                                    0, 
-                                    int(line_bottom_y_in_viewport) -1, 
-                                    self.editor.viewport().width(), 
+                                    0,
+                                    int(line_bottom_y_in_viewport) -1,
+                                    self.editor.viewport().width(),
                                     int(line_bottom_y_in_viewport) -1
                                 )
                     doc_visual_line_index +=1 

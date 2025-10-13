@@ -84,11 +84,19 @@ class SpellcheckDialog(QDialog):
         middle_layout.addWidget(QLabel("Text:"))
 
         # Use LineNumberedTextEdit with built-in line numbers
-        self.text_edit = LineNumberedTextEdit(self)
+        # Pass None as parent to avoid issues with main window attributes
+        self.text_edit = LineNumberedTextEdit(None)
         self.text_edit.setPlainText(self.current_text)
         self.text_edit.setReadOnly(True)
         font = QFont("Courier New", 10)
         self.text_edit.setFont(font)
+
+        # Set custom line numbers for the dialog
+        # This will be used by the paint logic to display proper string numbers
+        self.text_edit.custom_line_numbers = None  # Will be set after spacing processing
+
+        # Connect double-click handler for navigation to main window
+        self.text_edit.mouseDoubleClickEvent = self._on_text_double_click
 
         # Process spacing between strings if we have line numbers data
         self._process_text_spacing_and_line_numbers()
@@ -159,6 +167,7 @@ class SpellcheckDialog(QDialog):
             text_lines = self.current_text.split('\n')
             text_with_spacing = []
             new_line_numbers = []  # Updated line_numbers array with spacing
+            display_line_numbers = []  # Line numbers to display (None for non-first sublines)
 
             prev_line_num = None
             for i in range(line_count):
@@ -170,8 +179,14 @@ class SpellcheckDialog(QDialog):
                         # Add spacing between strings (empty line)
                         text_with_spacing.append('')
                         new_line_numbers.append(None)  # Placeholder for empty line
+                        display_line_numbers.append(None)  # No number for spacer
 
+                    # Show number only on first subline of string
+                    display_line_numbers.append(current_line_num)
                     prev_line_num = current_line_num
+                else:
+                    # Subsequent sublines of same string - don't show number
+                    display_line_numbers.append(None)
 
                 # Add text line
                 text_with_spacing.append(text_lines[i] if i < len(text_lines) else '')
@@ -181,6 +196,9 @@ class SpellcheckDialog(QDialog):
             self.current_text = '\n'.join(text_with_spacing)
             self.line_numbers = new_line_numbers  # Update for zebra striping
             self.text_edit.setPlainText(self.current_text)
+
+            # Set custom line numbers for display (shows string number only once)
+            self.text_edit.custom_line_numbers = display_line_numbers
 
     def _apply_zebra_striping(self):
         """Apply alternating background colors grouped by data string (not by subline)."""
@@ -496,3 +514,70 @@ class SpellcheckDialog(QDialog):
     def get_corrected_text(self) -> str:
         """Get the corrected text."""
         return self.current_text
+
+    def _on_text_double_click(self, event):
+        """Handle double-click on text to navigate to string in main window."""
+        from PyQt5.QtWidgets import QMainWindow
+
+        # Get the block number that was clicked
+        cursor = self.text_edit.cursorForPosition(event.pos())
+        block_number = cursor.blockNumber()
+
+        # Get the string number from custom_line_numbers
+        if hasattr(self.text_edit, 'custom_line_numbers') and self.text_edit.custom_line_numbers:
+            if block_number < len(self.text_edit.custom_line_numbers):
+                string_number = self.text_edit.custom_line_numbers[block_number]
+
+                # If this is a spacer line or subline without number, find the parent string
+                if string_number is None:
+                    # Search backwards for the first non-None string number
+                    for i in range(block_number - 1, -1, -1):
+                        if i < len(self.text_edit.custom_line_numbers):
+                            if self.text_edit.custom_line_numbers[i] is not None:
+                                string_number = self.text_edit.custom_line_numbers[i]
+                                break
+
+                if string_number is not None:
+                    # Find the main window
+                    main_window = None
+                    parent = self.parent()
+                    while parent:
+                        if isinstance(parent, QMainWindow):
+                            main_window = parent
+                            break
+                        parent = parent.parent() if hasattr(parent, 'parent') else None
+
+                    # If not found via parent chain, try to find it differently
+                    if not main_window:
+                        from PyQt5.QtWidgets import QApplication
+                        for widget in QApplication.topLevelWidgets():
+                            if isinstance(widget, QMainWindow) and widget.objectName() != '':
+                                main_window = widget
+                                break
+
+                    if main_window and hasattr(main_window, 'ui_updater'):
+                        # Navigate to the string in the main window
+                        log_debug(f"SpellcheckDialog: Navigating to string {string_number}")
+
+                        # Get current block index from main window
+                        current_block_idx = getattr(main_window, 'current_block_index', -1)
+                        if current_block_idx != -1:
+                            # Select the string in the list
+                            if hasattr(main_window, 'strings_list_widget'):
+                                main_window.strings_list_widget.setCurrentRow(string_number)
+
+                            # Update the current string index
+                            main_window.current_string_idx = string_number
+
+                            # Update text views
+                            main_window.ui_updater.update_text_views()
+
+                            # Bring main window to front and give it focus
+                            main_window.raise_()
+                            main_window.activateWindow()
+
+                            log_debug(f"SpellcheckDialog: Navigation complete")
+
+        # Call the original double click handler
+        from PyQt5.QtWidgets import QPlainTextEdit
+        QPlainTextEdit.mouseDoubleClickEvent(self.text_edit, event)

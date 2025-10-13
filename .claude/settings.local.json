@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"D:\\git\\dev\\zeldamc\\jsonreader\" add .)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
