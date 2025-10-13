@@ -97,52 +97,9 @@ class SpellcheckDialog(QDialog):
         font = QFont("Courier New", 10)
         self.line_numbers_edit.setFont(font)
 
-        # Calculate line numbers and build text with spacing between strings
-        line_count = self.current_text.count('\n') + 1
-
-        if self.line_numbers and len(self.line_numbers) >= line_count:
-            # Build text with spacing between different strings
-            text_lines = self.current_text.split('\n')
-            line_numbers_list = []
-            text_with_spacing = []
-            new_line_numbers = []  # Updated line_numbers array with spacing
-
-            prev_line_num = None
-            for i in range(line_count):
-                current_line_num = self.line_numbers[i]
-
-                if current_line_num != prev_line_num:
-                    # First subline of this string
-                    if prev_line_num is not None:
-                        # Add spacing between strings (empty line)
-                        line_numbers_list.append('')
-                        text_with_spacing.append('')
-                        new_line_numbers.append(None)  # Placeholder for empty line
-
-                    # Show number for first subline
-                    line_numbers_list.append(str(current_line_num))
-                    prev_line_num = current_line_num
-                else:
-                    # Subsequent subline of same string - show empty
-                    line_numbers_list.append('')
-
-                # Add text line
-                text_with_spacing.append(text_lines[i] if i < len(text_lines) else '')
-                new_line_numbers.append(current_line_num)
-
-            # Update current_text and line_numbers to include spacing
-            self.current_text = '\n'.join(text_with_spacing)
-            self.line_numbers = new_line_numbers  # Update for zebra striping
-            self.text_edit.setPlainText(self.current_text)
-
-            line_numbers_text = '\n'.join(line_numbers_list)
-            max_line_num = max(n for n in new_line_numbers if n is not None)
-        else:
-            # Fallback to sequential numbering
-            line_numbers_text = '\n'.join(str(self.starting_line_number + i + 1) for i in range(line_count))
-            max_line_num = self.starting_line_number + line_count
-
-        self.line_numbers_edit.setPlainText(line_numbers_text)
+        # We'll set line numbers text later, after processing spacing
+        line_numbers_text = ""
+        max_line_num = 0
 
         # Set fixed width for line numbers based on max line number
         digits = len(str(max_line_num))
@@ -167,6 +124,9 @@ class SpellcheckDialog(QDialog):
         self.text_edit.setReadOnly(True)
         self.text_edit.setFont(font)
         text_layout.addWidget(self.text_edit)
+
+        # Process spacing between strings and update line numbers
+        self._process_text_spacing_and_line_numbers()
 
         # Apply zebra striping (alternating row colors) to both text and line numbers
         self._apply_zebra_striping()
@@ -230,6 +190,56 @@ class SpellcheckDialog(QDialog):
         button_box = QDialogButtonBox(QDialogButtonBox.Close)
         button_box.rejected.connect(self.accept)
         layout.addWidget(button_box)
+
+    def _process_text_spacing_and_line_numbers(self):
+        """Add spacing between different strings and update line numbers display."""
+        line_count = self.current_text.count('\n') + 1
+
+        if self.line_numbers and len(self.line_numbers) >= line_count:
+            # Build text with spacing between different strings
+            text_lines = self.current_text.split('\n')
+            line_numbers_list = []
+            text_with_spacing = []
+            new_line_numbers = []  # Updated line_numbers array with spacing
+
+            prev_line_num = None
+            for i in range(line_count):
+                current_line_num = self.line_numbers[i]
+
+                if current_line_num != prev_line_num:
+                    # First subline of this string
+                    if prev_line_num is not None:
+                        # Add spacing between strings (empty line)
+                        line_numbers_list.append('')
+                        text_with_spacing.append('')
+                        new_line_numbers.append(None)  # Placeholder for empty line
+
+                    # Show number for first subline
+                    line_numbers_list.append(str(current_line_num))
+                    prev_line_num = current_line_num
+                else:
+                    # Subsequent subline of same string - show empty
+                    line_numbers_list.append('')
+
+                # Add text line
+                text_with_spacing.append(text_lines[i] if i < len(text_lines) else '')
+                new_line_numbers.append(current_line_num)
+
+            # Update current_text and line_numbers to include spacing
+            self.current_text = '\n'.join(text_with_spacing)
+            self.line_numbers = new_line_numbers  # Update for zebra striping
+            self.text_edit.setPlainText(self.current_text)
+
+            line_numbers_text = '\n'.join(line_numbers_list)
+            max_line_num = max(n for n in new_line_numbers if n is not None)
+
+            # Update line numbers display
+            self.line_numbers_edit.setPlainText(line_numbers_text)
+
+            # Update line numbers width based on actual max line number
+            digits = len(str(max_line_num))
+            line_numbers_width = digits * 10 + 10
+            self.line_numbers_edit.setFixedWidth(line_numbers_width)
 
     def _apply_zebra_striping(self):
         """Apply alternating background colors grouped by data string (not by subline)."""
