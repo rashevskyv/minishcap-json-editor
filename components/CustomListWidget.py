@@ -136,10 +136,9 @@ class CustomListWidget(QListWidget):
             log_debug(f"CustomListWidget: edited_file_data has {len(edited_file_data)} blocks")
             log_debug(f"CustomListWidget: Sample edited_data keys: {list(edited_data.keys())[:5]}")
 
-            text_parts = []
-            line_numbers = []  # Real line numbers in the block
+            # First pass: collect all translated lines and check for misspellings
+            all_translated_lines = []  # (string_idx, text)
 
-            # Collect translated text using proper priority order
             for string_idx in range(len(block_data)):
                 key = (block_idx, string_idx)
                 text = None
@@ -147,26 +146,53 @@ class CustomListWidget(QListWidget):
                 # Priority 1: Check in-memory edits
                 if key in edited_data:
                     text = edited_data[key]
-                    log_debug(f"CustomListWidget: Line {string_idx} - from edited_data (in-memory)")
                 # Priority 2: Check saved translation file
                 elif edited_file_data and block_idx < len(edited_file_data):
                     edited_block = edited_file_data[block_idx]
                     if isinstance(edited_block, list) and string_idx < len(edited_block):
                         text = edited_block[string_idx]
-                        log_debug(f"CustomListWidget: Line {string_idx} - from edited_file_data (saved translation)")
 
-                # Only include if we found a translation (don't fall back to original)
+                # Collect if we found a translation (don't fall back to original)
                 if text and text.strip():
+                    all_translated_lines.append((string_idx, text))
+
+            log_debug(f"CustomListWidget: Found {len(all_translated_lines)} translated lines in block")
+
+            # Second pass: filter to only lines with spelling errors
+            import re
+            word_pattern = re.compile(r'[a-zA-Zа-яА-ЯіїІїЄєґҐ\']+')
+
+            text_parts = []
+            line_numbers = []  # Real line numbers in the block
+
+            for string_idx, text in all_translated_lines:
+                # Replace middle dots with spaces for word detection
+                text_with_spaces = text.replace('·', ' ')
+
+                # Check if this line contains any misspelled words
+                has_misspellings = False
+                for match in word_pattern.finditer(text_with_spaces):
+                    word = match.group(0).strip("'")
+                    if word and spellchecker_manager.is_misspelled(word):
+                        has_misspellings = True
+                        break
+
+                # Only include lines with misspellings
+                if has_misspellings:
                     text_parts.append(text)
                     line_numbers.append(string_idx)
+                    log_debug(f"CustomListWidget: Line {string_idx} - has misspellings, including")
 
-            log_debug(f"CustomListWidget: Found {len(text_parts)} translated lines to check (total lines in block: {len(block_data)})")
+            log_debug(f"CustomListWidget: Found {len(text_parts)} lines with misspellings (out of {len(all_translated_lines)} translated lines)")
 
             text_to_check = '\n'.join(text_parts)
             if not text_to_check.strip():
-                log_debug("CustomListWidget: No translated text to check")
+                log_debug("CustomListWidget: No lines with misspellings found")
                 from PyQt5.QtWidgets import QMessageBox
-                QMessageBox.information(self, "Spellcheck", "Немає перекладеного тексту для перевірки.\nСпочатку перекладіть текст у цьому блоці.")
+                if len(all_translated_lines) == 0:
+                    QMessageBox.information(self, "Spellcheck", "Немає перекладеного тексту для перевірки.\nСпочатку перекладіть текст у цьому блоці.")
+                else:
+                    QMessageBox.information(self, "Spellcheck", f"Орфографічні помилки не знайдено!\nПеревірено {len(all_translated_lines)} перекладених рядків.")
                 return
 
             log_debug(f"CustomListWidget: Opening SpellcheckDialog with {len(line_numbers)} lines")
