@@ -163,7 +163,7 @@ class CustomListWidget(QListWidget):
             word_pattern = re.compile(r'[a-zA-Zа-яА-ЯіїІїЄєґҐ\']+')
 
             text_parts = []
-            line_numbers = []  # Real line numbers in the block
+            line_numbers = []  # Real STRING numbers (not subline numbers) from the block
 
             for string_idx, text in all_translated_lines:
                 # Replace middle dots with spaces for word detection
@@ -180,8 +180,14 @@ class CustomListWidget(QListWidget):
                 # Only include lines with misspellings
                 if has_misspellings:
                     text_parts.append(text)
-                    line_numbers.append(string_idx)
-                    log_debug(f"CustomListWidget: Line {string_idx} - has misspellings, including")
+
+                    # For each subline in this string, add the string index
+                    # This ensures line_numbers[subline_idx] = string_idx
+                    subline_count = text.count('\n') + 1
+                    for _ in range(subline_count):
+                        line_numbers.append(string_idx)
+
+                    log_debug(f"CustomListWidget: String {string_idx} - has misspellings, adding {subline_count} sublines")
 
             log_debug(f"CustomListWidget: Found {len(text_parts)} lines with misspellings (out of {len(all_translated_lines)} translated lines)")
 
