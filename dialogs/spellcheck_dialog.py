@@ -210,7 +210,7 @@ class SpellcheckDialog(QDialog):
         layout.addWidget(button_box)
 
     def _apply_zebra_striping(self):
-        """Apply alternating background colors to text lines for better readability."""
+        """Apply alternating background colors grouped by data string (not by subline)."""
         cursor = QTextCursor(self.text_edit.document())
         cursor.movePosition(QTextCursor.Start)
 
@@ -219,24 +219,53 @@ class SpellcheckDialog(QDialog):
         gray_bg = QColor(245, 245, 245)  # Light gray
 
         block = self.text_edit.document().firstBlock()
-        block_index = 0
+        subline_index = 0
 
-        while block.isValid():
+        # Build mapping: subline_index -> string_number
+        # Then determine color based on string_number, not subline_index
+        line_count = self.current_text.count('\n') + 1
+
+        # Track which string number each subline belongs to
+        string_numbers = []
+        if self.line_numbers and len(self.line_numbers) >= line_count:
+            string_numbers = self.line_numbers[:line_count]
+        else:
+            # Fallback: each line is its own string
+            string_numbers = list(range(line_count))
+
+        # Create set of unique string numbers in order they appear
+        unique_strings = []
+        seen = set()
+        for snum in string_numbers:
+            if snum not in seen:
+                unique_strings.append(snum)
+                seen.add(snum)
+
+        # Map string_number -> color_index (alternating)
+        string_color_map = {}
+        for i, snum in enumerate(unique_strings):
+            string_color_map[snum] = i % 2
+
+        while block.isValid() and subline_index < len(string_numbers):
             cursor.setPosition(block.position())
             block_format = QTextBlockFormat()
 
-            # Alternate between white and light gray
-            if block_index % 2 == 0:
+            # Get string number for this subline
+            string_num = string_numbers[subline_index]
+            color_idx = string_color_map.get(string_num, 0)
+
+            # Apply color based on string number, not subline index
+            if color_idx == 0:
                 block_format.setBackground(white_bg)
             else:
                 block_format.setBackground(gray_bg)
 
             cursor.setBlockFormat(block_format)
             block = block.next()
-            block_index += 1
+            subline_index += 1
 
     def _apply_zebra_striping_to_line_numbers(self):
-        """Apply alternating background colors to line numbers panel."""
+        """Apply alternating background colors to line numbers panel, grouped by string."""
         cursor = QTextCursor(self.line_numbers_edit.document())
         cursor.movePosition(QTextCursor.Start)
 
@@ -245,21 +274,48 @@ class SpellcheckDialog(QDialog):
         gray_bg = QColor(245, 245, 245)  # Light gray
 
         block = self.line_numbers_edit.document().firstBlock()
-        block_index = 0
+        subline_index = 0
 
-        while block.isValid():
+        line_count = self.current_text.count('\n') + 1
+
+        # Track which string number each subline belongs to
+        string_numbers = []
+        if self.line_numbers and len(self.line_numbers) >= line_count:
+            string_numbers = self.line_numbers[:line_count]
+        else:
+            # Fallback: each line is its own string
+            string_numbers = list(range(line_count))
+
+        # Create set of unique string numbers in order they appear
+        unique_strings = []
+        seen = set()
+        for snum in string_numbers:
+            if snum not in seen:
+                unique_strings.append(snum)
+                seen.add(snum)
+
+        # Map string_number -> color_index (alternating)
+        string_color_map = {}
+        for i, snum in enumerate(unique_strings):
+            string_color_map[snum] = i % 2
+
+        while block.isValid() and subline_index < len(string_numbers):
             cursor.setPosition(block.position())
             block_format = QTextBlockFormat()
 
-            # Alternate between white and light gray
-            if block_index % 2 == 0:
+            # Get string number for this subline
+            string_num = string_numbers[subline_index]
+            color_idx = string_color_map.get(string_num, 0)
+
+            # Apply color based on string number, not subline index
+            if color_idx == 0:
                 block_format.setBackground(white_bg)
             else:
                 block_format.setBackground(gray_bg)
 
             cursor.setBlockFormat(block_format)
             block = block.next()
-            block_index += 1
+            subline_index += 1
 
     def _load_content(self):
         """Load spellcheck content after dialog is shown."""
