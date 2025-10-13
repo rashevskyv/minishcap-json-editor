@@ -7,6 +7,7 @@ from PyQt5.QtGui import QTextCursor, QTextCharFormat, QColor, QFont, QTextBlockF
 from typing import List, Tuple
 import re
 from utils.logging_utils import log_debug, log_error
+from components.LineNumberedTextEdit import LineNumberedTextEdit
 
 
 class SpellcheckDialog(QDialog):
@@ -82,62 +83,20 @@ class SpellcheckDialog(QDialog):
 
         middle_layout.addWidget(QLabel("Text:"))
 
-        # Create horizontal layout for line numbers and text
-        text_container = QWidget()
-        text_layout = QHBoxLayout(text_container)
-        text_layout.setContentsMargins(0, 0, 0, 0)
-        text_layout.setSpacing(2)
-
-        # Line numbers display
-        self.line_numbers_edit = QTextEdit()
-        self.line_numbers_edit.setReadOnly(True)
-        self.line_numbers_edit.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.line_numbers_edit.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.line_numbers_edit.setFrameStyle(0)
-        font = QFont("Courier New", 10)
-        self.line_numbers_edit.setFont(font)
-
-        # We'll set line numbers text later, after processing spacing
-        line_numbers_text = ""
-        max_line_num = 0
-
-        # Set fixed width for line numbers based on max line number
-        digits = len(str(max_line_num))
-        line_numbers_width = digits * 10 + 10  # Approximate width
-        self.line_numbers_edit.setFixedWidth(line_numbers_width)
-
-        # Style line numbers
-        self.line_numbers_edit.setStyleSheet("""
-            QTextEdit {
-                background-color: #f0f0f0;
-                color: #666666;
-                border: none;
-                padding-right: 5px;
-            }
-        """)
-
-        text_layout.addWidget(self.line_numbers_edit)
-
-        # Main text edit
-        self.text_edit = QTextEdit()
+        # Use LineNumberedTextEdit with built-in line numbers
+        self.text_edit = LineNumberedTextEdit(self)
         self.text_edit.setPlainText(self.current_text)
         self.text_edit.setReadOnly(True)
+        font = QFont("Courier New", 10)
         self.text_edit.setFont(font)
-        text_layout.addWidget(self.text_edit)
 
-        # Process spacing between strings and update line numbers
+        # Process spacing between strings if we have line numbers data
         self._process_text_spacing_and_line_numbers()
 
-        # Apply zebra striping (alternating row colors) to both text and line numbers
+        # Apply zebra striping to text
         self._apply_zebra_striping()
-        self._apply_zebra_striping_to_line_numbers()
 
-        # Sync scrolling between line numbers and text
-        self.text_edit.verticalScrollBar().valueChanged.connect(
-            self.line_numbers_edit.verticalScrollBar().setValue
-        )
-
-        middle_layout.addWidget(text_container)
+        middle_layout.addWidget(self.text_edit)
 
         splitter.addWidget(middle_widget)
 
@@ -198,7 +157,6 @@ class SpellcheckDialog(QDialog):
         if self.line_numbers and len(self.line_numbers) >= line_count:
             # Build text with spacing between different strings
             text_lines = self.current_text.split('\n')
-            line_numbers_list = []
             text_with_spacing = []
             new_line_numbers = []  # Updated line_numbers array with spacing
 
@@ -210,16 +168,10 @@ class SpellcheckDialog(QDialog):
                     # First subline of this string
                     if prev_line_num is not None:
                         # Add spacing between strings (empty line)
-                        line_numbers_list.append('')
                         text_with_spacing.append('')
                         new_line_numbers.append(None)  # Placeholder for empty line
 
-                    # Show number for first subline
-                    line_numbers_list.append(str(current_line_num))
                     prev_line_num = current_line_num
-                else:
-                    # Subsequent subline of same string - show empty
-                    line_numbers_list.append('')
 
                 # Add text line
                 text_with_spacing.append(text_lines[i] if i < len(text_lines) else '')
@@ -229,17 +181,6 @@ class SpellcheckDialog(QDialog):
             self.current_text = '\n'.join(text_with_spacing)
             self.line_numbers = new_line_numbers  # Update for zebra striping
             self.text_edit.setPlainText(self.current_text)
-
-            line_numbers_text = '\n'.join(line_numbers_list)
-            max_line_num = max(n for n in new_line_numbers if n is not None)
-
-            # Update line numbers display
-            self.line_numbers_edit.setPlainText(line_numbers_text)
-
-            # Update line numbers width based on actual max line number
-            digits = len(str(max_line_num))
-            line_numbers_width = digits * 10 + 10
-            self.line_numbers_edit.setFixedWidth(line_numbers_width)
 
     def _apply_zebra_striping(self):
         """Apply alternating background colors grouped by data string (not by subline)."""
@@ -300,62 +241,6 @@ class SpellcheckDialog(QDialog):
             block = block.next()
             subline_index += 1
 
-    def _apply_zebra_striping_to_line_numbers(self):
-        """Apply alternating background colors to line numbers panel, grouped by string."""
-        cursor = QTextCursor(self.line_numbers_edit.document())
-        cursor.movePosition(QTextCursor.Start)
-
-        # Define colors for alternating rows (same as text)
-        white_bg = QColor(Qt.white)
-        gray_bg = QColor(245, 245, 245)  # Light gray
-
-        block = self.line_numbers_edit.document().firstBlock()
-        subline_index = 0
-
-        line_count = self.current_text.count('\n') + 1
-
-        # Track which string number each subline belongs to
-        string_numbers = []
-        if self.line_numbers and len(self.line_numbers) >= line_count:
-            string_numbers = self.line_numbers[:line_count]
-        else:
-            # Fallback: each line is its own string
-            string_numbers = list(range(line_count))
-
-        # Create set of unique string numbers in order they appear (skip None)
-        unique_strings = []
-        seen = set()
-        for snum in string_numbers:
-            if snum is not None and snum not in seen:
-                unique_strings.append(snum)
-                seen.add(snum)
-
-        # Map string_number -> color_index (alternating)
-        string_color_map = {}
-        for i, snum in enumerate(unique_strings):
-            string_color_map[snum] = i % 2
-
-        while block.isValid() and subline_index < len(string_numbers):
-            cursor.setPosition(block.position())
-            block_format = QTextBlockFormat()
-
-            # Get string number for this subline
-            string_num = string_numbers[subline_index]
-
-            # For empty separator lines (None), use transparent/white background
-            if string_num is None:
-                block_format.setBackground(white_bg)
-            else:
-                color_idx = string_color_map.get(string_num, 0)
-                # Apply color based on string number, not subline index
-                if color_idx == 0:
-                    block_format.setBackground(white_bg)
-                else:
-                    block_format.setBackground(gray_bg)
-
-            cursor.setBlockFormat(block_format)
-            block = block.next()
-            subline_index += 1
 
     def _load_content(self):
         """Load spellcheck content after dialog is shown."""
@@ -573,7 +458,6 @@ class SpellcheckDialog(QDialog):
 
         # Reapply zebra striping after text change
         self._apply_zebra_striping()
-        self._apply_zebra_striping_to_line_numbers()
 
         # Adjust positions for remaining words
         length_diff = len(replacement) - len(word)
