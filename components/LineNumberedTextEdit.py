@@ -149,7 +149,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
             word_cursor.insertText(replacement)
 
     def _open_spellcheck_dialog_for_selection(self, position_in_widget_coords: QPoint) -> None:
-        """Open spellcheck dialog for selected lines or line at cursor."""
+        """Open spellcheck dialog for selected lines from edited_text_edit."""
         main_window = self.window()
         if not isinstance(main_window, QMainWindow):
             return
@@ -158,26 +158,33 @@ class LineNumberedTextEdit(QPlainTextEdit):
         if not spellchecker_manager:
             return
 
-        # Get text to spellcheck
+        # Get edited_text_edit
+        if not hasattr(main_window, 'edited_text_edit') or not main_window.edited_text_edit:
+            return
+
+        edited_text_edit = main_window.edited_text_edit
+
+        # Get text to spellcheck from edited_text_edit (translation), not preview (original)
         selected_lines = self.get_selected_lines()
         starting_line_number = 0
         if selected_lines:
-            # Get text from selected lines
+            # Get text from selected lines in edited_text_edit
             text_parts = []
             for line_num in selected_lines:
-                block = self.document().findBlockByNumber(line_num)
+                block = edited_text_edit.document().findBlockByNumber(line_num)
                 if block.isValid():
                     text_parts.append(block.text())
             text_to_check = '\n'.join(text_parts)
             starting_line_number = selected_lines[0]
         else:
-            # Get text from line at cursor
+            # Get text from line at cursor in edited_text_edit
             cursor = self.cursorForPosition(position_in_widget_coords)
-            block = cursor.block()
+            line_num = cursor.blockNumber()
+            block = edited_text_edit.document().findBlockByNumber(line_num)
             if not block.isValid():
                 return
             text_to_check = block.text()
-            starting_line_number = cursor.blockNumber()
+            starting_line_number = line_num
 
         if not text_to_check.strip():
             return
@@ -187,8 +194,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
         if dialog.exec_():
             corrected_text = dialog.get_corrected_text()
             # Update edited_text_edit with corrected text
-            if hasattr(main_window, 'edited_text_edit') and main_window.edited_text_edit:
-                self._apply_corrected_text_to_editor(corrected_text, selected_lines if selected_lines else [cursor.blockNumber()])
+            self._apply_corrected_text_to_editor(corrected_text, selected_lines if selected_lines else [starting_line_number])
 
     def _apply_corrected_text_to_editor(self, corrected_text: str, line_numbers: List[int]) -> None:
         """Apply corrected text back to the edited_text_edit."""
