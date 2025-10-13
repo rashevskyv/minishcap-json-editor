@@ -1,38 +1,49 @@
 # Dialog for interactive spellchecking of selected text
 from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
                              QPushButton, QTextEdit, QListWidget, QSplitter,
-                             QDialogButtonBox, QWidget)
-from PyQt5.QtCore import Qt
+                             QDialogButtonBox, QWidget, QApplication)
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QTextCursor, QTextCharFormat, QColor, QFont, QTextBlockFormat
 from typing import List, Tuple
 import re
+from utils.logging_utils import log_debug, log_error
 
 
 class SpellcheckDialog(QDialog):
     """Interactive dialog for spellchecking text with suggestions."""
 
-    def __init__(self, parent, text: str, spellchecker_manager, starting_line_number: int = 0):
+    def __init__(self, parent, text: str, spellchecker_manager, starting_line_number: int = 0, line_numbers: List[int] = None):
+        log_debug("SpellcheckDialog: __init__ started")
         super().__init__(parent)
         self.spellchecker_manager = spellchecker_manager
         self.original_text = text
         self.current_text = text
         self.misspelled_words = []
         self.current_word_index = 0
-        self.starting_line_number = starting_line_number  # Line number in preview window
+        self.starting_line_number = starting_line_number  # Deprecated, kept for compatibility
+        self.line_numbers = line_numbers  # Real line numbers from block/document
 
         self.setWindowTitle("Spellcheck")
         self.setMinimumSize(900, 600)
+
+        log_debug("SpellcheckDialog: Setting up UI with placeholder")
         self.setup_ui()
-        self.find_misspelled_words()
-        self.pre_highlight_all_misspelled_words()
-        self.show_current_word()
+
+        log_debug("SpellcheckDialog: Showing dialog")
+        # Show dialog immediately
+        self.show()
+        QApplication.processEvents()  # Force UI update
+
+        log_debug("SpellcheckDialog: Starting content loading")
+        # Load content after a small delay to let dialog appear
+        QTimer.singleShot(50, self._load_content)
 
     def setup_ui(self):
         layout = QVBoxLayout(self)
 
         # Top label with navigation
         top_layout = QHBoxLayout()
-        self.status_label = QLabel("Checking spelling...")
+        self.status_label = QLabel("Loading spellchecker...")
         top_layout.addWidget(self.status_label)
 
         top_layout.addStretch()
@@ -86,13 +97,32 @@ class SpellcheckDialog(QDialog):
         font = QFont("Courier New", 10)
         self.line_numbers_edit.setFont(font)
 
-        # Calculate line numbers
+        # Calculate line numbers using real line numbers if available
         line_count = self.current_text.count('\n') + 1
-        line_numbers_text = '\n'.join(str(self.starting_line_number + i + 1) for i in range(line_count))
+        if self.line_numbers and len(self.line_numbers) >= line_count:
+            # Use real line numbers from block/document
+            # Show number only for first subline of each string, empty for others
+            line_numbers_list = []
+            prev_line_num = None
+            for i in range(line_count):
+                current_line_num = self.line_numbers[i]
+                if current_line_num != prev_line_num:
+                    # First subline of this string - show number
+                    line_numbers_list.append(str(current_line_num))
+                    prev_line_num = current_line_num
+                else:
+                    # Subsequent subline of same string - show empty
+                    line_numbers_list.append('')
+            line_numbers_text = '\n'.join(line_numbers_list)
+            max_line_num = max(self.line_numbers[:line_count])
+        else:
+            # Fallback to sequential numbering
+            line_numbers_text = '\n'.join(str(self.starting_line_number + i + 1) for i in range(line_count))
+            max_line_num = self.starting_line_number + line_count
+
         self.line_numbers_edit.setPlainText(line_numbers_text)
 
         # Set fixed width for line numbers based on max line number
-        max_line_num = self.starting_line_number + line_count
         digits = len(str(max_line_num))
         line_numbers_width = digits * 10 + 10  # Approximate width
         self.line_numbers_edit.setFixedWidth(line_numbers_width)
@@ -115,6 +145,10 @@ class SpellcheckDialog(QDialog):
         self.text_edit.setReadOnly(True)
         self.text_edit.setFont(font)
         text_layout.addWidget(self.text_edit)
+
+        # Apply zebra striping (alternating row colors) to both text and line numbers
+        self._apply_zebra_striping()
+        self._apply_zebra_striping_to_line_numbers()
 
         # Sync scrolling between line numbers and text
         self.text_edit.verticalScrollBar().valueChanged.connect(
@@ -175,6 +209,83 @@ class SpellcheckDialog(QDialog):
         button_box.rejected.connect(self.accept)
         layout.addWidget(button_box)
 
+    def _apply_zebra_striping(self):
+        """Apply alternating background colors to text lines for better readability."""
+        cursor = QTextCursor(self.text_edit.document())
+        cursor.movePosition(QTextCursor.Start)
+
+        # Define colors for alternating rows
+        white_bg = QColor(Qt.white)
+        gray_bg = QColor(245, 245, 245)  # Light gray
+
+        block = self.text_edit.document().firstBlock()
+        block_index = 0
+
+        while block.isValid():
+            cursor.setPosition(block.position())
+            block_format = QTextBlockFormat()
+
+            # Alternate between white and light gray
+            if block_index % 2 == 0:
+                block_format.setBackground(white_bg)
+            else:
+                block_format.setBackground(gray_bg)
+
+            cursor.setBlockFormat(block_format)
+            block = block.next()
+            block_index += 1
+
+    def _apply_zebra_striping_to_line_numbers(self):
+        """Apply alternating background colors to line numbers panel."""
+        cursor = QTextCursor(self.line_numbers_edit.document())
+        cursor.movePosition(QTextCursor.Start)
+
+        # Define colors for alternating rows (same as text)
+        white_bg = QColor(Qt.white)
+        gray_bg = QColor(245, 245, 245)  # Light gray
+
+        block = self.line_numbers_edit.document().firstBlock()
+        block_index = 0
+
+        while block.isValid():
+            cursor.setPosition(block.position())
+            block_format = QTextBlockFormat()
+
+            # Alternate between white and light gray
+            if block_index % 2 == 0:
+                block_format.setBackground(white_bg)
+            else:
+                block_format.setBackground(gray_bg)
+
+            cursor.setBlockFormat(block_format)
+            block = block.next()
+            block_index += 1
+
+    def _load_content(self):
+        """Load spellcheck content after dialog is shown."""
+        try:
+            log_debug("SpellcheckDialog: _load_content started")
+            self.status_label.setText("Analyzing text...")
+            QApplication.processEvents()
+
+            log_debug("SpellcheckDialog: Finding misspelled words")
+            self.find_misspelled_words()
+
+            log_debug(f"SpellcheckDialog: Found {len(self.misspelled_words)} misspelled words")
+            self.status_label.setText("Highlighting errors...")
+            QApplication.processEvents()
+
+            log_debug("SpellcheckDialog: Pre-highlighting all misspelled words")
+            self.pre_highlight_all_misspelled_words()
+
+            log_debug("SpellcheckDialog: Showing current word")
+            self.show_current_word()
+
+            log_debug("SpellcheckDialog: Content loading complete")
+        except Exception as e:
+            log_error(f"SpellcheckDialog: Error in _load_content: {e}", exc_info=True)
+            self.status_label.setText(f"Error loading spellchecker: {e}")
+
     def find_misspelled_words(self):
         """Find all misspelled words in the text."""
         self.misspelled_words = []
@@ -212,7 +323,11 @@ class SpellcheckDialog(QDialog):
         # Populate misspelled words list
         self.misspelled_list.clear()
         for start, end, word, line_idx in self.misspelled_words:
-            display_line_num = self.starting_line_number + line_idx + 1
+            # Use real line number if available, otherwise use sequential
+            if self.line_numbers and line_idx < len(self.line_numbers):
+                display_line_num = self.line_numbers[line_idx]
+            else:
+                display_line_num = self.starting_line_number + line_idx + 1
             self.misspelled_list.addItem(f"Line {display_line_num}: {word}")
 
     def show_current_word(self):
@@ -238,7 +353,11 @@ class SpellcheckDialog(QDialog):
         self.status_label.setText(f"Word {current} of {total}")
 
         # Update word label with line number
-        display_line_num = self.starting_line_number + line_idx + 1
+        # Use real line number if available, otherwise use sequential
+        if self.line_numbers and line_idx < len(self.line_numbers):
+            display_line_num = self.line_numbers[line_idx]
+        else:
+            display_line_num = self.starting_line_number + line_idx + 1
         self.word_label.setText(f"Line {display_line_num}: \"{word}\"")
 
         # Highlight word in text with yellow background + red underline
@@ -355,6 +474,10 @@ class SpellcheckDialog(QDialog):
         # Replace in text
         self.current_text = self.current_text[:start] + replacement + self.current_text[end:]
         self.text_edit.setPlainText(self.current_text)
+
+        # Reapply zebra striping after text change
+        self._apply_zebra_striping()
+        self._apply_zebra_striping_to_line_numbers()
 
         # Adjust positions for remaining words
         length_diff = len(replacement) - len(word)
