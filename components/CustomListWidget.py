@@ -3,6 +3,7 @@ from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QMenu, QAction
 from PyQt5.QtCore import Qt, QPoint, QSize
 from PyQt5.QtGui import QIcon, QPixmap, QPainter, QColor
 from .CustomListItemDelegate import CustomListItemDelegate
+from utils.logging_utils import log_debug, log_error
 
 class CustomListWidget(QListWidget):
     def __init__(self, parent=None):
@@ -101,53 +102,109 @@ class CustomListWidget(QListWidget):
 
     def _open_spellcheck_for_block(self, block_idx: int):
         """Open spellcheck dialog for a specific block."""
-        main_window = self.window()
-        spellchecker_manager = getattr(main_window, 'spellchecker_manager', None)
-        if not spellchecker_manager:
-            return
+        log_debug(f"CustomListWidget: _open_spellcheck_for_block called for block_idx={block_idx}")
 
-        # Get all lines from the block
-        if not hasattr(main_window, 'data') or block_idx >= len(main_window.data):
-            return
+        try:
+            main_window = self.window()
+            log_debug(f"CustomListWidget: Got main_window: {main_window}")
 
-        block_data = main_window.data[block_idx]
-        if not isinstance(block_data, list):
-            return
+            spellchecker_manager = getattr(main_window, 'spellchecker_manager', None)
+            log_debug(f"CustomListWidget: spellchecker_manager={spellchecker_manager}, enabled={spellchecker_manager.enabled if spellchecker_manager else 'N/A'}")
 
-        # Get edited text for each line
-        edited_data = getattr(main_window, 'edited_data', {})
-        text_parts = []
-        for string_idx in range(len(block_data)):
-            key = f"{block_idx}_{string_idx}"
-            if key in edited_data:
-                text_parts.append(edited_data[key])
+            if not spellchecker_manager:
+                log_debug("CustomListWidget: No spellchecker_manager, returning")
+                return
+
+            # Get all lines from the block
+            if not hasattr(main_window, 'data') or block_idx >= len(main_window.data):
+                log_debug(f"CustomListWidget: Invalid block_idx or no data. has_data={hasattr(main_window, 'data')}, block_idx={block_idx}")
+                return
+
+            block_data = main_window.data[block_idx]
+            log_debug(f"CustomListWidget: block_data type={type(block_data)}, len={len(block_data) if isinstance(block_data, list) else 'N/A'}")
+
+            if not isinstance(block_data, list):
+                log_debug("CustomListWidget: block_data is not a list, returning")
+                return
+
+            # Get translated text using same logic as data_state_processor.get_current_string_text()
+            # Priority: edited_data (in-memory) > edited_file_data (saved translations) > data (original)
+            edited_data = getattr(main_window, 'edited_data', {})
+            edited_file_data = getattr(main_window, 'edited_file_data', [])
+
+            log_debug(f"CustomListWidget: edited_data has {len(edited_data)} in-memory entries")
+            log_debug(f"CustomListWidget: edited_file_data has {len(edited_file_data)} blocks")
+            log_debug(f"CustomListWidget: Sample edited_data keys: {list(edited_data.keys())[:5]}")
+
+            text_parts = []
+            line_numbers = []  # Real line numbers in the block
+
+            # Collect translated text using proper priority order
+            for string_idx in range(len(block_data)):
+                key = (block_idx, string_idx)
+                text = None
+
+                # Priority 1: Check in-memory edits
+                if key in edited_data:
+                    text = edited_data[key]
+                    log_debug(f"CustomListWidget: Line {string_idx} - from edited_data (in-memory)")
+                # Priority 2: Check saved translation file
+                elif edited_file_data and block_idx < len(edited_file_data):
+                    edited_block = edited_file_data[block_idx]
+                    if isinstance(edited_block, list) and string_idx < len(edited_block):
+                        text = edited_block[string_idx]
+                        log_debug(f"CustomListWidget: Line {string_idx} - from edited_file_data (saved translation)")
+
+                # Only include if we found a translation (don't fall back to original)
+                if text and text.strip():
+                    text_parts.append(text)
+                    line_numbers.append(string_idx)
+
+            log_debug(f"CustomListWidget: Found {len(text_parts)} translated lines to check (total lines in block: {len(block_data)})")
+
+            text_to_check = '\n'.join(text_parts)
+            if not text_to_check.strip():
+                log_debug("CustomListWidget: No translated text to check")
+                from PyQt5.QtWidgets import QMessageBox
+                QMessageBox.information(self, "Spellcheck", "Немає перекладеного тексту для перевірки.\nСпочатку перекладіть текст у цьому блоці.")
+                return
+
+            log_debug(f"CustomListWidget: Opening SpellcheckDialog with {len(line_numbers)} lines")
+
+            # Import and open dialog
+            from dialogs.spellcheck_dialog import SpellcheckDialog
+            dialog = SpellcheckDialog(self, text_to_check, spellchecker_manager,
+                                     starting_line_number=0, line_numbers=line_numbers)
+            log_debug("CustomListWidget: SpellcheckDialog created, calling exec_()")
+
+            if dialog.exec_():
+                log_debug("CustomListWidget: Dialog accepted, applying corrections")
+                corrected_text = dialog.get_corrected_text()
+                corrected_lines = corrected_text.split('\n')
+
+                # Apply corrections back to edited_data
+                log_debug("CustomListWidget: Applying corrections to edited_data")
+                for i, corrected_line in enumerate(corrected_lines):
+                    if i < len(line_numbers):
+                        string_idx = line_numbers[i]
+                        key = (block_idx, string_idx)  # Use tuple key!
+                        if corrected_line != text_parts[i]:
+                            edited_data[key] = corrected_line
+                            main_window.unsaved_changes = True
+                            main_window.unsaved_block_indices.add(block_idx)
+                            log_debug(f"CustomListWidget: Updated line {string_idx} in edited_data")
+
+                # Refresh UI if this is the current block
+                current_block_idx = getattr(main_window, 'current_block_index', -1)
+                if current_block_idx == block_idx and hasattr(main_window, 'ui_updater'):
+                    log_debug("CustomListWidget: Refreshing UI for current block")
+                    main_window.ui_updater.populate_strings_for_block(block_idx)
+                    main_window.ui_updater.update_text_views()
+                    main_window.ui_updater.update_block_item_text_with_problem_count(block_idx)
+
+                log_debug("CustomListWidget: Corrections applied successfully")
             else:
-                # Fall back to original data
-                text_parts.append(str(block_data[string_idx]))
+                log_debug("CustomListWidget: Dialog cancelled")
 
-        text_to_check = '\n'.join(text_parts)
-        if not text_to_check.strip():
-            return
-
-        # Import and open dialog
-        from dialogs.spellcheck_dialog import SpellcheckDialog
-        dialog = SpellcheckDialog(self, text_to_check, spellchecker_manager, starting_line_number=0)
-        if dialog.exec_():
-            corrected_text = dialog.get_corrected_text()
-            corrected_lines = corrected_text.split('\n')
-
-            # Apply corrections back to edited_data
-            for string_idx, corrected_line in enumerate(corrected_lines):
-                if string_idx < len(block_data):
-                    key = f"{block_idx}_{string_idx}"
-                    if corrected_line != text_parts[string_idx]:
-                        # Update edited_data
-                        edited_data[key] = corrected_line
-                        main_window.unsaved_changes = True
-                        main_window.unsaved_block_indices.add(block_idx)
-
-            # Refresh UI
-            if hasattr(main_window, 'ui_updater'):
-                main_window.ui_updater.populate_strings_for_block(block_idx)
-                main_window.ui_updater.update_text_views()
-                main_window.ui_updater.update_block_item_text_with_problem_count(block_idx)
+        except Exception as e:
+            log_error(f"CustomListWidget: Error in _open_spellcheck_for_block: {e}", exc_info=True)
