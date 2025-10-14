@@ -46,7 +46,14 @@ class MainWindowActions:
             self.mw.active_game_plugin = new_settings.get('active_game_plugin')
             self.mw.theme = new_settings.get('theme')
             log_info(f"Set new active plugin: {self.mw.active_game_plugin}, theme: {self.mw.theme}, font file: {self.mw.default_font_file}")
-            
+
+            # Update plugin in current project if project is open
+            if hasattr(self.mw, 'project_manager') and self.mw.project_manager and \
+               hasattr(self.mw.project_manager, 'current_project') and self.mw.project_manager.current_project:
+                self.mw.project_manager.current_project.plugin_name = self.mw.active_game_plugin
+                self.mw.project_manager.save()
+                log_info(f"Updated project plugin to '{self.mw.active_game_plugin}' and saved project")
+
             self.mw.settings_manager._save_global_settings()
             
             self.mw.is_restart_in_progress = True
