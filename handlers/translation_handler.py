@@ -73,12 +73,13 @@ class TranslationHandler(BaseHandler):
 
     def append_selection_to_glossary(self):
         preview_edit = self.mw.preview_text_edit
-        selection_range = preview_edit._get_selected_line_range()
-        if not selection_range:
+        selected_lines = preview_edit.get_selected_lines()
+        if not selected_lines:
             QMessageBox.information(self.mw, "Glossary", "No lines selected in the preview.")
             return
 
-        start_line, end_line = selection_range
+        start_line = min(selected_lines)
+        end_line = max(selected_lines)
         
         block_idx = self.mw.current_block_idx
         if block_idx == -1:
@@ -601,8 +602,16 @@ class TranslationHandler(BaseHandler):
         if block_idx == -1: return
 
         preview_edit = self.mw.preview_text_edit
-        selection_range = preview_edit._get_selected_line_range()
-        start_line, end_line = selection_range if selection_range else (cursor.blockNumber(), cursor.blockNumber()) if (cursor := preview_edit.cursorForPosition(context_menu_pos)).blockNumber() >= 0 else (None, None)
+        selected_lines = preview_edit.get_selected_lines()
+        if selected_lines:
+            start_line = min(selected_lines)
+            end_line = max(selected_lines)
+        else:
+            cursor = preview_edit.cursorForPosition(context_menu_pos)
+            if cursor.blockNumber() < 0:
+                return
+            start_line = end_line = cursor.blockNumber()
+
         if start_line is None: return
 
         string_indices = list(range(start_line, end_line + 1))
