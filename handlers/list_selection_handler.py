@@ -45,6 +45,10 @@ class ListSelectionHandler(BaseHandler):
             self.ui_updater.populate_strings_for_block(-1)
             if hasattr(self.mw, 'string_settings_updater'):
                 self.mw.string_settings_updater.update_string_settings_panel()
+
+            # Disable toolbar buttons when no selection
+            self._update_block_toolbar_button_states(-1)
+
             self.mw.is_programmatically_changing_text = False
             return
 
@@ -58,12 +62,50 @@ class ListSelectionHandler(BaseHandler):
         if hasattr(self.mw, 'string_settings_updater'):
             self.mw.string_settings_updater.update_font_combobox()
             self.mw.string_settings_updater.update_string_settings_panel()
+
+        # Update toolbar button states
+        self._update_block_toolbar_button_states(block_index)
+
         self.mw.is_programmatically_changing_text = False
 
     def _restore_block_selection(self):
         if self.mw.current_block_idx != -1:
             self.mw.block_list_widget.setCurrentRow(self.mw.current_block_idx)
         self._restoring_selection = False
+
+    def _update_block_toolbar_button_states(self, block_idx: int):
+        """Update the enabled/disabled state of toolbar buttons based on selection and position."""
+        has_project = hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project
+        has_selection = block_idx >= 0
+
+        if has_project and has_selection:
+            total_blocks = len(self.mw.project_manager.project.blocks)
+            is_first = block_idx == 0
+            is_last = block_idx >= total_blocks - 1
+
+            # Enable delete and rename for any selected block
+            if hasattr(self.mw, 'delete_block_button'):
+                self.mw.delete_block_button.setEnabled(True)
+            if hasattr(self.mw, 'rename_block_button'):
+                self.mw.rename_block_button.setEnabled(True)
+
+            # Enable move up only if not first
+            if hasattr(self.mw, 'move_block_up_button'):
+                self.mw.move_block_up_button.setEnabled(not is_first)
+
+            # Enable move down only if not last
+            if hasattr(self.mw, 'move_block_down_button'):
+                self.mw.move_block_down_button.setEnabled(not is_last)
+        else:
+            # Disable all buttons when no selection or no project
+            if hasattr(self.mw, 'delete_block_button'):
+                self.mw.delete_block_button.setEnabled(False)
+            if hasattr(self.mw, 'rename_block_button'):
+                self.mw.rename_block_button.setEnabled(False)
+            if hasattr(self.mw, 'move_block_up_button'):
+                self.mw.move_block_up_button.setEnabled(False)
+            if hasattr(self.mw, 'move_block_down_button'):
+                self.mw.move_block_down_button.setEnabled(False)
 
 
     def string_selected_from_preview(self, line_number: int):
@@ -137,15 +179,18 @@ class ListSelectionHandler(BaseHandler):
     def _data_string_has_any_problem(self, block_idx: int, string_idx: int) -> bool:
         if not self.mw.current_game_rules:
             return False
-            
+
         data_string_text, _ = self.data_processor.get_current_string_text(block_idx, string_idx)
         if data_string_text is None:
             return False
-        
+
+        # Ensure data_string_text is a string
+        data_string_text = str(data_string_text)
+
         detection_config = getattr(self.mw, 'detection_enabled', {})
         analyzer = self.mw.current_game_rules.problem_analyzer
         found_problems = set()
-        
+
         font_map_for_string = self.mw.helper.get_font_map_for_string(block_idx, string_idx)
 
         if hasattr(analyzer, 'analyze_data_string'):

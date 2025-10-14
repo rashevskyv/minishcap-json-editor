@@ -382,3 +382,418 @@ class AppActionHandler(BaseHandler):
             text_edit_for_size.setMinimumWidth(700)
             text_edit_for_size.setMinimumHeight(500)
         result_dialog.exec_()
+
+    # ========== Project Management Methods ==========
+
+    def create_new_project_action(self):
+        """Create a new translation project."""
+        from components.project_dialogs import NewProjectDialog
+        log_info("Create New Project action triggered.")
+
+        # Get available plugins
+        plugins = {}
+        plugins_dir = "plugins"
+        if os.path.isdir(plugins_dir):
+            for item in os.listdir(plugins_dir):
+                item_path = os.path.join(plugins_dir, item)
+                config_path = os.path.join(item_path, "config.json")
+                if os.path.isdir(item_path) and os.path.exists(config_path):
+                    try:
+                        import json
+                        with open(config_path, 'r', encoding='utf-8') as f:
+                            config_data = json.load(f)
+                        display_name = config_data.get("display_name", item)
+                        plugins[display_name] = item
+                    except Exception as e:
+                        log_debug(f"Could not read config for plugin '{item}': {e}")
+
+        dialog = NewProjectDialog(self.mw, available_plugins=plugins)
+        if dialog.exec_() != dialog.Accepted:
+            log_info("New project dialog cancelled.")
+            return
+
+        info = dialog.get_project_info()
+        if not info:
+            return
+
+        # Create project using ProjectManager
+        from core.project_manager import ProjectManager
+        self.mw.project_manager = ProjectManager()
+
+        success = self.mw.project_manager.create_new_project(
+            project_dir=info['directory'],
+            name=info['name'],
+            plugin_name=info['plugin'],
+            description=info['description']
+        )
+
+        if success:
+            log_info(f"Project '{info['name']}' created successfully.")
+            QMessageBox.information(
+                self.mw,
+                "Project Created",
+                f"Project '{info['name']}' has been created at:\n{info['directory']}\n\n"
+                f"You can now import blocks into this project."
+            )
+
+            # Enable project-specific actions
+            if hasattr(self.mw, 'close_project_action'):
+                self.mw.close_project_action.setEnabled(True)
+            if hasattr(self.mw, 'import_block_action'):
+                self.mw.import_block_action.setEnabled(True)
+            if hasattr(self.mw, 'add_block_button'):
+                self.mw.add_block_button.setEnabled(True)
+
+            # Update UI
+            self.ui_updater.update_title()
+            self.ui_updater.populate_blocks()
+        else:
+            QMessageBox.critical(
+                self.mw,
+                "Project Creation Failed",
+                f"Failed to create project at:\n{info['directory']}"
+            )
+
+    def open_project_action(self):
+        """Open an existing translation project."""
+        from PyQt5.QtWidgets import QFileDialog
+        log_info("Open Project action triggered.")
+
+        # Open file dialog directly
+        start_dir = os.path.expanduser("~")
+        project_path, _ = QFileDialog.getOpenFileName(
+            self.mw,
+            "Open Project",
+            start_dir,
+            "Project Files (*.uiproj);;All Files (*)"
+        )
+
+        if not project_path:
+            log_info("Open project cancelled.")
+            return
+
+        # Load project using ProjectManager
+        from core.project_manager import ProjectManager
+        self.mw.project_manager = ProjectManager()
+
+        success = self.mw.project_manager.load(project_path)
+
+        if success:
+            project = self.mw.project_manager.project
+            log_info(f"Project '{project.name}' loaded successfully.")
+
+            # Enable project-specific actions
+            if hasattr(self.mw, 'close_project_action'):
+                self.mw.close_project_action.setEnabled(True)
+            if hasattr(self.mw, 'import_block_action'):
+                self.mw.import_block_action.setEnabled(True)
+            if hasattr(self.mw, 'add_block_button'):
+                self.mw.add_block_button.setEnabled(True)
+
+            # Update UI to show blocks
+            self.ui_updater.update_title()
+            self._populate_blocks_from_project()
+
+            QMessageBox.information(
+                self.mw,
+                "Project Opened",
+                f"Project '{project.name}' loaded successfully.\n\n"
+                f"Plugin: {project.plugin_name}\n"
+                f"Blocks: {len(project.blocks)}"
+            )
+        else:
+            QMessageBox.critical(
+                self.mw,
+                "Project Load Failed",
+                f"Failed to load project from:\n{project_path}"
+            )
+
+    def close_project_action(self):
+        """Close the current project."""
+        log_info("Close Project action triggered.")
+
+        if self.mw.unsaved_changes:
+            reply = QMessageBox.question(
+                self.mw,
+                'Unsaved Changes',
+                "Save changes before closing project?",
+                QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
+                QMessageBox.Cancel
+            )
+            if reply == QMessageBox.Save:
+                if not self.save_data_action(ask_confirmation=False):
+                    return
+            elif reply == QMessageBox.Cancel:
+                return
+
+        # Clear project
+        self.mw.project_manager = None
+
+        # Clear UI
+        self.mw.data = []
+        self.mw.edited_data = {}
+        self.mw.block_names = {}
+        self.mw.current_block_idx = -1
+        self.mw.current_string_idx = -1
+        self.mw.unsaved_changes = False
+
+        # Disable project-specific actions
+        if hasattr(self.mw, 'close_project_action'):
+            self.mw.close_project_action.setEnabled(False)
+        if hasattr(self.mw, 'import_block_action'):
+            self.mw.import_block_action.setEnabled(False)
+        if hasattr(self.mw, 'add_block_button'):
+            self.mw.add_block_button.setEnabled(False)
+
+        # Update UI
+        self.ui_updater.update_title()
+        self.ui_updater.populate_blocks()
+        self.ui_updater.populate_strings_for_block(-1)
+
+        log_info("Project closed.")
+
+    def import_block_action(self):
+        """Import a new block into the current project."""
+        from components.project_dialogs import ImportBlockDialog
+        log_info("Import Block action triggered.")
+
+        if not self.mw.project_manager or not self.mw.project_manager.project:
+            QMessageBox.warning(
+                self.mw,
+                "No Project",
+                "Please open or create a project first."
+            )
+            return
+
+        dialog = ImportBlockDialog(self.mw, project_manager=self.mw.project_manager)
+        if dialog.exec_() != dialog.Accepted:
+            log_info("Import block dialog cancelled.")
+            return
+
+        info = dialog.get_block_info()
+        if not info:
+            return
+
+        # Import block using ProjectManager
+        block = self.mw.project_manager.add_block(
+            name=info['name'],
+            source_file_path=info['source_file'],
+            translation_file_path=info.get('translation_file'),
+            description=info['description']
+        )
+
+        if block:
+            log_info(f"Block '{info['name']}' imported successfully.")
+
+            # Update UI
+            self._populate_blocks_from_project()
+
+            QMessageBox.information(
+                self.mw,
+                "Block Imported",
+                f"Block '{info['name']}' has been imported into the project."
+            )
+        else:
+            QMessageBox.critical(
+                self.mw,
+                "Import Failed",
+                f"Failed to import block from:\n{info['source_file']}"
+            )
+
+    def _populate_blocks_from_project(self):
+        """Populate block list from current project and load data."""
+        if not self.mw.project_manager or not self.mw.project_manager.project:
+            return
+
+        # Clear current data
+        self.mw.block_list_widget.clear()
+        self.mw.data = []
+        self.mw.edited_data = {}
+        self.mw.block_names = {}
+
+        # Load each block's data
+        for block_idx, block in enumerate(self.mw.project_manager.project.blocks):
+            # Add block name to block_names dict
+            self.mw.block_names[str(block_idx)] = block.name
+
+            # Get absolute paths for source and translation files
+            source_path = self.mw.project_manager.get_absolute_path(block.source_file)
+            translation_path = self.mw.project_manager.get_absolute_path(block.translation_file)
+
+            # Load source data
+            block_data = []
+            if os.path.exists(source_path):
+                file_extension = os.path.splitext(source_path)[1].lower()
+                if file_extension == '.json':
+                    file_content, error = load_json_file(source_path, parent_widget=self.mw)
+                elif file_extension == '.txt':
+                    file_content, error = load_text_file(source_path, parent_widget=self.mw)
+                else:
+                    log_warning(f"Unsupported file type for block {block.name}: {file_extension}")
+                    self.mw.data.append([])
+                    continue
+
+                if error:
+                    log_error(f"Failed to load block {block.name}: {error}")
+                    self.mw.data.append([])
+                    continue
+
+                # Parse data using current game rules
+                # The plugin returns a list of blocks (data strings), but for projects
+                # each file represents ONE block, so we take the first block from the parsed result
+                if self.mw.current_game_rules:
+                    parsed_data, _ = self.mw.current_game_rules.load_data_from_json_obj(file_content)
+                    # Take the first block from parsed data (index 0), which is the list of strings
+                    block_data = parsed_data[0] if parsed_data and len(parsed_data) > 0 else []
+                else:
+                    log_warning(f"No game rules to parse block {block.name}")
+            else:
+                log_warning(f"Source file not found for block {block.name}: {source_path}")
+
+            self.mw.data.append(block_data if block_data else [])
+
+        # Load edited_file_data (for multi-block editing compatibility)
+        self.mw.edited_file_data = []
+        for block in self.mw.project_manager.project.blocks:
+            translation_path = self.mw.project_manager.get_absolute_path(block.translation_file)
+            edited_block_data = []
+
+            if os.path.exists(translation_path):
+                file_extension = os.path.splitext(translation_path)[1].lower()
+                if file_extension == '.json':
+                    file_content, error = load_json_file(translation_path, parent_widget=self.mw)
+                elif file_extension == '.txt':
+                    file_content, error = load_text_file(translation_path, parent_widget=self.mw)
+                else:
+                    self.mw.edited_file_data.append([])
+                    continue
+
+                if not error and self.mw.current_game_rules:
+                    parsed_edited_data, _ = self.mw.current_game_rules.load_data_from_json_obj(file_content)
+                    # Take the first block from parsed data (index 0), which is the list of strings
+                    edited_block_data = parsed_edited_data[0] if parsed_edited_data and len(parsed_edited_data) > 0 else []
+
+            self.mw.edited_file_data.append(edited_block_data if edited_block_data else [])
+
+        # Update paths for old-style save/load compatibility
+        if self.mw.data:
+            # Use first block's paths as "current" file for legacy operations
+            first_block = self.mw.project_manager.project.blocks[0]
+            self.mw.json_path = self.mw.project_manager.get_absolute_path(first_block.source_file)
+            self.mw.edited_json_path = self.mw.project_manager.get_absolute_path(first_block.translation_file)
+
+        # Perform initial scan
+        self._perform_initial_silent_scan_all_issues()
+
+        # Update UI
+        self.ui_updater.populate_blocks()
+        self.ui_updater.update_statusbar_paths()
+
+    def delete_block_action(self):
+        """Delete the currently selected block from the project."""
+        log_info("Delete Block action triggered.")
+
+        if not self.mw.project_manager or not self.mw.project_manager.project:
+            QMessageBox.warning(self.mw, "No Project", "No project is currently open.")
+            return
+
+        current_item = self.mw.block_list_widget.currentItem()
+        if not current_item:
+            QMessageBox.warning(self.mw, "No Block Selected", "Please select a block to delete.")
+            return
+
+        block_idx = current_item.data(Qt.UserRole)
+        if block_idx < 0 or block_idx >= len(self.mw.project_manager.project.blocks):
+            QMessageBox.critical(self.mw, "Delete Error", "Invalid block index.")
+            return
+
+        block = self.mw.project_manager.project.blocks[block_idx]
+        block_name = block.name
+
+        # Confirm deletion
+        reply = QMessageBox.question(
+            self.mw,
+            'Delete Block',
+            f"Are you sure you want to delete block '{block_name}'?\n\n"
+            f"This will remove the block from the project, but the source files will not be deleted.",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+
+        if reply != QMessageBox.Yes:
+            return
+
+        # Remove block from project using block ID
+        success = self.mw.project_manager.project.remove_block(block.id)
+        if success:
+            self.mw.project_manager.save()
+            log_info(f"Block '{block_name}' removed from project.")
+
+            # Update UI
+            self._populate_blocks_from_project()
+
+            QMessageBox.information(
+                self.mw,
+                "Block Deleted",
+                f"Block '{block_name}' has been removed from the project."
+            )
+        else:
+            QMessageBox.critical(self.mw, "Delete Error", "Failed to remove block.")
+
+    def move_block_up_action(self):
+        """Move the currently selected block up in the list."""
+        log_info("Move Block Up action triggered.")
+
+        if not self.mw.project_manager or not self.mw.project_manager.project:
+            return
+
+        current_item = self.mw.block_list_widget.currentItem()
+        if not current_item:
+            return
+
+        block_idx = current_item.data(Qt.UserRole)
+        if block_idx <= 0:
+            return  # Already at top
+
+        # Swap blocks in project
+        self.mw.project_manager.project.blocks[block_idx], self.mw.project_manager.project.blocks[block_idx - 1] = \
+            self.mw.project_manager.project.blocks[block_idx - 1], self.mw.project_manager.project.blocks[block_idx]
+
+        # Save project
+        self.mw.project_manager.save()
+
+        # Reload UI and reselect moved block
+        self._populate_blocks_from_project()
+        if self.mw.block_list_widget.count() > block_idx - 1:
+            self.mw.block_list_widget.setCurrentRow(block_idx - 1)
+
+        log_info(f"Block moved up from index {block_idx} to {block_idx - 1}.")
+
+    def move_block_down_action(self):
+        """Move the currently selected block down in the list."""
+        log_info("Move Block Down action triggered.")
+
+        if not self.mw.project_manager or not self.mw.project_manager.project:
+            return
+
+        current_item = self.mw.block_list_widget.currentItem()
+        if not current_item:
+            return
+
+        block_idx = current_item.data(Qt.UserRole)
+        if block_idx >= len(self.mw.project_manager.project.blocks) - 1:
+            return  # Already at bottom
+
+        # Swap blocks in project
+        self.mw.project_manager.project.blocks[block_idx], self.mw.project_manager.project.blocks[block_idx + 1] = \
+            self.mw.project_manager.project.blocks[block_idx + 1], self.mw.project_manager.project.blocks[block_idx]
+
+        # Save project
+        self.mw.project_manager.save()
+
+        # Reload UI and reselect moved block
+        self._populate_blocks_from_project()
+        if self.mw.block_list_widget.count() > block_idx + 1:
+            self.mw.block_list_widget.setCurrentRow(block_idx + 1)
+
+        log_info(f"Block moved down from index {block_idx} to {block_idx + 1}.")

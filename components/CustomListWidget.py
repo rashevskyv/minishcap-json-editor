@@ -41,17 +41,26 @@ class CustomListWidget(QListWidget):
     
     def show_context_menu(self, pos: QPoint):
         item = self.itemAt(pos)
+        main_window = self.window()
+        menu = QMenu(self)
+
+        # "Add Block" option (always available if project is loaded)
+        if hasattr(main_window, 'project_manager') and main_window.project_manager:
+            add_block_action = menu.addAction("Add Block...")
+            if hasattr(main_window, 'app_action_handler') and hasattr(main_window.app_action_handler, 'import_block_action'):
+                add_block_action.triggered.connect(main_window.app_action_handler.import_block_action)
+            menu.addSeparator()
+
+        # Block-specific options (only if item exists)
         if not item:
+            menu.exec_(self.mapToGlobal(pos))
             return
 
         self.setCurrentItem(item)
         block_idx = item.data(Qt.UserRole)
-        main_window = self.window()
         block_name = item.text()
         if hasattr(main_window, 'block_names'):
             block_name = main_window.block_names.get(str(block_idx), f"Block {block_idx}")
-
-        menu = QMenu(self)
 
         rename_action = menu.addAction(f"Rename '{block_name}'")
         if hasattr(main_window, 'list_selection_handler') and hasattr(main_window.list_selection_handler, 'rename_block'):
