@@ -221,6 +221,17 @@ class MainWindowHelper:
                         if self.mw.original_text_edit:
                             self.mw.original_text_edit.verticalScrollBar().setValue(self.mw.last_original_text_edit_scroll_value_v)
                             self.mw.original_text_edit.horizontalScrollBar().setValue(self.mw.last_original_text_edit_scroll_value_h)
+        elif hasattr(self.mw, 'recent_projects') and self.mw.recent_projects and hasattr(self.mw, 'app_action_handler'):
+            # Auto-open last project from recent projects
+            last_project_path = self.mw.recent_projects[0]
+            if os.path.exists(last_project_path):
+                log_info(f"Auto-opening last project from recent projects: {last_project_path}")
+                if hasattr(self.mw.app_action_handler, '_open_recent_project'):
+                    self.mw.app_action_handler._open_recent_project(last_project_path)
+                else:
+                    log_info("app_action_handler._open_recent_project not available")
+            else:
+                log_info(f"Last project path does not exist: {last_project_path}")
         elif not self.mw.json_path:
              log_info("No file auto-loaded, updating initial UI state.")
              self.mw.ui_updater.update_title(); self.mw.ui_updater.update_statusbar_paths()
