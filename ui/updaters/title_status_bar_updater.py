@@ -9,11 +9,17 @@ class TitleStatusBarUpdater(BaseUIUpdater):
 
     def update_title(self):
         title = "JSON Text Editor"
-        if self.mw.json_path: 
+
+        # Check if a project is open
+        if hasattr(self.mw, 'project_manager') and self.mw.project_manager and hasattr(self.mw.project_manager, 'current_project') and self.mw.project_manager.current_project:
+            project_name = self.mw.project_manager.current_project.name
+            title += f" - [{project_name}]"
+        elif self.mw.json_path:
             title += f" - [{os.path.basename(self.mw.json_path)}]"
-        else: 
+        else:
             title += " - [No File Open]"
-        if self.mw.unsaved_changes: 
+
+        if self.mw.unsaved_changes:
             title += " *"
         self.mw.setWindowTitle(title)
 
