@@ -1,9 +1,7 @@
 {
-    "display_name": "Zelda: The Wind Waker",
+    "display_name": "Plain Text",
     "default_tag_mappings": {},
-    "block_names": {
-        "0": "Block 0 (msg0)"
-    },
+    "block_names": {},
     "block_color_markers": {},
     "newline_display_symbol": "↵",
     "newline_css": "color: #A020F0; font-weight: bold;",
@@ -11,13 +9,13 @@
     "bracket_tag_color_hex": "#8da3b4",
     "show_multiple_spaces_as_dots": true,
     "space_dot_color_hex": "#808080",
-    "preview_wrap_lines": false,
+    "preview_wrap_lines": true,
     "editors_wrap_lines": false,
-    "game_dialog_max_width_pixels": 869,
-    "line_width_warning_threshold_pixels": 869,
-    "original_file_path": "D:\\git\\WW\\WindWaker\\sources\\message_orig.txt",
-    "edited_file_path": "D:\\git\\WW\\WindWaker\\translation\\message_orig.txt",
-    "last_selected_block_index": 0,
+    "game_dialog_max_width_pixels": 1000,
+    "line_width_warning_threshold_pixels": 1000,
+    "original_file_path": null,
+    "edited_file_path": null,
+    "last_selected_block_index": -1,
     "last_selected_string_index": -1,
     "last_cursor_position_in_edited": 0,
     "last_edited_text_edit_scroll_value_v": 0,
@@ -26,71 +24,41 @@
     "last_original_text_edit_scroll_value_v": 0,
     "last_original_text_edit_scroll_value_h": 0,
     "search_history": [],
-    "autofix_enabled": {
-        "PKFR_WIDTH_EXCEEDED": true,
-        "PKFR_SHORT_LINE": true,
-        "PKFR_EMPTY_SUBLINE": true,
-        "PKFR_SINGLE_WORD_SUBLINE": false,
-        "PKFR_TAG_WARNING": false,
-        "ZWW_TAG_WARNING": false,
-        "ZWW_WIDTH_EXCEEDED": true,
-        "ZWW_EMPTY_ODD_SUBLINE_LOGICAL": true,
-        "ZWW_EMPTY_ODD_SUBLINE_DISPLAY": true,
-        "ZWW_EMPTY_FIRST_LINE_OF_PAGE": false,
-        "ZWW_SINGLE_WORD_SUBLINE": false,
-        "ZWW_SHORT_LINE": true
-    },
-    "detection_enabled": {
-        "PKFR_WIDTH_EXCEEDED": true,
-        "PKFR_SHORT_LINE": true,
-        "PKFR_EMPTY_SUBLINE": true,
-        "PKFR_SINGLE_WORD_SUBLINE": true,
-        "PKFR_TAG_WARNING": true,
-        "ZWW_TAG_WARNING": true,
-        "ZWW_WIDTH_EXCEEDED": true,
-        "ZWW_EMPTY_ODD_SUBLINE_LOGICAL": true,
-        "ZWW_EMPTY_ODD_SUBLINE_DISPLAY": true,
-        "ZWW_EMPTY_FIRST_LINE_OF_PAGE": true,
-        "ZWW_SINGLE_WORD_SUBLINE": true,
-        "ZWW_SHORT_LINE": true
-    },
+    "autofix_enabled": {},
+    "detection_enabled": {},
     "default_font_file": "",
-    "string_metadata": {
-        "(0, 416)": {
-            "font_file": "CKingMsg.json"
-        }
-    },
+    "string_metadata": {},
     "tag_color_rgba": "#ffa7a7b6",
     "tag_bold": false,
-    "tag_italic": false,
+    "tag_italic": true,
     "tag_underline": false,
     "newline_color_rgba": "#ffa020f0",
     "newline_bold": true,
     "newline_italic": false,
     "newline_underline": false,
     "translation_config": {
-        "provider": "gemini",
+        "provider": "disabled",
         "session_mode": "auto",
         "providers": {
             "openai_chat": {
-                "api_key": "***REMOVED***",
-                "api_key_env": "",
+                "api_key": "",
+                "api_key_env": "OPENAI_API_KEY",
                 "base_url": "",
-                "model": "gpt-4o-mini",
+                "model": "gpt-4o",
                 "temperature": 0.0,
                 "max_output_tokens": 0,
                 "timeout": 120,
                 "extra_headers": {}
             },
             "openai_responses": {
-                "api_key": "***REMOVED***",
+                "api_key": "",
                 "api_key_env": "OPENAI_API_KEY",
                 "base_url": "",
-                "model": "gpt-5-mini",
+                "model": "gpt-5",
                 "reasoning_effort": "low",
                 "text_verbosity": "low",
                 "timeout": 120,
-                "use_chat_key": true
+                "use_chat_key": false
             },
             "ollama_chat": {
                 "base_url": "http://localhost:11434",
@@ -103,7 +71,7 @@
             "chatmock": {
                 "base_url": "",
                 "model": "gpt-5-mini",
-                "api_key": "***REMOVED***",
+                "api_key": "",
                 "temperature": 0.0,
                 "timeout": 120,
                 "reasoning_effort": "medium",
@@ -119,12 +87,12 @@
                 "timeout": 60
             },
             "gemini": {
-                "api_key": "***REMOVED***",
+                "api_key": "",
                 "api_key_env": "GEMINI_API_KEY",
-                "model": "gemini-2.5-pro",
+                "model": "gemini-1.5-flash-latest",
                 "temperature": 0.0,
                 "timeout": 120,
-                "base_url": "http://127.0.0.1:2048/"
+                "base_url": ""
             },
             "perplexity": {
                 "api_key": "",

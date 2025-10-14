@@ -4,7 +4,8 @@
       "Bash(python:*)",
       "Bash(git add:*)",
       "Bash(git commit -m \"$(cat <<''EOF''\nfeat: add project system with block management toolbar\n\nImplemented complete project-based workflow:\n- Project management: create, open, close projects with .uiproj files\n- Block toolbar with 5 buttons (32x32): add, delete, rename, move up/down\n- Integrated toolbar at bottom of block list widget container\n- Smart button state management based on selection and position\n- Context menu \"Add Block\" option for projects\n- Fixed plugin data parsing to correctly extract first block from parsed result\n- Each file in project = one block with multiple strings (restored original behavior)\n\nBlock toolbar features:\n- Add (+): Import new block into project\n- Delete (-): Remove block from project (with confirmation)\n- Rename (✎): Edit block name\n- Move Up (↑): Reorder block upward\n- Move Down (↓): Reorder block downward\n- Buttons auto-enable/disable based on project state and block position\n\nData parsing fixed:\n- Plugin returns list of blocks, but project files = single block\n- Extract parsed_data[0] to get string list for each block\n- Restored proper string display in preview (not all as one line)\n- Fixed \\n display as special symbol instead of literal text\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(dir:*)"
     ],
     "deny": [],
     "ask": []
