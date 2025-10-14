@@ -18,8 +18,7 @@
         "{PKMN}": "{PKMN}"
     },
     "block_names": {
-        "0": "data/text/new_game_intro.inc",
-        "1": "src/strings.c"
+        "0": "Block 0 (msg0)"
     },
     "block_color_markers": {},
     "newline_display_symbol": "↵",
@@ -31,8 +30,8 @@
     "editors_wrap_lines": false,
     "game_dialog_max_width_pixels": 214,
     "line_width_warning_threshold_pixels": 214,
-    "original_file_path": null,
-    "edited_file_path": null,
+    "original_file_path": "D:\\git\\WW\\WindWaker\\sources\\message_orig.txt",
+    "edited_file_path": "D:\\git\\WW\\WindWaker\\translation\\message_orig.txt",
     "last_selected_block_index": -1,
     "last_selected_string_index": -1,
     "last_cursor_position_in_edited": 0,

@@ -2,7 +2,7 @@
     "display_name": "Zelda: The Wind Waker",
     "default_tag_mappings": {},
     "block_names": {
-        "0": "0X777E3C87E77639C9"
+        "0": "Block 0"
     },
     "block_color_markers": {},
     "newline_display_symbol": "↵",
@@ -17,7 +17,7 @@
     "line_width_warning_threshold_pixels": 869,
     "original_file_path": "C:\\Users\\Administrator\\Desktop\\pokemon\\Pokemon\\sources\\0x777e3c87e77639c9.txt",
     "edited_file_path": "C:\\Users\\Administrator\\Desktop\\pokemon\\Pokemon\\translation\\0x777e3c87e77639c9.txt",
-    "last_selected_block_index": 1,
+    "last_selected_block_index": 0,
     "last_selected_string_index": -1,
     "last_cursor_position_in_edited": 0,
     "last_edited_text_edit_scroll_value_v": 0,

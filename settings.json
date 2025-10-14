@@ -1,6 +1,6 @@
 {
     "font_size": 13,
-    "active_game_plugin": "pokemon_fr",
+    "active_game_plugin": "zelda_ww",
     "window_was_maximized": false,
     "window_normal_geometry": {
         "x": 278,
@@ -39,5 +39,8 @@
     },
     "prompt_editor_enabled": false,
     "spellchecker_enabled": true,
-    "spellchecker_language": "uk"
+    "spellchecker_language": "uk",
+    "recent_projects": [
+        "D:\\git\\WW\\WindWaker\\project.uiproj"
+    ]
 }

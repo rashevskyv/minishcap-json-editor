@@ -438,6 +438,31 @@ class AppActionHandler(BaseHandler):
                 # Update recent projects menu
                 self._update_recent_projects_menu()
 
+            # Switch plugin if needed
+            project = self.mw.project_manager.project
+            if project.plugin_name and project.plugin_name != self.mw.active_game_plugin:
+                log_info(f"Switching plugin from '{self.mw.active_game_plugin}' to '{project.plugin_name}'")
+                self.mw.active_game_plugin = project.plugin_name
+
+                # Reload plugin settings
+                if hasattr(self.mw, 'settings_manager'):
+                    self.mw.settings_manager._load_plugin_settings()
+                    self.mw.settings_manager.load_all_font_maps()
+
+                # Reload game rules
+                self.mw.load_game_plugin()
+                self.game_rules_plugin = self.mw.current_game_rules
+
+                if self.mw.current_game_rules:
+                    self.mw.default_tag_mappings = self.mw.current_game_rules.get_default_tag_mappings()
+
+                # Update UI after plugin switch
+                self.ui_updater.update_plugin_status_label()
+
+                # Save settings to persist plugin change
+                if hasattr(self.mw, 'settings_manager'):
+                    self.mw.settings_manager.save_settings()
+
             QMessageBox.information(
                 self.mw,
                 "Project Created",
@@ -497,6 +522,30 @@ class AppActionHandler(BaseHandler):
                 self.mw.settings_manager.save_settings()
                 # Update recent projects menu
                 self._update_recent_projects_menu()
+
+            # Switch plugin if needed
+            if project.plugin_name and project.plugin_name != self.mw.active_game_plugin:
+                log_info(f"Switching plugin from '{self.mw.active_game_plugin}' to '{project.plugin_name}'")
+                self.mw.active_game_plugin = project.plugin_name
+
+                # Reload plugin settings
+                if hasattr(self.mw, 'settings_manager'):
+                    self.mw.settings_manager._load_plugin_settings()
+                    self.mw.settings_manager.load_all_font_maps()
+
+                # Reload game rules
+                self.mw.load_game_plugin()
+                self.game_rules_plugin = self.mw.current_game_rules
+
+                if self.mw.current_game_rules:
+                    self.mw.default_tag_mappings = self.mw.current_game_rules.get_default_tag_mappings()
+
+                # Update UI after plugin switch
+                self.ui_updater.update_plugin_status_label()
+
+                # Save settings to persist plugin change
+                if hasattr(self.mw, 'settings_manager'):
+                    self.mw.settings_manager.save_settings()
 
             # Enable project-specific actions
             if hasattr(self.mw, 'close_project_action'):
@@ -888,6 +937,30 @@ class AppActionHandler(BaseHandler):
                 self.mw.settings_manager.add_recent_project(project_path)
                 self.mw.settings_manager.save_settings()
                 self._update_recent_projects_menu()
+
+            # Switch plugin if needed
+            if project.plugin_name and project.plugin_name != self.mw.active_game_plugin:
+                log_info(f"Switching plugin from '{self.mw.active_game_plugin}' to '{project.plugin_name}'")
+                self.mw.active_game_plugin = project.plugin_name
+
+                # Reload plugin settings
+                if hasattr(self.mw, 'settings_manager'):
+                    self.mw.settings_manager._load_plugin_settings()
+                    self.mw.settings_manager.load_all_font_maps()
+
+                # Reload game rules
+                self.mw.load_game_plugin()
+                self.game_rules_plugin = self.mw.current_game_rules
+
+                if self.mw.current_game_rules:
+                    self.mw.default_tag_mappings = self.mw.current_game_rules.get_default_tag_mappings()
+
+                # Update UI after plugin switch
+                self.ui_updater.update_plugin_status_label()
+
+                # Save settings to persist plugin change
+                if hasattr(self.mw, 'settings_manager'):
+                    self.mw.settings_manager.save_settings()
 
             # Enable project-specific actions
             if hasattr(self.mw, 'close_project_action'):
