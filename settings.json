@@ -1,11 +1,11 @@
 {
     "font_size": 13,
-    "active_game_plugin": "zelda_ww",
+    "active_game_plugin": "pokemon_fr",
     "window_was_maximized": false,
     "window_normal_geometry": {
-        "x": 236,
-        "y": 145,
-        "width": 2065,
+        "x": 278,
+        "y": 185,
+        "width": 2066,
         "height": 1277
     },
     "main_splitter_state": "AAAA/wAAAAEAAAACAAAAyAAAAyAB/////wEAAAABAA==",
@@ -37,7 +37,7 @@
         "is_fullscreen": false,
         "is_maximized": false
     },
-    "prompt_editor_enabled": true,
+    "prompt_editor_enabled": false,
     "spellchecker_enabled": true,
     "spellchecker_language": "uk"
 }

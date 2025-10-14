@@ -429,6 +429,15 @@ class AppActionHandler(BaseHandler):
 
         if success:
             log_info(f"Project '{info['name']}' created successfully.")
+
+            # Add to recent projects
+            if hasattr(self.mw, 'settings_manager'):
+                project_file_path = os.path.join(info['directory'], 'project.uiproj')
+                self.mw.settings_manager.add_recent_project(project_file_path)
+                self.mw.settings_manager.save_settings()
+                # Update recent projects menu
+                self._update_recent_projects_menu()
+
             QMessageBox.information(
                 self.mw,
                 "Project Created",
@@ -481,6 +490,13 @@ class AppActionHandler(BaseHandler):
         if success:
             project = self.mw.project_manager.project
             log_info(f"Project '{project.name}' loaded successfully.")
+
+            # Add to recent projects
+            if hasattr(self.mw, 'settings_manager'):
+                self.mw.settings_manager.add_recent_project(project_path)
+                self.mw.settings_manager.save_settings()
+                # Update recent projects menu
+                self._update_recent_projects_menu()
 
             # Enable project-specific actions
             if hasattr(self.mw, 'close_project_action'):
@@ -797,3 +813,115 @@ class AppActionHandler(BaseHandler):
             self.mw.block_list_widget.setCurrentRow(block_idx + 1)
 
         log_info(f"Block moved down from index {block_idx} to {block_idx + 1}.")
+
+    def _update_recent_projects_menu(self):
+        """Update the Recent Projects submenu with current list."""
+        if not hasattr(self.mw, 'recent_projects_menu'):
+            return
+
+        # Clear existing menu items
+        self.mw.recent_projects_menu.clear()
+
+        # Get recent projects list
+        recent_projects = getattr(self.mw, 'recent_projects', [])
+
+        if not recent_projects:
+            # Add "No recent projects" action
+            no_recent_action = self.mw.recent_projects_menu.addAction("No recent projects")
+            no_recent_action.setEnabled(False)
+            return
+
+        # Add action for each recent project
+        for project_path in recent_projects:
+            # Check if file exists
+            if os.path.exists(project_path):
+                # Get project name from path
+                project_name = os.path.splitext(os.path.basename(project_path))[0]
+                if project_name == "project":
+                    # Use directory name if file is named "project.uiproj"
+                    project_name = os.path.basename(os.path.dirname(project_path))
+
+                action = self.mw.recent_projects_menu.addAction(project_name)
+                action.setToolTip(project_path)
+                # Use lambda with default argument to capture current project_path
+                action.triggered.connect(lambda checked=False, path=project_path: self._open_recent_project(path))
+            else:
+                # Project file doesn't exist, show as unavailable
+                action = self.mw.recent_projects_menu.addAction(f"{os.path.basename(project_path)} (missing)")
+                action.setEnabled(False)
+
+        # Add separator and "Clear Recent Projects" action
+        self.mw.recent_projects_menu.addSeparator()
+        clear_action = self.mw.recent_projects_menu.addAction("Clear Recent Projects")
+        clear_action.triggered.connect(self._clear_recent_projects)
+
+    def _open_recent_project(self, project_path: str):
+        """Open a project from the recent projects list."""
+        log_info(f"Opening recent project: {project_path}")
+
+        if not os.path.exists(project_path):
+            QMessageBox.critical(
+                self.mw,
+                "Project Not Found",
+                f"Project file not found:\n{project_path}\n\n"
+                f"It may have been moved or deleted."
+            )
+            # Remove from recent projects
+            if hasattr(self.mw, 'settings_manager'):
+                self.mw.settings_manager.remove_recent_project(project_path)
+                self.mw.settings_manager.save_settings()
+                self._update_recent_projects_menu()
+            return
+
+        # Load project using ProjectManager
+        from core.project_manager import ProjectManager
+        self.mw.project_manager = ProjectManager()
+
+        success = self.mw.project_manager.load(project_path)
+
+        if success:
+            project = self.mw.project_manager.project
+            log_info(f"Recent project '{project.name}' loaded successfully.")
+
+            # Move to top of recent projects (already handled by add_recent_project)
+            if hasattr(self.mw, 'settings_manager'):
+                self.mw.settings_manager.add_recent_project(project_path)
+                self.mw.settings_manager.save_settings()
+                self._update_recent_projects_menu()
+
+            # Enable project-specific actions
+            if hasattr(self.mw, 'close_project_action'):
+                self.mw.close_project_action.setEnabled(True)
+            if hasattr(self.mw, 'import_block_action'):
+                self.mw.import_block_action.setEnabled(True)
+            if hasattr(self.mw, 'add_block_button'):
+                self.mw.add_block_button.setEnabled(True)
+
+            # Update UI to show blocks
+            self.ui_updater.update_title()
+            self._populate_blocks_from_project()
+
+            log_info(f"Recent project '{project.name}' opened with {len(project.blocks)} blocks.")
+        else:
+            QMessageBox.critical(
+                self.mw,
+                "Project Load Failed",
+                f"Failed to load project from:\n{project_path}"
+            )
+
+    def _clear_recent_projects(self):
+        """Clear all recent projects."""
+        reply = QMessageBox.question(
+            self.mw,
+            'Clear Recent Projects',
+            "Are you sure you want to clear all recent projects?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+
+        if reply == QMessageBox.Yes:
+            if hasattr(self.mw, 'settings_manager'):
+                self.mw.settings_manager.clear_recent_projects()
+                self.mw.settings_manager.save_settings()
+                self._update_recent_projects_menu()
+            log_info("Recent projects cleared.")

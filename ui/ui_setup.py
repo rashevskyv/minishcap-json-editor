@@ -259,6 +259,10 @@ def setup_main_window_ui(main_window):
     main_window.open_project_action.setShortcut('Ctrl+O')
     file_menu.addAction(main_window.open_project_action)
 
+    # Recent Projects submenu
+    main_window.recent_projects_menu = QMenu('Recent Projects', main_window)
+    file_menu.addMenu(main_window.recent_projects_menu)
+
     main_window.close_project_action = QAction('&Close Project', main_window)
     main_window.close_project_action.setEnabled(False)  # Enabled when project is loaded
     file_menu.addAction(main_window.close_project_action)

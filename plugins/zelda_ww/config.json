@@ -2,7 +2,7 @@
     "display_name": "Zelda: The Wind Waker",
     "default_tag_mappings": {},
     "block_names": {
-        "0": "Block 0"
+        "0": "0X777E3C87E77639C9"
     },
     "block_color_markers": {},
     "newline_display_symbol": "↵",
@@ -15,14 +15,14 @@
     "editors_wrap_lines": false,
     "game_dialog_max_width_pixels": 869,
     "line_width_warning_threshold_pixels": 869,
-    "original_file_path": "D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig.txt",
-    "edited_file_path": "D:/git/WW/WindWaker_HD_rus_(NTSC+PAL)/ukr/message_orig_ukr.txt",
-    "last_selected_block_index": 0,
-    "last_selected_string_index": 217,
-    "last_cursor_position_in_edited": 6,
+    "original_file_path": "C:\\Users\\Administrator\\Desktop\\pokemon\\Pokemon\\sources\\0x777e3c87e77639c9.txt",
+    "edited_file_path": "C:\\Users\\Administrator\\Desktop\\pokemon\\Pokemon\\translation\\0x777e3c87e77639c9.txt",
+    "last_selected_block_index": 1,
+    "last_selected_string_index": -1,
+    "last_cursor_position_in_edited": 0,
     "last_edited_text_edit_scroll_value_v": 0,
     "last_edited_text_edit_scroll_value_h": 0,
-    "last_preview_text_edit_scroll_value_v": 207,
+    "last_preview_text_edit_scroll_value_v": 0,
     "last_original_text_edit_scroll_value_v": 0,
     "last_original_text_edit_scroll_value_h": 0,
     "search_history": [],
@@ -54,7 +54,7 @@
         "ZWW_SINGLE_WORD_SUBLINE": true,
         "ZWW_SHORT_LINE": true
     },
-    "default_font_file": "CKingMsg.json",
+    "default_font_file": "",
     "string_metadata": {
         "(0, 416)": {
             "font_file": "CKingMsg.json"

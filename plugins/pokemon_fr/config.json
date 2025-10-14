@@ -33,35 +33,35 @@
     "line_width_warning_threshold_pixels": 214,
     "original_file_path": null,
     "edited_file_path": null,
-    "last_selected_block_index": 0,
-    "last_selected_string_index": 45,
+    "last_selected_block_index": -1,
+    "last_selected_string_index": -1,
     "last_cursor_position_in_edited": 0,
     "last_edited_text_edit_scroll_value_v": 0,
     "last_edited_text_edit_scroll_value_h": 0,
-    "last_preview_text_edit_scroll_value_v": 42,
+    "last_preview_text_edit_scroll_value_v": 0,
     "last_original_text_edit_scroll_value_v": 0,
     "last_original_text_edit_scroll_value_h": 0,
     "search_history": [
-        "просто стояти й ",
-        "суворо заборонено",
-        "всього лише",
-        "Коштує всього ",
-        "Коштує всього",
-        "муу",
-        "Можу закластися",
-        "Знайшовся ще один",
-        "Вітру",
-        "Вітру.",
-        "повернутися до бою",
-        "кремова насолода",
-        "що й подіти",
-        "величезний вихор",
-        "Прошу ласкаво\\",
-        "Прошу ласкаво",
-        "ще вище лізти",
-        "Настав час відродити",
+        "Король та варта",
         "Ледь стримуюся",
-        "Король та варта"
+        "Настав час відродити",
+        "ще вище лізти",
+        "Прошу ласкаво",
+        "Прошу ласкаво\\",
+        "величезний вихор",
+        "що й подіти",
+        "кремова насолода",
+        "повернутися до бою",
+        "Вітру.",
+        "Вітру",
+        "Знайшовся ще один",
+        "Можу закластися",
+        "муу",
+        "Коштує всього",
+        "Коштує всього ",
+        "всього лише",
+        "суворо заборонено",
+        "просто стояти й "
     ],
     "autofix_enabled": {
         "PKFR_WIDTH_EXCEEDED": true,
@@ -78,5 +78,70 @@
         "PKFR_TAG_WARNING": false
     },
     "string_metadata": {},
-    "default_font_file": ""
+    "default_font_file": "",
+    "tag_color_rgba": "#FF8C00",
+    "tag_bold": true,
+    "tag_italic": false,
+    "tag_underline": false,
+    "newline_color_rgba": "#A020F0",
+    "newline_bold": true,
+    "newline_italic": false,
+    "newline_underline": false,
+    "translation_config": {
+        "provider": "disabled",
+        "session_mode": "auto",
+        "providers": {
+            "openai_chat": {
+                "api_key": "",
+                "api_key_env": "OPENAI_API_KEY",
+                "base_url": "",
+                "model": "gpt-4o-mini",
+                "temperature": 0.0,
+                "max_output_tokens": 0,
+                "timeout": 60,
+                "extra_headers": {}
+            },
+            "openai_responses": {
+                "api_key": "",
+                "api_key_env": "OPENAI_API_KEY",
+                "base_url": "",
+                "model": "gpt-5",
+                "reasoning_effort": "low",
+                "text_verbosity": "low",
+                "timeout": 120
+            },
+            "ollama_chat": {
+                "base_url": "http://localhost:11434",
+                "model": "llama3",
+                "temperature": 0.0,
+                "timeout": 120,
+                "keep_alive": "",
+                "extra_headers": {}
+            },
+            "chatmock": {
+                "base_url": "http://127.0.0.1:8000",
+                "model": "gpt-5",
+                "api_key": "chatmock-placeholder",
+                "temperature": 0.0,
+                "timeout": 120,
+                "reasoning_effort": "medium",
+                "reasoning_summary": "auto",
+                "extra_headers": {}
+            },
+            "deepl": {
+                "api_key": "",
+                "api_key_env": "DEEPL_API_KEY",
+                "server_url": "",
+                "timeout": 60
+            },
+            "gemini": {
+                "api_key": "",
+                "api_key_env": "GEMINI_API_KEY",
+                "model": "gemini-1.5-flash-latest",
+                "temperature": 0.0,
+                "timeout": 120,
+                "base_url": ""
+            }
+        }
+    }
 }

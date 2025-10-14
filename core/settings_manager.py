@@ -62,6 +62,7 @@ class SettingsManager:
             "prompt_editor_enabled": True,
             "spellchecker_enabled": False,
             "spellchecker_language": "uk",
+            "recent_projects": [],
             "translation_ai": {
                 "provider": "OpenAI", "api_key": "", "model": "gpt-4o"
             },
@@ -252,6 +253,7 @@ class SettingsManager:
             "theme": getattr(self.mw, 'theme', 'auto'),
             "restore_unsaved_on_startup": self.mw.restore_unsaved_on_startup,
             "prompt_editor_enabled": getattr(self.mw, 'prompt_editor_enabled', True),
+            "recent_projects": getattr(self.mw, 'recent_projects', []),
             "translation_ai": getattr(self.mw, 'translation_ai', {}),
             "glossary_ai": getattr(self.mw, 'glossary_ai', {}),
             "spellchecker_enabled": getattr(self.mw, 'spellchecker_enabled', False),
@@ -537,3 +539,44 @@ class SettingsManager:
                     if isinstance(value, dict) and 'width' in value:
                         sequences.add(key)
         self.mw.icon_sequences = sorted(sequences, key=len, reverse=True)
+
+    def add_recent_project(self, project_path: str, max_recent: int = 10):
+        """
+        Add a project to the recent projects list.
+
+        Args:
+            project_path: Absolute path to the project directory or .uiproj file
+            max_recent: Maximum number of recent projects to keep (default: 10)
+        """
+        if not hasattr(self.mw, 'recent_projects'):
+            self.mw.recent_projects = []
+
+        # Normalize path
+        project_path = os.path.abspath(project_path)
+
+        # Remove if already in list
+        if project_path in self.mw.recent_projects:
+            self.mw.recent_projects.remove(project_path)
+
+        # Add to beginning
+        self.mw.recent_projects.insert(0, project_path)
+
+        # Limit to max_recent
+        self.mw.recent_projects = self.mw.recent_projects[:max_recent]
+
+        log_debug(f"Added '{project_path}' to recent projects")
+
+    def remove_recent_project(self, project_path: str):
+        """Remove a project from the recent projects list."""
+        if not hasattr(self.mw, 'recent_projects'):
+            return
+
+        project_path = os.path.abspath(project_path)
+        if project_path in self.mw.recent_projects:
+            self.mw.recent_projects.remove(project_path)
+            log_debug(f"Removed '{project_path}' from recent projects")
+
+    def clear_recent_projects(self):
+        """Clear all recent projects."""
+        self.mw.recent_projects = []
+        log_debug("Cleared all recent projects")

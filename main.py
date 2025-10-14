@@ -37,6 +37,7 @@ from core.settings_manager import SettingsManager
 from core.data_state_processor import DataStateProcessor
 from core.translation.config import build_default_translation_config
 from core.spellchecker_manager import SpellcheckerManager
+from core.project_manager import ProjectManager
 
 from plugins.base_game_rules import BaseGameRules
 
@@ -128,6 +129,10 @@ class MainWindow(QMainWindow):
         self.is_updating_search_panel_results = False
         self.is_updating_search_panel_ui_state = False
 
+        # Project management
+        self.project_manager = None  # Will be initialized when project is created/opened
+
+        # Legacy data structures (still used internally)
         self.json_path = None; self.edited_json_path = None
         self.data = []; self.edited_data = {}; self.edited_file_data = []
         self.block_names = {}; self.current_block_idx = -1; self.current_string_idx = -1
@@ -303,6 +308,10 @@ class MainWindow(QMainWindow):
             log_info(f"Spellchecker initialization complete. Manager enabled state: {self.spellchecker_manager.enabled}")
         else:
             log_info("Spellchecker manager not found, skipping initialization")
+
+        # Update recent projects menu
+        if hasattr(self, 'app_action_handler') and hasattr(self.app_action_handler, '_update_recent_projects_menu'):
+            self.app_action_handler._update_recent_projects_menu()
 
         QTimer.singleShot(100, self.force_focus)
 
