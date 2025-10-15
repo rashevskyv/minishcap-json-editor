@@ -8,12 +8,47 @@ This plugin provides basic text editing functionality with minimal rules:
 """
 
 import re
-from typing import List, Tuple, Dict, Optional, Any
+from typing import List, Tuple, Dict, Optional, Any, Set
 from plugins.base_game_rules import BaseGameRules
+
+
+class SimpleProblemAnalyzer:
+    """Simple problem analyzer for plain text - no problems detected."""
+
+    def __init__(self):
+        pass
+
+    def analyze_data_string(self, text: str, font_map: dict, width_threshold: int) -> List[Set[str]]:
+        """
+        Analyze a data string and return problems per subline.
+        For plain text, returns empty sets (no problems).
+
+        Args:
+            text: The full data string to analyze
+            font_map: Font map for width calculation (not used)
+            width_threshold: Width threshold in pixels (not used)
+
+        Returns:
+            List of sets, one per subline, each containing problem IDs (all empty)
+        """
+        # Split by \n to get sublines
+        sublines = text.split('\\n')
+        # Return empty problem sets for each subline
+        return [set() for _ in sublines]
+
+    def _get_sublines_from_data_string(self, text: str) -> List[str]:
+        """Split a data string into sublines."""
+        return text.split('\\n')
 
 
 class GameRules(BaseGameRules):
     """Plain text game rules with basic tag support."""
+
+    def __init__(self, main_window_ref=None):
+        """Initialize plain text game rules with minimal problem analyzer."""
+        super().__init__(main_window_ref)
+        # Create simple problem analyzer that detects no problems
+        self.problem_analyzer = SimpleProblemAnalyzer()
 
     def get_display_name(self) -> str:
         """Return the display name for this plugin."""
@@ -179,7 +214,7 @@ class GameRules(BaseGameRules):
         text: str,
         font_map: Optional[Dict] = None,
         width_threshold: Optional[int] = None
-    ) -> str:
+    ) -> Tuple[str, bool]:
         """
         Apply automatic fixes to a data string.
 
@@ -191,10 +226,11 @@ class GameRules(BaseGameRules):
             width_threshold: Width threshold in pixels (not used)
 
         Returns:
-            Fixed text (unchanged for plain text)
+            Tuple of (fixed_text, was_modified)
+            For plain text: (text, False) - no modifications
         """
         # No autofixes for plain text
-        return text
+        return text, False
 
     def get_problem_definitions(self) -> Dict[str, Dict[str, Any]]:
         """
