@@ -51,8 +51,9 @@ class MainWindowActions:
             if hasattr(self.mw, 'project_manager') and self.mw.project_manager and \
                hasattr(self.mw.project_manager, 'current_project') and self.mw.project_manager.current_project:
                 self.mw.project_manager.current_project.plugin_name = self.mw.active_game_plugin
-                self.mw.project_manager.save()
-                log_info(f"Updated project plugin to '{self.mw.active_game_plugin}' and saved project")
+                # Save project-specific settings to metadata
+                self.mw.project_manager.save_settings_to_project(self.mw)
+                log_info(f"Updated project plugin to '{self.mw.active_game_plugin}' and saved project with settings")
 
             self.mw.settings_manager._save_global_settings()
             
@@ -100,6 +101,12 @@ class MainWindowActions:
                     self.mw.edited_text_edit.highlighter.rehighlight()
 
             self.mw.settings_manager.save_settings()
+
+            # Save project-specific settings to metadata if project is open
+            if hasattr(self.mw, 'project_manager') and self.mw.project_manager and \
+               hasattr(self.mw.project_manager, 'current_project') and self.mw.project_manager.current_project:
+                self.mw.project_manager.save_settings_to_project(self.mw)
+                log_info("Saved project-specific settings to project metadata")
 
             self.mw.apply_font_size()
             self.mw.helper.reconfigure_all_highlighters()

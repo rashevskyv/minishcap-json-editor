@@ -258,6 +258,33 @@ class ProjectManager:
     SOURCES_DIR = "sources"
     TRANSLATION_DIR = "translation"
 
+    # Project-specific settings that are saved to project.metadata
+    PROJECT_SETTINGS = [
+        'font_size',
+        'show_multiple_spaces_as_dots',
+        'space_dot_color_hex',
+        'preview_wrap_lines',
+        'editors_wrap_lines',
+        'game_dialog_max_width_pixels',
+        'line_width_warning_threshold_pixels',
+        'default_font_file',
+        'newline_display_symbol',
+        'newline_css',
+        'tag_css',
+        'tag_color_rgba',
+        'tag_bold',
+        'tag_italic',
+        'tag_underline',
+        'newline_color_rgba',
+        'newline_bold',
+        'newline_italic',
+        'newline_underline',
+        'spellchecker_language',
+        'default_tag_mappings',
+        'autofix_enabled',
+        'detection_enabled',
+    ]
+
     def __init__(self, project_path: Optional[str] = None):
         """
         Initialize ProjectManager.
@@ -493,3 +520,74 @@ class ProjectManager:
         except ValueError:
             # Path is not relative to project dir
             return absolute_path
+
+    def save_settings_to_project(self, main_window) -> bool:
+        """
+        Save project-specific settings from MainWindow to project.metadata.
+
+        Args:
+            main_window: MainWindow instance with settings to save
+
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self.project:
+            log_warning("No project to save settings to")
+            return False
+
+        try:
+            # Save each project-specific setting to metadata
+            settings_saved = {}
+            for setting_name in self.PROJECT_SETTINGS:
+                if hasattr(main_window, setting_name):
+                    value = getattr(main_window, setting_name)
+                    settings_saved[setting_name] = value
+
+            self.project.metadata['settings'] = settings_saved
+            log_info(f"Saved {len(settings_saved)} project settings to metadata")
+
+            # Save project to disk
+            return self.save()
+
+        except Exception as e:
+            log_error(f"Failed to save settings to project: {e}")
+            return False
+
+    def load_settings_from_project(self, main_window) -> bool:
+        """
+        Load project-specific settings from project.metadata to MainWindow.
+
+        Args:
+            main_window: MainWindow instance to apply settings to
+
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self.project:
+            log_warning("No project to load settings from")
+            return False
+
+        try:
+            settings = self.project.metadata.get('settings', {})
+            if not settings:
+                log_info("No project settings found in metadata, using current settings")
+                return False
+
+            # Apply each project-specific setting to MainWindow
+            settings_loaded = 0
+            for setting_name, value in settings.items():
+                if hasattr(main_window, setting_name):
+                    setattr(main_window, setting_name, value)
+                    settings_loaded += 1
+
+            log_info(f"Loaded {settings_loaded} project settings from metadata")
+            return True
+
+        except Exception as e:
+            log_error(f"Failed to load settings from project: {e}")
+            return False
+
+    @property
+    def current_project(self) -> Optional[Project]:
+        """Get the currently loaded project."""
+        return self.project

@@ -430,6 +430,10 @@ class AppActionHandler(BaseHandler):
         if success:
             log_info(f"Project '{info['name']}' created successfully.")
 
+            # Save current settings to new project
+            self.mw.project_manager.save_settings_to_project(self.mw)
+            log_info("Saved current settings to new project")
+
             # Add to recent projects
             if hasattr(self.mw, 'settings_manager'):
                 project_file_path = os.path.join(info['directory'], 'project.uiproj')
@@ -546,6 +550,18 @@ class AppActionHandler(BaseHandler):
                 # Save settings to persist plugin change
                 if hasattr(self.mw, 'settings_manager'):
                     self.mw.settings_manager.save_settings()
+
+            # Load project-specific settings from metadata
+            if self.mw.project_manager:
+                loaded = self.mw.project_manager.load_settings_from_project(self.mw)
+                if loaded:
+                    log_info("Project-specific settings loaded from metadata")
+                    # Reapply settings to UI
+                    if hasattr(self.mw, 'apply_font_size'):
+                        self.mw.apply_font_size()
+                    if hasattr(self.mw, 'helper'):
+                        self.mw.helper.reconfigure_all_highlighters()
+                        self.mw.helper.apply_text_wrap_settings()
 
             # Enable project-specific actions
             if hasattr(self.mw, 'close_project_action'):
@@ -961,6 +977,18 @@ class AppActionHandler(BaseHandler):
                 # Save settings to persist plugin change
                 if hasattr(self.mw, 'settings_manager'):
                     self.mw.settings_manager.save_settings()
+
+            # Load project-specific settings from metadata
+            if self.mw.project_manager:
+                loaded = self.mw.project_manager.load_settings_from_project(self.mw)
+                if loaded:
+                    log_info("Project-specific settings loaded from metadata")
+                    # Reapply settings to UI
+                    if hasattr(self.mw, 'apply_font_size'):
+                        self.mw.apply_font_size()
+                    if hasattr(self.mw, 'helper'):
+                        self.mw.helper.reconfigure_all_highlighters()
+                        self.mw.helper.apply_text_wrap_settings()
 
             # Enable project-specific actions
             if hasattr(self.mw, 'close_project_action'):
