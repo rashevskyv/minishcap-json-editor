@@ -1,10 +1,10 @@
 {
     "font_size": 13,
-    "active_game_plugin": "pokemon_fr",
-    "window_was_maximized": false,
+    "active_game_plugin": "plain_text",
+    "window_was_maximized": true,
     "window_normal_geometry": {
-        "x": 208,
-        "y": 36,
+        "x": 165,
+        "y": 75,
         "width": 2066,
         "height": 1277
     },

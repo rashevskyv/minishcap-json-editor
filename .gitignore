@@ -7,3 +7,5 @@ __pycache__/
 font_tool/
 build_gemini_dir.py
 /gemini/
+.claude
+/app_debug.txt
