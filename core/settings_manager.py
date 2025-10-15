@@ -14,10 +14,40 @@ from utils.constants import (
 from plugins.pokemon_fr.config import DEFAULT_AUTOFIX_SETTINGS, DEFAULT_DETECTION_SETTINGS
 from core.translation.config import build_default_translation_config, merge_translation_config
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # python-dotenv not installed, using system env variables only
+
 class SettingsManager:
     def __init__(self, main_window):
         self.mw = main_window
         self.settings_file_path = "settings.json"
+
+    def _substitute_env_vars(self, data):
+        """
+        Recursively substitute environment variables in data structure.
+        Replaces strings matching ${VAR_NAME} with os.getenv('VAR_NAME').
+        """
+        import re
+
+        if isinstance(data, dict):
+            return {key: self._substitute_env_vars(value) for key, value in data.items()}
+        elif isinstance(data, list):
+            return [self._substitute_env_vars(item) for item in data]
+        elif isinstance(data, str):
+            # Match ${VAR_NAME} or $VAR_NAME patterns
+            def replace_env_var(match):
+                var_name = match.group(1) or match.group(2)
+                return os.getenv(var_name, match.group(0))  # Keep original if env var not found
+
+            # Pattern matches ${VAR_NAME} or $VAR_NAME
+            pattern = r'\$\{([^}]+)\}|\$([A-Z_][A-Z0-9_]*)'
+            return re.sub(pattern, replace_env_var, data)
+        else:
+            return data
 
     def _get_plugin_config_path(self):
         plugin_name = getattr(self.mw, 'active_game_plugin', None)
@@ -152,6 +182,9 @@ class SettingsManager:
         try:
             with open(plugin_config_path, 'r', encoding='utf-8') as f:
                 plugin_data = json.load(f)
+
+            # Substitute environment variables in plugin config
+            plugin_data = self._substitute_env_vars(plugin_data)
 
             self.mw.block_names.update({str(k): v for k, v in plugin_data.get("block_names", {}).items()})
             self.mw.block_color_markers.update({k: set(v) for k, v in plugin_data.get("block_color_markers", {}).items()})

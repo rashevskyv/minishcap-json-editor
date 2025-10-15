@@ -9,3 +9,6 @@ build_gemini_dir.py
 /gemini/
 .claude
 /app_debug.txt
+
+# Environment variables with API keys
+.env

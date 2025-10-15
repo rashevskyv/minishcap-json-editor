@@ -7,8 +7,18 @@ import io
 import base64
 import numpy as np
 
-# OpenAI API ключ
-OPENAI_API_KEY = "***REMOVED***"
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    # Load from project root (parent directory)
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    env_path = os.path.join(project_root, '.env')
+    load_dotenv(env_path)
+except ImportError:
+    print("python-dotenv not installed. Using environment variables only.")
+
+# OpenAI API ключ - читається з .env файлу або змінної оточення
+OPENAI_API_KEY = os.getenv('FONT_TOOL_OPENAI_API_KEY') or os.getenv('OPENAI_API_KEY', '')
 
 OUTPUT_JSON = "font_map.json"
 CHAR_HEIGHT = 16
