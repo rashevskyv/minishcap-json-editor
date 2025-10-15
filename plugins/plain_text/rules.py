@@ -10,6 +10,7 @@ This plugin provides basic text editing functionality with minimal rules:
 import re
 from typing import List, Tuple, Dict, Optional, Any, Set
 from plugins.base_game_rules import BaseGameRules
+from PyQt5.QtGui import QTextCharFormat, QColor, QFont
 
 
 class SimpleProblemAnalyzer:
@@ -65,9 +66,9 @@ class GameRules(BaseGameRules):
         """
         Load data from a JSON object or text file content.
 
-        For plain text, we support both:
-        - Simple text files (one string per line, blank lines separate blocks)
-        - JSON arrays of strings
+        For plain text: ONE FILE = ONE BLOCK
+        - Text files: each line becomes a string in the block
+        - JSON arrays: all items become strings in one block
 
         Args:
             json_obj: Either a list of strings, or raw text content
@@ -81,23 +82,13 @@ class GameRules(BaseGameRules):
         block_names = {}
 
         # If it's a string, treat it as plain text file content
+        # ONE FILE = ONE BLOCK - split by single newlines to get individual strings
         if isinstance(json_obj, str):
-            # Split by double newlines to separate blocks
-            raw_blocks = json_obj.split('\n\n')
-
-            for i, raw_block in enumerate(raw_blocks):
-                # Split block into individual strings (lines)
-                lines = [line for line in raw_block.split('\n') if line.strip()]
-                if lines:
-                    blocks.append(lines)
-                    block_names[str(i)] = f"Block {i}"
-
-            # If no blocks found, treat entire content as one block
-            if not blocks:
-                lines = [line for line in json_obj.split('\n') if line.strip()]
-                if lines:
-                    blocks.append(lines)
-                    block_names["0"] = "Block 0"
+            # Split by single newlines to get individual strings
+            lines = [line for line in json_obj.split('\n') if line.strip()]
+            if lines:
+                blocks.append(lines)
+                block_names["0"] = "Block 0"
 
         # If it's a list, treat each item as a string
         elif isinstance(json_obj, list):
@@ -144,9 +135,9 @@ class GameRules(BaseGameRules):
         """
         Save data blocks to a JSON-serializable object.
 
-        For plain text, we save as simple text format:
-        - Each block separated by double newline
-        - Each string on its own line
+        For plain text: ONE FILE = ONE BLOCK
+        - Each string in the block becomes a line in the file
+        - Strings are separated by single newlines
 
         Args:
             blocks: List of blocks, each block is a list of strings
@@ -155,15 +146,13 @@ class GameRules(BaseGameRules):
         Returns:
             String containing plain text representation
         """
-        output_blocks = []
-
+        # For plain text, we expect only one block
+        # Join all strings from all blocks with newlines
+        all_strings = []
         for block in blocks:
-            # Join strings in block with newlines
-            block_text = '\n'.join(str(s) for s in block)
-            output_blocks.append(block_text)
+            all_strings.extend(block)
 
-        # Join blocks with double newlines
-        return '\n\n'.join(output_blocks)
+        return '\n'.join(str(s) for s in all_strings)
 
     def get_tag_pattern(self) -> Optional[re.Pattern]:
         """
@@ -172,6 +161,153 @@ class GameRules(BaseGameRules):
         Matches: [tag], [tag with spaces], [TAG123]
         """
         return re.compile(r'\[([^\]]+)\]')
+
+    def get_text_representation_for_preview(self, data_string: str) -> str:
+        """
+        Convert data string format to preview display format.
+
+        Converts escaped newlines (\\n, \\r) to the configured newline display symbol
+        (e.g., ↵) for display in the preview window.
+
+        Args:
+            data_string: The data string with escaped newlines
+
+        Returns:
+            Text with newline symbols for preview display
+        """
+        newline_symbol = getattr(self.mw, "newline_display_symbol", "↵") if self.mw else "↵"
+
+        # Convert escaped newlines to display symbol
+        processed = str(data_string)
+        processed = processed.replace('\\n', newline_symbol)
+        processed = processed.replace('\\r', newline_symbol)  # Treat \r same as \n
+
+        return processed
+
+    def get_text_representation_for_editor(self, data_string_subline: str) -> str:
+        """
+        Convert data string format to editor display format.
+
+        Converts escaped newlines (\\n, \\r) to actual newline characters
+        so they display as separate lines in the editor.
+
+        Args:
+            data_string_subline: The data string with escaped newlines
+
+        Returns:
+            Text with actual newline characters for editor display
+        """
+        # Convert escaped newlines to actual newlines
+        processed = str(data_string_subline)
+        processed = processed.replace('\\n', '\n')
+        processed = processed.replace('\\r', '\n')  # Treat \r as \n
+        return processed
+
+    def convert_editor_text_to_data(self, text: str) -> str:
+        """
+        Convert editor text back to data string format.
+
+        Converts actual newline characters back to escaped format (\\n)
+        for storage in the data file.
+
+        Args:
+            text: The editor text with actual newlines
+
+        Returns:
+            Text with escaped newlines for data storage
+        """
+        # Convert actual newlines back to escaped format
+        return text.replace('\n', '\\n')
+
+    def get_syntax_highlighting_rules(self) -> List[Tuple[str, QTextCharFormat]]:
+        """
+        Return syntax highlighting rules for tags and newlines.
+
+        Returns list of (pattern, format) tuples for:
+        - Tags in square brackets: [VAR PKNICK(0000)], [tag], etc.
+        - Literal newline sequences: \\n, \\r
+        - Newline display symbol (if configured)
+        """
+        rules = []
+
+        # Create format for tags in square brackets
+        tag_format = QTextCharFormat()
+        if self.mw:
+            # Get tag color from settings (default to gray)
+            tag_color = getattr(self.mw, 'tag_color_rgba', '#ffa7a7b6')
+            try:
+                tag_format.setForeground(QColor(tag_color))
+            except Exception:
+                tag_format.setForeground(QColor('#a7a7b6'))  # Fallback gray
+
+            # Apply tag style settings
+            if getattr(self.mw, 'tag_bold', False):
+                tag_format.setFontWeight(QFont.Bold)
+            if getattr(self.mw, 'tag_italic', True):
+                tag_format.setFontItalic(True)
+            if getattr(self.mw, 'tag_underline', False):
+                tag_format.setFontUnderline(True)
+        else:
+            # Default styling if no main window reference
+            tag_format.setForeground(QColor('#a7a7b6'))
+            tag_format.setFontItalic(True)
+
+        # Create format for literal newlines (\\n, \\r)
+        literal_newline_format = QTextCharFormat()
+        if self.mw:
+            # Get newline color from settings
+            newline_color = getattr(self.mw, 'newline_color_rgba', '#ffa020f0')
+            try:
+                literal_newline_format.setForeground(QColor(newline_color))
+            except Exception:
+                literal_newline_format.setForeground(QColor('#a020f0'))  # Fallback purple
+
+            # Apply newline style settings
+            if getattr(self.mw, 'newline_bold', True):
+                literal_newline_format.setFontWeight(QFont.Bold)
+            if getattr(self.mw, 'newline_italic', False):
+                literal_newline_format.setFontItalic(True)
+            if getattr(self.mw, 'newline_underline', False):
+                literal_newline_format.setFontUnderline(True)
+        else:
+            # Default styling
+            literal_newline_format.setForeground(QColor('#a020f0'))
+            literal_newline_format.setFontWeight(QFont.Bold)
+
+        # Create format for newline display symbol (e.g., ↵)
+        newline_symbol_format = QTextCharFormat()
+        if self.mw:
+            newline_color = getattr(self.mw, 'newline_color_rgba', '#ffa020f0')
+            try:
+                newline_symbol_format.setForeground(QColor(newline_color))
+            except Exception:
+                newline_symbol_format.setForeground(QColor('#a020f0'))
+
+            if getattr(self.mw, 'newline_bold', True):
+                newline_symbol_format.setFontWeight(QFont.Bold)
+            if getattr(self.mw, 'newline_italic', False):
+                newline_symbol_format.setFontItalic(True)
+            if getattr(self.mw, 'newline_underline', False):
+                newline_symbol_format.setFontUnderline(True)
+        else:
+            newline_symbol_format.setForeground(QColor('#a020f0'))
+            newline_symbol_format.setFontWeight(QFont.Bold)
+
+        # Add highlighting rules
+        # 1. Tags in square brackets
+        rules.append((r"(\[\s*[^\]]*?\s*\])", tag_format))
+
+        # 2. Literal newline sequences
+        rules.append((r"(\\n)", literal_newline_format))
+        rules.append((r"(\\r)", literal_newline_format))
+
+        # 3. Newline display symbol (if configured)
+        if self.mw and hasattr(self.mw, 'newline_display_symbol'):
+            newline_symbol = getattr(self.mw, 'newline_display_symbol', None)
+            if newline_symbol:
+                rules.append((r"(" + re.escape(newline_symbol) + r")", newline_symbol_format))
+
+        return rules
 
     def analyze_subline(
         self,
