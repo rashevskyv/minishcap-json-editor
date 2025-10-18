@@ -40,28 +40,19 @@ class GameRules(BaseGameRules):
                                                 self.problem_definitions_cache, ProblemIDs)
         self.text_fixer = TextFixer(main_window_ref, self.tag_manager, self.problem_analyzer)
 
-    def load_data_from_json_obj(self, file_content: Any) -> Tuple[list, dict]:
-        if not isinstance(file_content, str):
-            log_warning(f"Wind Waker Plugin: Expected file content as a string, but got {type(file_content)}")
-            return [], {}
+    def load_data_from_json_obj(self, json_obj: Any) -> Tuple[List[List[str]], Optional[Dict[str, str]]]:
+        blocks = []
+        block_names = {}
+        if isinstance(json_obj, str):
+            lines = json_obj.splitlines()
+            if lines:
+                blocks.append(lines)
+                block_names["0"] = "Block 0"
 
-        strings = re.split(r'\{END\}\r?\n', file_content)
-        
-        if strings and (not strings[-1] or strings[-1].isspace()):
-            strings.pop()
-            
-        processed_strings = [s.strip().replace('\r\n', '\n').replace('\r', '\n') for s in strings]
-        data_for_app = [processed_strings]
-        
-        block_name = "Block 0"
-        if self.mw and self.mw.json_path:
-            block_name = os.path.basename(self.mw.json_path)
-            
-        block_names = {"0": block_name}
-        
-        log_info(f"Wind Waker Plugin: Loaded {len(processed_strings)} strings from TXT file into block '{block_name}'.")
-        
-        return data_for_app, block_names
+        if not blocks:
+            blocks = [[]]
+            block_names = {"0": "Block 0"}
+        return blocks, block_names
 
     def save_data_to_json_obj(self, data: list, block_names: dict) -> Any:
         if not data or not isinstance(data[0], list):
@@ -70,11 +61,7 @@ class GameRules(BaseGameRules):
 
         strings_to_save = data[0]
         
-        content_parts = []
-        for s in strings_to_save:
-            content_parts.append(s + "\n{END}\n\n")
-        
-        content = "".join(content_parts)
+        content = "\n".join(strings_to_save)
             
         return content
 
@@ -154,4 +141,4 @@ class GameRules(BaseGameRules):
     def get_ctrl_enter_char(self) -> str: return '\n'
     
     def get_editor_page_size(self) -> int:
-        return 4
+        return 1

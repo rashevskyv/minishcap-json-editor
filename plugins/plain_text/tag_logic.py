@@ -1,4 +1,4 @@
-# --- START OF FILE plugins/zelda_ww/tag_logic.py ---
+# --- START OF FILE plugins/plain_text/tag_logic.py ---
 import re
 from typing import Tuple
 from utils.logging_utils import log_debug
@@ -59,4 +59,3 @@ def process_segment_tags_aggressively_zww(
     status, msg = _analyze_tags_for_issues_zww(segment_to_insert, original_text_for_tags)
 
     return segment_to_insert, status, msg
-

@@ -1,22 +1,6 @@
 {
-    "display_name": "Plain Text",
-    "default_tag_mappings": {
-        "{PLAYER}": "{PLAYER}",
-        "{RIVAL}": "{RIVAL}",
-        "{DPAD_UPDOWN}": "{DPAD_UPDOWN}",
-        "{A_BUTTON}": "{A_BUTTON}",
-        "{B_BUTTON}": "{B_BUTTON}",
-        "{DPAD_LEFTRIGHT}": "{DPAD_LEFTRIGHT}",
-        "{PLUS}": "{PLUS}",
-        "{START_BUTTON}": "{START_BUTTON}",
-        "{NO}": "{NO}",
-        "{LV_2}": "{LV_2}",
-        "{ID}": "{ID}",
-        "{PP}": "{PP}",
-        "{ESCAPE 0x03}": "{ESCAPE 0x03}",
-        "{ID}{NO}": "{ID}{NO}",
-        "{PKMN}": "{PKMN}"
-    },
+    "display_name": "Zelda: The Wind Waker",
+    "default_tag_mappings": {},
     "block_names": {
         "0": "0X777E3C87E77639C9"
     },
@@ -29,16 +13,16 @@
     "space_dot_color_hex": "#808080",
     "preview_wrap_lines": false,
     "editors_wrap_lines": false,
-    "game_dialog_max_width_pixels": 214,
-    "line_width_warning_threshold_pixels": 214,
-    "original_file_path": "C:\\Users\\Administrator\\Desktop\\pokemon\\Pokemon\\sources\\0x777e3c87e77639c9.txt",
-    "edited_file_path": "C:\\Users\\Administrator\\Desktop\\pokemon\\Pokemon\\translation\\0x777e3c87e77639c9.txt",
+    "game_dialog_max_width_pixels": 600,
+    "line_width_warning_threshold_pixels": 600,
+    "original_file_path": null,
+    "edited_file_path": null,
     "last_selected_block_index": 0,
-    "last_selected_string_index": 9,
-    "last_cursor_position_in_edited": 0,
+    "last_selected_string_index": 133,
+    "last_cursor_position_in_edited": 34,
     "last_edited_text_edit_scroll_value_v": 0,
     "last_edited_text_edit_scroll_value_h": 0,
-    "last_preview_text_edit_scroll_value_v": 0,
+    "last_preview_text_edit_scroll_value_v": 126,
     "last_original_text_edit_scroll_value_v": 0,
     "last_original_text_edit_scroll_value_h": 0,
     "search_history": [],
@@ -47,17 +31,34 @@
         "PKFR_SHORT_LINE": true,
         "PKFR_EMPTY_SUBLINE": true,
         "PKFR_SINGLE_WORD_SUBLINE": false,
-        "PKFR_TAG_WARNING": false
+        "PKFR_TAG_WARNING": false,
+        "PT_TAG_WARNING": false,
+        "PT_WIDTH_EXCEEDED": false,
+        "PT_EMPTY_FIRST_LINE_OF_PAGE": false,
+        "PT_SINGLE_WORD_SUBLINE": false,
+        "PT_SHORT_LINE": false,
+        "PT_EMPTY_ODD_SUBLINE_DISPLAY": false
     },
     "detection_enabled": {
         "PKFR_WIDTH_EXCEEDED": true,
         "PKFR_SHORT_LINE": true,
         "PKFR_EMPTY_SUBLINE": true,
-        "PKFR_SINGLE_WORD_SUBLINE": false,
-        "PKFR_TAG_WARNING": false
+        "PKFR_SINGLE_WORD_SUBLINE": true,
+        "PKFR_TAG_WARNING": true,
+        "PT_TAG_WARNING": false,
+        "PT_WIDTH_EXCEEDED": true,
+        "PT_EMPTY_FIRST_LINE_OF_PAGE": true,
+        "PT_SINGLE_WORD_SUBLINE": true,
+        "PT_SHORT_LINE": true,
+        "PT_EMPTY_ODD_SUBLINE_DISPLAY": true
     },
+    "lines_per_page": 4,
     "default_font_file": "",
-    "string_metadata": {},
+    "string_metadata": {
+        "(0, 416)": {
+            "font_file": "CKingMsg.json"
+        }
+    },
     "tag_color_rgba": "#ffff8c00",
     "tag_bold": true,
     "tag_italic": false,
@@ -67,28 +68,28 @@
     "newline_italic": false,
     "newline_underline": false,
     "translation_config": {
-        "provider": "disabled",
+        "provider": "gemini",
         "session_mode": "auto",
         "providers": {
             "openai_chat": {
-                "api_key": "",
-                "api_key_env": "OPENAI_API_KEY",
+                "api_key": "${OPENAI_API_KEY}",
+                "api_key_env": "",
                 "base_url": "",
-                "model": "gpt-4o",
+                "model": "gpt-4o-mini",
                 "temperature": 0.0,
                 "max_output_tokens": 0,
                 "timeout": 120,
                 "extra_headers": {}
             },
             "openai_responses": {
-                "api_key": "",
+                "api_key": "${OPENAI_API_KEY}",
                 "api_key_env": "OPENAI_API_KEY",
                 "base_url": "",
-                "model": "gpt-5",
+                "model": "gpt-5-mini",
                 "reasoning_effort": "low",
                 "text_verbosity": "low",
                 "timeout": 120,
-                "use_chat_key": false
+                "use_chat_key": true
             },
             "ollama_chat": {
                 "base_url": "http://localhost:11434",
@@ -101,7 +102,7 @@
             "chatmock": {
                 "base_url": "",
                 "model": "gpt-5-mini",
-                "api_key": "",
+                "api_key": "${OPENAI_API_KEY}",
                 "temperature": 0.0,
                 "timeout": 120,
                 "reasoning_effort": "medium",
@@ -117,12 +118,12 @@
                 "timeout": 60
             },
             "gemini": {
-                "api_key": "",
+                "api_key": "AIzaSyAtCo4BHLQj9FUqE3BXDidusRpC3u6H8rA",
                 "api_key_env": "GEMINI_API_KEY",
-                "model": "gemini-1.5-flash-latest",
+                "model": "gemini-2.5-pro",
                 "temperature": 0.0,
                 "timeout": 120,
-                "base_url": ""
+                "base_url": "http://127.0.0.1:2048/"
             },
             "perplexity": {
                 "api_key": "",

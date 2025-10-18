@@ -14,7 +14,6 @@ from .config import (
     PROBLEM_DEFINITIONS,
     PROBLEM_WIDTH_EXCEEDED,
     PROBLEM_SHORT_LINE,
-    PROBLEM_EMPTY_ODD_SUBLINE_LOGICAL,
     PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY,
     PROBLEM_TAG_WARNING,
     PROBLEM_SINGLE_WORD_SUBLINE
@@ -25,13 +24,12 @@ from .text_fixer import TextFixer
 from .tag_logic import process_segment_tags_aggressively_zmc
 from .tag_checker_handler import TagCheckerHandler
 
-class ProblemIDs: 
+class ProblemIDs:
     PROBLEM_WIDTH_EXCEEDED = PROBLEM_WIDTH_EXCEEDED
     PROBLEM_SHORT_LINE = PROBLEM_SHORT_LINE
-    PROBLEM_EMPTY_ODD_SUBLINE_LOGICAL = PROBLEM_EMPTY_ODD_SUBLINE_LOGICAL
     PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY = PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY
     PROBLEM_TAG_WARNING = PROBLEM_TAG_WARNING
-    PROBLEM_SINGLE_WORD_SUBLINE = "ZMC_SINGLE_WORD_SUBLINE"
+    PROBLEM_SINGLE_WORD_SUBLINE = PROBLEM_SINGLE_WORD_SUBLINE
 
 class GameRules(BaseGameRules):
 
@@ -81,9 +79,9 @@ class GameRules(BaseGameRules):
     def get_short_problem_name(self, problem_id: str) -> str:
         if problem_id == PROBLEM_WIDTH_EXCEEDED: return "Width"
         if problem_id == PROBLEM_SHORT_LINE: return "Short"
-        if problem_id == PROBLEM_EMPTY_ODD_SUBLINE_LOGICAL: return "EmptyOddL"
-        if problem_id == PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY: return "EmptyOddD"
+        if problem_id == PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY: return "EmptyPage"
         if problem_id == PROBLEM_SINGLE_WORD_SUBLINE: return "1Word"
+        if problem_id == PROBLEM_TAG_WARNING: return "Tag"
         return super().get_short_problem_name(problem_id)
 
     def get_plugin_actions(self) -> List[Dict[str, Any]]:
