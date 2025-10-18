@@ -1,3 +1,4 @@
+# --- START OF FILE plugins/plain_textrules.py ---
 """
 Plain Text plugin for text translation workbench.
 
@@ -63,31 +64,7 @@ class GameRules(BaseGameRules):
             if lines:
                 blocks.append(lines)
                 block_names["0"] = "Block 0"
-        elif isinstance(json_obj, list):
-            strings = [str(item) for item in json_obj if item]
-            if strings:
-                blocks.append(strings)
-                block_names["0"] = "Block 0"
-        elif isinstance(json_obj, dict):
-            if 'blocks' in json_obj:
-                for i, block_data in enumerate(json_obj['blocks']):
-                    if isinstance(block_data, list):
-                        strings = [str(s) for s in block_data if s]
-                        if strings:
-                            blocks.append(strings)
-                            block_names[str(i)] = json_obj.get('block_names', {}).get(str(i), f"Block {i}")
-            elif 'strings' in json_obj:
-                strings = [str(s) for s in json_obj['strings'] if s]
-                if strings:
-                    blocks.append(strings)
-                    block_names["0"] = "Block 0"
-            else:
-                for key, value in json_obj.items():
-                    if isinstance(value, list):
-                        strings = [str(s) for s in value if s]
-                        if strings:
-                            blocks.append(strings)
-                            block_names[str(len(blocks)-1)] = key
+
         if not blocks:
             blocks = [[]]
             block_names = {"0": "Block 0"}
@@ -154,15 +131,26 @@ class GameRules(BaseGameRules):
         full_data_string_text_for_logical_check: Optional[str] = None,
         is_target_for_debug: bool = False
     ) -> set:
-        
-        text_for_analysis = self.get_text_representation_for_editor(full_data_string_text_for_logical_check)
-        
-        all_problems = self.problem_analyzer.analyze_data_string(text_for_analysis, editor_font_map, editor_line_width_threshold)
+
+        all_problems = self.problem_analyzer.analyze_data_string(
+            full_data_string_text_for_logical_check,
+            editor_font_map,
+            editor_line_width_threshold
+        )
 
         if subline_number_in_data_string < len(all_problems):
+            # Add line-specific problems that are not part of the full string analysis
+            line_specific_problems = self.problem_analyzer.analyze_subline(
+                text, next_text, subline_number_in_data_string, qtextblock_number_in_editor, is_last_subline_in_data_string,
+                editor_font_map, editor_line_width_threshold, full_data_string_text_for_logical_check, is_target_for_debug
+            )
+            all_problems[subline_number_in_data_string].update(line_specific_problems)
             return all_problems[subline_number_in_data_string]
 
-        return set()
+        return self.problem_analyzer.analyze_subline(
+            text, next_text, subline_number_in_data_string, qtextblock_number_in_data_string, is_last_subline_in_data_string,
+            editor_font_map, editor_line_width_threshold, full_data_string_text_for_logical_check, is_target_for_debug
+        )
 
     def autofix_data_string(
         self,
