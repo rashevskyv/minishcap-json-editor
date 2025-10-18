@@ -1,7 +1,7 @@
 {
     "font_size": 13,
     "active_game_plugin": "plain_text",
-    "window_was_maximized": true,
+    "window_was_maximized": false,
     "window_normal_geometry": {
         "x": 165,
         "y": 75,
@@ -26,7 +26,7 @@
         "model": "gemini-2.5-pro",
         "chunk_size": 8000
     },
-    "restore_unsaved_on_startup": false,
+    "restore_unsaved_on_startup": true,
     "glossary_dialog_state": {
         "geometry": {
             "x": -150,
@@ -42,6 +42,7 @@
     "spellchecker_language": "uk",
     "recent_projects": [
         "C:\\Users\\Administrator\\Desktop\\pokemon\\Pokemon\\project.uiproj",
-        "D:\\git\\WW\\WindWaker\\project.uiproj"
+        "D:\\git\\WW\\WindWaker\\project.uiproj",
+        "C:\\Users\\Administrator\\Desktop\\13\\project.uiproj"
     ]
 }
