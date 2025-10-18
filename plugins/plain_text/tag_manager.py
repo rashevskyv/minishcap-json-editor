@@ -1,5 +1,6 @@
+# --- START OF FILE plugins/plain_text/tag_manager.py ---
 import re
-from typing import Set, List, Tuple
+from typing import Optional, Set, List, Tuple
 from PyQt5.QtGui import QTextCharFormat, QColor, QFont
 from utils.logging_utils import log_debug
 
@@ -16,7 +17,7 @@ class TagManager:
         self.reconfigure_styles()
 
     def reconfigure_styles(self):
-        # Use Tag Style from settings
+        # Use new Tag Style from settings
         tag_color = getattr(self.mw, 'tag_color_rgba', "#FF8C00") if self.mw else "#FF8C00"
         self.tag_format.setForeground(QColor(tag_color))
         self.tag_format.setFontWeight(QFont.Bold if getattr(self.mw, 'tag_bold', True) else QFont.Normal)
@@ -52,12 +53,9 @@ class TagManager:
         return rules
         
     def get_legitimate_tags(self) -> Set[str]:
-        # For plain-text, we don't have a predefined list. 
-        # is_tag_legitimate will handle validation.
         return set()
 
     def is_tag_legitimate(self, tag_to_check: str) -> bool:
-        # For a generic plain-text plugin, we assume any tag in square brackets is legitimate.
         if re.fullmatch(r"\[[^\]]+\]", tag_to_check):
             return True
         return False

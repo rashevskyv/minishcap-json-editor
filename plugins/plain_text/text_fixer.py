@@ -1,12 +1,13 @@
-from typing import Tuple
+# --- START OF FILE plugins/plain_text/text_fixer.py ---
+from typing import Optional, Set, Dict, Any, Tuple
 import re
 
-from utils.utils import calculate_string_width
-from .problem_analyzer import ANY_TAG_PATTERN_PT, remove_all_tags_pt
+from utils.logging_utils import log_debug
+from .problem_analyzer import ANY_TAG_PATTERN_WW, remove_all_tags_ww
 
-WORD_CHAR_PATTERN_PT = re.compile(r"^[a-zA-Zа-яА-ЯіїєґІЇЄҐ]$")
-CLOSING_COLOR_TAG_PT = "[/C]" # Example, may not be used in plain-text
-PUNCTUATION_PATTERN_PT = re.compile(r"^[,.!?]$")
+WORD_CHAR_PATTERN_ZWW = re.compile(r"^[a-zA-Zа-яА-ЯіїєґІЇЄҐ]$")
+CLOSING_COLOR_TAG_WW = "[/C]"
+PUNCTUATION_PATTERN_ZWW = re.compile(r"^[,\.!?]$")
 
 class TextFixer:
     def __init__(self, main_window_ref, tag_manager_ref, problem_analyzer_ref):
@@ -14,7 +15,7 @@ class TextFixer:
         self.tag_manager = tag_manager_ref 
         self.problem_analyzer = problem_analyzer_ref
 
-    def _fix_empty_odd_sublines_pt(self, text: str) -> Tuple[str, bool]:
+    def _fix_empty_odd_sublines_zww(self, text: str) -> Tuple[str, bool]:
         sub_lines = text.split('\n')
         if len(sub_lines) <= 1:
             return text, False
@@ -22,10 +23,10 @@ class TextFixer:
         made_change = False
         for i, sub_line in enumerate(sub_lines):
             is_odd_subline = (i + 1) % 2 != 0
-            if ANY_TAG_PATTERN_PT.search(sub_line):
+            if ANY_TAG_PATTERN_WW.search(sub_line):
                 new_sub_lines.append(sub_line)
                 continue
-            text_no_tags = remove_all_tags_pt(sub_line)
+            text_no_tags = remove_all_tags_ww(sub_line)
             stripped_text_no_tags = text_no_tags.strip()
             is_empty_or_zero = not stripped_text_no_tags or stripped_text_no_tags == "0"
             if is_odd_subline and is_empty_or_zero:
@@ -44,7 +45,7 @@ class TextFixer:
         joined_text = "\n".join(final_text_list)
         return joined_text, joined_text != text
 
-    def _extract_first_word_with_tags_pt(self, text: str) -> tuple[str, str]:
+    def _extract_first_word_with_tags_zww(self, text: str) -> tuple[str, str]:
         if not text.strip(): return "", text
         first_word_text = ""
         char_idx = 0
@@ -54,7 +55,7 @@ class TextFixer:
                 if first_word_text: break
                 else: first_word_text += char; char_idx += 1; continue
             is_tag_char = False
-            for tag_match in ANY_TAG_PATTERN_PT.finditer(text[char_idx:]):
+            for tag_match in ANY_TAG_PATTERN_WW.finditer(text[char_idx:]):
                 if tag_match.start() == 0:
                     tag_content = tag_match.group(0)
                     first_word_text += tag_content
@@ -67,7 +68,7 @@ class TextFixer:
         remaining_text = text[len(first_word_text):].lstrip()
         return first_word_text.rstrip(), remaining_text
 
-    def _fix_short_lines_pt(self, text: str, font_map: dict, threshold: int) -> Tuple[str, bool]:
+    def _fix_short_lines_zww(self, text: str, font_map: dict, threshold: int) -> Tuple[str, bool]:
         sub_lines = text.split('\n')
         if len(sub_lines) <= 1: return text, False
         original_text = text
@@ -80,8 +81,8 @@ class TextFixer:
                 current_line = new_sub_lines[i]
                 next_line = new_sub_lines[i+1]
                 
-                if self.problem_analyzer._check_short_line_pt(current_line, next_line, font_map, threshold):
-                    first_word_next_raw, rest_of_next_line_raw = self._extract_first_word_with_tags_pt(next_line)
+                if self.problem_analyzer._check_short_line_zww(current_line, next_line, font_map, threshold):
+                    first_word_next_raw, rest_of_next_line_raw = self._extract_first_word_with_tags_zww(next_line)
                     current_line_rstripped = current_line.rstrip()
                     merged_line = current_line_rstripped
                     if current_line_rstripped and first_word_next_raw:
@@ -91,7 +92,7 @@ class TextFixer:
                             first_char_next = first_word_next_raw[0]
                             is_current_ends_tag = last_char_current == ']'
                             is_next_starts_tag = first_char_next == '['
-                            is_next_starts_word_char = WORD_CHAR_PATTERN_PT.match(first_char_next) is not None
+                            is_next_starts_word_char = WORD_CHAR_PATTERN_ZWW.match(first_char_next) is not None
                             if is_current_ends_tag and is_next_starts_word_char: needs_space = True
                             elif not is_current_ends_tag and not is_next_starts_tag: needs_space = True
                             elif not is_current_ends_tag and is_next_starts_tag: needs_space = True
@@ -109,7 +110,7 @@ class TextFixer:
         final_text = "\n".join(sub_lines)
         return final_text, final_text != original_text
 
-    def _fix_width_exceeded_pt(self, text: str, font_map: dict, threshold: int) -> Tuple[str, bool]:
+    def _fix_width_exceeded_zww(self, text: str, font_map: dict, threshold: int) -> Tuple[str, bool]:
         original_text = text
         sub_lines = text.split('\n')
         
@@ -150,9 +151,9 @@ class TextFixer:
         final_text = "\n".join(final_lines)
         return final_text, True
 
-    def _cleanup_spaces_around_tags_pt(self, text: str) -> Tuple[str, bool]:
+    def _cleanup_spaces_around_tags_zww(self, text: str) -> Tuple[str, bool]:
         original_text = text
-        pattern = re.compile(f"(?P<tag>{ANY_TAG_PATTERN_PT.pattern})(?P<space> )(?P<after_space>.)?")
+        pattern = re.compile(f"(?P<tag>{ANY_TAG_PATTERN_WW.pattern})(?P<space> )(?P<after_space>.)?")
         current_pos = 0
         result_parts = []
         last_processed_end = 0
@@ -168,11 +169,11 @@ class TextFixer:
             char_after_space_content = match.group("after_space") if match.group("after_space") is not None else ""
             result_parts.append(tag_content)
             
-            is_closing_tag = tag_content.lower() == CLOSING_COLOR_TAG_PT.lower()
+            is_closing_tag = tag_content.lower() == CLOSING_COLOR_TAG_WW.lower()
             
             should_remove_space = False
             if is_closing_tag:
-                if char_after_space_content and PUNCTUATION_PATTERN_PT.match(char_after_space_content):
+                if char_after_space_content and PUNCTUATION_PATTERN_ZWW.match(char_after_space_content):
                     should_remove_space = True
             else: 
                 should_remove_space = True
@@ -208,19 +209,19 @@ class TextFixer:
         
         text_after_page_fix, page_fix_changed = self.fix_empty_first_line_of_page(original_text)
         
-        modified_text, changed = self._fix_empty_odd_sublines_pt(text_after_page_fix)
+        modified_text, changed = self._fix_empty_odd_sublines_zww(text_after_page_fix)
         
         max_iterations = 10
         for _ in range(max_iterations):
             text_before_pass = modified_text
             
-            merged_text, changed_merge = self._fix_short_lines_pt(modified_text, editor_font_map, editor_line_width_threshold)
-            splitted_text, changed_split = self._fix_width_exceeded_pt(merged_text, editor_font_map, editor_line_width_threshold)
+            merged_text, changed_merge = self._fix_short_lines_zww(modified_text, editor_font_map, editor_line_width_threshold)
+            splitted_text, changed_split = self._fix_width_exceeded_zww(merged_text, editor_font_map, editor_line_width_threshold)
             
             modified_text = splitted_text
             if not changed_merge and not changed_split:
                 break
         
-        cleaned_text, _ = self._cleanup_spaces_around_tags_pt(modified_text)
+        cleaned_text, _ = self._cleanup_spaces_around_tags_zww(modified_text)
         
         return cleaned_text, cleaned_text != original_text

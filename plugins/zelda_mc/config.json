@@ -75,7 +75,6 @@
         "PKFR_TAG_WARNING": false,
         "ZMC_TAG_WARNING": false,
         "ZMC_WIDTH_EXCEEDED": false,
-        "ZMC_EMPTY_ODD_SUBLINE_LOGICAL": false,
         "ZMC_EMPTY_ODD_SUBLINE_DISPLAY": false,
         "ZMC_SINGLE_WORD_SUBLINE": false,
         "ZMC_SHORT_LINE": false
@@ -88,11 +87,11 @@
         "PKFR_TAG_WARNING": true,
         "ZMC_TAG_WARNING": false,
         "ZMC_WIDTH_EXCEEDED": true,
-        "ZMC_EMPTY_ODD_SUBLINE_LOGICAL": true,
         "ZMC_EMPTY_ODD_SUBLINE_DISPLAY": true,
         "ZMC_SINGLE_WORD_SUBLINE": false,
         "ZMC_SHORT_LINE": true
     },
+    "lines_per_page": 4,
     "string_metadata": {},
     "default_font_file": ""
 }

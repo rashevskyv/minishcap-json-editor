@@ -307,6 +307,10 @@ class SettingsDialog(QDialog):
         self.width_warning_spinbox.spin_box.valueChanged.connect(self.on_rules_changed)
         layout.addRow(self.width_warning_spinbox)
 
+        self.lines_per_page_spinbox = LabeledSpinBox("Lines Per Page:", 1, 20, 4, parent=self)
+        self.lines_per_page_spinbox.spin_box.valueChanged.connect(self.on_rules_changed)
+        layout.addRow(self.lines_per_page_spinbox)
+
     def _setup_paths_subtab(self, tab):
         layout = QFormLayout(tab)
         self.original_path_edit = QLineEdit(self)
@@ -319,7 +323,7 @@ class SettingsDialog(QDialog):
     def _populate_checkbox_subtab(self, tab, checkbox_dict, title):
         layout = QFormLayout(tab)
         layout.addRow(QLabel(title))
-        
+
         if not self.mw.current_game_rules:
             return
 
@@ -334,11 +338,36 @@ class SettingsDialog(QDialog):
 
         for problem_id in sorted_problem_ids:
             definition = problem_definitions[problem_id]
+
+            # Create a widget with color indicator and checkbox
+            row_widget = QWidget(self)
+            row_layout = QHBoxLayout(row_widget)
+            row_layout.setContentsMargins(0, 0, 0, 0)
+            row_layout.setSpacing(8)
+
+            # Color indicator
+            color_label = QLabel(self)
+            color_label.setFixedSize(20, 20)
+            problem_color = definition.get("color", QColor(200, 200, 200, 100))
+            if isinstance(problem_color, QColor):
+                # Use rgba() format to preserve alpha channel
+                r, g, b, a = problem_color.red(), problem_color.green(), problem_color.blue(), problem_color.alpha()
+                color_label.setStyleSheet(f"background-color: rgba({r}, {g}, {b}, {a}); border: 1px solid #888;")
+                color_label.setToolTip(f"Problem color: rgba({r}, {g}, {b}, {a})")
+            else:
+                color_label.setStyleSheet(f"background-color: {problem_color}; border: 1px solid #888;")
+                color_label.setToolTip(f"Problem color: {problem_color}")
+            row_layout.addWidget(color_label)
+
+            # Checkbox
             checkbox = QCheckBox(definition.get("name", problem_id), self)
             checkbox.setToolTip(definition.get("description", "No description available."))
             checkbox_dict[problem_id] = checkbox
             checkbox.stateChanged.connect(self.on_rules_changed)
-            layout.addRow(checkbox)
+            row_layout.addWidget(checkbox)
+            row_layout.addStretch(1)
+
+            layout.addRow(row_widget)
 
     def _setup_detection_subtab(self, tab):
         self._populate_checkbox_subtab(tab, self.detection_checkboxes, "Enable/disable problem detection:")
@@ -661,6 +690,7 @@ class SettingsDialog(QDialog):
         self.tag_bold_chk.setChecked(getattr(self.mw, 'tag_bold', True)); self.tag_italic_chk.setChecked(getattr(self.mw, 'tag_italic', False)); self.tag_underline_chk.setChecked(getattr(self.mw, 'tag_underline', False))
         
         self.game_dialog_width_spinbox.setValue(self.mw.game_dialog_max_width_pixels); self.width_warning_spinbox.setValue(self.mw.line_width_warning_threshold_pixels)
+        self.lines_per_page_spinbox.setValue(getattr(self.mw, 'lines_per_page', 4))
 
         current_font_file = getattr(self.mw, 'default_font_file', ""); font_index = self.font_file_combo.findData(current_font_file)
         if font_index != -1: self.font_file_combo.setCurrentIndex(font_index)
@@ -834,6 +864,7 @@ class SettingsDialog(QDialog):
             'tag_color_rgba': self.tag_color_picker.color().name(QColor.HexArgb) if hasattr(QColor, 'HexArgb') else self.tag_color_picker.color().name(),
             'tag_bold': self.tag_bold_chk.isChecked(), 'tag_italic': self.tag_italic_chk.isChecked(), 'tag_underline': self.tag_underline_chk.isChecked(),
             'game_dialog_max_width_pixels': self.game_dialog_width_spinbox.value(), 'line_width_warning_threshold_pixels': self.width_warning_spinbox.value(),
+            'lines_per_page': self.lines_per_page_spinbox.value(),
             'autofix_enabled': autofix_settings, 'translation_config': translation_config_to_save, 'detection_enabled': detection_settings,
             'glossary_ai': glossary_ai_settings,
             'spellchecker_enabled': self.spellcheck_enabled_checkbox.isChecked(),

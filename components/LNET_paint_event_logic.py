@@ -30,10 +30,24 @@ class LNETPaintEventLogic:
                 temp_block = temp_block.next()
 
             main_window = self.editor.window()
-            page_size = 2
-            if isinstance(main_window, QMainWindow) and hasattr(main_window, 'current_game_rules') and main_window.current_game_rules:
-                if hasattr(main_window.current_game_rules, 'get_editor_page_size'):
-                    page_size = main_window.current_game_rules.get_editor_page_size()
+            page_size = 4  # Default
+            if isinstance(main_window, QMainWindow):
+                # Always use lines_per_page from settings if available
+                page_size = getattr(main_window, 'lines_per_page', None)
+                if page_size is None:
+                    # Fall back to game rules method only if lines_per_page is not set
+                    if hasattr(main_window, 'current_game_rules') and main_window.current_game_rules:
+                        if hasattr(main_window.current_game_rules, 'get_editor_page_size'):
+                            page_size = main_window.current_game_rules.get_editor_page_size()
+                        else:
+                            page_size = 4
+                    else:
+                        page_size = 4
+                # Debug: print once per paint to see what value is used
+                if not hasattr(self.editor, '_last_logged_page_size') or self.editor._last_logged_page_size != page_size:
+                    from utils.logging_utils import log_debug
+                    log_debug(f"LNET: Using page_size={page_size} for horizontal lines")
+                    self.editor._last_logged_page_size = page_size
 
             while block.isValid() and block.layout():
                 layout = block.layout()
