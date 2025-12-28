@@ -1,3 +1,4 @@
+# --- START OF FILE PROJECT_MANAGER_README.md ---
 # ProjectManager Implementation
 
 ## Огляд

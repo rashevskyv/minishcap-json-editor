@@ -1,3 +1,4 @@
+# --- START OF FILE components/dictionary_manager_dialog.py ---
 # /home/runner/work/RAG_project/RAG_project/components/dictionary_manager_dialog.py
 import requests
 import os

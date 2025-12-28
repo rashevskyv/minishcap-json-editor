@@ -1,3 +1,4 @@
+# --- START OF FILE components/ai_status_dialog.py ---
 # components/ai_status_dialog.py ---
 import os
 from typing import Optional

@@ -1,3 +1,4 @@
+# --- START OF FILE plugins/plain_text/rules.py ---
 # --- START OF FILE plugins/plain_textrules.py ---
 """
 Plain Text plugin for text translation workbench.

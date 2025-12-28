@@ -86,8 +86,8 @@ def log_error(message: str, exc_info=False):
     logger.error(message, exc_info=exc_info)
 
 if __name__ == '__main__':
-    log_debug("This is a test debug message from logging_utils.py.")
-    log_info("This is a test info message from logging_utils.py.")
+    log_debug("This is a test debug message from utils.logging_utils.py.")
+    log_info("This is a test info message from utils.logging_utils.py.")
     try:
         1 / 0
     except ZeroDivisionError:

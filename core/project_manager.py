@@ -1,3 +1,4 @@
+# --- START OF FILE core/project_manager.py ---
 # core/project_manager.py
 """
 Project management system for the translation workbench.

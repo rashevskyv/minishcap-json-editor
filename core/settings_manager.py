@@ -1,3 +1,4 @@
+# --- START OF FILE core/settings_manager.py ---
 # /home/runner/work/RAG_project/RAG_project/core/settings_manager.py
 import json
 import os

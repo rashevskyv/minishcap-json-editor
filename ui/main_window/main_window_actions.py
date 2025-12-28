@@ -1,3 +1,4 @@
+# --- START OF FILE main_window_actions.py ---
 # /home/runner/work/RAG_project/RAG_project/handlers/main_window_actions.py
 from __future__ import annotations
 from typing import TYPE_CHECKING

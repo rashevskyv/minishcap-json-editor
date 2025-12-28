@@ -7,8 +7,8 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QSize
 import os
 from PyQt5.QtGui import QIcon, QFont, QFontMetrics, QKeySequence 
-from components.LineNumberedTextEdit import LineNumberedTextEdit
-from components.CustomListWidget import CustomListWidget
+from components.line_numbered_text_edit import LineNumberedTextEdit
+from components.custom_list_widget import CustomListWidget
 
 def setup_main_window_ui(main_window):
     central_widget = QWidget(); main_window.setCentralWidget(central_widget)

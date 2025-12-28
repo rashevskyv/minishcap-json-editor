@@ -5,7 +5,7 @@ from PyQt5.QtGui import QTextCursor, QTextBlockFormat, QColor, QTextBlock
 from .base_handler import BaseHandler
 from utils.logging_utils import log_debug
 from utils.utils import calculate_string_width, remove_all_tags, ALL_TAGS_PATTERN
-from components.LNET_paint_handlers import LNETPaintHandlers
+from components.lnet_paint_handlers import LNETPaintHandlers
 
 class ListSelectionHandler(BaseHandler):
     def __init__(self, main_window, data_processor, ui_updater):

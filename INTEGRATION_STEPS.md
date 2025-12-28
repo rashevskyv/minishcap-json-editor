@@ -1,3 +1,4 @@
+# --- START OF FILE INTEGRATION_STEPS.md ---
 # Integration Steps для Project System
 
 ## 🎯 Мета

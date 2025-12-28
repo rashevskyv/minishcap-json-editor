@@ -8,8 +8,8 @@ from ui.themes import DARK_THEME_STYLESHEET, LIGHT_THEME_STYLESHEET
 from utils.constants import DT_PREVIEW_SELECTED_LINE_COLOR, LT_PREVIEW_SELECTED_LINE_COLOR
 from typing import List
 from utils.logging_utils import log_info
-from components.CustomListWidget import CustomListWidget
-from components.CustomListItemDelegate import CustomListItemDelegate
+from components.custom_list_widget import CustomListWidget
+from components.custom_list_item_delegate import CustomListItemDelegate
 
 if TYPE_CHECKING:
     from main import MainWindow

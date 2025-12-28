@@ -1,3 +1,4 @@
+# --- START OF FILE ui/settings_dialog.py ---
 # /home/runner/work/RAG_project/RAG_project/ui/settings_dialog.py
 import os
 import json

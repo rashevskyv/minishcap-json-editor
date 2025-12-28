@@ -1,3 +1,4 @@
+# --- START OF FILE components/project_dialogs.py ---
 # components/project_dialogs.py
 """
 Dialog windows for project management:

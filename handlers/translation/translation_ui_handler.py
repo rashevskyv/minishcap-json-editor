@@ -1,3 +1,4 @@
+# --- START OF FILE handlers/translation/translation_ui_handler.py ---
 # handlers/translation/translation_ui_handler.py ---
 import json
 import re

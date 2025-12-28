@@ -1,3 +1,4 @@
+# --- START OF FILE handlers/translation/glossary_handler.py ---
 # handlers/translation/glossary_handler.py ---
 import json
 from pathlib import Path

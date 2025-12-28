@@ -1,3 +1,4 @@
+# --- START OF FILE dialogs/spellcheck_dialog.py ---
 # Dialog for interactive spellchecking of selected text
 from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
                              QPushButton, QTextEdit, QListWidget, QSplitter,
@@ -7,7 +8,7 @@ from PyQt5.QtGui import QTextCursor, QTextCharFormat, QColor, QFont, QTextBlockF
 from typing import List, Tuple
 import re
 from utils.logging_utils import log_debug, log_error
-from components.LineNumberedTextEdit import LineNumberedTextEdit
+from components.line_numbered_text_edit import LineNumberedTextEdit
 
 
 class SpellcheckDialog(QDialog):

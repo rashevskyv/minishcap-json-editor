@@ -1,3 +1,4 @@
+# --- START OF FILE components/prompt_editor_dialog.py ---
 ﻿"""Reusable prompt editor dialog for AI requests."""
 from __future__ import annotations
 

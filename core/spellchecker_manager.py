@@ -1,3 +1,4 @@
+# --- START OF FILE core/spellchecker_manager.py ---
 # /home/runner/work/RAG_project/RAG_project/core/spellchecker_manager.py
 import os
 import re

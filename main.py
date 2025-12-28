@@ -1,3 +1,4 @@
+# --- START OF FILE main.py ---
 # /home/runner/work/RAG_project/RAG_project/main.py
 import sys
 import os
@@ -18,8 +19,8 @@ from ui.ui_setup import setup_main_window_ui
 from ui.ui_event_filters import MainWindowEventFilter, TextEditEventFilter
 from ui.ui_updater import UIUpdater
 from ui.updaters.string_settings_updater import StringSettingsUpdater
-from components.LineNumberedTextEdit import LineNumberedTextEdit
-from components.CustomListWidget import CustomListWidget
+from components.line_numbered_text_edit import LineNumberedTextEdit
+from components.custom_list_widget import CustomListWidget
 from components.search_panel import SearchPanelWidget
 from ui.themes import DARK_THEME_STYLESHEET, LIGHT_THEME_STYLESHEET
 
@@ -52,14 +53,14 @@ from utils.constants import (
 from utils.utils import ALL_TAGS_PATTERN
 
 from ui.settings_dialog import SettingsDialog
-from components.CustomListItemDelegate import CustomListItemDelegate
+from components.custom_list_item_delegate import CustomListItemDelegate
 
-from main_window_helper import MainWindowHelper
-from main_window_actions import MainWindowActions
-from main_window_ui_handler import MainWindowUIHandler
-from main_window_plugin_handler import MainWindowPluginHandler
-from main_window_event_handler import MainWindowEventHandler
-from main_window_block_handler import MainWindowBlockHandler
+from ui.main_window.main_window_helper import MainWindowHelper
+from ui.main_window.main_window_actions import MainWindowActions
+from ui.main_window.main_window_ui_handler import MainWindowUIHandler
+from ui.main_window.main_window_plugin_handler import MainWindowPluginHandler
+from ui.main_window.main_window_event_handler import MainWindowEventHandler
+from ui.main_window.main_window_block_handler import MainWindowBlockHandler
 
 
 class MainWindow(QMainWindow):

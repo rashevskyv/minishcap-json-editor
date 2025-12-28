@@ -118,7 +118,7 @@
                 "timeout": 60
             },
             "gemini": {
-                "api_key": "${GEMINI_API_KEY}",
+                "api_key": "AIzaSyAtCo4BHLQj9FUqE3BXDidusRpC3u6H8rA",
                 "api_key_env": "GEMINI_API_KEY",
                 "model": "gemini-2.5-pro",
                 "temperature": 0.0,

@@ -1,3 +1,4 @@
+# --- START OF FILE fix_ui_setup.py ---
 #!/usr/bin/env python3
 """
 Script to fix ui/ui_setup.py and add project menu items.

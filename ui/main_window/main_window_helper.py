@@ -1,3 +1,4 @@
+# --- START OF FILE main_window_helper.py ---
 # --- START OF FILE handlers/main_window_helper.py ---
 from __future__ import annotations
 from typing import TYPE_CHECKING

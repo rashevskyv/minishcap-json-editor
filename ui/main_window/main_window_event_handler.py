@@ -1,3 +1,4 @@
+# --- START OF FILE main_window_event_handler.py ---
 # --- START OF FILE handlers/main_window_event_handler.py ---
 from __future__ import annotations
 from typing import TYPE_CHECKING
