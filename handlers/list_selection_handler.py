@@ -5,7 +5,7 @@ from PyQt5.QtGui import QTextCursor, QTextBlockFormat, QColor, QTextBlock
 from .base_handler import BaseHandler
 from utils.logging_utils import log_debug
 from utils.utils import calculate_string_width, remove_all_tags, ALL_TAGS_PATTERN
-from components.lnet_paint_handlers import LNETPaintHandlers
+from components.editor.paint_handlers import LNETPaintHandlers
 
 class ListSelectionHandler(BaseHandler):
     def __init__(self, main_window, data_processor, ui_updater):
@@ -175,7 +175,6 @@ class ListSelectionHandler(BaseHandler):
             self.ui_updater.populate_blocks()
             self.mw.settings_manager.save_block_names()
 
-
     def _data_string_has_any_problem(self, block_idx: int, string_idx: int) -> bool:
         if not self.mw.current_game_rules:
             return False
@@ -183,42 +182,19 @@ class ListSelectionHandler(BaseHandler):
         data_string_text, _ = self.data_processor.get_current_string_text(block_idx, string_idx)
         if data_string_text is None:
             return False
-
-        # Ensure data_string_text is a string
-        data_string_text = str(data_string_text)
-
+            
+        num_sublines = str(data_string_text).count('\n') + 1
+        
         detection_config = getattr(self.mw, 'detection_enabled', {})
-        analyzer = self.mw.current_game_rules.problem_analyzer
-        found_problems = set()
-
-        font_map_for_string = self.mw.helper.get_font_map_for_string(block_idx, string_idx)
-
-        if hasattr(analyzer, 'analyze_data_string'):
-            problems_per_subline = analyzer.analyze_data_string(
-                data_string_text, font_map_for_string, self.mw.line_width_warning_threshold_pixels
-            )
-            for problem_set in problems_per_subline:
-                found_problems.update(problem_set)
-        else:
-            sublines = str(data_string_text).split('\n')
-            for i, subline in enumerate(sublines):
-                next_subline = sublines[i+1] if i + 1 < len(sublines) else None
-                problems = analyzer.analyze_subline(
-                    text=subline,
-                    next_text=next_subline,
-                    subline_number_in_data_string=i,
-                    qtextblock_number_in_editor=i,
-                    is_last_subline_in_data_string=(i == len(sublines) - 1),
-                    editor_font_map=font_map_for_string,
-                    editor_line_width_threshold=self.mw.line_width_warning_threshold_pixels,
-                    full_data_string_text_for_logical_check=data_string_text
-                )
-                found_problems.update(problems)
         
-        filtered_problems = {p_id for p_id in found_problems if detection_config.get(p_id, True)}
-        has_problems = bool(filtered_problems)
-        
-        return has_problems
+        for i in range(num_sublines):
+            key = (block_idx, string_idx, i)
+            if key in self.mw.problems_per_subline:
+                problems = self.mw.problems_per_subline[key]
+                if any(detection_config.get(p_id, True) for p_id in problems):
+                    return True
+                    
+        return False
 
     def navigate_to_problem_string(self, direction_down: bool):
         if self.mw.current_block_idx == -1 or not self.mw.data or \

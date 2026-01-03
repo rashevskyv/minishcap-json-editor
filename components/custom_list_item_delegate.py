@@ -1,3 +1,4 @@
+# --- START OF FILE components/custom_list_item_delegate.py ---
 # --- START OF FILE components/CustomListItemDelegate.py ---
 from PyQt5.QtWidgets import QStyledItemDelegate, QStyle, QStyleOptionViewItem
 from PyQt5.QtGui import QPainter, QColor, QPalette, QBrush, QPen, QFontMetrics, QFont

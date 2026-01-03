@@ -1,3 +1,4 @@
+# --- START OF FILE tests/test_project_manager.py ---
 # --- START OF FILE test_project_manager.py ---
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
@@ -18,10 +19,12 @@ if sys.platform == 'win32':
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
 
-# Add parent directory to path to import project modules
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add project root to path to import project modules
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
 
-from core.project_manager import ProjectManager, Project, Block, Category
+from core.project_manager import ProjectManager
+from core.project_models import Project, Block, Category
 
 
 def test_basic_project_creation():

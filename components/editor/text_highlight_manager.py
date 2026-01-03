@@ -1,3 +1,4 @@
+# --- START OF FILE components/text_highlight_manager.py ---
 # --- START OF FILE components/TextHighlightManager.py ---
 from PyQt5.QtWidgets import QTextEdit
 from PyQt5.QtGui import QColor, QTextBlockFormat, QTextFormat, QTextCursor, QTextBlock, QTextCharFormat
@@ -182,12 +183,23 @@ class TextHighlightManager:
             self.applyHighlights()
 
     def addProblemLineHighlight(self, line_number: int):
-        # Цей метод більше нічого не робить
-        pass
+        self.addCriticalProblemHighlight(line_number)
 
     def addCriticalProblemHighlight(self, line_number: int):
-        # Цей метод більше нічого не робить
-        pass
+        doc = self.editor.document()
+        needs_update = False
+        if 0 <= line_number < doc.blockCount():
+            block = doc.findBlockByNumber(line_number)
+            if block.isValid():
+                is_already_added = any(s.cursor.blockNumber() == line_number for s in self._critical_problem_selections)
+                if not is_already_added:
+                    color = getattr(self.editor, 'critical_problem_line_color', QColor(255, 255, 0, 80))
+                    selection = self._create_block_background_selection(block, color, use_full_width=True)
+                    if selection:
+                        self._critical_problem_selections.append(selection)
+                        needs_update = True
+        if needs_update:
+            self.applyHighlights()
 
     def removeCriticalProblemHighlight(self, line_number: int) -> bool:
         removed = False; initial_len = len(self._critical_problem_selections)
@@ -214,7 +226,8 @@ class TextHighlightManager:
             if block.isValid():
                 is_already_added = any(s.cursor.blockNumber() == line_number for s in self._warning_problem_selections)
                 if not is_already_added:
-                    selection = self._create_block_background_selection(block, self.editor.warning_problem_line_color, use_full_width=False) 
+                    color = getattr(self.editor, 'warning_problem_line_color', QColor(221, 221, 221, 150))
+                    selection = self._create_block_background_selection(block, color, use_full_width=False) 
                     if selection: 
                         self._warning_problem_selections.append(selection)
                         needs_update = True

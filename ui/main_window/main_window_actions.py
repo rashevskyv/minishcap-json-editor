@@ -1,3 +1,4 @@
+# --- START OF FILE ui/main_window/main_window_actions.py ---
 # --- START OF FILE main_window_actions.py ---
 # /home/runner/work/RAG_project/RAG_project/handlers/main_window_actions.py
 from __future__ import annotations
@@ -67,8 +68,7 @@ class MainWindowActions:
             restore_session_before = self.mw.restore_unsaved_on_startup
 
             for key, value in new_settings.items():
-                if hasattr(self.mw, key):
-                     setattr(self.mw, key, value)
+                setattr(self.mw, key, value)
             
             restore_session_after = self.mw.restore_unsaved_on_startup
             

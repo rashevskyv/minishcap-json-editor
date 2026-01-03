@@ -1,5 +1,4 @@
 # --- START OF FILE core/settings_manager.py ---
-# /home/runner/work/RAG_project/RAG_project/core/settings_manager.py
 import json
 import os
 import base64
@@ -26,6 +25,7 @@ class SettingsManager:
     def __init__(self, main_window):
         self.mw = main_window
         self.settings_file_path = "settings.json"
+        self._settings = {}
 
     def _substitute_env_vars(self, data):
         """
@@ -49,6 +49,22 @@ class SettingsManager:
             return re.sub(pattern, replace_env_var, data)
         else:
             return data
+
+    def get(self, key, default=None):
+        """Get a setting value from the centralized storage."""
+        return self._settings.get(key, default)
+
+    def set(self, key, value):
+        """Set a setting value in the centralized storage."""
+        self._settings[key] = value
+        # Update MainWindow attribute only if it's a plain attribute, not a property
+        # to avoid recursion.
+        if hasattr(self.mw, key):
+            # Check if it's a property on the class
+            cls = type(self.mw)
+            attr = getattr(cls, key, None)
+            if not isinstance(attr, property):
+                setattr(self.mw, key, value)
 
     def _get_plugin_config_path(self):
         plugin_name = getattr(self.mw, 'active_game_plugin', None)
@@ -106,7 +122,12 @@ class SettingsManager:
             }
         }
         for key, value in defaults.items():
-            setattr(self.mw, key, value)
+            self._settings[key] = value
+            # Compatibility: only set if not property
+            cls = type(self.mw)
+            attr = getattr(cls, key, None)
+            if not isinstance(attr, property):
+                setattr(self.mw, key, value)
         
         self.mw.current_font_size = defaults['font_size']
 
@@ -124,9 +145,19 @@ class SettingsManager:
                     merged_value = default_value.copy()
                     if isinstance(loaded_value, dict):
                         merged_value.update(loaded_value)
-                    setattr(self.mw, key, merged_value)
+                    self._settings[key] = merged_value
+                    # Compatibility: only set if not property
+                    cls = type(self.mw)
+                    attr = getattr(cls, key, None)
+                    if not isinstance(attr, property):
+                        setattr(self.mw, key, merged_value)
                 else:
-                    setattr(self.mw, key, loaded_value)
+                    self._settings[key] = loaded_value
+                    # Compatibility: only set if not property
+                    cls = type(self.mw)
+                    attr = getattr(cls, key, None)
+                    if not isinstance(attr, property):
+                        setattr(self.mw, key, loaded_value)
 
             self.mw.current_font_size = settings_data.get('font_size', default_font_size)
             self.mw.window_geometry_to_restore = settings_data.get("window_normal_geometry")
@@ -140,7 +171,7 @@ class SettingsManager:
         defaults = {
             "display_name": "Unknown Plugin", "default_tag_mappings": {}, "block_names": {}, "block_color_markers": {},
             "string_metadata": {}, "default_font_file": "",
-            "newline_display_symbol": "в†µ", "newline_css": "color: #A020F0; font-weight: bold;",
+            "newline_display_symbol": "↵", "newline_css": "color: #A020F0; font-weight: bold;",
             "tag_css": "color: #808080; font-style: italic;",
             "bracket_tag_color_hex": "#FF8C00",
             "preview_wrap_lines": True, "editors_wrap_lines": False,
@@ -158,8 +189,14 @@ class SettingsManager:
             "detection_enabled": DEFAULT_DETECTION_SETTINGS.copy()
         }
         for key, value in defaults.items():
+             self._settings[key] = value
              if key not in ["block_names", "block_color_markers", "default_tag_mappings", "string_metadata"]:
-                setattr(self.mw, key, value)
+                # Compatibility: only set if not property
+                cls = type(self.mw)
+                attr = getattr(cls, key, None)
+                if not isinstance(attr, property):
+                    setattr(self.mw, key, value)
+        
         # Ensure new style fields exist
         if not hasattr(self.mw, 'tag_color_rgba'): self.mw.tag_color_rgba = "#FF8C00"
         if not hasattr(self.mw, 'tag_bold'): self.mw.tag_bold = True
@@ -202,8 +239,13 @@ class SettingsManager:
             for key, value in plugin_data.items():
                 if key in ["block_names", "block_color_markers", "default_tag_mappings", "string_metadata"]:
                     continue
+                self._settings[key] = value
                 if hasattr(self.mw, key):
-                     setattr(self.mw, key, value)
+                     # Compatibility: only set if not property
+                     cls = type(self.mw)
+                     attr = getattr(cls, key, None)
+                     if not isinstance(attr, property):
+                         setattr(self.mw, key, value)
 
             # Migrate legacy CSS-based settings to new style fields if needed
             if not hasattr(self.mw, 'tag_color_rgba') or not getattr(self.mw, 'tag_color_rgba', None):
@@ -428,7 +470,7 @@ class SettingsManager:
             log_warning(f"Error loading unsaved session data: {e}")
 
     def _parse_new_font_format(self, font_data):
-        """РџР°СЂСЃРёС‚СЊ РЅРѕРІРёР№ С„РѕСЂРјР°С‚ С„Р°Р№Р»Сѓ С€СЂРёС„С‚Сѓ С– РїРѕРІРµСЂС‚Р°С” font_map."""
+        """Парсить новий формат файлу шрифту і повертає font_map."""
         font_map = {}
         if not isinstance(font_data, dict) or "glyphs" not in font_data:
             log_debug("New font format error: 'glyphs' key not found or data is not a dict.")
@@ -546,10 +588,6 @@ class SettingsManager:
         self._update_icon_sequences_cache()
         self._refresh_icon_highlighting()
         log_debug(f"Applied {len(overrides)} font override entries.")
-
-
-
-
 
     def _refresh_icon_highlighting(self) -> None:
         editors = []

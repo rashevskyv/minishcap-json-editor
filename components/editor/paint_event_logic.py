@@ -1,10 +1,10 @@
-# --- START OF FILE components/LNET_paint_event_logic.py ---
+# --- START OF FILE components/editor/paint_event_logic.py ---
 import re
 from PyQt5.QtGui import QPainter, QColor, QPen, QPaintEvent, QTextLine
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QMainWindow
 from utils.utils import calculate_string_width, remove_all_tags, convert_dots_to_spaces_from_editor
-from .LNET_constants import PAIR_SEPARATOR_LINE_COLOR, PAIR_SEPARATOR_LINE_STYLE, PAIR_SEPARATOR_LINE_THICKNESS
+from .constants import PAIR_SEPARATOR_LINE_COLOR, PAIR_SEPARATOR_LINE_STYLE, PAIR_SEPARATOR_LINE_THICKNESS
 
 class LNETPaintEventLogic:
     def __init__(self, editor, helpers):
@@ -46,7 +46,7 @@ class LNETPaintEventLogic:
                 # Debug: print once per paint to see what value is used
                 if not hasattr(self.editor, '_last_logged_page_size') or self.editor._last_logged_page_size != page_size:
                     from utils.logging_utils import log_debug
-                    log_debug(f"LNET: Using page_size={page_size} for horizontal lines")
+                    log_debug(f"Using page_size={page_size} for horizontal lines")
                     self.editor._last_logged_page_size = page_size
 
             while block.isValid() and block.layout():

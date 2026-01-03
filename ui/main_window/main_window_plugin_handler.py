@@ -1,3 +1,4 @@
+# --- START OF FILE ui/main_window/main_window_plugin_handler.py ---
 # --- START OF FILE main_window_plugin_handler.py ---
 from __future__ import annotations
 from typing import TYPE_CHECKING

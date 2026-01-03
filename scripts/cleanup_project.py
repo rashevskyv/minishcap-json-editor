@@ -1,3 +1,4 @@
+# --- START OF FILE scripts/cleanup_project.py ---
 import os
 import shutil
 import subprocess
@@ -140,17 +141,17 @@ def main():
     # 3. Rename Components to snake_case
     # Map: Current Path -> New Path
     renames = {
-        "components/CustomListWidget.py": "components/custom_list_widget.py",
+        "components/custom_list_widget.py": "components/custom_list_widget.py",
         "components/CustomListItemDelegate.py": "components/custom_list_item_delegate.py",
         "components/LineNumberedTextEdit.py": "components/line_numbered_text_edit.py",
-        "components/LineNumberArea.py": "components/line_number_area.py",
+        "components/line_number_area.py": "components/line_number_area.py",
         "components/TextHighlightManager.py": "components/text_highlight_manager.py",
-        "components/LNET_constants.py": "components/lnet_constants.py",
+        "components/editor_constants.py": "components/editor_constants.py",
         "components/LNET_highlight_interface.py": "components/lnet_highlight_interface.py",
         "components/LNET_line_number_area_paint_logic.py": "components/lnet_line_number_area_paint_logic.py",
-        "components/LNET_mouse_handlers.py": "components/lnet_mouse_handlers.py",
+        "components/editor_mouse_handlers.py": "components/editor_mouse_handlers.py",
         "components/LNET_paint_event_logic.py": "components/lnet_paint_event_logic.py",
-        "components/LNET_paint_handlers.py": "components/lnet_paint_handlers.py",
+        "components/editor_paint_handlers.py": "components/editor_paint_handlers.py",
         "components/LNET_paint_helpers.py": "components/lnet_paint_helpers.py",
     }
     move_files(renames)
@@ -174,18 +175,18 @@ def main():
     # This dictionary maps "OldString" -> "NewString" for import statements
     import_replacements = {
         # Components renames
-        "components.CustomListWidget": "components.custom_list_widget",
-        "components.CustomListItemDelegate": "components.custom_list_item_delegate",
-        "components.LineNumberedTextEdit": "components.line_numbered_text_edit",
-        "components.LineNumberArea": "components.line_number_area",
-        "components.TextHighlightManager": "components.text_highlight_manager",
-        "components.LNET_constants": "components.lnet_constants",
-        "components.LNET_highlight_interface": "components.lnet_highlight_interface",
-        "components.LNET_line_number_area_paint_logic": "components.lnet_line_number_area_paint_logic",
-        "components.LNET_mouse_handlers": "components.lnet_mouse_handlers",
-        "components.LNET_paint_event_logic": "components.lnet_paint_event_logic",
-        "components.LNET_paint_handlers": "components.lnet_paint_handlers",
-        "components.LNET_paint_helpers": "components.lnet_paint_helpers",
+        "components.custom_list_widget": "components.custom_list_widget",
+        "components.custom_list_item_delegate": "components.custom_list_item_delegate",
+        "components.editor.line_numbered_text_edit": "components.line_numbered_text_edit",
+        "components.line_number_area": "components.line_number_area",
+        "components.editor.text_highlight_manager": "components.text_highlight_manager",
+        "components.editor_constants": "components.editor_constants",
+        "components.editor.highlight_interface": "components.lnet_highlight_interface",
+        "components.editor.line_number_area_paint_logic": "components.lnet_line_number_area_paint_logic",
+        "components.editor_mouse_handlers": "components.editor_mouse_handlers",
+        "components.editor.paint_event_logic": "components.lnet_paint_event_logic",
+        "components.editor_paint_handlers": "components.editor_paint_handlers",
+        "components.editor.paint_helpers": "components.lnet_paint_helpers",
         
         # Main Window moves
         "main_window_actions": "ui.main_window.main_window_actions",

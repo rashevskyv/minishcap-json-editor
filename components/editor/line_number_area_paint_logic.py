@@ -1,4 +1,4 @@
-# --- START OF FILE components/LNET_line_number_area_paint_logic.py ---
+# --- START OF FILE components/editor/line_number_area_paint_logic.py ---
 from PyQt5.QtGui import QPainter, QColor
 from PyQt5.QtCore import Qt, QRect
 from PyQt5.QtWidgets import QMainWindow, QTextEdit
@@ -134,7 +134,7 @@ class LNETLineNumberAreaPaintLogic:
 
                 filtered_problems = {p_id for p_id in problem_ids_for_this_qtextblock if detection_config.get(p_id, True)}
                 
-                if self.editor.objectName() == "edited_text_edit" and filtered_problems:
+                if is_editor and filtered_problems:
                     sorted_subline_problem_ids = sorted(
                         list(filtered_problems),
                         key=lambda pid: problem_definitions.get(pid, {}).get("priority", 99)

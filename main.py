@@ -1,5 +1,4 @@
 # --- START OF FILE main.py ---
-# /home/runner/work/RAG_project/RAG_project/main.py
 import sys
 import os
 import json
@@ -19,7 +18,7 @@ from ui.ui_setup import setup_main_window_ui
 from ui.ui_event_filters import MainWindowEventFilter, TextEditEventFilter
 from ui.ui_updater import UIUpdater
 from ui.updaters.string_settings_updater import StringSettingsUpdater
-from components.line_numbered_text_edit import LineNumberedTextEdit
+from components.editor.line_numbered_text_edit import LineNumberedTextEdit
 from components.custom_list_widget import CustomListWidget
 from components.search_panel import SearchPanelWidget
 from ui.themes import DARK_THEME_STYLESHEET, LIGHT_THEME_STYLESHEET
@@ -70,18 +69,10 @@ class MainWindow(QMainWindow):
 
         self.EDITOR_PLAYER_TAG = EDITOR_PLAYER_TAG
         self.ORIGINAL_PLAYER_TAG = ORIGINAL_PLAYER_TAG
-        self.game_dialog_max_width_pixels = DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS
-        self.line_width_warning_threshold_pixels = DEFAULT_LINE_WIDTH_WARNING_THRESHOLD
-        self.font_map = {}
-        self.all_font_maps = {}
-
-        self.current_font_size = DEFAULT_APP_FONT_SIZE
+        
         self.general_font_family = GENERAL_APP_FONT_FAMILY
         self.editor_font_family = MONOSPACE_EDITOR_FONT_FAMILY
-        self.active_game_plugin = "zelda_mc"
         self.display_name = ""
-        self.theme = "auto"
-        self.restore_unsaved_on_startup = False
 
         self.is_adjusting_cursor = False
         self.is_adjusting_selection = False
@@ -158,9 +149,18 @@ class MainWindow(QMainWindow):
         self.window_normal_geometry_on_close: QRect = None
 
         self.newline_display_symbol = "↵"
+        self.newline_color_rgba = "#A020F0"
+        self.newline_bold = True
+        self.newline_italic = False
+        self.newline_underline = False
+        
+        self.tag_color_rgba = "#FF8C00"
+        self.tag_bold = True
+        self.tag_italic = False
+        self.tag_underline = False
+
         self.newline_css = "color: #A020F0; font-weight: bold;"
         self.tag_css = "color: rgba(128, 128, 128, 128); font-style: italic;"
-        self.show_multiple_spaces_as_dots = True
         self.space_dot_color_hex = "#BBBBBB"
         self.preview_wrap_lines = True
         self.editors_wrap_lines = False
@@ -213,6 +213,8 @@ class MainWindow(QMainWindow):
         self.tag_checker_handler = None 
         self.plugin_actions = {}
 
+        self.font_map = {}
+        self.all_font_maps = {}
 
         self.settings_manager = SettingsManager(self)
         self.settings_manager.load_settings()
@@ -377,6 +379,41 @@ class MainWindow(QMainWindow):
     def hide_search_panel(self):
         self.helper.hide_search_panel()
 
+    # --- Settings Properties ---
+    @property
+    def current_font_size(self): return self.settings_manager.get('font_size', DEFAULT_APP_FONT_SIZE)
+    @current_font_size.setter
+    def current_font_size(self, val): self.settings_manager.set('font_size', val)
+
+    @property
+    def active_game_plugin(self): return self.settings_manager.get('active_game_plugin', "zelda_mc")
+    @active_game_plugin.setter
+    def active_game_plugin(self, val): self.settings_manager.set('active_game_plugin', val)
+
+    @property
+    def show_multiple_spaces_as_dots(self): return self.settings_manager.get('show_multiple_spaces_as_dots', True)
+    @show_multiple_spaces_as_dots.setter
+    def show_multiple_spaces_as_dots(self, val): self.settings_manager.set('show_multiple_spaces_as_dots', val)
+
+    @property
+    def theme(self): return self.settings_manager.get('theme', "auto")
+    @theme.setter
+    def theme(self, val): self.settings_manager.set('theme', val)
+
+    @property
+    def restore_unsaved_on_startup(self): return self.settings_manager.get('restore_unsaved_on_startup', False)
+    @restore_unsaved_on_startup.setter
+    def restore_unsaved_on_startup(self, val): self.settings_manager.set('restore_unsaved_on_startup', val)
+
+    @property
+    def game_dialog_max_width_pixels(self): return self.settings_manager.get('game_dialog_max_width_pixels', DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS)
+    @game_dialog_max_width_pixels.setter
+    def game_dialog_max_width_pixels(self, val): self.settings_manager.set('game_dialog_max_width_pixels', val)
+
+    @property
+    def line_width_warning_threshold_pixels(self): return self.settings_manager.get('line_width_warning_threshold_pixels', DEFAULT_LINE_WIDTH_WARNING_THRESHOLD)
+    @line_width_warning_threshold_pixels.setter
+    def line_width_warning_threshold_pixels(self, val): self.settings_manager.set('line_width_warning_threshold_pixels', val)
 
     def load_all_data_for_path(self, original_file_path, manually_set_edited_path=None, is_initial_load_from_settings=False):
         self.helper.load_all_data_for_path(original_file_path, manually_set_edited_path, is_initial_load_from_settings)

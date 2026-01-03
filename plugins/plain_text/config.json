@@ -72,7 +72,7 @@
         "session_mode": "auto",
         "providers": {
             "openai_chat": {
-                "api_key": "${OPENAI_API_KEY}",
+                "api_key": "sk-OqDxEf2eWkYLcDpbkz67mqYFrTP9CmGIMml5g9Jys2jZiBDL",
                 "api_key_env": "",
                 "base_url": "",
                 "model": "gpt-4o-mini",
@@ -82,7 +82,7 @@
                 "extra_headers": {}
             },
             "openai_responses": {
-                "api_key": "${OPENAI_API_KEY}",
+                "api_key": "sk-OqDxEf2eWkYLcDpbkz67mqYFrTP9CmGIMml5g9Jys2jZiBDL",
                 "api_key_env": "OPENAI_API_KEY",
                 "base_url": "",
                 "model": "gpt-5-mini",
@@ -102,7 +102,7 @@
             "chatmock": {
                 "base_url": "",
                 "model": "gpt-5-mini",
-                "api_key": "${OPENAI_API_KEY}",
+                "api_key": "sk-OqDxEf2eWkYLcDpbkz67mqYFrTP9CmGIMml5g9Jys2jZiBDL",
                 "temperature": 0.0,
                 "timeout": 120,
                 "reasoning_effort": "medium",

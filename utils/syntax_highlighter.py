@@ -1,5 +1,3 @@
-# --- START OF FILE utils/syntax_highlighter.py ---
-
 import sys
 import re
 from typing import Dict, Iterable, List, Optional, Tuple
@@ -130,8 +128,15 @@ class JsonTagHighlighter(QSyntaxHighlighter):
             if len(parts) != 2: continue
             key, value = parts[0].strip().lower(), parts[1].strip().lower()
             try:
-                if key == 'color': char_format.setForeground(QColor(value))
-                elif key == 'background-color': char_format.setBackground(QColor(value))
+                if key == 'color' or key == 'background-color':
+                    color = QColor(value)
+                    if not color.isValid() and value.startswith('#') and len(value) == 9:
+                        # Fallback for #AARRGGBB
+                        color = QColor('#' + value[3:])
+                    
+                    if color.isValid():
+                        if key == 'color': char_format.setForeground(color)
+                        else: char_format.setBackground(color)
                 elif key == 'font-weight':
                     if value == 'bold': char_format.setFontWeight(QFont.Bold)
                     elif value == 'normal': char_format.setFontWeight(QFont.Normal)
@@ -140,7 +145,6 @@ class JsonTagHighlighter(QSyntaxHighlighter):
                     if value == 'italic': char_format.setFontItalic(True)
                     elif value == 'normal': char_format.setFontItalic(False)
                 elif key == 'text-decoration':
-                    # basic underline support
                     if 'underline' in value: char_format.setFontUnderline(True)
                     else: char_format.setFontUnderline(False)
             except Exception as e: log_debug(f"  Error applying CSS property '{prop}': {e}")
@@ -173,12 +177,8 @@ class JsonTagHighlighter(QSyntaxHighlighter):
                 self.custom_rules = plugin_rules
 
         self._apply_css_to_format(self.curly_tag_format, tag_css_str)
-        try:
-            self.bracket_tag_format.setForeground(QColor(bracket_tag_color_hex))
-            self.bracket_tag_format.setFontWeight(QFont.Bold)
-        except Exception as e:
-            self.bracket_tag_format.setForeground(QColor(255, 140, 0))
-            self.bracket_tag_format.setFontWeight(QFont.Bold)
+        self._apply_css_to_format(self.bracket_tag_format, tag_css_str)
+        
         self._apply_css_to_format(self.newline_symbol_format, newline_css_str)
         self._apply_css_to_format(self.literal_newline_format, "color: red; font-weight: bold;")
         
@@ -480,6 +480,8 @@ class JsonTagHighlighter(QSyntaxHighlighter):
                 rules_to_apply = [rule for rule in self.custom_rules if r"(\[\s*[^\]]*?\s*\])" not in rule[0]]
 
         all_rules = rules_to_apply + [
+            (r"(\{[^}]*\})", self.curly_tag_format),
+            (r"(\[[^\]]*\])", self.bracket_tag_format),
             (r"(\\n)", self.literal_newline_format),
             (re.escape(self.newline_char), self.newline_symbol_format),
             (re.escape(SPACE_DOT_SYMBOL), self.space_dot_format),

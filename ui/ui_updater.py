@@ -116,74 +116,11 @@ class UIUpdater:
         
         if item.text() != display_name_with_issues:
             item.setText(display_name_with_issues)
-        
-        self.mw.block_list_widget.viewport().update()
 
-    def _apply_highlights_for_block(self, block_idx: int):
-        preview_edit = getattr(self.mw, 'preview_text_edit', None)
-        if not preview_edit or not hasattr(preview_edit, 'highlightManager') or not self.mw.current_game_rules:
-            return
-
-        preview_edit.highlightManager.clearAllProblemHighlights()
-        
-        if not (0 <= block_idx < len(self.mw.data)):
-            return
-
-        for data_str_idx in range(len(self.mw.data[block_idx])):
-            if self.mw.list_selection_handler._data_string_has_any_problem(block_idx, data_str_idx):
-                preview_edit.highlightManager.addProblemLineHighlight(data_str_idx)
-
-    def populate_strings_for_block(self, block_idx):
-        preview_edit = getattr(self.mw, 'preview_text_edit', None)
-        original_edit = getattr(self.mw, 'original_text_edit', None)
-        edited_edit = getattr(self.mw, 'edited_text_edit', None)
-        
-        old_preview_scrollbar_value = preview_edit.verticalScrollBar().value() if preview_edit else 0
-        
-        self.mw.is_programmatically_changing_text = True 
-        
-        if preview_edit: preview_edit.highlightManager.clearAllProblemHighlights()
-        if original_edit: original_edit.highlightManager.clearAllProblemHighlights()
-        if edited_edit: edited_edit.highlightManager.clearAllProblemHighlights()
-
-        if block_idx < 0 or not self.mw.data or block_idx >= len(self.mw.data) or not isinstance(self.mw.data[block_idx], list):
-            if preview_edit: preview_edit.setPlainText("")
-            if original_edit: original_edit.setPlainText("")
-            if edited_edit: edited_edit.setPlainText("")
-            self.update_text_views(); self.synchronize_original_cursor() 
-            if preview_edit: preview_edit.verticalScrollBar().setValue(old_preview_scrollbar_value)
-            self.mw.is_programmatically_changing_text = False 
-            return
-        
-        self._apply_highlights_for_block(block_idx)
-        
-        if preview_edit and self.mw.current_game_rules:
-            preview_lines = []
-            for i in range(len(self.mw.data[block_idx])):
-                text_for_preview_raw, _ = self.data_processor.get_current_string_text(block_idx, i)
-                preview_line_text = self.mw.current_game_rules.get_text_representation_for_preview(str(text_for_preview_raw))
-                preview_lines.append(preview_line_text)
-
-            preview_full_text = "\n".join(preview_lines)
-            
-            if preview_edit.toPlainText() != preview_full_text:
-                preview_edit.setPlainText(preview_full_text)
-
-            if self.mw.current_string_idx != -1 and \
-            hasattr(preview_edit, 'highlightManager') and \
-            0 <= self.mw.current_string_idx < preview_edit.document().blockCount(): 
-                preview_edit.highlightManager.setPreviewSelectedLineHighlight([self.mw.current_string_idx])
-
-            preview_edit.verticalScrollBar().setValue(old_preview_scrollbar_value)
-        
-        self.update_text_views() 
-        self.synchronize_original_cursor() 
-        self.mw.is_programmatically_changing_text = False
-        
     def update_status_bar(self):
         if not hasattr(self.mw, 'edited_text_edit') or not self.mw.edited_text_edit or \
            not all(hasattr(self.mw, label_name) for label_name in ['status_label_part1', 'status_label_part2', 'status_label_part3']):
-            return 
+            return
         
         editor = self.mw.edited_text_edit
         cursor = editor.textCursor()
@@ -327,6 +264,101 @@ class UIUpdater:
             self.mw.edited_path_label.setText(f"Changes: {edited_filename}")
             self.mw.edited_path_label.setToolTip(self.mw.edited_json_path if self.mw.edited_json_path else "Path to changes file")
 
+    def _apply_highlights_for_block(self, block_idx: int):
+        preview_edit = getattr(self.mw, 'preview_text_edit', None)
+        if not preview_edit or not hasattr(preview_edit, 'highlightManager') or not self.mw.current_game_rules:
+            return
+
+        preview_edit.highlightManager.clearAllProblemHighlights()
+        
+        if not (0 <= block_idx < len(self.mw.data)):
+            return
+
+        for data_str_idx in range(len(self.mw.data[block_idx])):
+            if self.mw.list_selection_handler._data_string_has_any_problem(block_idx, data_str_idx):
+                preview_edit.addProblemLineHighlight(data_str_idx)
+
+    def _apply_highlights_to_editor(self, editor, block_idx: int, string_idx: int):
+        if not editor or not hasattr(editor, 'highlightManager'):
+            return
+        
+        editor.highlightManager.clearAllProblemHighlights()
+        
+        if block_idx < 0 or string_idx < 0:
+            return
+
+        doc = editor.document()
+        for i in range(doc.blockCount()):
+            problem_key = (block_idx, string_idx, i)
+            if problem_key in self.mw.problems_per_subline:
+                problems = self.mw.problems_per_subline[problem_key]
+                if problems:
+                    # Determine if critical or warning
+                    is_critical = False
+                    for p_id in problems:
+                        def_ = self.mw.current_game_rules.get_problem_definitions().get(p_id, {})
+                        if def_.get("severity") == "error":
+                            is_critical = True
+                            break
+                    
+                    if is_critical:
+                        editor.highlightManager.addCriticalProblemHighlight(i)
+                    else:
+                        editor.highlightManager.addWarningLineHighlight(i)
+                        
+            # Also check for specific highlights that have their own methods in HighlightManager
+            if problem_key in self.mw.problems_per_subline:
+                 problems = self.mw.problems_per_subline[problem_key]
+                 if self.mw.current_game_rules.problem_ids.PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY in problems:
+                     editor.highlightManager.addEmptyOddSublineHighlight(i)
+
+    def populate_strings_for_block(self, block_idx):
+        preview_edit = getattr(self.mw, 'preview_text_edit', None)
+        original_edit = getattr(self.mw, 'original_text_edit', None)
+        edited_edit = getattr(self.mw, 'edited_text_edit', None)
+
+        old_preview_scrollbar_value = preview_edit.verticalScrollBar().value() if preview_edit else 0
+
+        self.mw.is_programmatically_changing_text = True 
+        
+        if preview_edit: preview_edit.highlightManager.clearAllProblemHighlights()
+        if original_edit: original_edit.highlightManager.clearAllProblemHighlights()
+        if edited_edit: edited_edit.highlightManager.clearAllProblemHighlights()
+
+        if block_idx < 0 or not self.mw.data or block_idx >= len(self.mw.data) or not isinstance(self.mw.data[block_idx], list):
+            if preview_edit: preview_edit.setPlainText("")
+            if original_edit: original_edit.setPlainText("")
+            if edited_edit: edited_edit.setPlainText("")
+            self.update_text_views(); self.synchronize_original_cursor() 
+            if preview_edit: preview_edit.verticalScrollBar().setValue(old_preview_scrollbar_value)
+            self.mw.is_programmatically_changing_text = False 
+            return
+        
+        self._apply_highlights_for_block(block_idx)
+        
+        if preview_edit and self.mw.current_game_rules:
+            preview_lines = []
+            for i in range(len(self.mw.data[block_idx])):
+                text_for_preview_raw, _ = self.data_processor.get_current_string_text(block_idx, i)
+                preview_line_text = self.mw.current_game_rules.get_text_representation_for_preview(str(text_for_preview_raw))
+                preview_lines.append(preview_line_text)
+
+            preview_full_text = "\n".join(preview_lines)
+            
+            if preview_edit.toPlainText() != preview_full_text:
+                preview_edit.setPlainText(preview_full_text)
+
+            if self.mw.current_string_idx != -1 and \
+               hasattr(preview_edit, 'highlightManager') and \
+               0 <= self.mw.current_string_idx < preview_edit.document().blockCount(): 
+                preview_edit.highlightManager.setPreviewSelectedLineHighlight([self.mw.current_string_idx])
+
+            preview_edit.verticalScrollBar().setValue(old_preview_scrollbar_value)
+        
+        self.update_text_views() 
+        self.synchronize_original_cursor() 
+        self.mw.is_programmatically_changing_text = False
+
             
     def update_text_views(self): 
         is_programmatic_call_flag_original = self.mw.is_programmatically_changing_text
@@ -384,10 +416,9 @@ class UIUpdater:
             
         self.mw.is_programmatically_changing_text = is_programmatic_call_flag_original
 
-        if self.mw.edited_text_edit: 
-            if self.mw.edited_text_edit.textCursor().hasSelection():
-                self.update_status_bar_selection()
-            else:
-                self.update_status_bar()
+        # Apply highlights to editors
+        if self.mw.current_block_idx != -1 and self.mw.current_string_idx != -1:
+             self._apply_highlights_to_editor(self.mw.edited_text_edit, self.mw.current_block_idx, self.mw.current_string_idx)
+             self._apply_highlights_to_editor(self.mw.original_text_edit, self.mw.current_block_idx, self.mw.current_string_idx)
         else: 
             self.clear_status_bar()

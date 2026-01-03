@@ -1,4 +1,4 @@
-# --- START OF FILE components/LNET_mouse_handlers.py ---
+# --- START OF FILE components/editor/mouse_handlers.py ---
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QInputDialog, QDialog, QVBoxLayout, QComboBox, QDialogButtonBox, QLabel, QSpinBox
 from PyQt5.QtGui import QTextCursor, QMouseEvent
 from PyQt5.QtCore import Qt, QPoint
@@ -83,14 +83,14 @@ class LNETMouseHandlers:
         return None, -1, -1
 
     def showContextMenu(self, pos: QPoint): # pos - це координати кліку відносно віджета self.editor
-        log_debug(f"LNETMouseHandlers: showContextMenu for editor: {self.editor.objectName()} at pos {pos}")
+        log_debug(f"showContextMenu for editor: {self.editor.objectName()} at pos {pos}")
         menu = self.editor.createStandardContextMenu()
         
         # Викликаємо метод самого редактора для заповнення меню
         if hasattr(self.editor, 'populateContextMenu'):
             self.editor.populateContextMenu(menu, pos) # Передаємо pos
         else:
-            log_debug(f"LNETMouseHandlers: Editor {self.editor.objectName()} has no populateContextMenu method.")
+            log_debug(f"Editor {self.editor.objectName()} has no populateContextMenu method.")
 
         main_window = self.editor.window()
         if isinstance(main_window, QMainWindow):
@@ -119,7 +119,7 @@ class LNETMouseHandlers:
                 else:
                     discuss_action.setEnabled(False)
 
-        log_debug(f"LNETMouseHandlers: Executing menu for {self.editor.objectName()}.")
+        log_debug(f"Executing menu for {self.editor.objectName()}.")
         menu.exec_(self.editor.mapToGlobal(pos))
 
 
@@ -151,7 +151,7 @@ class LNETMouseHandlers:
                     finder = getattr(self.editor, '_find_glossary_entry_at', None)
                     glossary_entry = finder(event.pos()) if callable(finder) else None
                     if glossary_entry and translator and hasattr(translator, 'edit_glossary_entry'):
-                        log_debug(f'LNETMouseHandlers: Ctrl+Click edit glossary for "{glossary_entry.original}".')
+                        log_debug(f'Ctrl+Click edit glossary for "{glossary_entry.original}".')
                         translator.edit_glossary_entry(glossary_entry.original)
                         event.accept(); return
                 tag_text_curly, tag_start, tag_end = self.get_tag_at_cursor(text_cursor_at_click, r"\{[^}]*\}")
@@ -223,6 +223,7 @@ class LNETMouseHandlers:
                     self.editor._last_clicked_line = block_number
                     self.editor.lineClicked.emit(block_number)
 
+                self.editor._update_selection_highlight()
                 self.editor._update_selection_highlight()
                 self.editor._emit_selection_changed()
                 event.accept()

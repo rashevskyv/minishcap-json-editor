@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QSize
 import os
 from PyQt5.QtGui import QIcon, QFont, QFontMetrics, QKeySequence 
-from components.line_numbered_text_edit import LineNumberedTextEdit
+from components.editor.line_numbered_text_edit import LineNumberedTextEdit
 from components.custom_list_widget import CustomListWidget
 
 def setup_main_window_ui(main_window):
@@ -134,15 +134,12 @@ def setup_main_window_ui(main_window):
     main_window.navigate_down_button.setToolTip("Navigate to next problem string (Ctrl+Down)")
     editable_text_header_layout.addWidget(main_window.navigate_down_button)
 
-    main_window.ai_translate_button = QPushButton("AI Translate")
     main_window.ai_translate_button = QPushButton('AI Translate')
     editable_text_header_layout.addWidget(main_window.ai_translate_button)
 
-    main_window.ai_variation_button = QPushButton("AI Variation")
     main_window.ai_variation_button = QPushButton('AI Variation')
     editable_text_header_layout.addWidget(main_window.ai_variation_button)
 
-    main_window.auto_fix_button = QPushButton("Auto-fix")
     main_window.auto_fix_button = QPushButton('Auto-fix')
     editable_text_header_layout.addWidget(main_window.auto_fix_button)
     

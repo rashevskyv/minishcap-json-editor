@@ -24,7 +24,8 @@ class TextOperationHandler(BaseHandler):
         for key in keys_to_remove:
             del self.mw.problems_per_subline[key]
             
-        analyzer = self.mw.current_game_rules.problem_analyzer
+        # Use problem_analyzer if it exists, otherwise use the game rules object itself
+        analyzer = getattr(self.mw.current_game_rules, 'problem_analyzer', self.mw.current_game_rules)
         sublines = new_text.split('\n')
         
         font_map_for_string = self.mw.helper.get_font_map_for_string(block_idx, string_idx)
@@ -35,7 +36,7 @@ class TextOperationHandler(BaseHandler):
         problems_in_string = []
         if hasattr(analyzer, 'analyze_data_string'):
             problems_in_string = analyzer.analyze_data_string(new_text, font_map_for_string, width_threshold_for_string)
-        else:
+        elif hasattr(analyzer, 'analyze_subline'):
             for i, subline in enumerate(sublines):
                 next_subline = sublines[i+1] if i + 1 < len(sublines) else None
                 problems = analyzer.analyze_subline(
@@ -126,6 +127,9 @@ class TextOperationHandler(BaseHandler):
         self.preview_update_timer.start(PREVIEW_UPDATE_DELAY) 
         self.mw.ui_updater.update_status_bar()
         self.mw.ui_updater.synchronize_original_cursor()
+        
+        # Re-apply highlights to editor
+        self.mw.ui_updater._apply_highlights_to_editor(edited_edit, block_idx, string_idx_in_block)
         
         if edited_edit and hasattr(edited_edit, 'lineNumberArea'):
             edited_edit.lineNumberArea.update()
@@ -284,6 +288,9 @@ class TextOperationHandler(BaseHandler):
         
         problem_definitions = self.mw.current_game_rules.get_problem_definitions()
         
+        # Use problem_analyzer if it exists, otherwise use the game rules object itself
+        analyzer = getattr(self.mw.current_game_rules, 'problem_analyzer', self.mw.current_game_rules)
+
         sources_to_check = [
             ("Current", str(current_text_data_line), source),
             ("Original", str(original_text_data_line), "original_data")
@@ -299,23 +306,32 @@ class TextOperationHandler(BaseHandler):
                 game_status = f"EXCEEDS GAME DIALOG LIMIT ({total_game_width - self.mw.game_dialog_max_width_pixels}px)"
             info_parts.append(f"Total (game-like, no newlines): {total_game_width}px ({game_status})")
 
-            logical_sublines = text_to_analyze.split('\n')
+            logical_sublines = []
+            if hasattr(analyzer, '_get_sublines_from_data_string'):
+                logical_sublines = analyzer._get_sublines_from_data_string(text_to_analyze)
+            else:
+                logical_sublines = text_to_analyze.split('\n')
+
             for subline_idx, sub_line_text in enumerate(logical_sublines):
                 sub_line_no_tags_rstripped = remove_all_tags(sub_line_text).rstrip()
                 width_px = calculate_string_width(sub_line_no_tags_rstripped, font_map_for_string)
                 
                 current_subline_problems = set()
-                next_original_subline = logical_sublines[subline_idx + 1] if subline_idx + 1 < len(logical_sublines) else None
-                current_subline_problems = self.mw.current_game_rules.analyze_subline(
-                    text=sub_line_text,
-                    next_text=next_original_subline,
-                    subline_number_in_data_string=subline_idx,
-                    qtextblock_number_in_editor=subline_idx, 
-                    is_last_subline_in_data_string=(subline_idx == len(logical_sublines) - 1),
-                    editor_font_map=font_map_for_string,
-                    editor_line_width_threshold=warning_threshold,
-                    full_data_string_text_for_logical_check=text_to_analyze 
-                )
+                if hasattr(analyzer, 'analyze_data_string'):
+                    problems_per_subline_list = analyzer.analyze_data_string(text_to_analyze, font_map_for_string, warning_threshold)
+                    current_subline_problems = problems_per_subline_list[subline_idx] if subline_idx < len(problems_per_subline_list) else set()
+                elif hasattr(analyzer, 'analyze_subline'):
+                    next_original_subline = logical_sublines[subline_idx + 1] if subline_idx + 1 < len(logical_sublines) else None
+                    current_subline_problems = analyzer.analyze_subline(
+                        text=sub_line_text,
+                        next_text=next_original_subline,
+                        subline_number_in_data_string=subline_idx,
+                        qtextblock_number_in_editor=subline_idx, 
+                        is_last_subline_in_data_string=(subline_idx == len(logical_sublines) - 1),
+                        editor_font_map=font_map_for_string,
+                        editor_line_width_threshold=warning_threshold,
+                        full_data_string_text_for_logical_check=text_to_analyze 
+                    )
                 
                 statuses = []
                 for prob_id in current_subline_problems:
@@ -347,8 +363,9 @@ class TextOperationHandler(BaseHandler):
             return
 
         edited_text_edit = self.mw.edited_text_edit
-        
-        data_to_fix = self.mw.current_game_rules.convert_editor_text_to_data(edited_text_edit.toPlainText())
+        raw_text = edited_text_edit.toPlainText()
+        text_with_spaces = convert_dots_to_spaces_from_editor(raw_text)
+        data_to_fix = self.mw.current_game_rules.convert_editor_text_to_data(text_with_spaces)
         
         font_map_for_string = self.mw.helper.get_font_map_for_string(self.mw.current_block_idx, self.mw.current_string_idx)
         

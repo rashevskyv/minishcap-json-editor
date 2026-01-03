@@ -1,3 +1,4 @@
+# --- START OF FILE ui/main_window/main_window_ui_handler.py ---
 # --- START OF FILE main_window_ui_handler.py ---
 from __future__ import annotations
 from typing import TYPE_CHECKING
@@ -124,15 +125,21 @@ class MainWindowUIHandler:
         if getattr(self.mw, 'newline_underline', False): nl_css_parts.append("text-decoration: underline")
         newline_css_str = "; ".join(nl_css_parts) + ";"
 
+        # Compose CSS for tags
+        tag_color = getattr(self.mw, 'tag_color_rgba', getattr(self.mw, 'bracket_tag_color_hex', "#FF8C00"))
+        tag_css_parts = [f"color: {tag_color}"]
+        if getattr(self.mw, 'tag_bold', True): tag_css_parts.append("font-weight: bold")
+        if getattr(self.mw, 'tag_italic', False): tag_css_parts.append("font-style: italic")
+        if getattr(self.mw, 'tag_underline', False): tag_css_parts.append("text-decoration: underline")
+        tag_css_str = "; ".join(tag_css_parts) + ";"
+
         common_args = {
             "newline_symbol": self.mw.newline_display_symbol,
             "newline_css_str": newline_css_str,
-            # We keep tag_css_str empty; plugins apply tag style directly
-            "tag_css_str": "",
+            "tag_css_str": tag_css_str,
             "show_multiple_spaces_as_dots": self.mw.show_multiple_spaces_as_dots,
             "space_dot_color_hex": self.mw.space_dot_color_hex,
-            # Use Tag Style color for bracket tags in base highlighter
-            "bracket_tag_color_hex": getattr(self.mw, 'tag_color_rgba', "#FF8C00"),
+            "bracket_tag_color_hex": tag_color,
         }
         for editor in [self.mw.preview_text_edit, self.mw.original_text_edit, self.mw.edited_text_edit]:
             if editor and hasattr(editor, 'highlighter') and editor.highlighter:

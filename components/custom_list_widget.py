@@ -1,8 +1,9 @@
+# --- START OF FILE components/custom_list_widget.py ---
 # --- START OF FILE components/CustomListWidget.py ---
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QMenu, QAction
 from PyQt5.QtCore import Qt, QPoint, QSize
 from PyQt5.QtGui import QIcon, QPixmap, QPainter, QColor
-from .CustomListItemDelegate import CustomListItemDelegate
+from .custom_list_item_delegate import CustomListItemDelegate
 from utils.logging_utils import log_debug, log_error
 
 class CustomListWidget(QListWidget):

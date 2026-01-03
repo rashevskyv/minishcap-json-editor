@@ -2,17 +2,46 @@
 from typing import List, Tuple, Dict, Optional, Any, Set
 from PyQt5.QtGui import QTextCharFormat
 import json
+import re
 
 class BaseGameRules:
+    """
+    Base class for game-specific rules.
+    Supports the 'Kruptar' format: strings delimited by {END} + empty line.
+    """
     def __init__(self, main_window_ref=None):
         self.mw = main_window_ref
 
     def load_data_from_json_obj(self, json_data: Any) -> Tuple[list, dict]:
         if isinstance(json_data, list):
             return json_data, {}
+        if isinstance(json_data, str):
+            # Kruptar format check: if it contains {END}, split by it
+            if '{END}' in json_data:
+                raw_strings = re.split(r'\{END\}', json_data)
+                processed_strings = []
+                for s in raw_strings:
+                    cleaned = s.strip('\r\n')
+                    # If it's not empty, or it's the last one and contains content
+                    if cleaned:
+                        processed_strings.append(cleaned)
+                    elif s == raw_strings[-1] and s.strip():
+                         processed_strings.append(s.strip())
+                return [processed_strings], {}
+            
+            # Fallback: treat as a single block with lines
+            lines = json_data.splitlines()
+            return [lines], {}
         return [], {}
 
     def save_data_to_json_obj(self, data: list, block_names: dict) -> Any:
+        # If we are dealing with a single block (typical for .txt files)
+        if len(data) == 1 and isinstance(data[0], list):
+            # If we suspect Kruptar format (or just want to be safe if we loaded it that way)
+            # For now, let's assume if we have {END} in the original or if it's multi-line strings
+            # we might want to use {END}. But to be safe and consistent with user request:
+            # "один блок - одна строка. {END} + порожня строка - симантичний символ"
+            return "\n\n".join([str(line) + "\n{END}" for line in data[0]])
         return data
     
     def get_enter_char(self) -> str:
@@ -54,9 +83,9 @@ class BaseGameRules:
         return data_string, False
 
     def process_pasted_segment(self,
-                               segment_to_insert: str,
-                               original_text_for_tags: str,
-                               editor_player_tag_const: str) -> Tuple[str, str, str]:
+                                segment_to_insert: str,
+                                original_text_for_tags: str,
+                                editor_player_tag_const: str) -> Tuple[str, str, str]:
         return segment_to_insert, "OK", ""
         
     def get_base_game_rules_class(self):
@@ -79,7 +108,8 @@ class BaseGameRules:
         return data_string_subline
 
     def get_text_representation_for_preview(self, data_string: str) -> str:
-        return data_string.replace('\n', getattr(self.mw, "newline_display_symbol", "↵")) if self.mw else data_string.replace('\n', "↵")
+        newline_symbol = getattr(self.mw, "newline_display_symbol", "↵") if self.mw else "↵"
+        return data_string.replace('\n', newline_symbol)
 
     def get_syntax_highlighting_rules(self) -> List[Tuple[str, QTextCharFormat]]:
         return []

@@ -1,5 +1,5 @@
 # --- START OF FILE components/glossary_translation_update_dialog.py ---
-﻿"""Dialog for reviewing translations after a glossary change."""
+"""Dialog for reviewing translations after a glossary change."""
 from __future__ import annotations
 
 from typing import Callable, Dict, List, Optional, Sequence
@@ -291,4 +291,3 @@ class GlossaryTranslationUpdateDialog(QDialog):
             QMessageBox.warning(self, "AI Update", message)
         self.set_batch_active(False)
         self.set_ai_busy(False)
-

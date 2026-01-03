@@ -11,105 +11,42 @@ from core.data_manager import load_json_file, load_text_file
 from plugins.base_game_rules import BaseGameRules
 
 class AppActionHandler(BaseHandler):
-    def __init__(self, main_window, data_processor, ui_updater, game_rules_plugin: Optional[BaseGameRules]): 
+    def __init__(self, main_window, data_processor, ui_updater, game_rules_plugin: Optional[BaseGameRules]):
         super().__init__(main_window, data_processor, ui_updater)
         self.game_rules_plugin = game_rules_plugin
+        from .project_action_handler import ProjectActionHandler
+        from .issue_scan_handler import IssueScanHandler
+        self.mw.project_action_handler = ProjectActionHandler(main_window, data_processor, ui_updater)
+        self.mw.issue_scan_handler = IssueScanHandler(main_window, data_processor, ui_updater)
 
     def _perform_issues_scan_for_block(self, block_idx: int, is_single_block_scan: bool = False, use_default_mappings_in_scan: bool = False):
-        if not self.mw.current_game_rules or not (0 <= block_idx < len(self.mw.data)):
-            return
-
-        keys_to_remove = [k for k in self.mw.problems_per_subline if k[0] == block_idx]
-        for key in keys_to_remove:
-            del self.mw.problems_per_subline[key]
-        
-        block_data = self.mw.data[block_idx]
-        if not isinstance(block_data, list):
-            return
-
-        for string_idx, _ in enumerate(block_data):
-            text, _ = self.data_processor.get_current_string_text(block_idx, string_idx)
-            text = str(text)
-
-            analyzer = self.mw.current_game_rules.problem_analyzer
-            all_problems_for_string = []
-            
-            font_map_for_string = self.mw.helper.get_font_map_for_string(block_idx, string_idx)
-            string_meta = self.mw.string_metadata.get((block_idx, string_idx), {})
-            width_threshold_for_string = string_meta.get("width", self.mw.line_width_warning_threshold_pixels)
-            
-            if hasattr(analyzer, 'analyze_data_string'):
-                all_problems_for_string = analyzer.analyze_data_string(text, font_map_for_string, width_threshold_for_string)
-            else:
-                sublines = text.split('\n')
-                for i, subline in enumerate(sublines):
-                    next_subline = sublines[i+1] if i + 1 < len(sublines) else None
-                    problems = analyzer.analyze_subline(
-                        text=subline, next_text=next_subline, subline_number_in_data_string=i, qtextblock_number_in_editor=i,
-                        is_last_subline_in_data_string=(i == len(sublines) - 1), editor_font_map=font_map_for_string,
-                        editor_line_width_threshold=width_threshold_for_string,
-                        full_data_string_text_for_logical_check=text
-                    )
-                    all_problems_for_string.append(problems)
-
-            for i, problem_set in enumerate(all_problems_for_string):
-                if problem_set:
-                    self.mw.problems_per_subline[(block_idx, string_idx, i)] = problem_set
-
+        self.mw.issue_scan_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan, use_default_mappings_in_scan)
 
     def _perform_initial_silent_scan_all_issues(self):
-        self.mw.problems_per_subline.clear()
-        if not self.mw.data:
-            return
-        
-        for block_idx in range(len(self.mw.data)):
-            self._perform_issues_scan_for_block(block_idx)
+        self.mw.issue_scan_handler._perform_initial_silent_scan_all_issues()
 
+    def rescan_issues_for_single_block(self, block_idx: int = -1, show_message_on_completion: bool = True, use_default_mappings: bool = True):
+        self.mw.issue_scan_handler.rescan_issues_for_single_block(block_idx, show_message_on_completion, use_default_mappings)
 
-    def save_data_action(self, ask_confirmation=True):
-        if self.mw.json_path and not self.mw.edited_json_path:
-            self.mw.edited_json_path = self._derive_edited_path(self.mw.json_path)
-        current_block_idx_before_save = self.mw.current_block_idx; current_string_idx_before_save = self.mw.current_string_idx
-        save_success = self.data_processor.save_current_edits(ask_confirmation=ask_confirmation)
-        if save_success:
-            self.ui_updater.update_title()
-            self.mw.is_programmatically_changing_text = True
-            if current_block_idx_before_save != -1:
-                 self.mw.current_block_idx = current_block_idx_before_save
-                 self.mw.current_string_idx = current_string_idx_before_save
-                 self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
-            else: self.ui_updater.populate_strings_for_block(-1)
-            self.ui_updater.update_statusbar_paths()
-            self.mw.is_programmatically_changing_text = False
-        else: self.ui_updater.update_title()
-        return save_success
+    def rescan_all_tags(self):
+        self.mw.issue_scan_handler.rescan_all_tags()
 
     def handle_close_event(self, event):
         if self.mw.unsaved_changes:
-            reply = QMessageBox.question(self.mw, 'Unsaved Changes', "Save changes before exiting?", QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel, QMessageBox.Cancel)
+            reply = QMessageBox.question(
+                self.mw, 'Unsaved Changes',
+                "Save changes before closing?",
+                QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
+                QMessageBox.Cancel
+            )
             if reply == QMessageBox.Save:
-                if not self.save_data_action(ask_confirmation=True): event.ignore()
-                else: event.accept()
-            elif reply == QMessageBox.Discard: event.accept()
-            else: event.ignore()
-        else: event.accept()
-    
-    def rescan_issues_for_single_block(self, block_idx: int = -1, show_message_on_completion: bool = True, use_default_mappings: bool = True):
-        target_block_idx = block_idx if block_idx != -1 else self.mw.current_block_idx
-        if target_block_idx == -1: return
-
-        self._perform_issues_scan_for_block(target_block_idx, is_single_block_scan=True, use_default_mappings_in_scan=use_default_mappings)
-        self.ui_updater.populate_blocks() 
-        self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
-        if show_message_on_completion:
-            QMessageBox.information(self.mw, "Rescan Complete", f"Issue scan complete for block {target_block_idx}.")
-
-
-    def rescan_all_tags(self): 
-        log_info("Rescan All Issues action triggered.") 
-        self._perform_initial_silent_scan_all_issues()
-        self.ui_updater.populate_blocks()
-        self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
+                if not self.save_data_action(ask_confirmation=False):
+                    event.ignore()
+                    return
+            elif reply == QMessageBox.Cancel:
+                event.ignore()
+                return
+        event.accept()
             
     def _derive_edited_path(self, original_path):
         if not original_path: return None
@@ -168,7 +105,6 @@ class AppActionHandler(BaseHandler):
                  self.mw.block_list_widget.setCurrentRow(0)
             else:
                  self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
-
 
     def save_as_dialog_action(self):
         log_info("Save As Dialog action triggered.")
@@ -296,7 +232,6 @@ class AppActionHandler(BaseHandler):
             QMessageBox.warning(self.mw, "Calculate Widths Error", "Game rules plugin not loaded.")
             return
 
-
         num_strings = len(self.mw.data[block_idx])
         if num_strings == 0:
             QMessageBox.information(self.mw, "Calculate Line Widths", f"Block {self.mw.block_names.get(str(block_idx),str(block_idx))} is empty.")
@@ -309,6 +244,9 @@ class AppActionHandler(BaseHandler):
         results = []
         problem_definitions = self.game_rules_plugin.get_problem_definitions()
         
+        # Use problem_analyzer if it exists, otherwise use the game rules object itself
+        analyzer = getattr(self.game_rules_plugin, 'problem_analyzer', self.game_rules_plugin)
+
         for data_str_idx in range(num_strings):
             progress.setValue(data_str_idx)
             if progress.wasCanceled():
@@ -331,7 +269,12 @@ class AppActionHandler(BaseHandler):
 
             for title_prefix, text_to_analyze, text_source_info in sources_to_check:
                 line_report_parts.append(f"  {title_prefix} (src:{text_source_info}):")
-                logical_sublines = self.game_rules_plugin.problem_analyzer._get_sublines_from_data_string(text_to_analyze)
+                
+                logical_sublines = []
+                if hasattr(analyzer, '_get_sublines_from_data_string'):
+                    logical_sublines = analyzer._get_sublines_from_data_string(text_to_analyze)
+                else:
+                    logical_sublines = text_to_analyze.split('\n')
                 
                 game_like_text_no_newlines_rstripped = remove_all_tags(text_to_analyze.replace('\\n','').replace('\\p','').replace('\\l','')).rstrip()
                 total_game_width = calculate_string_width(game_like_text_no_newlines_rstripped, font_map_for_string)
@@ -344,8 +287,18 @@ class AppActionHandler(BaseHandler):
                     sub_line_no_tags_rstripped = remove_all_tags(sub_line_text).rstrip()
                     width_px = calculate_string_width(sub_line_no_tags_rstripped, font_map_for_string)
                     
-                    problems_per_subline_list = self.game_rules_plugin.problem_analyzer.analyze_data_string(text_to_analyze, font_map_for_string, editor_warning_threshold)
-                    current_subline_problems = problems_per_subline_list[subline_idx] if subline_idx < len(problems_per_subline_list) else set()
+                    current_subline_problems = set()
+                    if hasattr(analyzer, 'analyze_data_string'):
+                        problems_per_subline_list = analyzer.analyze_data_string(text_to_analyze, font_map_for_string, editor_warning_threshold)
+                        current_subline_problems = problems_per_subline_list[subline_idx] if subline_idx < len(problems_per_subline_list) else set()
+                    elif hasattr(analyzer, 'analyze_subline'):
+                        next_subline = logical_sublines[subline_idx+1] if subline_idx + 1 < len(logical_sublines) else None
+                        current_subline_problems = analyzer.analyze_subline(
+                            text=sub_line_text, next_text=next_subline, subline_number_in_data_string=subline_idx, qtextblock_number_in_editor=subline_idx,
+                            is_last_subline_in_data_string=(subline_idx == len(logical_sublines) - 1), editor_font_map=font_map_for_string,
+                            editor_line_width_threshold=editor_warning_threshold,
+                            full_data_string_text_for_logical_check=text_to_analyze
+                        )
                     
                     statuses = []
                     for prob_id in current_subline_problems:
@@ -355,7 +308,6 @@ class AppActionHandler(BaseHandler):
                     status_str = ", ".join(statuses) if statuses else "OK"
                     line_report_parts.append(f"    Sub {subline_idx+1} (rstripped): {width_px}px ({status_str}) '{sub_line_no_tags_rstripped[:30]}...'")
                 if title_prefix == "Current": line_report_parts.append("")
-
 
             results.append("\n".join(line_report_parts))
         
@@ -383,646 +335,37 @@ class AppActionHandler(BaseHandler):
             text_edit_for_size.setMinimumHeight(500)
         result_dialog.exec_()
 
-    # ========== Project Management Methods ==========
+    # ========== Project Management Methods (Delegated) ==========
 
     def create_new_project_action(self):
-        """Create a new translation project."""
-        from components.project_dialogs import NewProjectDialog
-        log_info("Create New Project action triggered.")
-
-        # Get available plugins
-        plugins = {}
-        plugins_dir = "plugins"
-        if os.path.isdir(plugins_dir):
-            for item in os.listdir(plugins_dir):
-                item_path = os.path.join(plugins_dir, item)
-                config_path = os.path.join(item_path, "config.json")
-                if os.path.isdir(item_path) and os.path.exists(config_path):
-                    try:
-                        import json
-                        with open(config_path, 'r', encoding='utf-8') as f:
-                            config_data = json.load(f)
-                        display_name = config_data.get("display_name", item)
-                        plugins[display_name] = item
-                    except Exception as e:
-                        log_debug(f"Could not read config for plugin '{item}': {e}")
-
-        dialog = NewProjectDialog(self.mw, available_plugins=plugins)
-        if dialog.exec_() != dialog.Accepted:
-            log_info("New project dialog cancelled.")
-            return
-
-        info = dialog.get_project_info()
-        if not info:
-            return
-
-        # Create project using ProjectManager
-        from core.project_manager import ProjectManager
-        self.mw.project_manager = ProjectManager()
-
-        success = self.mw.project_manager.create_new_project(
-            project_dir=info['directory'],
-            name=info['name'],
-            plugin_name=info['plugin'],
-            description=info['description']
-        )
-
-        if success:
-            log_info(f"Project '{info['name']}' created successfully.")
-
-            # Save current settings to new project
-            self.mw.project_manager.save_settings_to_project(self.mw)
-            log_info("Saved current settings to new project")
-
-            # Add to recent projects
-            if hasattr(self.mw, 'settings_manager'):
-                project_file_path = os.path.join(info['directory'], 'project.uiproj')
-                self.mw.settings_manager.add_recent_project(project_file_path)
-                self.mw.settings_manager.save_settings()
-                # Update recent projects menu
-                self._update_recent_projects_menu()
-
-            # Switch plugin if needed
-            project = self.mw.project_manager.project
-            if project.plugin_name and project.plugin_name != self.mw.active_game_plugin:
-                log_info(f"Switching plugin from '{self.mw.active_game_plugin}' to '{project.plugin_name}'")
-                self.mw.active_game_plugin = project.plugin_name
-
-                # Reload plugin settings
-                if hasattr(self.mw, 'settings_manager'):
-                    self.mw.settings_manager._load_plugin_settings()
-                    self.mw.settings_manager.load_all_font_maps()
-
-                # Reload game rules
-                self.mw.load_game_plugin()
-                self.game_rules_plugin = self.mw.current_game_rules
-
-                if self.mw.current_game_rules:
-                    self.mw.default_tag_mappings = self.mw.current_game_rules.get_default_tag_mappings()
-
-                # Update UI after plugin switch
-                self.ui_updater.update_plugin_status_label()
-
-                # Save settings to persist plugin change
-                if hasattr(self.mw, 'settings_manager'):
-                    self.mw.settings_manager.save_settings()
-
-            QMessageBox.information(
-                self.mw,
-                "Project Created",
-                f"Project '{info['name']}' has been created at:\n{info['directory']}\n\n"
-                f"You can now import blocks into this project."
-            )
-
-            # Enable project-specific actions
-            if hasattr(self.mw, 'close_project_action'):
-                self.mw.close_project_action.setEnabled(True)
-            if hasattr(self.mw, 'import_block_action'):
-                self.mw.import_block_action.setEnabled(True)
-            if hasattr(self.mw, 'add_block_button'):
-                self.mw.add_block_button.setEnabled(True)
-
-            # Update UI
-            self.ui_updater.update_title()
-            self.ui_updater.populate_blocks()
-        else:
-            QMessageBox.critical(
-                self.mw,
-                "Project Creation Failed",
-                f"Failed to create project at:\n{info['directory']}"
-            )
+        self.mw.project_action_handler.create_new_project_action()
 
     def open_project_action(self):
-        """Open an existing translation project."""
-        from PyQt5.QtWidgets import QFileDialog
-        log_info("Open Project action triggered.")
-
-        # Open file dialog directly
-        start_dir = os.path.expanduser("~")
-        project_path, _ = QFileDialog.getOpenFileName(
-            self.mw,
-            "Open Project",
-            start_dir,
-            "Project Files (*.uiproj);;All Files (*)"
-        )
-
-        if not project_path:
-            log_info("Open project cancelled.")
-            return
-
-        # Load project using ProjectManager
-        from core.project_manager import ProjectManager
-        self.mw.project_manager = ProjectManager()
-
-        success = self.mw.project_manager.load(project_path)
-
-        if success:
-            project = self.mw.project_manager.project
-            log_info(f"Project '{project.name}' loaded successfully.")
-
-            # Add to recent projects
-            if hasattr(self.mw, 'settings_manager'):
-                self.mw.settings_manager.add_recent_project(project_path)
-                self.mw.settings_manager.save_settings()
-                # Update recent projects menu
-                self._update_recent_projects_menu()
-
-            # Switch plugin if needed
-            if project.plugin_name and project.plugin_name != self.mw.active_game_plugin:
-                log_info(f"Switching plugin from '{self.mw.active_game_plugin}' to '{project.plugin_name}'")
-                self.mw.active_game_plugin = project.plugin_name
-
-                # Reload plugin settings
-                if hasattr(self.mw, 'settings_manager'):
-                    self.mw.settings_manager._load_plugin_settings()
-                    self.mw.settings_manager.load_all_font_maps()
-
-                # Reload game rules
-                self.mw.load_game_plugin()
-                self.game_rules_plugin = self.mw.current_game_rules
-
-                if self.mw.current_game_rules:
-                    self.mw.default_tag_mappings = self.mw.current_game_rules.get_default_tag_mappings()
-
-                # Update UI after plugin switch
-                self.ui_updater.update_plugin_status_label()
-
-                # Save settings to persist plugin change
-                if hasattr(self.mw, 'settings_manager'):
-                    self.mw.settings_manager.save_settings()
-
-            # Load project-specific settings from metadata
-            if self.mw.project_manager:
-                loaded = self.mw.project_manager.load_settings_from_project(self.mw)
-                if loaded:
-                    log_info("Project-specific settings loaded from metadata")
-                    # Reapply settings to UI
-                    if hasattr(self.mw, 'apply_font_size'):
-                        self.mw.apply_font_size()
-                    if hasattr(self.mw, 'helper'):
-                        self.mw.helper.reconfigure_all_highlighters()
-                        self.mw.helper.apply_text_wrap_settings()
-
-            # Enable project-specific actions
-            if hasattr(self.mw, 'close_project_action'):
-                self.mw.close_project_action.setEnabled(True)
-            if hasattr(self.mw, 'import_block_action'):
-                self.mw.import_block_action.setEnabled(True)
-            if hasattr(self.mw, 'add_block_button'):
-                self.mw.add_block_button.setEnabled(True)
-
-            # Update UI to show blocks
-            self.ui_updater.update_title()
-            self._populate_blocks_from_project()
-
-            QMessageBox.information(
-                self.mw,
-                "Project Opened",
-                f"Project '{project.name}' loaded successfully.\n\n"
-                f"Plugin: {project.plugin_name}\n"
-                f"Blocks: {len(project.blocks)}"
-            )
-        else:
-            QMessageBox.critical(
-                self.mw,
-                "Project Load Failed",
-                f"Failed to load project from:\n{project_path}"
-            )
+        self.mw.project_action_handler.open_project_action()
 
     def close_project_action(self):
-        """Close the current project."""
-        log_info("Close Project action triggered.")
-
-        if self.mw.unsaved_changes:
-            reply = QMessageBox.question(
-                self.mw,
-                'Unsaved Changes',
-                "Save changes before closing project?",
-                QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
-                QMessageBox.Cancel
-            )
-            if reply == QMessageBox.Save:
-                if not self.save_data_action(ask_confirmation=False):
-                    return
-            elif reply == QMessageBox.Cancel:
-                return
-
-        # Clear project
-        self.mw.project_manager = None
-
-        # Clear UI
-        self.mw.data = []
-        self.mw.edited_data = {}
-        self.mw.block_names = {}
-        self.mw.current_block_idx = -1
-        self.mw.current_string_idx = -1
-        self.mw.unsaved_changes = False
-
-        # Disable project-specific actions
-        if hasattr(self.mw, 'close_project_action'):
-            self.mw.close_project_action.setEnabled(False)
-        if hasattr(self.mw, 'import_block_action'):
-            self.mw.import_block_action.setEnabled(False)
-        if hasattr(self.mw, 'add_block_button'):
-            self.mw.add_block_button.setEnabled(False)
-
-        # Update UI
-        self.ui_updater.update_title()
-        self.ui_updater.populate_blocks()
-        self.ui_updater.populate_strings_for_block(-1)
-
-        log_info("Project closed.")
+        self.mw.project_action_handler.close_project_action()
 
     def import_block_action(self):
-        """Import a new block into the current project."""
-        from components.project_dialogs import ImportBlockDialog
-        log_info("Import Block action triggered.")
-
-        if not self.mw.project_manager or not self.mw.project_manager.project:
-            QMessageBox.warning(
-                self.mw,
-                "No Project",
-                "Please open or create a project first."
-            )
-            return
-
-        dialog = ImportBlockDialog(self.mw, project_manager=self.mw.project_manager)
-        if dialog.exec_() != dialog.Accepted:
-            log_info("Import block dialog cancelled.")
-            return
-
-        info = dialog.get_block_info()
-        if not info:
-            return
-
-        # Import block using ProjectManager
-        block = self.mw.project_manager.add_block(
-            name=info['name'],
-            source_file_path=info['source_file'],
-            translation_file_path=info.get('translation_file'),
-            description=info['description']
-        )
-
-        if block:
-            log_info(f"Block '{info['name']}' imported successfully.")
-
-            # Update UI
-            self._populate_blocks_from_project()
-
-            QMessageBox.information(
-                self.mw,
-                "Block Imported",
-                f"Block '{info['name']}' has been imported into the project."
-            )
-        else:
-            QMessageBox.critical(
-                self.mw,
-                "Import Failed",
-                f"Failed to import block from:\n{info['source_file']}"
-            )
+        self.mw.project_action_handler.import_block_action()
 
     def _populate_blocks_from_project(self):
-        """Populate block list from current project and load data."""
-        if not self.mw.project_manager or not self.mw.project_manager.project:
-            return
-
-        # Clear current data
-        self.mw.block_list_widget.clear()
-        self.mw.data = []
-        self.mw.edited_data = {}
-        self.mw.block_names = {}
-
-        # Load each block's data
-        for block_idx, block in enumerate(self.mw.project_manager.project.blocks):
-            # Add block name to block_names dict
-            self.mw.block_names[str(block_idx)] = block.name
-
-            # Get absolute paths for source and translation files
-            source_path = self.mw.project_manager.get_absolute_path(block.source_file)
-            translation_path = self.mw.project_manager.get_absolute_path(block.translation_file)
-
-            # Load source data
-            block_data = []
-            if os.path.exists(source_path):
-                file_extension = os.path.splitext(source_path)[1].lower()
-                if file_extension == '.json':
-                    file_content, error = load_json_file(source_path, parent_widget=self.mw)
-                elif file_extension == '.txt':
-                    file_content, error = load_text_file(source_path, parent_widget=self.mw)
-                else:
-                    log_warning(f"Unsupported file type for block {block.name}: {file_extension}")
-                    self.mw.data.append([])
-                    continue
-
-                if error:
-                    log_error(f"Failed to load block {block.name}: {error}")
-                    self.mw.data.append([])
-                    continue
-
-                # Parse data using current game rules
-                # The plugin returns a list of blocks (data strings), but for projects
-                # each file represents ONE block, so we take the first block from the parsed result
-                if self.mw.current_game_rules:
-                    parsed_data, _ = self.mw.current_game_rules.load_data_from_json_obj(file_content)
-                    # Take the first block from parsed data (index 0), which is the list of strings
-                    block_data = parsed_data[0] if parsed_data and len(parsed_data) > 0 else []
-                else:
-                    log_warning(f"No game rules to parse block {block.name}")
-            else:
-                log_warning(f"Source file not found for block {block.name}: {source_path}")
-
-            self.mw.data.append(block_data if block_data else [])
-
-        # Load edited_file_data (for multi-block editing compatibility)
-        self.mw.edited_file_data = []
-        for block in self.mw.project_manager.project.blocks:
-            translation_path = self.mw.project_manager.get_absolute_path(block.translation_file)
-            edited_block_data = []
-
-            if os.path.exists(translation_path):
-                file_extension = os.path.splitext(translation_path)[1].lower()
-                if file_extension == '.json':
-                    file_content, error = load_json_file(translation_path, parent_widget=self.mw)
-                elif file_extension == '.txt':
-                    file_content, error = load_text_file(translation_path, parent_widget=self.mw)
-                else:
-                    self.mw.edited_file_data.append([])
-                    continue
-
-                if not error and self.mw.current_game_rules:
-                    parsed_edited_data, _ = self.mw.current_game_rules.load_data_from_json_obj(file_content)
-                    # Take the first block from parsed data (index 0), which is the list of strings
-                    edited_block_data = parsed_edited_data[0] if parsed_edited_data and len(parsed_edited_data) > 0 else []
-
-            self.mw.edited_file_data.append(edited_block_data if edited_block_data else [])
-
-        # Update paths for old-style save/load compatibility
-        if self.mw.data:
-            # Use first block's paths as "current" file for legacy operations
-            first_block = self.mw.project_manager.project.blocks[0]
-            self.mw.json_path = self.mw.project_manager.get_absolute_path(first_block.source_file)
-            self.mw.edited_json_path = self.mw.project_manager.get_absolute_path(first_block.translation_file)
-
-        # Perform initial scan
-        self._perform_initial_silent_scan_all_issues()
-
-        # Update UI
-        self.ui_updater.populate_blocks()
-        self.ui_updater.update_statusbar_paths()
+        self.mw.project_action_handler._populate_blocks_from_project()
 
     def delete_block_action(self):
-        """Delete the currently selected block from the project."""
-        log_info("Delete Block action triggered.")
-
-        if not self.mw.project_manager or not self.mw.project_manager.project:
-            QMessageBox.warning(self.mw, "No Project", "No project is currently open.")
-            return
-
-        current_item = self.mw.block_list_widget.currentItem()
-        if not current_item:
-            QMessageBox.warning(self.mw, "No Block Selected", "Please select a block to delete.")
-            return
-
-        block_idx = current_item.data(Qt.UserRole)
-        if block_idx < 0 or block_idx >= len(self.mw.project_manager.project.blocks):
-            QMessageBox.critical(self.mw, "Delete Error", "Invalid block index.")
-            return
-
-        block = self.mw.project_manager.project.blocks[block_idx]
-        block_name = block.name
-
-        # Confirm deletion
-        reply = QMessageBox.question(
-            self.mw,
-            'Delete Block',
-            f"Are you sure you want to delete block '{block_name}'?\n\n"
-            f"This will remove the block from the project, but the source files will not be deleted.",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
-        )
-
-        if reply != QMessageBox.Yes:
-            return
-
-        # Remove block from project using block ID
-        success = self.mw.project_manager.project.remove_block(block.id)
-        if success:
-            self.mw.project_manager.save()
-            log_info(f"Block '{block_name}' removed from project.")
-
-            # Update UI
-            self._populate_blocks_from_project()
-
-            QMessageBox.information(
-                self.mw,
-                "Block Deleted",
-                f"Block '{block_name}' has been removed from the project."
-            )
-        else:
-            QMessageBox.critical(self.mw, "Delete Error", "Failed to remove block.")
+        self.mw.project_action_handler.delete_block_action()
 
     def move_block_up_action(self):
-        """Move the currently selected block up in the list."""
-        log_info("Move Block Up action triggered.")
-
-        if not self.mw.project_manager or not self.mw.project_manager.project:
-            return
-
-        current_item = self.mw.block_list_widget.currentItem()
-        if not current_item:
-            return
-
-        block_idx = current_item.data(Qt.UserRole)
-        if block_idx <= 0:
-            return  # Already at top
-
-        # Swap blocks in project
-        self.mw.project_manager.project.blocks[block_idx], self.mw.project_manager.project.blocks[block_idx - 1] = \
-            self.mw.project_manager.project.blocks[block_idx - 1], self.mw.project_manager.project.blocks[block_idx]
-
-        # Save project
-        self.mw.project_manager.save()
-
-        # Reload UI and reselect moved block
-        self._populate_blocks_from_project()
-        if self.mw.block_list_widget.count() > block_idx - 1:
-            self.mw.block_list_widget.setCurrentRow(block_idx - 1)
-
-        log_info(f"Block moved up from index {block_idx} to {block_idx - 1}.")
+        self.mw.project_action_handler.move_block_up_action()
 
     def move_block_down_action(self):
-        """Move the currently selected block down in the list."""
-        log_info("Move Block Down action triggered.")
-
-        if not self.mw.project_manager or not self.mw.project_manager.project:
-            return
-
-        current_item = self.mw.block_list_widget.currentItem()
-        if not current_item:
-            return
-
-        block_idx = current_item.data(Qt.UserRole)
-        if block_idx >= len(self.mw.project_manager.project.blocks) - 1:
-            return  # Already at bottom
-
-        # Swap blocks in project
-        self.mw.project_manager.project.blocks[block_idx], self.mw.project_manager.project.blocks[block_idx + 1] = \
-            self.mw.project_manager.project.blocks[block_idx + 1], self.mw.project_manager.project.blocks[block_idx]
-
-        # Save project
-        self.mw.project_manager.save()
-
-        # Reload UI and reselect moved block
-        self._populate_blocks_from_project()
-        if self.mw.block_list_widget.count() > block_idx + 1:
-            self.mw.block_list_widget.setCurrentRow(block_idx + 1)
-
-        log_info(f"Block moved down from index {block_idx} to {block_idx + 1}.")
+        self.mw.project_action_handler.move_block_down_action()
 
     def _update_recent_projects_menu(self):
-        """Update the Recent Projects submenu with current list."""
-        if not hasattr(self.mw, 'recent_projects_menu'):
-            return
-
-        # Clear existing menu items
-        self.mw.recent_projects_menu.clear()
-
-        # Get recent projects list
-        recent_projects = getattr(self.mw, 'recent_projects', [])
-
-        if not recent_projects:
-            # Add "No recent projects" action
-            no_recent_action = self.mw.recent_projects_menu.addAction("No recent projects")
-            no_recent_action.setEnabled(False)
-            return
-
-        # Add action for each recent project
-        for project_path in recent_projects:
-            # Check if file exists
-            if os.path.exists(project_path):
-                # Get project name from path
-                project_name = os.path.splitext(os.path.basename(project_path))[0]
-                if project_name == "project":
-                    # Use directory name if file is named "project.uiproj"
-                    project_name = os.path.basename(os.path.dirname(project_path))
-
-                action = self.mw.recent_projects_menu.addAction(project_name)
-                action.setToolTip(project_path)
-                # Use lambda with default argument to capture current project_path
-                action.triggered.connect(lambda checked=False, path=project_path: self._open_recent_project(path))
-            else:
-                # Project file doesn't exist, show as unavailable
-                action = self.mw.recent_projects_menu.addAction(f"{os.path.basename(project_path)} (missing)")
-                action.setEnabled(False)
-
-        # Add separator and "Clear Recent Projects" action
-        self.mw.recent_projects_menu.addSeparator()
-        clear_action = self.mw.recent_projects_menu.addAction("Clear Recent Projects")
-        clear_action.triggered.connect(self._clear_recent_projects)
+        self.mw.project_action_handler._update_recent_projects_menu()
 
     def _open_recent_project(self, project_path: str):
-        """Open a project from the recent projects list."""
-        log_info(f"Opening recent project: {project_path}")
-
-        if not os.path.exists(project_path):
-            QMessageBox.critical(
-                self.mw,
-                "Project Not Found",
-                f"Project file not found:\n{project_path}\n\n"
-                f"It may have been moved or deleted."
-            )
-            # Remove from recent projects
-            if hasattr(self.mw, 'settings_manager'):
-                self.mw.settings_manager.remove_recent_project(project_path)
-                self.mw.settings_manager.save_settings()
-                self._update_recent_projects_menu()
-            return
-
-        # Load project using ProjectManager
-        from core.project_manager import ProjectManager
-        self.mw.project_manager = ProjectManager()
-
-        success = self.mw.project_manager.load(project_path)
-
-        if success:
-            project = self.mw.project_manager.project
-            log_info(f"Recent project '{project.name}' loaded successfully.")
-
-            # Move to top of recent projects (already handled by add_recent_project)
-            if hasattr(self.mw, 'settings_manager'):
-                self.mw.settings_manager.add_recent_project(project_path)
-                self.mw.settings_manager.save_settings()
-                self._update_recent_projects_menu()
-
-            # Switch plugin if needed
-            if project.plugin_name and project.plugin_name != self.mw.active_game_plugin:
-                log_info(f"Switching plugin from '{self.mw.active_game_plugin}' to '{project.plugin_name}'")
-                self.mw.active_game_plugin = project.plugin_name
-
-                # Reload plugin settings
-                if hasattr(self.mw, 'settings_manager'):
-                    self.mw.settings_manager._load_plugin_settings()
-                    self.mw.settings_manager.load_all_font_maps()
-
-                # Reload game rules
-                self.mw.load_game_plugin()
-                self.game_rules_plugin = self.mw.current_game_rules
-
-                if self.mw.current_game_rules:
-                    self.mw.default_tag_mappings = self.mw.current_game_rules.get_default_tag_mappings()
-
-                # Update UI after plugin switch
-                self.ui_updater.update_plugin_status_label()
-
-                # Save settings to persist plugin change
-                if hasattr(self.mw, 'settings_manager'):
-                    self.mw.settings_manager.save_settings()
-
-            # Load project-specific settings from metadata
-            if self.mw.project_manager:
-                loaded = self.mw.project_manager.load_settings_from_project(self.mw)
-                if loaded:
-                    log_info("Project-specific settings loaded from metadata")
-                    # Reapply settings to UI
-                    if hasattr(self.mw, 'apply_font_size'):
-                        self.mw.apply_font_size()
-                    if hasattr(self.mw, 'helper'):
-                        self.mw.helper.reconfigure_all_highlighters()
-                        self.mw.helper.apply_text_wrap_settings()
-
-            # Enable project-specific actions
-            if hasattr(self.mw, 'close_project_action'):
-                self.mw.close_project_action.setEnabled(True)
-            if hasattr(self.mw, 'import_block_action'):
-                self.mw.import_block_action.setEnabled(True)
-            if hasattr(self.mw, 'add_block_button'):
-                self.mw.add_block_button.setEnabled(True)
-
-            # Update UI to show blocks
-            self.ui_updater.update_title()
-            self._populate_blocks_from_project()
-
-            log_info(f"Recent project '{project.name}' opened with {len(project.blocks)} blocks.")
-        else:
-            QMessageBox.critical(
-                self.mw,
-                "Project Load Failed",
-                f"Failed to load project from:\n{project_path}"
-            )
+        self.mw.project_action_handler._open_recent_project(project_path)
 
     def _clear_recent_projects(self):
-        """Clear all recent projects."""
-        reply = QMessageBox.question(
-            self.mw,
-            'Clear Recent Projects',
-            "Are you sure you want to clear all recent projects?",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
-        )
-
-        if reply == QMessageBox.Yes:
-            if hasattr(self.mw, 'settings_manager'):
-                self.mw.settings_manager.clear_recent_projects()
-                self.mw.settings_manager.save_settings()
-                self._update_recent_projects_menu()
-            log_info("Recent projects cleared.")
+        self.mw.project_action_handler._clear_recent_projects()

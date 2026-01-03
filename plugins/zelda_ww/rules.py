@@ -41,29 +41,12 @@ class GameRules(BaseGameRules):
         self.text_fixer = TextFixer(main_window_ref, self.tag_manager, self.problem_analyzer)
 
     def load_data_from_json_obj(self, json_obj: Any) -> Tuple[List[List[str]], Optional[Dict[str, str]]]:
-        blocks = []
-        block_names = {}
-        if isinstance(json_obj, str):
-            lines = json_obj.splitlines()
-            if lines:
-                blocks.append(lines)
-                block_names["0"] = "Block 0"
-
-        if not blocks:
-            blocks = [[]]
-            block_names = {"0": "Block 0"}
-        return blocks, block_names
+        # Use base class implementation for Kruptar format support
+        return super().load_data_from_json_obj(json_obj)
 
     def save_data_to_json_obj(self, data: list, block_names: dict) -> Any:
-        if not data or not isinstance(data[0], list):
-            log_warning(f"Wind Waker Plugin: Save data is in unexpected format. Expected list of lists.")
-            return ""
-
-        strings_to_save = data[0]
-        
-        content = "\n".join(strings_to_save)
-            
-        return content
+        # Use base class implementation for Kruptar format support
+        return super().save_data_to_json_obj(data, block_names)
 
     def get_display_name(self) -> str:
         return "Zelda: The Wind Waker"
@@ -126,7 +109,7 @@ class GameRules(BaseGameRules):
         return super().get_short_problem_name(problem_id)
         
     def get_text_representation_for_preview(self, data_string: str) -> str:
-        newline_symbol = getattr(self.mw, "newline_display_symbol", "↵")
+        newline_symbol = getattr(self.mw, "newline_display_symbol", "↵") if self.mw else "↵"
         processed_string = str(data_string).replace('\n', newline_symbol)
         return convert_spaces_to_dots_for_display(processed_string, self.mw.show_multiple_spaces_as_dots)
 

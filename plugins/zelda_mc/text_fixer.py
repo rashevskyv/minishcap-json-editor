@@ -1,20 +1,17 @@
-# --- START OF FILE plugins/zelda_mc/text_fixer.py ---
-from typing import Optional, Set, Dict, Any, Tuple
 import re
-
+from typing import Optional, Set, Dict, Any, Tuple
 from utils.logging_utils import log_debug
 from utils.utils import calculate_string_width, remove_all_tags, convert_dots_to_spaces_from_editor, ALL_TAGS_PATTERN
+from plugins.common.text_fixer import GenericTextFixer
 
 WORD_CHAR_PATTERN_ZMC = re.compile(r"^[a-zA-Zа-яА-ЯіїєґІЇЄҐ]$")
 ANY_TAG_RE_PATTERN_ZMC = r"(\{[^}]*\}|\[[^\]]*\])"
 COLOR_WHITE_TAG_PATTERN_ZMC = re.compile(r"\{Color:White\}", re.IGNORECASE)
 PUNCTUATION_PATTERN_ZMC = re.compile(r"^[,\.!?]$")
 
-class TextFixer:
+class TextFixer(GenericTextFixer):
     def __init__(self, main_window_ref, tag_manager_ref, problem_analyzer_ref):
-        self.mw = main_window_ref
-        self.tag_manager = tag_manager_ref 
-        self.problem_analyzer = problem_analyzer_ref
+        super().__init__(main_window_ref, tag_manager_ref, problem_analyzer_ref)
 
     def _fix_empty_odd_sublines_zmc(self, text: str) -> Tuple[str, bool]:
         sub_lines = text.split('\n')
@@ -46,29 +43,6 @@ class TextFixer:
         joined_text = "\n".join(final_text_list)
         return joined_text, joined_text != text
 
-    def _extract_first_word_with_tags_zmc(self, text: str) -> tuple[str, str]:
-        if not text.strip(): return "", text
-        first_word_text = ""
-        char_idx = 0
-        while char_idx < len(text):
-            char = text[char_idx]
-            if char.isspace():
-                if first_word_text: break
-                else: first_word_text += char; char_idx += 1; continue
-            is_tag_char = False
-            for tag_match in ALL_TAGS_PATTERN.finditer(text[char_idx:]):
-                if tag_match.start() == 0:
-                    tag_content = tag_match.group(0)
-                    first_word_text += tag_content
-                    char_idx += len(tag_content)
-                    is_tag_char = True
-                    break
-            if is_tag_char: continue
-            first_word_text += char
-            char_idx += 1
-        remaining_text = text[len(first_word_text):].lstrip()
-        return first_word_text.rstrip(), remaining_text
-
     def _fix_short_lines_zmc(self, text: str, font_map: dict, threshold: int) -> Tuple[str, bool]:
         sub_lines = text.split('\n')
         if len(sub_lines) <= 1: return text, False
@@ -82,9 +56,8 @@ class TextFixer:
                 current_line = new_sub_lines[i]
                 next_line = new_sub_lines[i+1]
                 
-                # Використовуємо той самий аналізатор, що і для відображення
                 if self.problem_analyzer._check_short_line_zmc(current_line, next_line, font_map, threshold):
-                    first_word_next_raw, rest_of_next_line_raw = self._extract_first_word_with_tags_zmc(next_line)
+                    first_word_next_raw, rest_of_next_line_raw = self._extract_first_word_with_tags_generic(next_line)
                     current_line_rstripped = current_line.rstrip()
                     merged_line = current_line_rstripped
                     if current_line_rstripped and first_word_next_raw:
@@ -111,47 +84,6 @@ class TextFixer:
             if not made_change_in_this_fix_pass: break
         final_text = "\n".join(sub_lines)
         return final_text, final_text != original_text
-
-    def _fix_width_exceeded_zmc(self, text: str, font_map: dict, threshold: int) -> Tuple[str, bool]:
-        original_text = text
-        sub_lines = text.split('\n')
-        
-        made_change = False
-        final_lines = []
-
-        for line in sub_lines:
-            while calculate_string_width(remove_all_tags(line), font_map) > threshold:
-                made_change = True
-                line_parts = re.findall(r'(\{[^}]*\}|\[[^\]]*\]|\S+|\s+)', line)
-                
-                best_split_point = -1
-                for j in range(len(line_parts) - 1, 0, -1):
-                    line_part_one = "".join(line_parts[:j]).rstrip()
-                    if calculate_string_width(remove_all_tags(line_part_one), font_map) <= threshold:
-                        best_split_point = j
-                        break
-                
-                if best_split_point == -1 and len(line_parts) > 1:
-                    best_split_point = 1
-
-                if best_split_point != -1:
-                    line1 = "".join(line_parts[:best_split_point]).rstrip()
-                    line2 = "".join(line_parts[best_split_point:]).lstrip()
-                    final_lines.append(line1)
-                    line = line2 
-                else:
-                    final_lines.append(line)
-                    line = ""
-                    break
-            
-            if line:
-                final_lines.append(line)
-
-        if not made_change:
-            return original_text, False
-
-        final_text = "\n".join(final_lines)
-        return final_text, True
 
     def _fix_blue_sublines_zmc(self, text: str) -> Tuple[str, bool]:
         sub_lines = text.split('\n')
@@ -253,7 +185,7 @@ class TextFixer:
         
         merged_text, changed2 = self._fix_short_lines_zmc(modified_text, editor_font_map, editor_line_width_threshold)
         
-        splitted_text, changed3 = self._fix_width_exceeded_zmc(merged_text, editor_font_map, editor_line_width_threshold)
+        splitted_text, changed3 = self._fix_width_exceeded_generic(merged_text, editor_font_map, editor_line_width_threshold)
         
         final_text, changed4 = self._cleanup_spaces_around_tags_zmc(splitted_text)
         final_text, changed5 = self._fix_leading_spaces_in_sublines_zmc(final_text)

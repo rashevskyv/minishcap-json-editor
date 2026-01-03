@@ -1,20 +1,15 @@
-# --- START OF FILE plugins/zelda_mc/problem_analyzer.py ---
-from typing import Optional, Set, Dict, Any
 import re
-
+from typing import Optional, Set, Dict, Any
 from utils.logging_utils import log_debug
 from utils.utils import calculate_string_width, remove_all_tags, convert_dots_to_spaces_from_editor, ALL_TAGS_PATTERN
+from plugins.common.problem_analyzer import GenericProblemAnalyzer
 
 SENTENCE_END_PUNCTUATION_CHARS_ZMC = ['.', '!', '?']
 OPTIONAL_TRAILING_CHARS_ZMC = ['"', "'"]
 
-
-class ProblemAnalyzer:
+class ProblemAnalyzer(GenericProblemAnalyzer):
     def __init__(self, main_window_ref, tag_manager_ref, problem_definitions_ref, problem_ids_ref):
-        self.mw = main_window_ref
-        self.tag_manager = tag_manager_ref
-        self.problem_definitions = problem_definitions_ref
-        self.problem_ids = problem_ids_ref
+        super().__init__(main_window_ref, tag_manager_ref, problem_definitions_ref, problem_ids_ref)
 
     def _ends_with_sentence_punctuation_zmc(self, text_no_tags_stripped: str) -> bool:
         if not text_no_tags_stripped:
@@ -52,66 +47,23 @@ class ProblemAnalyzer:
     def _check_empty_odd_subline_display_zmc(self,
                                              subline_text: str,
                                              subline_qtextblock_number_in_editor: int,
-                                             is_single_subline_in_document: bool,
-                                             is_logically_single_and_empty_data_string: bool,
-                                             is_target_for_debug: bool = False) -> bool:
+                                             is_logically_single_and_empty_data_string: bool) -> bool:
 
         lines_per_page = getattr(self.mw, 'lines_per_page', 4)
         is_first_line_of_page = (subline_qtextblock_number_in_editor % lines_per_page) == 0
 
-        # Debug logging - ALWAYS log for first-line-of-page positions
-        if is_first_line_of_page:
-            log_debug(f"[EMPTY CHECK] Line {subline_qtextblock_number_in_editor}: is_first_line_of_page=True, lines_per_page={lines_per_page}")
-            log_debug(f"[EMPTY CHECK]   is_logically_empty={is_logically_single_and_empty_data_string}")
-            log_debug(f"[EMPTY CHECK]   text='{subline_text[:50]}...'")
-
         if is_logically_single_and_empty_data_string:
-            if is_first_line_of_page:
-                log_debug(f"[EMPTY CHECK] Line {subline_qtextblock_number_in_editor}: SKIP - is_logically_single_and_empty_data_string")
             return False
-
-        # REMOVED: is_single_subline_in_document check
-        # This was checking editor.document().blockCount() == 1, which is always True when viewing a single data string
-        # The actual "single empty string" case is already handled by is_logically_single_and_empty_data_string above
 
         if not is_first_line_of_page:
             return False
 
         text_no_dots = convert_dots_to_spaces_from_editor(subline_text)
-
-        # REMOVED: has_tags check
-        # The old logic skipped ALL lines with tags, even if they were empty after removing tags
-        # We want to detect lines that are empty after tag removal (e.g., "[VAR PKNICK(0000)]")
-
         text_no_tags_for_empty_check = remove_all_tags(text_no_dots)
         stripped_text_no_tags_for_empty_check = text_no_tags_for_empty_check.strip()
         is_content_empty_or_zero = not stripped_text_no_tags_for_empty_check or stripped_text_no_tags_for_empty_check == "0"
 
-        if is_first_line_of_page:
-            log_debug(f"[EMPTY CHECK] Line {subline_qtextblock_number_in_editor}: stripped='{stripped_text_no_tags_for_empty_check}', is_empty={is_content_empty_or_zero}")
-            if is_content_empty_or_zero:
-                log_debug(f"[EMPTY CHECK] Line {subline_qtextblock_number_in_editor}: *** PROBLEM DETECTED ***")
-
         return is_content_empty_or_zero
-
-    def _check_single_word_subline_zmc(self, subline_text: str) -> bool:
-        text_no_tags = remove_all_tags(subline_text).strip()
-        if not text_no_tags: 
-            return False
-        
-        words = text_no_tags.split()
-        
-        if len(words) > 1:
-            return False
-        
-        if len(words) == 1:
-            word = words[0]
-            word_content_pattern = re.compile(r'[\wа-яА-ЯіїІїЄєґҐ]+') 
-            if word_content_pattern.search(word):
-                return True 
-
-        return False
-
 
     def analyze_subline(self,
                         text: str,
@@ -121,37 +73,16 @@ class ProblemAnalyzer:
                         is_last_subline_in_data_string: bool,
                         editor_font_map: dict,
                         editor_line_width_threshold: int,
-                        full_data_string_text_for_logical_check: str,
-                        is_target_for_debug: bool = False) -> Set[str]:
+                        full_data_string_text_for_logical_check: str) -> Set[str]:
 
-        # Debug: log every analyze_subline call for first-line-of-page positions
-        lines_per_page = getattr(self.mw, 'lines_per_page', 4)
-        is_first_line_of_page_position = (qtextblock_number_in_editor % lines_per_page) == 0
-        if is_first_line_of_page_position:
-            log_debug(f"[ANALYZE_SUBLINE] Called for line {qtextblock_number_in_editor} (subline {subline_number_in_data_string} in data string)")
-
-        found_problems = set()
+        found_problems = super().analyze_subline(text, next_text, subline_number_in_data_string, qtextblock_number_in_editor, is_last_subline_in_data_string, editor_font_map, editor_line_width_threshold, full_data_string_text_for_logical_check)
+        
         text_with_spaces = convert_dots_to_spaces_from_editor(text)
         next_text_with_spaces = convert_dots_to_spaces_from_editor(next_text) if next_text is not None else None
 
-        # --- ОСНОВНА ЗМІНА ТУТ ---
-        # Рахуємо ширину тексту З УРАХУВАННЯМ тегів і порівнюємо з порогом
-        pixel_width_subline = calculate_string_width(text_with_spaces.rstrip(), editor_font_map)
-        if pixel_width_subline > editor_line_width_threshold:
-            found_problems.add(self.problem_ids.PROBLEM_WIDTH_EXCEEDED)
-
         is_logically_single_and_empty_data_string_check = (full_data_string_text_for_logical_check == "" and subline_number_in_data_string == 0 and is_last_subline_in_data_string)
 
-        # Note: Removed is_single_doc_block_for_display_check calculation
-        # That was checking editor.document().blockCount() == 1, which doesn't help
-        # We pass False for is_single_subline_in_document as it's no longer used
-
-        if self._check_empty_odd_subline_display_zmc(text,
-                                                     qtextblock_number_in_editor,
-                                                     False,  # is_single_subline_in_document - no longer used
-                                                     is_logically_single_and_empty_data_string_check,
-                                                     is_target_for_debug):
-             log_debug(f"[ANALYZE_SUBLINE] Line {qtextblock_number_in_editor}: Adding PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY")
+        if self._check_empty_odd_subline_display_zmc(text, qtextblock_number_in_editor, is_logically_single_and_empty_data_string_check):
              found_problems.add(self.problem_ids.PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY)
 
         if next_text_with_spaces is not None:
@@ -160,9 +91,8 @@ class ProblemAnalyzer:
 
         is_odd_logical_subline = (subline_number_in_data_string + 1) % 2 != 0
         if subline_number_in_data_string > 0 and is_odd_logical_subline:
-            if self._check_single_word_subline_zmc(text_with_spaces):
+            if self._check_single_word_subline_generic(text_with_spaces):
                 found_problems.add(self.problem_ids.PROBLEM_SINGLE_WORD_SUBLINE)
-
 
         for tag_match in ALL_TAGS_PATTERN.finditer(text_with_spaces):
             tag = tag_match.group(0)

@@ -1,3 +1,4 @@
+# --- START OF FILE components/line_numbered_text_edit.py ---
 # --- START OF FILE components/LineNumberedTextEdit.py ---
 from PyQt5.QtWidgets import (QPlainTextEdit, QMainWindow, QMenu, QApplication, QAction,
                              QWidget, QHBoxLayout, QPushButton, QWidgetAction, QDialog,
@@ -7,8 +8,8 @@ from PyQt5.QtCore import Qt, QRect, QSize, QRectF, pyqtSignal, QPoint, QMimeData
 from typing import Optional, List, Tuple
 import os
 
-from .LineNumberArea import LineNumberArea
-from .TextHighlightManager import TextHighlightManager
+from .line_number_area import LineNumberArea
+from .text_highlight_manager import TextHighlightManager
 from utils.logging_utils import log_debug, log_error
 from utils.syntax_highlighter import JsonTagHighlighter
 from core.glossary_manager import GlossaryEntry
@@ -20,20 +21,21 @@ from utils.constants import (
     MONOSPACE_EDITOR_FONT_FAMILY as DEFAULT_EDITOR_FONT_FAMILY_CONST,
     DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS
 )
-from .LNET_constants import (
+from .constants import (
     LT_CURRENT_LINE_COLOR, LT_LINKED_CURSOR_BLOCK_COLOR, LT_PREVIEW_SELECTED_LINE_COLOR,
     DT_CURRENT_LINE_COLOR, DT_LINKED_CURSOR_BLOCK_COLOR, DT_PREVIEW_SELECTED_LINE_COLOR,
     LINKED_CURSOR_POS_COLOR, TAG_INTERACTION_HIGHLIGHT_COLOR,
     SEARCH_MATCH_HIGHLIGHT_COLOR, WIDTH_EXCEEDED_LINE_COLOR, SHORT_LINE_COLOR,
     EMPTY_ODD_SUBLINE_COLOR, NEW_BLUE_SUBLINE_COLOR,
     CHARACTER_LIMIT_LINE_POSITION, CHARACTER_LIMIT_LINE_COLOR, CHARACTER_LIMIT_LINE_STYLE, CHARACTER_LIMIT_LINE_WIDTH,
-    WIDTH_THRESHOLD_LINE_COLOR, WIDTH_THRESHOLD_LINE_STYLE, WIDTH_THRESHOLD_LINE_WIDTH
+    WIDTH_THRESHOLD_LINE_COLOR, WIDTH_THRESHOLD_LINE_STYLE, WIDTH_THRESHOLD_LINE_WIDTH,
+    CRITICAL_PROBLEM_LINE_COLOR, WARNING_PROBLEM_LINE_COLOR
 )
-from .LNET_mouse_handlers import LNETMouseHandlers
-from .LNET_highlight_interface import LNETHighlightInterface
-from .LNET_paint_helpers import LNETPaintHelpers
-from .LNET_paint_event_logic import LNETPaintEventLogic
-from .LNET_line_number_area_paint_logic import LNETLineNumberAreaPaintLogic
+from .mouse_handlers import LNETMouseHandlers
+from .highlight_interface import LNETHighlightInterface
+from .paint_helpers import LNETPaintHelpers
+from .paint_event_logic import LNETPaintEventLogic
+from .line_number_area_paint_logic import LNETLineNumberAreaPaintLogic
 
 class LineNumberedTextEdit(QPlainTextEdit):
     lineClicked = pyqtSignal(int)
@@ -120,7 +122,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
         cursor = self.cursorForPosition(QPoint(5, y_pos))
         if cursor.isNull():
             return
-
+        
         block = cursor.block()
         if not block.isValid():
             return
@@ -356,6 +358,8 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.short_line_color = SHORT_LINE_COLOR 
         self.empty_odd_subline_color = EMPTY_ODD_SUBLINE_COLOR
         self.new_blue_subline_color = NEW_BLUE_SUBLINE_COLOR 
+        self.critical_problem_line_color = CRITICAL_PROBLEM_LINE_COLOR
+        self.warning_problem_line_color = WARNING_PROBLEM_LINE_COLOR
 
     def _create_color_button(self, parent_widget, color_name: str, color_rgb_str: str, menu_to_close: QMenu):
         btn = QPushButton(parent_widget)
@@ -887,10 +891,10 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.highlight_interface.setLinkedCursorPosition(line_number, column_number)
 
     def applyQueuedHighlights(self):
-        self.editor.highlightManager.applyHighlights()
+        self.highlightManager.applyHighlights()
 
     def clearAllProblemTypeHighlights(self):
-        self.editor.highlightManager.clearAllProblemHighlights()
+        self.highlightManager.clearAllProblemHighlights()
 
     def addProblemLineHighlight(self, line_number: int):
         self.addCriticalProblemHighlight(line_number)
@@ -902,7 +906,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.clearAllProblemTypeHighlights()
         
     def hasProblemHighlight(self, line_number = None) -> bool:
-        return self.hasProblemHighlight(line_number)
+        return self.hasCriticalProblemHighlight(line_number)
 
     def handle_mass_set_font(self):
         selected_lines = self.get_selected_lines()

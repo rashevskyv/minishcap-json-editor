@@ -44,11 +44,18 @@ class GameRules(BaseGameRules):
     def load_data_from_json_obj(self, json_data: Any) -> Tuple[list, dict]:
         if isinstance(json_data, list) and all(isinstance(sublist, list) for sublist in json_data):
             return json_data, {}
-        log_debug(f"Zelda Plugin: Provided JSON data is not a list of lists. Type: {type(json_data)}")
+        # Use base class implementation for Kruptar format support if it's a string
+        if isinstance(json_data, str):
+            return super().load_data_from_json_obj(json_data)
+        log_debug(f"Zelda Plugin: Provided JSON data is not a list of lists or string. Type: {type(json_data)}")
         return [], {}
 
     def save_data_to_json_obj(self, data: list, block_names: dict) -> Any:
-        return data
+        # If it's a list of lists, return as is (JSON format)
+        if data and isinstance(data[0], list) and len(data) > 1:
+            return data
+        # Otherwise use base class for Kruptar/text format
+        return super().save_data_to_json_obj(data, block_names)
 
     def get_display_name(self) -> str:
         return "The Legend of Zelda: The Minish Cap"
@@ -136,7 +143,7 @@ class GameRules(BaseGameRules):
         return actions
     
     def get_text_representation_for_preview(self, data_string: str) -> str:
-        newline_symbol = getattr(self.mw, "newline_display_symbol", "↵")
+        newline_symbol = getattr(self.mw, "newline_display_symbol", "↵") if self.mw else "↵"
         processed_string = str(data_string).replace('\n', newline_symbol)
         return convert_spaces_to_dots_for_display(processed_string, self.mw.show_multiple_spaces_as_dots)
 
