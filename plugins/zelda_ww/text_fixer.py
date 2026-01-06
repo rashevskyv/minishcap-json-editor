@@ -1,6 +1,9 @@
+# --- START OF FILE plugins/zelda_ww/text_fixer.py ---
 import re
 from typing import Optional, Set, Dict, Any, Tuple
 from plugins.common.text_fixer import GenericTextFixer
+from .tag_logic import ANY_TAG_PATTERN_WW
+from utils.utils import remove_all_tags
 
 WORD_CHAR_PATTERN_ZWW = re.compile(r"^[a-zA-Zа-яА-ЯіїєґІЇЄҐ]$")
 CLOSING_COLOR_TAG_WW = "[/C]"
@@ -18,6 +21,11 @@ class TextFixer(GenericTextFixer):
         made_change = False
         for i, sub_line in enumerate(sub_lines):
             is_odd_subline = (i + 1) % 2 != 0
+            if ANY_TAG_PATTERN_WW.search(sub_line):
+                new_sub_lines.append(sub_line)
+                continue
+            
+            # Використовуємо загальну функцію видалення тегів
             text_no_tags = remove_all_tags(sub_line)
             stripped_text_no_tags = text_no_tags.strip()
             is_empty_or_zero = not stripped_text_no_tags or stripped_text_no_tags == "0"
@@ -27,7 +35,14 @@ class TextFixer(GenericTextFixer):
             new_sub_lines.append(sub_line)
         if not made_change:
             return text, False
-        joined_text = "\n".join(new_sub_lines)
+        if text and not new_sub_lines:
+            return "", True
+        final_text_list = []
+        for i in range(len(new_sub_lines)):
+            if i > 0 and not new_sub_lines[i].strip() and not new_sub_lines[i-1].strip():
+                continue
+            final_text_list.append(new_sub_lines[i])
+        joined_text = "\n".join(final_text_list)
         return joined_text, joined_text != text
 
     def _fix_short_lines_zww(self, text: str, font_map: dict, threshold: int) -> Tuple[str, bool]:

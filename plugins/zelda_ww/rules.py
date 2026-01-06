@@ -35,6 +35,8 @@ class GameRules(BaseGameRules):
     def __init__(self, main_window_ref=None):
         super().__init__(main_window_ref)
         self.problem_definitions_cache = PROBLEM_DEFINITIONS
+        # Додаємо посилання на ProblemIDs, щоб UI міг звертатися до self.mw.current_game_rules.problem_ids
+        self.problem_ids = ProblemIDs 
         self.tag_manager = TagManager(main_window_ref)
         self.problem_analyzer = ProblemAnalyzer(main_window_ref, self.tag_manager,
                                                 self.problem_definitions_cache, ProblemIDs)

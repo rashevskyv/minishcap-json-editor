@@ -106,6 +106,13 @@ class AppActionHandler(BaseHandler):
             else:
                  self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
 
+    def save_data_action(self, ask_confirmation=True):
+        """
+        High-level save action that delegates to the data processor.
+        """
+        log_info(f"AppActionHandler: save_data_action called (confirm={ask_confirmation})")
+        return self.data_processor.save_current_edits(ask_confirmation)
+
     def save_as_dialog_action(self):
         log_info("Save As Dialog action triggered.")
         if not self.mw.json_path: QMessageBox.warning(self.mw, "Save As Error", "No original file open."); return

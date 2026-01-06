@@ -326,10 +326,15 @@ class SettingsDialog(QDialog):
         layout.addRow(QLabel(title))
 
         if not self.mw.current_game_rules:
+            layout.addRow(QLabel("No game rules loaded."))
             return
 
         problem_definitions = self.mw.current_game_rules.get_problem_definitions()
         if not problem_definitions:
+            layout.addRow(QLabel("No problem definitions found in current plugin."))
+            # Add a hint about potential fallback
+            if self.mw.current_game_rules.get_display_name() == "Base Game (No Plugin)":
+                layout.addRow(QLabel("<i>(Running in fallback mode due to plugin load error)</i>"))
             return
 
         sorted_problem_ids = sorted(

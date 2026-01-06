@@ -1,3 +1,4 @@
+# --- START OF FILE handlers/issue_scan_handler.py ---
 # handlers/issue_scan_handler.py
 from PyQt5.QtWidgets import QMessageBox
 from .base_handler import BaseHandler

@@ -1,3 +1,4 @@
+# --- START OF FILE plugins/common/problem_analyzer.py ---
 from typing import Optional, Set, List
 import re
 from utils.utils import calculate_string_width, remove_all_tags
@@ -28,7 +29,8 @@ class GenericProblemAnalyzer:
                         is_last_subline_in_data_string: bool,
                         editor_font_map: dict,
                         editor_line_width_threshold: int,
-                        full_data_string_text_for_logical_check: str) -> Set[str]:
+                        full_data_string_text_for_logical_check: str,
+                        is_target_for_debug: bool = False) -> Set[str]:
         found_problems = set()
         
         # Common width check

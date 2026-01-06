@@ -1,3 +1,4 @@
+# --- START OF FILE plugins/zelda_mc/tag_manager.py ---
 import re
 from typing import Optional, Set, List, Tuple
 from PyQt5.QtGui import QTextCharFormat, QColor
@@ -7,13 +8,13 @@ from utils.logging_utils import log_debug
 
 class TagManager(GenericTagManager):
     def __init__(self, main_window_ref=None):
-        super().__init__(main_window_ref)
-        self._legitimate_exact_tags_cache: Optional[Set[str]] = None
         self.literal_newline_format = QTextCharFormat()
         self.color_red_format = QTextCharFormat()
         self.color_green_format = QTextCharFormat()
         self.color_blue_format = QTextCharFormat()
         self.color_default_format = QTextCharFormat()
+        super().__init__(main_window_ref)
+        self._legitimate_exact_tags_cache: Optional[Set[str]] = None
         self.reconfigure_styles()
 
     def reconfigure_styles(self):

@@ -1,3 +1,4 @@
+# --- START OF FILE handlers/project_action_handler.py ---
 # handlers/project_action_handler.py
 import os
 import json

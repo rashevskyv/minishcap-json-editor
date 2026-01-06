@@ -1,3 +1,4 @@
+# --- START OF FILE core/project_models.py ---
 # core/project_models.py
 """
 Data models for the project-oriented paradigm:

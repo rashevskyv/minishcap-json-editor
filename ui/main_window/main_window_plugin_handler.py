@@ -1,10 +1,10 @@
 # --- START OF FILE ui/main_window/main_window_plugin_handler.py ---
-# --- START OF FILE main_window_plugin_handler.py ---
 from __future__ import annotations
 from typing import TYPE_CHECKING
 import sys
 import importlib
-from PyQt5.QtWidgets import QAction, QMenu
+import traceback
+from PyQt5.QtWidgets import QAction, QMenu, QMessageBox
 from PyQt5.QtGui import QKeySequence
 from utils.logging_utils import log_info, log_error
 from plugins.base_game_rules import BaseGameRules
@@ -54,10 +54,18 @@ class MainWindowPluginHandler:
             module_path = f"plugins.{self.mw.active_game_plugin}.rules"
             if module_path in sys.modules:
                 del sys.modules[module_path]
-                if f"plugins.{self.mw.active_game_plugin}.config" in sys.modules: 
-                    del sys.modules[f"plugins.{self.mw.active_game_plugin}.config"]
-                if f"plugins.{self.mw.active_game_plugin}.tag_checker_handler" in sys.modules:
-                    del sys.modules[f"plugins.{self.mw.active_game_plugin}.tag_checker_handler"]
+                # Force reload of related modules to ensure clean state
+                related_modules = [
+                    f"plugins.{self.mw.active_game_plugin}.config",
+                    f"plugins.{self.mw.active_game_plugin}.tag_checker_handler",
+                    f"plugins.{self.mw.active_game_plugin}.tag_manager",
+                    f"plugins.{self.mw.active_game_plugin}.problem_analyzer",
+                    f"plugins.{self.mw.active_game_plugin}.text_fixer",
+                    f"plugins.{self.mw.active_game_plugin}.tag_logic"
+                ]
+                for mod in related_modules:
+                    if mod in sys.modules:
+                        del sys.modules[mod]
 
             game_rules_module = importlib.import_module(module_path)
             
@@ -66,27 +74,39 @@ class MainWindowPluginHandler:
                 self.mw.current_game_rules = GameRulesClass(main_window_ref=self.mw)
                 log_info(f"Successfully loaded and instantiated game rules: {GameRulesClass.__name__}")
             else:
-                log_error(f"Class 'GameRules' not found or not a subclass of BaseGameRules in module {module_path}")
-                self._load_fallback_rules()
+                error_msg = f"Class 'GameRules' not found or not a subclass of BaseGameRules in module {module_path}"
+                log_error(error_msg)
+                self._load_fallback_rules(error_msg)
 
         except ImportError as e:
-            log_error(f"Could not import game plugin module {module_path}: {e}")
-            self._load_fallback_rules()
+            error_msg = f"Could not import game plugin module {module_path}:\n{e}\n\n{traceback.format_exc()}"
+            log_error(error_msg)
+            self._load_fallback_rules(error_msg)
         except Exception as e:
-            log_error(f"Unexpected error loading game plugin {module_path}: {e}")
-            self._load_fallback_rules()
+            error_msg = f"Unexpected error loading game plugin {module_path}:\n{e}\n\n{traceback.format_exc()}"
+            log_error(error_msg)
+            self._load_fallback_rules(error_msg)
+            
         if hasattr(self.mw, 'translation_handler'):
             self.mw.translation_handler.initialize_glossary_highlighting()
 
-    def _load_fallback_rules(self):
+    def _load_fallback_rules(self, error_message: str = None):
         log_info("Loading fallback game rules.")
+        
+        # Show error to user so they know why settings are missing
+        if error_message:
+            QMessageBox.critical(self.mw, "Plugin Load Error", 
+                                 f"Failed to load plugin '{self.mw.active_game_plugin}'.\n"
+                                 "Falling back to base rules.\n\n"
+                                 f"Error details:\n{error_message}")
+
         try:
             from plugins.base_game_rules import BaseGameRules 
             self.mw.current_game_rules = BaseGameRules(main_window_ref=self.mw)
             log_info("Loaded fallback BaseGameRules.")
         except Exception as e:
             log_error(f"CRITICAL ERROR: Could not load fallback game rules: {e}")
-            self.mw.current_game_rules = None 
+            self.mw.current_game_rules = None
 
     def trigger_check_tags_action(self):
         if self.mw.tag_checker_handler:

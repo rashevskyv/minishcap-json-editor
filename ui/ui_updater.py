@@ -294,17 +294,19 @@ class UIUpdater:
                 problems = self.mw.problems_per_subline[problem_key]
                 if problems:
                     # Determine if critical or warning
-                    is_critical = False
+                    is_critical = False; warning_color = None
                     for p_id in problems:
                         def_ = self.mw.current_game_rules.get_problem_definitions().get(p_id, {})
                         if def_.get("severity") == "error":
                             is_critical = True
                             break
+                        elif "color" in def_:
+                             warning_color = def_["color"]
                     
                     if is_critical:
                         editor.highlightManager.addCriticalProblemHighlight(i)
                     else:
-                        editor.highlightManager.addWarningLineHighlight(i)
+                        editor.highlightManager.addWarningLineHighlight(i, warning_color)
                         
             # Also check for specific highlights that have their own methods in HighlightManager
             if problem_key in self.mw.problems_per_subline:

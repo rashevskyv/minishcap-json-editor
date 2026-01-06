@@ -1,3 +1,4 @@
+# --- START OF FILE components/editor/text_highlight_manager.py ---
 # --- START OF FILE components/text_highlight_manager.py ---
 # --- START OF FILE components/TextHighlightManager.py ---
 from PyQt5.QtWidgets import QTextEdit
@@ -185,21 +186,9 @@ class TextHighlightManager:
     def addProblemLineHighlight(self, line_number: int):
         self.addCriticalProblemHighlight(line_number)
 
-    def addCriticalProblemHighlight(self, line_number: int):
-        doc = self.editor.document()
-        needs_update = False
-        if 0 <= line_number < doc.blockCount():
-            block = doc.findBlockByNumber(line_number)
-            if block.isValid():
-                is_already_added = any(s.cursor.blockNumber() == line_number for s in self._critical_problem_selections)
-                if not is_already_added:
-                    color = getattr(self.editor, 'critical_problem_line_color', QColor(255, 255, 0, 80))
-                    selection = self._create_block_background_selection(block, color, use_full_width=True)
-                    if selection:
-                        self._critical_problem_selections.append(selection)
-                        needs_update = True
-        if needs_update:
-            self.applyHighlights()
+    def addCriticalProblemHighlight(self, line_number: int, color: QColor = None):
+        # Не підсвічуємо фон тексту в редакторах, тільки в прев'ю (якщо потрібно)
+        return
 
     def removeCriticalProblemHighlight(self, line_number: int) -> bool:
         removed = False; initial_len = len(self._critical_problem_selections)
@@ -218,21 +207,9 @@ class TextHighlightManager:
         if line_number is not None: return any(s.cursor.blockNumber() == line_number for s in self._critical_problem_selections)
         return bool(self._critical_problem_selections)
 
-    def addWarningLineHighlight(self, line_number: int):
-        doc = self.editor.document()
-        needs_update = False
-        if line_number >= 0 and line_number < doc.blockCount():
-            block = doc.findBlockByNumber(line_number)
-            if block.isValid():
-                is_already_added = any(s.cursor.blockNumber() == line_number for s in self._warning_problem_selections)
-                if not is_already_added:
-                    color = getattr(self.editor, 'warning_problem_line_color', QColor(221, 221, 221, 150))
-                    selection = self._create_block_background_selection(block, color, use_full_width=False) 
-                    if selection: 
-                        self._warning_problem_selections.append(selection)
-                        needs_update = True
-        if needs_update:
-             self.applyHighlights()
+    def addWarningLineHighlight(self, line_number: int, color: QColor = None):
+        # Не підсвічуємо фон тексту в редакторах
+        return
 
     def removeWarningLineHighlight(self, line_number: int) -> bool:
         removed = False; initial_len = len(self._warning_problem_selections)
@@ -312,19 +289,8 @@ class TextHighlightManager:
         pass
 
     def addEmptyOddSublineHighlight(self, block_number: int):
-        doc = self.editor.document()
-        needs_update = False
-        if block_number >= 0 and block_number < doc.blockCount():
-            block = doc.findBlockByNumber(block_number)
-            if block.isValid():
-                is_already_added = any(s.cursor.blockNumber() == block_number for s in self._empty_odd_subline_selections)
-                if not is_already_added:
-                    selection = self._create_block_background_selection(block, self.editor.empty_odd_subline_color, use_full_width=False)
-                    if selection:
-                        self._empty_odd_subline_selections.append(selection)
-                        needs_update = True
-        if needs_update:
-            self.applyHighlights()
+        # Background highlighting disabled by request to keep the text area clean
+        return
 
     def removeEmptyOddSublineHighlight(self, block_number: int) -> bool:
         removed = False

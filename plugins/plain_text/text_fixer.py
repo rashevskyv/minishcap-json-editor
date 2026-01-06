@@ -1,3 +1,4 @@
+# --- START OF FILE plugins/plain_text/text_fixer.py ---
 import re
 from typing import Optional, Set, Dict, Any, Tuple
 from plugins.common.text_fixer import GenericTextFixer

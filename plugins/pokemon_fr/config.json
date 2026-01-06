@@ -1,24 +1,8 @@
 {
     "display_name": "Pokemon FireRed/LeafGreen",
-    "default_tag_mappings": {
-        "{PLAYER}": "{PLAYER}",
-        "{RIVAL}": "{RIVAL}",
-        "{DPAD_UPDOWN}": "{DPAD_UPDOWN}",
-        "{A_BUTTON}": "{A_BUTTON}",
-        "{B_BUTTON}": "{B_BUTTON}",
-        "{DPAD_LEFTRIGHT}": "{DPAD_LEFTRIGHT}",
-        "{PLUS}": "{PLUS}",
-        "{START_BUTTON}": "{START_BUTTON}",
-        "{NO}": "{NO}",
-        "{LV_2}": "{LV_2}",
-        "{ID}": "{ID}",
-        "{PP}": "{PP}",
-        "{ESCAPE 0x03}": "{ESCAPE 0x03}",
-        "{ID}{NO}": "{ID}{NO}",
-        "{PKMN}": "{PKMN}"
-    },
+    "default_tag_mappings": {},
     "block_names": {
-        "0": "0X777E3C87E77639C9"
+        "0": "Block 0 (msg0)"
     },
     "block_color_markers": {},
     "newline_display_symbol": "↵",
@@ -28,10 +12,10 @@
     "space_dot_color_hex": "#808080",
     "preview_wrap_lines": false,
     "editors_wrap_lines": false,
-    "game_dialog_max_width_pixels": 214,
-    "line_width_warning_threshold_pixels": 214,
-    "original_file_path": "C:\\Users\\Administrator\\Desktop\\pokemon\\Pokemon\\sources\\0x777e3c87e77639c9.txt",
-    "edited_file_path": "C:\\Users\\Administrator\\Desktop\\pokemon\\Pokemon\\translation\\0x777e3c87e77639c9.txt",
+    "game_dialog_max_width_pixels": 869,
+    "line_width_warning_threshold_pixels": 869,
+    "original_file_path": "D:\\git\\WW\\WindWaker\\sources\\message_orig.txt",
+    "edited_file_path": "D:\\git\\WW\\WindWaker\\translation\\message_orig.txt",
     "last_selected_block_index": 0,
     "last_selected_string_index": -1,
     "last_cursor_position_in_edited": 0,
@@ -62,24 +46,12 @@
         "Ледь стримуюся",
         "Король та варта"
     ],
-    "autofix_enabled": {
-        "PKFR_WIDTH_EXCEEDED": true,
-        "PKFR_SHORT_LINE": true,
-        "PKFR_EMPTY_SUBLINE": true,
-        "PKFR_SINGLE_WORD_SUBLINE": false,
-        "PKFR_TAG_WARNING": false
-    },
-    "detection_enabled": {
-        "PKFR_WIDTH_EXCEEDED": true,
-        "PKFR_SHORT_LINE": true,
-        "PKFR_EMPTY_SUBLINE": true,
-        "PKFR_SINGLE_WORD_SUBLINE": false,
-        "PKFR_TAG_WARNING": false
-    },
+    "autofix_enabled": {},
+    "detection_enabled": {},
     "string_metadata": {},
     "default_font_file": "",
-    "tag_color_rgba": "#ffff8c00",
-    "tag_bold": true,
+    "tag_color_rgba": "#ffa7a7b6",
+    "tag_bold": false,
     "tag_italic": false,
     "tag_underline": false,
     "newline_color_rgba": "#ffa020f0",
@@ -151,5 +123,6 @@
                 "timeout": 60
             }
         }
-    }
+    },
+    "lines_per_page": 4
 }

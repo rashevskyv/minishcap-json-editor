@@ -1,3 +1,4 @@
+# --- START OF FILE PLAN.md ---
 # Plan: Fix Warning Display & System Analysis
 
 ## Current Status

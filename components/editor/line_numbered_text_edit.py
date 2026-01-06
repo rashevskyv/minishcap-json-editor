@@ -1,3 +1,4 @@
+# --- START OF FILE components/editor/line_numbered_text_edit.py ---
 # --- START OF FILE components/line_numbered_text_edit.py ---
 # --- START OF FILE components/LineNumberedTextEdit.py ---
 from PyQt5.QtWidgets import (QPlainTextEdit, QMainWindow, QMenu, QApplication, QAction,

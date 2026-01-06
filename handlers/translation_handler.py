@@ -1314,3 +1314,16 @@ class TranslationHandler(BaseHandler):
                 return ""
                 
         return text
+
+    def translate_selected_lines(self):
+        """
+        Translates the lines currently selected in the preview editor.
+        If no lines are selected, translates the current string.
+        """
+        preview_edit = getattr(self.mw, 'preview_text_edit', None)
+        if preview_edit and preview_edit.get_selected_lines():
+            # Pass a dummy point; translate_preview_selection prioritizes 
+            # explicit selection over the mouse position.
+            self.translate_preview_selection(QPoint(0, 0))
+        else:
+            self.translate_current_string()
