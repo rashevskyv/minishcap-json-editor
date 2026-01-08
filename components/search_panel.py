@@ -7,8 +7,8 @@ from PyQt5.QtCore import Qt, pyqtSignal
 import collections
 
 class SearchPanelWidget(QWidget):
-    find_next_requested = pyqtSignal(str, bool, bool, bool) # Додано ignore_tags_newlines
-    find_previous_requested = pyqtSignal(str, bool, bool, bool) # Додано ignore_tags_newlines
+    find_next_requested = pyqtSignal(str, bool, bool, bool, bool) # + is_fuzzy
+    find_previous_requested = pyqtSignal(str, bool, bool, bool, bool) # + is_fuzzy
     close_requested = pyqtSignal()
 
     MAX_HISTORY_ITEMS = 20
@@ -28,27 +28,34 @@ class SearchPanelWidget(QWidget):
         self.search_query_edit = QComboBox(self)
         self.search_query_edit.setEditable(True)
         self.search_query_edit.setInsertPolicy(QComboBox.NoInsert) 
-        self.search_query_edit.lineEdit().setPlaceholderText("Знайти...")
+        self.search_query_edit.lineEdit().setPlaceholderText("Find...")
         
-        self.find_next_button = QPushButton("Далі", self)
-        self.find_previous_button = QPushButton("Назад", self)
+        self.find_next_button = QPushButton("Next", self)
+        self.find_previous_button = QPushButton("Prev", self)
         
         button_width = 75 
         self.find_next_button.setFixedWidth(button_width)
         self.find_previous_button.setFixedWidth(button_width)
         
-        self.case_sensitive_checkbox = QCheckBox("Враховувати регістр", self)
-        self.search_in_original_checkbox = QCheckBox("В оригіналі", self)
-        self.ignore_tags_newlines_checkbox = QCheckBox("Ігнор. теги/переноси", self)
-        self.ignore_tags_newlines_checkbox.setChecked(True) # За замовчуванням увімкнено
-        self.ignore_tags_newlines_checkbox.setToolTip("Ігнорувати теги {...} [...], переноси рядків та зайві пробіли при пошуку")
+        self.case_sensitive_checkbox = QCheckBox("Aa", self)
+        self.case_sensitive_checkbox.setToolTip("Case sensitive")
         
+        self.search_in_original_checkbox = QCheckBox("Original", self)
+        self.search_in_original_checkbox.setToolTip("Search in original text")
+        
+        self.ignore_tags_newlines_checkbox = QCheckBox("No Tags", self)
+        self.ignore_tags_newlines_checkbox.setChecked(True) 
+        self.ignore_tags_newlines_checkbox.setToolTip("Ignore tags {...} [...], newlines, and extra spaces")
+        
+        self.fuzzy_search_checkbox = QCheckBox("Fuzzy", self)
+        self.fuzzy_search_checkbox.setToolTip("Search for similar words (ignores endings)")
+
         self.status_label = QLabel("", self)
-        self.status_label.setMinimumWidth(150) 
+        self.status_label.setMinimumWidth(100) 
         self.status_label.setAlignment(Qt.AlignCenter)
 
         self.close_search_panel_button = QPushButton("X", self)
-        self.close_search_panel_button.setToolTip("Закрити панель пошуку")
+        self.close_search_panel_button.setToolTip("Close search panel")
         self.close_search_panel_button.setFixedSize(24, 24)
 
         left_layout = QHBoxLayout()
@@ -57,13 +64,15 @@ class SearchPanelWidget(QWidget):
         left_layout.addWidget(self.find_previous_button)
         
         options_layout = QHBoxLayout()
+        options_layout.setSpacing(8)
         options_layout.addWidget(self.case_sensitive_checkbox)
+        options_layout.addWidget(self.fuzzy_search_checkbox)
         options_layout.addWidget(self.search_in_original_checkbox)
-        options_layout.addWidget(self.ignore_tags_newlines_checkbox) # Додано сюди
+        options_layout.addWidget(self.ignore_tags_newlines_checkbox)
         options_layout.addSpacerItem(QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum))
 
-        main_layout.addLayout(left_layout, 5) 
-        main_layout.addLayout(options_layout, 4) # Збільшено stretch factor для опцій
+        main_layout.addLayout(left_layout, 6) 
+        main_layout.addLayout(options_layout, 5)
         main_layout.addWidget(self.status_label, 2) 
         main_layout.addWidget(self.close_search_panel_button) 
 
@@ -71,8 +80,6 @@ class SearchPanelWidget(QWidget):
         self.find_previous_button.clicked.connect(self._on_find_previous)
         self.search_query_edit.lineEdit().returnPressed.connect(self._on_find_next)
         self.search_query_edit.activated[str].connect(self._on_find_next_from_combobox_activation)
-
-
         self.close_search_panel_button.clicked.connect(self.close_requested)
 
     def _on_find_next_from_combobox_activation(self, text: str):
@@ -105,35 +112,49 @@ class SearchPanelWidget(QWidget):
         if self.search_history:
             self.search_query_edit.setCurrentText(self.search_history[0])
 
-
     def get_history(self) -> list:
         return list(self.search_history)
-
 
     def _on_find_next(self):
         query = self.search_query_edit.currentText()
         case_sensitive = self.case_sensitive_checkbox.isChecked()
         search_in_original = self.search_in_original_checkbox.isChecked()
         ignore_tags = self.ignore_tags_newlines_checkbox.isChecked()
+        is_fuzzy = self.fuzzy_search_checkbox.isChecked()
         if query:
             self._add_to_history(query)
-            self.find_next_requested.emit(query, case_sensitive, search_in_original, ignore_tags)
+            # Передаємо is_fuzzy через emit не вийде без зміни сигналу, 
+            # але ми можемо змінити сигнатуру або просто викликати публічний метод хендлера, 
+            # якщо сигнал підключений до нього. 
+            # Однак сигнал визначений як (str, bool, bool, bool). Додамо ще один bool.
+            # Оскільки ми змінюємо і клас сигналу, краще оновити сигнал.
+            # АЛЕ, щоб не ламати сумісність з ui_setup.py, де підключення йде через connect,
+            # ми оновимо definition сигналу нагорі файлу (див. нижче).
+            self.find_next_requested.emit(query, case_sensitive, search_in_original, ignore_tags, is_fuzzy)
 
     def _on_find_previous(self):
         query = self.search_query_edit.currentText()
         case_sensitive = self.case_sensitive_checkbox.isChecked()
         search_in_original = self.search_in_original_checkbox.isChecked()
         ignore_tags = self.ignore_tags_newlines_checkbox.isChecked()
+        is_fuzzy = self.fuzzy_search_checkbox.isChecked()
         if query:
             self._add_to_history(query)
-            self.find_previous_requested.emit(query, case_sensitive, search_in_original, ignore_tags)
+            self.find_previous_requested.emit(query, case_sensitive, search_in_original, ignore_tags, is_fuzzy)
 
-    def get_search_parameters(self) -> tuple[str, bool, bool, bool]: # Додано ignore_tags
+    def get_search_parameters(self) -> tuple[str, bool, bool, bool, bool]:
         query = self.search_query_edit.currentText()
         case_sensitive = self.case_sensitive_checkbox.isChecked()
         search_in_original = self.search_in_original_checkbox.isChecked()
         ignore_tags = self.ignore_tags_newlines_checkbox.isChecked()
-        return query, case_sensitive, search_in_original, ignore_tags
+        is_fuzzy = self.fuzzy_search_checkbox.isChecked()
+        return query, case_sensitive, search_in_original, ignore_tags, is_fuzzy
+
+    def set_search_options(self, case_sensitive: bool, search_in_original: bool, ignore_tags: bool, is_fuzzy: bool = False):
+        self.case_sensitive_checkbox.setChecked(case_sensitive)
+        self.search_in_original_checkbox.setChecked(search_in_original)
+        self.ignore_tags_newlines_checkbox.setChecked(ignore_tags)
+        self.fuzzy_search_checkbox.setChecked(is_fuzzy)
 
     def set_status_message(self, message: str, is_error: bool = False):
         self.status_label.setText(message)
@@ -155,8 +176,3 @@ class SearchPanelWidget(QWidget):
 
     def set_query(self, query: str):
         self.search_query_edit.lineEdit().setText(query)
-        
-    def set_search_options(self, case_sensitive: bool, search_in_original: bool, ignore_tags: bool):
-        self.case_sensitive_checkbox.setChecked(case_sensitive)
-        self.search_in_original_checkbox.setChecked(search_in_original)
-        self.ignore_tags_newlines_checkbox.setChecked(ignore_tags)

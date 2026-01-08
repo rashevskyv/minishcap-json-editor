@@ -44,62 +44,67 @@ class MainWindowHelper:
         case_sensitive_to_use = False
         search_in_original_to_use = False
         ignore_tags_to_use = True
+        is_fuzzy_to_use = False
 
         if self.mw.search_panel_widget.isVisible():
-            query_to_use, case_sensitive_to_use, search_in_original_to_use, ignore_tags_to_use = self.mw.search_panel_widget.get_search_parameters()
+            query_to_use, case_sensitive_to_use, search_in_original_to_use, ignore_tags_to_use, is_fuzzy_to_use = self.mw.search_panel_widget.get_search_parameters()
             if not query_to_use:
-                self.mw.search_panel_widget.set_status_message("Введіть запит для F3", is_error=True)
+                self.mw.search_panel_widget.set_status_message("Enter query for F3", is_error=True)
                 self.mw.search_panel_widget.focus_search_input()
                 return
         else:
-            query_to_use, case_sensitive_to_use, search_in_original_to_use, ignore_tags_to_use = self.mw.search_handler.get_current_search_params()
+            query_to_use, case_sensitive_to_use, search_in_original_to_use, ignore_tags_to_use, is_fuzzy_to_use = self.mw.search_handler.get_current_search_params()
             if not query_to_use:
                 self.toggle_search_panel()
-                self.mw.search_panel_widget.set_status_message("Введіть запит", is_error=True)
+                self.mw.search_panel_widget.set_status_message("Enter query", is_error=True)
                 return
 
-        found = self.mw.search_handler.find_next(query_to_use, case_sensitive_to_use, search_in_original_to_use, ignore_tags_to_use)
+        found = self.mw.search_handler.find_next(query_to_use, case_sensitive_to_use, search_in_original_to_use, ignore_tags_to_use, is_fuzzy_to_use)
         if not found and not self.mw.search_panel_widget.isVisible():
-            QMessageBox.information(self.mw, "Пошук", f"Не знайдено: \"{query_to_use}\"")
+            from PyQt5.QtWidgets import QMessageBox
+            QMessageBox.information(self.mw, "Find", f"Not found: \"{query_to_use}\"")
 
     def execute_find_previous_shortcut(self):
         query_to_use = ""
         case_sensitive_to_use = False
         search_in_original_to_use = False
         ignore_tags_to_use = True
+        is_fuzzy_to_use = False
 
         if self.mw.search_panel_widget.isVisible():
-            query_to_use, case_sensitive_to_use, search_in_original_to_use, ignore_tags_to_use = self.mw.search_panel_widget.get_search_parameters()
+            query_to_use, case_sensitive_to_use, search_in_original_to_use, ignore_tags_to_use, is_fuzzy_to_use = self.mw.search_panel_widget.get_search_parameters()
             if not query_to_use:
-                self.mw.search_panel_widget.set_status_message("Введіть запит для Shift+F3", is_error=True)
+                self.mw.search_panel_widget.set_status_message("Enter query for Shift+F3", is_error=True)
                 self.mw.search_panel_widget.focus_search_input()
                 return
         else:
-            query_to_use, case_sensitive_to_use, search_in_original_to_use, ignore_tags_to_use = self.mw.search_handler.get_current_search_params()
+            query_to_use, case_sensitive_to_use, search_in_original_to_use, ignore_tags_to_use, is_fuzzy_to_use = self.mw.search_handler.get_current_search_params()
             if not query_to_use:
                 self.toggle_search_panel()
-                self.mw.search_panel_widget.set_status_message("Введіть запит", is_error=True)
+                self.mw.search_panel_widget.set_status_message("Enter query", is_error=True)
                 return
 
-        found = self.mw.search_handler.find_previous(query_to_use, case_sensitive_to_use, search_in_original_to_use, ignore_tags_to_use)
+        found = self.mw.search_handler.find_previous(query_to_use, case_sensitive_to_use, search_in_original_to_use, ignore_tags_to_use, is_fuzzy_to_use)
         if not found and not self.mw.search_panel_widget.isVisible():
-            QMessageBox.information(self.mw, "Пошук", f"Не знайдено: \"{query_to_use}\"")
+            from PyQt5.QtWidgets import QMessageBox
+            QMessageBox.information(self.mw, "Find", f"Not found: \"{query_to_use}\"")
 
-    def handle_panel_find_next(self, query, case_sensitive, search_in_original, ignore_tags):
-        self.mw.search_handler.find_next(query, case_sensitive, search_in_original, ignore_tags)
+    def handle_panel_find_next(self, query, case_sensitive, search_in_original, ignore_tags, is_fuzzy):
+        self.mw.search_handler.find_next(query, case_sensitive, search_in_original, ignore_tags, is_fuzzy)
 
-    def handle_panel_find_previous(self, query, case_sensitive, search_in_original, ignore_tags):
-        self.mw.search_handler.find_previous(query, case_sensitive, search_in_original, ignore_tags)
+    def handle_panel_find_previous(self, query, case_sensitive, search_in_original, ignore_tags, is_fuzzy):
+        self.mw.search_handler.find_previous(query, case_sensitive, search_in_original, ignore_tags, is_fuzzy)
 
     def toggle_search_panel(self):
         if self.mw.search_panel_widget.isVisible():
             self.hide_search_panel()
         else:
             self.mw.search_panel_widget.setVisible(True)
-            last_query, case_sensitive, search_in_original, ignore_tags = self.mw.search_handler.get_current_search_params()
+            # Fix: added is_fuzzy to unpacking
+            last_query, case_sensitive, search_in_original, ignore_tags, is_fuzzy = self.mw.search_handler.get_current_search_params()
 
             self.mw.search_panel_widget.set_query(last_query if last_query else "")
-            self.mw.search_panel_widget.set_search_options(case_sensitive, search_in_original, ignore_tags)
+            self.mw.search_panel_widget.set_search_options(case_sensitive, search_in_original, ignore_tags, is_fuzzy)
 
             if hasattr(self.mw, 'search_history_to_save'):
                  self.mw.search_panel_widget.load_history(self.mw.search_history_to_save)
@@ -178,6 +183,7 @@ class MainWindowHelper:
 
 
     def restore_state_after_settings_load(self):
+        from utils.logging_utils import log_info
         log_info("Restoring state after settings load.")
         
         if hasattr(self.mw, 'window_geometry_to_restore') and self.mw.window_geometry_to_restore:
@@ -246,7 +252,9 @@ class MainWindowHelper:
             if self.mw.search_history_to_save:
                 last_query = self.mw.search_history_to_save[0]
                 self.mw.search_handler.current_query = last_query
-                _, cs, so, it = self.mw.search_panel_widget.get_search_parameters()
+                # Fix: unpacking 5 values
+                _, cs, so, it, is_fuzzy = self.mw.search_panel_widget.get_search_parameters()
                 self.mw.search_handler.is_case_sensitive = cs
                 self.mw.search_handler.search_in_original = so
                 self.mw.search_handler.ignore_tags_newlines = it
+                self.mw.search_handler.is_fuzzy = is_fuzzy

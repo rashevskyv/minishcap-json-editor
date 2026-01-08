@@ -1,11 +1,11 @@
 # --- START OF FILE utils/utils.py ---
 import datetime
 import re
-from typing import Optional, List
 import os
+import difflib # Додано
+from typing import Optional, List
 from plugins.pokemon_fr.config import P_VISUAL_EDITOR_MARKER, L_VISUAL_EDITOR_MARKER
 from .logging_utils import log_debug
-
 
 SPACE_DOT_SYMBOL = "·"
 ALL_TAGS_PATTERN = re.compile(r'\[[^\]]*\]|\{[^}]*\}|' + re.escape(P_VISUAL_EDITOR_MARKER) + r'|' + re.escape(L_VISUAL_EDITOR_MARKER))
@@ -61,8 +61,21 @@ def calculate_string_width(text: str, font_map: dict, default_char_width: int = 
         
     return total_width
 
-
-
+def is_fuzzy_match(word1: str, word2: str, threshold: float = 0.8) -> bool:
+    """
+    Checks if two words are similar enough using SequenceMatcher.
+    Ignores case.
+    """
+    if not word1 or not word2:
+        return False
+    # Оптимізація: якщо слова ідентичні, не запускаємо важкий алгоритм
+    if word1.lower() == word2.lower():
+        return True
+    # Оптимізація: якщо довжина відрізняється занадто сильно, це не збіг
+    if abs(len(word1) - len(word2)) > 3: 
+        return False
+        
+    return difflib.SequenceMatcher(None, word1.lower(), word2.lower()).ratio() >= threshold
 
 def convert_spaces_to_dots_for_display(text: str, enable_conversion: bool) -> str:
     if not enable_conversion or text is None:

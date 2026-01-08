@@ -23,7 +23,7 @@
         "provider": "Gemini",
         "api_key": "",
         "use_translation_api_key": true,
-        "model": "gemini-2.5-pro",
+        "model": "gemini-3.5-pro",
         "chunk_size": 8000
     },
     "restore_unsaved_on_startup": true,

@@ -189,6 +189,9 @@ class GlossaryTranslationUpdateDialog(QDialog):
         self._original_view.setPlainText(original_text)
         self._translation_edit.setPlainText(suggested)
         self._status_label.clear()
+        
+        # Оновлюємо підсвітку після завантаження тексту
+        self._update_text_highlights()
 
     # ------------------------------------------------------------------
     # Actions
@@ -214,12 +217,91 @@ class GlossaryTranslationUpdateDialog(QDialog):
         if not candidate:
             QMessageBox.warning(self, "Update", "Translation cannot be empty.")
             return
+        
+        # Застосовуємо зміни
         self._apply_translation_cb(occ, candidate)
+        
         self._status[id(occ)] = 'applied'
         self._refresh_occurrence_item(occ)
         self._status_label.setText("Applied.")
+        
         if next_item:
             self._select_next()
+        else:
+            # Якщо залишаємося на тому ж елементі, оновлюємо підсвітку
+            self._update_text_highlights()
+
+    def _update_text_highlights(self) -> None:
+        """Applies green background highlighting to the target terms in both editors using fuzzy matching."""
+        from PyQt5.QtWidgets import QTextEdit
+        from PyQt5.QtGui import QColor, QTextCursor
+        import re
+        from utils.utils import is_fuzzy_match
+        
+        highlight_color = QColor(0, 255, 0, 80) # Light green background
+
+        def get_selections_for_term(editor, term_phrase):
+            selections = []
+            if not term_phrase:
+                return selections
+            
+            text = editor.toPlainText()
+            
+            # Розбиваємо шукану фразу на окремі слова, ігноруючи короткі (сполучники тощо)
+            # Якщо слово коротше 3 букв, воно має збігатися точно, тому fuzzy не застосовуємо
+            search_tokens = [t for t in re.split(r'\W+', term_phrase) if t]
+            
+            if not search_tokens:
+                return selections
+
+            # Знаходимо всі слова в тексті редактора
+            # Використовуємо ітератор, щоб отримати позиції
+            word_iter = re.finditer(r'\w+', text)
+            
+            for match in word_iter:
+                word_in_text = match.group(0)
+                
+                # Перевіряємо, чи це слово схоже на будь-яке слово з шуканої фрази
+                is_match = False
+                for token in search_tokens:
+                    # Якщо слово коротке, вимагаємо точного збігу (ігноруючи регістр)
+                    if len(token) < 4:
+                        if token.lower() == word_in_text.lower():
+                            is_match = True
+                            break
+                    # Для довших слів використовуємо нечіткий пошук
+                    else:
+                        # Поріг 0.75 дозволяє "Острови" (7) і "Островів" (8) вважатися схожими
+                        if is_fuzzy_match(token, word_in_text, threshold=0.75):
+                            is_match = True
+                            break
+                
+                if is_match:
+                    sel = QTextEdit.ExtraSelection()
+                    sel.format.setBackground(highlight_color)
+                    cursor = editor.textCursor()
+                    cursor.setPosition(match.start())
+                    cursor.setPosition(match.end(), QTextCursor.KeepAnchor)
+                    sel.cursor = cursor
+                    selections.append(sel)
+                    
+            return selections
+
+        # 1. Highlight original term in original text view
+        orig_selections = get_selections_for_term(self._original_view, self._term)
+        self._original_view.setExtraSelections(orig_selections)
+        
+        # 2. Highlight translated terms in edit field
+        trans_selections = []
+        
+        # Highlight new value
+        trans_selections.extend(get_selections_for_term(self._translation_edit, self._new_translation))
+        
+        # Highlight old value (if present and different)
+        if self._old_translation and self._old_translation.strip() != self._new_translation.strip():
+            trans_selections.extend(get_selections_for_term(self._translation_edit, self._old_translation))
+            
+        self._translation_edit.setExtraSelections(trans_selections)
 
     def _skip_current(self) -> None:
         occ = self._current_occurrence()

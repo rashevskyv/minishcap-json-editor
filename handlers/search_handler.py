@@ -1,7 +1,7 @@
 # --- START OF FILE handlers/search_handler.py ---
 from .base_handler import BaseHandler
 from utils.logging_utils import log_debug
-from utils.utils import convert_spaces_to_dots_for_display, remove_curly_tags, convert_raw_to_display_text, prepare_text_for_tagless_search
+from utils.utils import convert_spaces_to_dots_for_display, remove_curly_tags, convert_raw_to_display_text, prepare_text_for_tagless_search, is_fuzzy_match
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QTextCursor
 from PyQt5.QtWidgets import QApplication
@@ -14,14 +14,15 @@ class SearchHandler(BaseHandler):
         self.is_case_sensitive = False
         self.search_in_original = False
         self.ignore_tags_newlines = True
+        self.is_fuzzy = False # New state
         self.last_found_block = -1
         self.last_found_string = -1
         self.last_found_char_pos_raw = -1
         self.search_results = []
         self.current_search_index = -1
         
-    def get_current_search_params(self) -> tuple[str, bool, bool, bool]:
-        return self.current_query, self.is_case_sensitive, self.search_in_original, self.ignore_tags_newlines
+    def get_current_search_params(self) -> tuple[str, bool, bool, bool, bool]:
+        return self.current_query, self.is_case_sensitive, self.search_in_original, self.ignore_tags_newlines, self.is_fuzzy
 
     def _get_text_for_search(self, block_idx: int, string_idx: int, search_in_original_flag: bool, ignore_tags_flag: bool) -> str:
         text_to_process = ""
@@ -59,40 +60,78 @@ class SearchHandler(BaseHandler):
         if hasattr(self.mw, 'search_panel_widget') and self.mw.search_panel_widget.isVisible():
             self.mw.search_panel_widget.clear_status()
 
-    def _find_in_text(self, text_to_search_in: str, query_to_find: str, start_offset: int, case_sensitive: bool, find_reverse: bool = False) -> int:
-        compare_text = text_to_search_in
-        compare_query = query_to_find
-        if not case_sensitive:
-            compare_text = text_to_search_in.lower()
-            compare_query = query_to_find.lower()
+    def _find_in_text(self, text_to_search_in: str, query_to_find: str, start_offset: int, case_sensitive: bool, find_reverse: bool = False, is_fuzzy: bool = False) -> int:
+        if not query_to_find: return -1
         
-        if not compare_query: return -1
+        # 1. Звичайний пошук (точний)
+        if not is_fuzzy:
+            compare_text = text_to_search_in
+            compare_query = query_to_find
+            if not case_sensitive:
+                compare_text = text_to_search_in.lower()
+                compare_query = query_to_find.lower()
 
-        if find_reverse:
-            return compare_text.rfind(compare_query, 0, start_offset + 1)
+            if find_reverse:
+                return compare_text.rfind(compare_query, 0, start_offset + 1)
+            else:
+                return compare_text.find(compare_query, start_offset)
+        
+        # 2. Нечіткий пошук
         else:
-            return compare_text.find(compare_query, start_offset)
+            # Шукаємо слова в тексті
+            # Regex для пошуку слів (буквено-цифрових послідовностей)
+            word_iter = re.finditer(r'\w+', text_to_search_in)
+            matches = []
+            
+            for match in word_iter:
+                # Фільтруємо за start_offset
+                if not find_reverse:
+                    if match.start() < start_offset: continue
+                else:
+                    # Для зворотного пошуку перевіряємо, щоб початок слова був до offset
+                    # Але rfind шукає "останнє входження в межах", тому тут логіка трохи складніша
+                    # Ми зберемо всі збіги, а потім виберемо потрібний
+                    if match.start() > start_offset: break
+                
+                # Перевірка на нечіткий збіг
+                # Якщо запит складається з кількох слів, це складніше, 
+                # тому для простоти реалізуємо нечіткий пошук ПО СЛОВАХ.
+                # Якщо запит - одне слово, порівнюємо.
+                if is_fuzzy_match(query_to_find, match.group(0), threshold=0.75):
+                    matches.append(match.start())
+            
+            if not matches:
+                return -1
+            
+            if find_reverse:
+                # Повертаємо останній збіг, який <= start_offset
+                valid_matches = [m for m in matches if m <= start_offset]
+                return valid_matches[-1] if valid_matches else -1
+            else:
+                # Повертаємо перший збіг
+                return matches[0]
 
-
-    def find_next(self, query: str, case_sensitive: bool, search_in_original: bool, ignore_tags: bool) -> bool:
-        log_debug(f"SearchHandler: find_next. Q: '{query}', Case: {case_sensitive}, Orig: {search_in_original}, IgnoreTags: {ignore_tags}")
+    def find_next(self, query: str, case_sensitive: bool, search_in_original: bool, ignore_tags: bool, is_fuzzy: bool = False) -> bool:
+        log_debug(f"SearchHandler: find_next. Q: '{query}', Case: {case_sensitive}, Orig: {search_in_original}, IgnoreTags: {ignore_tags}, Fuzzy: {is_fuzzy}")
         
         effective_query = prepare_text_for_tagless_search(query) if ignore_tags else query
         if not effective_query:
             if hasattr(self.mw, 'search_panel_widget') and self.mw.search_panel_widget.isVisible():
-                self.mw.search_panel_widget.set_status_message("Введіть запит", is_error=True)
+                self.mw.search_panel_widget.set_status_message("Enter query", is_error=True)
             return False
 
         if (self.current_query != query or
             self.is_case_sensitive != case_sensitive or
             self.search_in_original != search_in_original or
-            self.ignore_tags_newlines != ignore_tags):
+            self.ignore_tags_newlines != ignore_tags or
+            self.is_fuzzy != is_fuzzy):
             self.last_found_block = -1; self.last_found_string = -1; self.last_found_char_pos_raw = -1
         
         self.current_query = query
         self.is_case_sensitive = case_sensitive
         self.search_in_original = search_in_original
         self.ignore_tags_newlines = ignore_tags
+        self.is_fuzzy = is_fuzzy
 
         if not self.mw.data: return False
         
@@ -109,7 +148,14 @@ class SearchHandler(BaseHandler):
                 
                 text_for_search = self._get_text_for_search(b_idx, s_idx, self.search_in_original, self.ignore_tags_newlines)
                 
-                match_pos_in_search_text = self._find_in_text(text_for_search, effective_query, current_char_search_offset, self.is_case_sensitive)
+                match_pos_in_search_text = self._find_in_text(
+                    text_for_search, 
+                    effective_query, 
+                    current_char_search_offset, 
+                    self.is_case_sensitive, 
+                    find_reverse=False,
+                    is_fuzzy=self.is_fuzzy
+                )
                 
                 if match_pos_in_search_text != -1:
                     log_debug(f"Found match in {'processed' if ignore_tags else 'raw'} text at DataB {b_idx}, DataS {s_idx}, SearchTextPos {match_pos_in_search_text}")
@@ -119,36 +165,38 @@ class SearchHandler(BaseHandler):
                     
                     self._navigate_to_match(b_idx, s_idx, match_pos_in_search_text, len(effective_query), self.ignore_tags_newlines)
                     if hasattr(self.mw, 'search_panel_widget') and self.mw.search_panel_widget.isVisible():
-                        self.mw.search_panel_widget.set_status_message(f"Знайдено: Б{b_idx+1}, Р{s_idx+1}")
+                        self.mw.search_panel_widget.set_status_message(f"Found: B{b_idx+1}, S{s_idx+1}")
                     return True
             
             start_string_data_idx = 0
             start_char_offset = 0   
 
         if hasattr(self.mw, 'search_panel_widget') and self.mw.search_panel_widget.isVisible():
-            self.mw.search_panel_widget.set_status_message("Не знайдено (кінець)")
+            self.mw.search_panel_widget.set_status_message("Not found (end)")
         self.last_found_block = -1; self.last_found_string = -1; self.last_found_char_pos_raw = -1
         return False
 
-    def find_previous(self, query: str, case_sensitive: bool, search_in_original: bool, ignore_tags: bool) -> bool:
-        log_debug(f"SearchHandler: find_previous. Q: '{query}', Case: {case_sensitive}, Orig: {search_in_original}, IgnoreTags: {ignore_tags}")
+    def find_previous(self, query: str, case_sensitive: bool, search_in_original: bool, ignore_tags: bool, is_fuzzy: bool = False) -> bool:
+        log_debug(f"SearchHandler: find_previous. Q: '{query}', Case: {case_sensitive}, Orig: {search_in_original}, IgnoreTags: {ignore_tags}, Fuzzy: {is_fuzzy}")
 
         effective_query = prepare_text_for_tagless_search(query) if ignore_tags else query
         if not effective_query:
             if hasattr(self.mw, 'search_panel_widget') and self.mw.search_panel_widget.isVisible():
-                self.mw.search_panel_widget.set_status_message("Введіть запит", is_error=True)
+                self.mw.search_panel_widget.set_status_message("Enter query", is_error=True)
             return False
 
         if (self.current_query != query or
             self.is_case_sensitive != case_sensitive or
             self.search_in_original != search_in_original or
-            self.ignore_tags_newlines != ignore_tags):
+            self.ignore_tags_newlines != ignore_tags or
+            self.is_fuzzy != is_fuzzy):
             self.last_found_block = -1; self.last_found_string = -1; self.last_found_char_pos_raw = -1
 
         self.current_query = query
         self.is_case_sensitive = case_sensitive
         self.search_in_original = search_in_original
         self.ignore_tags_newlines = ignore_tags
+        self.is_fuzzy = is_fuzzy
             
         if not self.mw.data: return False
 
@@ -169,7 +217,14 @@ class SearchHandler(BaseHandler):
                                            if b_idx == start_block_data_idx and s_idx == start_string_data_idx and start_char_search_from != -1
                                            else len(text_for_search) -1 )
                 
-                match_pos_in_search_text = self._find_in_text(text_for_search, effective_query, current_char_search_from, self.is_case_sensitive, find_reverse=True)
+                match_pos_in_search_text = self._find_in_text(
+                    text_for_search, 
+                    effective_query, 
+                    current_char_search_from, 
+                    self.is_case_sensitive, 
+                    find_reverse=True,
+                    is_fuzzy=self.is_fuzzy
+                )
                 
                 if match_pos_in_search_text != -1:
                     log_debug(f"Found (prev) match in {'processed' if ignore_tags else 'raw'} text at DataB {b_idx}, DataS {s_idx}, SearchTextPos {match_pos_in_search_text}")
@@ -179,14 +234,14 @@ class SearchHandler(BaseHandler):
                     
                     self._navigate_to_match(b_idx, s_idx, match_pos_in_search_text, len(effective_query), self.ignore_tags_newlines)
                     if hasattr(self.mw, 'search_panel_widget') and self.mw.search_panel_widget.isVisible():
-                        self.mw.search_panel_widget.set_status_message(f"Знайдено: Б{b_idx+1}, Р{s_idx+1}")
+                        self.mw.search_panel_widget.set_status_message(f"Found: B{b_idx+1}, S{s_idx+1}")
                     return True
             
             start_string_data_idx = -1
             start_char_search_from = -1   
 
         if hasattr(self.mw, 'search_panel_widget') and self.mw.search_panel_widget.isVisible():
-             self.mw.search_panel_widget.set_status_message("Не знайдено (початок)")
+             self.mw.search_panel_widget.set_status_message("Not found (start)")
         self.last_found_block = -1; self.last_found_string = -1; self.last_found_char_pos_raw = -1
         return False
 

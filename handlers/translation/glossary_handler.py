@@ -220,6 +220,7 @@ class GlossaryHandler(BaseTranslationHandler):
 
     def edit_glossary_entry(self, term: str, is_new: bool = False, context: Optional[str] = None) -> None:
         entry = self.glossary_manager.get_entry(term) if not is_new else None
+        old_translation = entry.translation if entry else None
         
         dialog = self._create_edit_dialog(term, entry, context)
         if dialog.exec_() != QDialog.Accepted:
@@ -235,13 +236,28 @@ class GlossaryHandler(BaseTranslationHandler):
             return
             
         if is_new:
-            self.glossary_manager.add_entry(term, new_translation, new_notes)
+            updated_entry = self.glossary_manager.add_entry(term, new_translation, new_notes)
         else:
-            self.glossary_manager.update_entry(term, new_translation, new_notes)
+            updated_entry = self.glossary_manager.update_entry(term, new_translation, new_notes)
         
         self.glossary_manager.save_to_disk()
         self.main_handler._cached_glossary = self.glossary_manager.get_raw_text()
         self._update_glossary_highlighting()
+
+        # ТРИГЕР ВІКНА ОНОВЛЕННЯ ПЕРЕКЛАДІВ
+        # Якщо переклад змінився і це не новий запис, шукаємо входження
+        if not is_new and updated_entry and old_translation and old_translation.strip() != new_translation.strip():
+            data_source = getattr(self.mw, 'data', [])
+            occurrence_map = self.glossary_manager.build_occurrence_index(data_source)
+            occurrences = occurrence_map.get(updated_entry.original, [])
+            
+            if occurrences:
+                log_debug(f"Glossary: Translation changed for '{term}'. Showing update dialog for {len(occurrences)} occurrences.")
+                self._show_translation_update_dialog(
+                    entry=updated_entry,
+                    previous_translation=old_translation,
+                    occurrences=occurrences
+                )
 
     def _create_edit_dialog(self, term: str, entry: Optional[GlossaryEntry], context: Optional[str]) -> _EditEntryDialog:
         dialog_ref: Dict[str, _EditEntryDialog] = {}
@@ -708,10 +724,21 @@ class GlossaryHandler(BaseTranslationHandler):
         return str(text or '')
 
     def _apply_occurrence_translation(self, occurrence: GlossaryOccurrence, new_text: str) -> None:
+        # Оновлюємо дані в пам'яті
         self.main_handler.data_processor.update_edited_data(occurrence.block_idx, occurrence.string_idx, new_text)
+        
+        # Оновлюємо список рядків для блоку
         self.mw.ui_updater.populate_strings_for_block(occurrence.block_idx)
+        
+        # Якщо ми зараз знаходимося в цьому ж блоці, оновлюємо текстові поля
         if self.mw.current_block_idx == occurrence.block_idx:
-            self.mw.ui_updater.update_text_views()
+            # Якщо ми редагуємо саме той рядок, який зараз відкритий в редакторі
+            if self.mw.current_string_idx == occurrence.string_idx:
+                self.mw.ui_updater.update_text_views()
+        
+        # Оновлюємо лічильники проблем у списку блоків
+        self.mw.ui_updater.update_block_item_text_with_problem_count(occurrence.block_idx)
+        
         if self.mw.statusBar:
             self.mw.statusBar.showMessage(
                 f"Updated translation for block {occurrence.block_idx}, string {occurrence.string_idx}",
@@ -1094,27 +1121,53 @@ class GlossaryHandler(BaseTranslationHandler):
     def edit_glossary_entry(self, term: str, is_new: bool = False, context: Optional[str] = None) -> None:
         entry = self.glossary_manager.get_entry(term) if not is_new else None
         
+        # Зберігаємо старий переклад, обробляючи випадок None
+        old_translation = entry.translation if entry else ""
+        
         dialog = self._create_edit_dialog(term, entry, context)
         if dialog.exec_() != QDialog.Accepted:
             return
             
         new_translation, new_notes = dialog.get_values()
-        if not new_translation:
-            if entry and new_notes != entry.notes:
-                if self.glossary_manager.update_entry(term, entry.translation, new_notes):
-                    self.glossary_manager.save_to_disk()
-                    self.main_handler._cached_glossary = self.glossary_manager.get_raw_text()
-                    self._update_glossary_highlighting()
-            return
-            
-        if is_new:
-            self.glossary_manager.add_entry(term, new_translation, new_notes)
-        else:
-            self.glossary_manager.update_entry(term, new_translation, new_notes)
         
+        # Нормалізуємо для порівняння (прибираємо зайві пробіли)
+        old_val_clean = (old_translation or "").strip()
+        new_val_clean = (new_translation or "").strip()
+        
+        updated_entry = None
+        if is_new:
+            updated_entry = self.glossary_manager.add_entry(term, new_translation, new_notes)
+        else:
+            updated_entry = self.glossary_manager.update_entry(term, new_translation, new_notes)
+        
+        if not updated_entry:
+            log_debug(f"Glossary: Failed to update/add entry for '{term}'")
+            return
+
         self.glossary_manager.save_to_disk()
         self.main_handler._cached_glossary = self.glossary_manager.get_raw_text()
         self._update_glossary_highlighting()
+
+        # ТРИГЕР ВІКНА ОНОВЛЕННЯ ПЕРЕКЛАДІВ
+        # Умова: це редагування існуючого запису (не нового) І переклад фактично змінився
+        if not is_new and old_val_clean != new_val_clean:
+            log_debug(f"Glossary: Translation changed for '{term}'. Old: '{old_val_clean}', New: '{new_val_clean}'. Scanning occurrences...")
+            
+            data_source = getattr(self.mw, 'data', [])
+            occurrence_map = self.glossary_manager.build_occurrence_index(data_source)
+            occurrences = occurrence_map.get(updated_entry.original, [])
+            
+            if occurrences:
+                log_debug(f"Glossary: Found {len(occurrences)} occurrences. Opening update dialog.")
+                self._show_translation_update_dialog(
+                    entry=updated_entry,
+                    previous_translation=old_translation,
+                    occurrences=occurrences
+                )
+            else:
+                log_debug(f"Glossary: No occurrences found for term '{updated_entry.original}' in the text.")
+        else:
+            log_debug("Glossary: No translation change detected or new entry created. Skipping update dialog.")
 
     def _create_edit_dialog(self, term: str, entry: Optional[GlossaryEntry], context: Optional[str]) -> _EditEntryDialog:
         dialog_ref: Dict[str, _EditEntryDialog] = {}
