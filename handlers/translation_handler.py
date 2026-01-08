@@ -904,7 +904,7 @@ class TranslationHandler(BaseHandler):
                 if block_idx in self.pre_translation_state:
                     del self.pre_translation_state[block_idx]
                 
-                self.reset_translation_session()
+                # Removed self.reset_translation_session() to allow user to inspect context if needed
 
         except (json.JSONDecodeError, ValueError) as e:
             self._handle_ai_error(f"Failed to process chunk {chunk_index + 1}: {e}", context)
@@ -1096,7 +1096,7 @@ class TranslationHandler(BaseHandler):
         log_debug(
             f"AI Error (type={task_type}, attempt={attempt}/{max_attempts}, mode={mode}): {error_message}"
         )
-        self.reset_translation_session()
+        # Removed self.reset_translation_session() to preserve context/history for debugging
 
         if task_type in ['fill_glossary', 'glossary_occurrence_update', 'glossary_occurrence_batch_update', 'glossary_notes_variation']:
             self.ui_handler.finish_ai_operation()

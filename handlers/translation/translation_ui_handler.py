@@ -123,6 +123,46 @@ class TranslationUIHandler(BaseTranslationHandler):
         text = (raw_text or '').strip()
         if not text: return []
         
+        # Strategy 1: Look for JSON code blocks
+        import re
+        code_block_pattern = re.compile(r"```(?:json)?\s*(\[[\s\S]*?\])\s*```", re.IGNORECASE)
+        matches = code_block_pattern.findall(text)
+        if matches:
+            # Try parsing the LAST code block found, as reasoning often comes first
+            try:
+                parsed = json.loads(matches[-1])
+                if isinstance(parsed, list):
+                    return [str(item) for item in parsed if isinstance(item, str)]
+            except json.JSONDecodeError:
+                pass
+
+        # Strategy 2: Scan for the last valid JSON array in the text
+        # (Handles cases where reasoning precedes the JSON without code blocks)
+        try:
+            # Find the last closing bracket
+            end_idx = text.rfind(']')
+            if end_idx != -1:
+                # Iterate backwards to find the matching opening bracket
+                cursor = end_idx
+                while cursor >= 0:
+                    start_idx = text.rfind('[', 0, cursor)
+                    if start_idx == -1:
+                        break
+                    
+                    candidate = text[start_idx : end_idx+1]
+                    try:
+                        parsed = json.loads(candidate)
+                        if isinstance(parsed, list):
+                            return [str(item) for item in parsed if isinstance(item, str)]
+                    except json.JSONDecodeError:
+                        # If parse fails, keep searching backwards for an earlier '['
+                        cursor = start_idx
+                    else:
+                        cursor = -1 # Should not happen if successful, but to prevent infinite loop
+        except Exception:
+            pass
+
+        # Strategy 3: Fallback to simple line parsing if JSON fails
         try:
             parsed = json.loads(text)
             if isinstance(parsed, list):

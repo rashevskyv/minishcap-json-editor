@@ -1,4 +1,3 @@
-# --- START OF FILE components/translation_variations_dialog.py ---
 """Dialog for choosing among AI translation variations."""
 from __future__ import annotations
 
@@ -23,13 +22,13 @@ class TranslationVariationsDialog(QDialog):
 
     def __init__(self, parent=None, variations: Optional[Iterable[str]] = None) -> None:
         super().__init__(parent)
-        self.setWindowTitle("AI-варіації перекладу")
+        self.setWindowTitle("AI Translation Variations")
         self.resize(720, 520)
         self.selected_translation: Optional[str] = None
 
         layout = QVBoxLayout(self)
 
-        layout.addWidget(QLabel("Оберіть варіант перекладу та двічі клацніть або натисніть \"Застосувати\"."))
+        layout.addWidget(QLabel("Select a translation option and double-click or press 'Apply'."))
 
         lists_layout = QHBoxLayout()
         self._list = QListWidget(self)
@@ -45,10 +44,10 @@ class TranslationVariationsDialog(QDialog):
         layout.addLayout(lists_layout)
 
         self._buttons = QDialogButtonBox(self)
-        self._apply_button = QPushButton("Застосувати", self)
+        self._apply_button = QPushButton("Apply", self)
         self._apply_button.clicked.connect(self._apply_current_selection)
         self._buttons.addButton(self._apply_button, QDialogButtonBox.AcceptRole)
-        self._buttons.addButton("Скасувати", QDialogButtonBox.RejectRole)
+        self._buttons.addButton("Cancel", QDialogButtonBox.RejectRole)
         self._buttons.rejected.connect(self.reject)
         layout.addWidget(self._buttons)
 
