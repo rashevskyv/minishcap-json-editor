@@ -362,7 +362,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.critical_problem_line_color = CRITICAL_PROBLEM_LINE_COLOR
         self.warning_problem_line_color = WARNING_PROBLEM_LINE_COLOR
 
-    def _create_tag_button(self, parent_widget, display: str, open_tag: str, close_tag: str = None):
+    def _create_tag_button(self, parent_widget, display: str, open_tag: str, close_tag: str = None, menu: QMenu = None):
         btn = QPushButton(parent_widget)
         button_size = 24 
         btn.setFixedSize(button_size, button_size)
@@ -377,10 +377,16 @@ class LineNumberedTextEdit(QPlainTextEdit):
             btn.setToolTip(f"Вставити/Обгорнути: {open_tag}{'...' + close_tag if close_tag else ''}")
             btn.setStyleSheet("padding: 0px; font-size: 14px;")
 
-        if close_tag:
-            btn.clicked.connect(lambda: self.mouse_handler.wrap_selection_with_custom_tags(open_tag, close_tag))
-        else:
-            btn.clicked.connect(lambda: self.mouse_handler.insert_single_tag(open_tag))
+        def on_click():
+            if close_tag:
+                self.mouse_handler.wrap_selection_with_custom_tags(open_tag, close_tag)
+            else:
+                self.mouse_handler.insert_single_tag(open_tag)
+            
+            if menu:
+                menu.close()
+
+        btn.clicked.connect(on_click)
         
         return btn
 
@@ -539,20 +545,26 @@ class LineNumberedTextEdit(QPlainTextEdit):
                     
                     tag_widget_action = QWidgetAction(menu)
                     tag_palette_widget = QWidget(menu)
-                    palette_layout = QHBoxLayout(tag_palette_widget)
+                    
+                    from PyQt5.QtWidgets import QGridLayout
+                    palette_layout = QGridLayout(tag_palette_widget)
                     palette_layout.setContentsMargins(5, 3, 5, 3)
                     palette_layout.setSpacing(4)
                     
-                    for tag_info in tags_to_show:
+                    max_cols = 8
+                    for i, tag_info in enumerate(tags_to_show):
                         disp = tag_info.get("display", "?")
                         if has_selection:
                             ot = tag_info.get("open", "")
                             ct = tag_info.get("close", "")
-                            btn = self._create_tag_button(tag_palette_widget, disp, ot, ct)
+                            btn = self._create_tag_button(tag_palette_widget, disp, ot, ct, menu)
                         else:
                             t = tag_info.get("tag", "")
-                            btn = self._create_tag_button(tag_palette_widget, disp, t)
-                        palette_layout.addWidget(btn)
+                            btn = self._create_tag_button(tag_palette_widget, disp, t, None, menu)
+                            
+                        row = i // max_cols
+                        col = i % max_cols
+                        palette_layout.addWidget(btn, row, col)
                     
                     tag_palette_widget.setLayout(palette_layout)
                     tag_widget_action.setDefaultWidget(tag_palette_widget)

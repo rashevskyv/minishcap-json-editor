@@ -440,9 +440,11 @@ class SettingsDialog(QDialog):
             row = table.rowAt(pos.y())
             
         add_action = menu.addAction("Add Row")
+        clone_action = menu.addAction("Clone Row")
         delete_action = menu.addAction("Delete Row")
         
         if row == -1:
+            clone_action.setEnabled(False)
             delete_action.setEnabled(False)
             
         action = menu.exec_(table.viewport().mapToGlobal(pos))
@@ -452,6 +454,20 @@ class SettingsDialog(QDialog):
                 self._add_table_row(table, insert_at_row=row + 1)
             else:
                 self._add_table_row(table)
+        elif action == clone_action:
+            if row != -1:
+                widget = table.cellWidget(row, 0)
+                disp = widget.text() if widget else ""
+                
+                item1 = table.item(row, 1)
+                col1 = item1.text() if item1 else ""
+                
+                col2 = ""
+                if table.columnCount() > 2:
+                    item2 = table.item(row, 2)
+                    col2 = item2.text() if item2 else ""
+                    
+                self._add_table_row(table, display_text=disp, col1=col1, col2=col2, insert_at_row=row + 1)
         elif action == delete_action:
             if row != -1:
                 table.removeRow(row)
