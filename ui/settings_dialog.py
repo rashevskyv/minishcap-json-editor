@@ -373,6 +373,7 @@ class SettingsDialog(QDialog):
         search_layout.addWidget(QLabel("Filter Tags:"))
         self.tags_search_edit = QLineEdit(self)
         self.tags_search_edit.setPlaceholderText("Search by hex, emoji, or tag name...")
+        self.tags_search_edit.setClearButtonEnabled(True)
         self.tags_search_edit.textChanged.connect(self._filter_tags_tables)
         search_layout.addWidget(self.tags_search_edit)
         layout.addLayout(search_layout)
