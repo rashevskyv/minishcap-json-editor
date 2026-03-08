@@ -366,38 +366,61 @@ class SettingsDialog(QDialog):
         layout = QVBoxLayout(tab)
         
         # Single Tags
-        single_group = QGroupBox("Single Tags (ПКМ без виділення)", self)
+        single_group = QGroupBox("Single Tags (RMB without selection)", self)
         single_layout = QVBoxLayout(single_group)
         self.single_tags_table = QTableWidget(0, 2, self)
-        self.single_tags_table.setHorizontalHeaderLabels(["Відображення (Emoji/Hex)", "Тег"])
-        self.single_tags_table.horizontalHeader().setStretchLastSection(True)
+        self.single_tags_table.setHorizontalHeaderLabels(["Display (Emoji/Hex)", "Tag"])
+        
+        header = self.single_tags_table.horizontalHeader()
+        try:
+            from PyQt5.QtWidgets import QHeaderView
+            header.setSectionResizeMode(QHeaderView.Stretch)
+        except ImportError:
+            header.setStretchLastSection(True)
+            
+        self.single_tags_table.mouseDoubleClickEvent = lambda e: self._handle_table_double_click(e, self.single_tags_table)
         single_layout.addWidget(self.single_tags_table)
         
         single_btn_row = QHBoxLayout()
-        add_single_btn = QPushButton("Додати ряд", self)
+        add_single_btn = QPushButton("Add Row", self)
         add_single_btn.clicked.connect(lambda: self._add_table_row(self.single_tags_table))
-        remove_single_btn = QPushButton("Видалити ряд", self)
+        remove_single_btn = QPushButton("Remove Row", self)
         remove_single_btn.clicked.connect(lambda: self._remove_table_row(self.single_tags_table))
         single_btn_row.addWidget(add_single_btn); single_btn_row.addWidget(remove_single_btn)
         single_layout.addLayout(single_btn_row)
         layout.addWidget(single_group)
         
         # Wrap Tags
-        wrap_group = QGroupBox("Wrap Tags (ПКМ з виділенням)", self)
+        wrap_group = QGroupBox("Wrap Tags (RMB with selection)", self)
         wrap_layout = QVBoxLayout(wrap_group)
         self.wrap_tags_table = QTableWidget(0, 3, self)
-        self.wrap_tags_table.setHorizontalHeaderLabels(["Відображення (Emoji/Hex)", "Відкриваючий тег", "Закриваючий тег"])
-        self.wrap_tags_table.horizontalHeader().setStretchLastSection(True)
+        self.wrap_tags_table.setHorizontalHeaderLabels(["Display (Emoji/Hex)", "Opening Tag", "Closing Tag"])
+        
+        header_wrap = self.wrap_tags_table.horizontalHeader()
+        try:
+            from PyQt5.QtWidgets import QHeaderView
+            header_wrap.setSectionResizeMode(QHeaderView.Stretch)
+        except ImportError:
+            header_wrap.setStretchLastSection(True)
+            
+        self.wrap_tags_table.mouseDoubleClickEvent = lambda e: self._handle_table_double_click(e, self.wrap_tags_table)
         wrap_layout.addWidget(self.wrap_tags_table)
         
         wrap_btn_row = QHBoxLayout()
-        add_wrap_btn = QPushButton("Додати ряд", self)
+        add_wrap_btn = QPushButton("Add Row", self)
         add_wrap_btn.clicked.connect(lambda: self._add_table_row(self.wrap_tags_table))
-        remove_wrap_btn = QPushButton("Видалити ряд", self)
+        remove_wrap_btn = QPushButton("Remove Row", self)
         remove_wrap_btn.clicked.connect(lambda: self._remove_table_row(self.wrap_tags_table))
         wrap_btn_row.addWidget(add_wrap_btn); wrap_btn_row.addWidget(remove_wrap_btn)
         wrap_layout.addLayout(wrap_btn_row)
         layout.addWidget(wrap_group)
+
+    def _handle_table_double_click(self, event, table):
+        item = table.itemAt(event.pos())
+        if item is None:
+            self._add_table_row(table)
+        else:
+            QTableWidget.mouseDoubleClickEvent(table, event)
 
     def _add_table_row(self, table, display_text="", col1="", col2=""):
         row = table.rowCount()

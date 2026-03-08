@@ -1,6 +1,22 @@
 {
     "display_name": "Pokemon FireRed/LeafGreen",
-    "default_tag_mappings": {},
+    "default_tag_mappings": {
+        "{PLAYER}": "{PLAYER}",
+        "{RIVAL}": "{RIVAL}",
+        "{DPAD_UPDOWN}": "{DPAD_UPDOWN}",
+        "{A_BUTTON}": "{A_BUTTON}",
+        "{B_BUTTON}": "{B_BUTTON}",
+        "{DPAD_LEFTRIGHT}": "{DPAD_LEFTRIGHT}",
+        "{PLUS}": "{PLUS}",
+        "{START_BUTTON}": "{START_BUTTON}",
+        "{NO}": "{NO}",
+        "{LV_2}": "{LV_2}",
+        "{ID}": "{ID}",
+        "{PP}": "{PP}",
+        "{ESCAPE 0x03}": "{ESCAPE 0x03}",
+        "{ID}{NO}": "{ID}{NO}",
+        "{PKMN}": "{PKMN}"
+    },
     "block_names": {
         "0": "data_event_scripts.s",
         "1": "data_field_move_scripts.inc",
@@ -350,8 +366,8 @@
     "editors_wrap_lines": false,
     "game_dialog_max_width_pixels": 869,
     "line_width_warning_threshold_pixels": 869,
-    "original_file_path": "C:\\Users\\Administrator\\Desktop\\PokemonRS\\sources\\data_event_scripts.s.json",
-    "edited_file_path": "C:\\Users\\Administrator\\Desktop\\PokemonRS\\translation\\data_event_scripts.s.json",
+    "original_file_path": null,
+    "edited_file_path": null,
     "last_selected_block_index": 0,
     "last_selected_string_index": 0,
     "last_cursor_position_in_edited": 0,
@@ -383,18 +399,18 @@
         "З гучним кукуріканням та милим"
     ],
     "autofix_enabled": {
-        "PKFR_TAG_WARNING": false,
         "PKFR_WIDTH_EXCEEDED": true,
+        "PKFR_SHORT_LINE": true,
         "PKFR_EMPTY_SUBLINE": true,
         "PKFR_SINGLE_WORD_SUBLINE": false,
-        "PKFR_SHORT_LINE": true
+        "PKFR_TAG_WARNING": false
     },
     "detection_enabled": {
-        "PKFR_TAG_WARNING": true,
         "PKFR_WIDTH_EXCEEDED": true,
+        "PKFR_SHORT_LINE": true,
         "PKFR_EMPTY_SUBLINE": true,
         "PKFR_SINGLE_WORD_SUBLINE": true,
-        "PKFR_SHORT_LINE": true
+        "PKFR_TAG_WARNING": true
     },
     "string_metadata": {},
     "default_font_file": "",
