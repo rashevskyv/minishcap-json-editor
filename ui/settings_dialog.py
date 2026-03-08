@@ -434,28 +434,32 @@ class SettingsDialog(QDialog):
         menu = QMenu(self)
         
         item = table.itemAt(pos)
-        row = item.row() if item else -1
+        clicked_row = item.row() if item else -1
         
-        if row == -1:
-            row = table.rowAt(pos.y())
+        if clicked_row == -1:
+            clicked_row = table.rowAt(pos.y())
+            
+        selected_rows = sorted(list(set([i.row() for i in table.selectedItems()])))
+        if clicked_row != -1 and clicked_row not in selected_rows:
+            selected_rows = [clicked_row]
             
         add_action = menu.addAction("Add Row")
-        clone_action = menu.addAction("Clone Row")
-        delete_action = menu.addAction("Delete Row")
+        clone_action = menu.addAction(f"Clone Row{'s' if len(selected_rows) > 1 else ''}")
+        delete_action = menu.addAction(f"Delete Row{'s' if len(selected_rows) > 1 else ''}")
         
-        if row == -1:
+        if not selected_rows:
             clone_action.setEnabled(False)
             delete_action.setEnabled(False)
             
         action = menu.exec_(table.viewport().mapToGlobal(pos))
         
         if action == add_action:
-            if row != -1:
-                self._add_table_row(table, insert_at_row=row + 1)
+            if clicked_row != -1:
+                self._add_table_row(table, insert_at_row=clicked_row + 1)
             else:
                 self._add_table_row(table)
         elif action == clone_action:
-            if row != -1:
+            for row in reversed(selected_rows):
                 widget = table.cellWidget(row, 0)
                 disp = widget.text() if widget else ""
                 
@@ -469,7 +473,7 @@ class SettingsDialog(QDialog):
                     
                 self._add_table_row(table, display_text=disp, col1=col1, col2=col2, insert_at_row=row + 1)
         elif action == delete_action:
-            if row != -1:
+            for row in reversed(selected_rows):
                 table.removeRow(row)
 
     def _add_table_row(self, table, display_text="", col1="", col2="", insert_at_row=None):
