@@ -60,6 +60,8 @@ class ColorPickerButton(QPushButton):
             self.setColor(chosen)
 
 class TagDisplayWidget(QWidget):
+    textChanged = pyqtSignal(str)
+
     def __init__(self, initial_text="", parent=None):
         super().__init__(parent)
         layout = QHBoxLayout(self)
@@ -86,6 +88,7 @@ class TagDisplayWidget(QWidget):
         else:
             self.color_btn.setStyleSheet("border: 1px solid gray; border-radius: 2px;")
             self.color_btn.setText("...")
+        self.textChanged.emit(text)
 
     def _pick_color(self):
         current_text = self.line_edit.text().strip()
@@ -365,6 +368,15 @@ class SettingsDialog(QDialog):
     def _setup_context_tags_subtab(self, tab):
         layout = QVBoxLayout(tab)
         
+        # Search Filter
+        search_layout = QHBoxLayout()
+        search_layout.addWidget(QLabel("Filter Tags:"))
+        self.tags_search_edit = QLineEdit(self)
+        self.tags_search_edit.setPlaceholderText("Search by hex, emoji, or tag name...")
+        self.tags_search_edit.textChanged.connect(self._filter_tags_tables)
+        search_layout.addWidget(self.tags_search_edit)
+        layout.addLayout(search_layout)
+        
         # Single Tags
         single_group = QGroupBox("Single Tags (RMB without selection)", self)
         single_layout = QVBoxLayout(single_group)
@@ -477,17 +489,48 @@ class SettingsDialog(QDialog):
                 table.removeRow(row)
 
     def _add_table_row(self, table, display_text="", col1="", col2="", insert_at_row=None):
+        sorting_was_enabled = table.isSortingEnabled()
+        if sorting_was_enabled:
+            table.setSortingEnabled(False)
+            
         if insert_at_row is not None:
             row = insert_at_row
         else:
             row = table.rowCount()
         table.insertRow(row)
         
-        table.setCellWidget(row, 0, TagDisplayWidget(display_text, table))
+        disp_item = QTableWidgetItem()
+        disp_item.setData(Qt.DisplayRole, display_text)
+        table.setItem(row, 0, disp_item)
+        
+        widget = TagDisplayWidget(display_text, table)
+        widget.textChanged.connect(lambda txt, i=disp_item: i.setData(Qt.DisplayRole, txt))
+        table.setCellWidget(row, 0, widget)
+        
         table.setItem(row, 1, QTableWidgetItem(col1))
         
         if table.columnCount() > 2:
             table.setItem(row, 2, QTableWidgetItem(col2))
+            
+        if sorting_was_enabled:
+            table.setSortingEnabled(True)
+
+    def _filter_tags_tables(self, text):
+        search_text = text.lower()
+        for table in (self.single_tags_table, self.wrap_tags_table):
+            for r in range(table.rowCount()):
+                row_matches = False
+                for c in range(table.columnCount()):
+                    widget = table.cellWidget(r, c)
+                    if widget and isinstance(widget, TagDisplayWidget):
+                        cell_text = widget.text().lower()
+                    else:
+                        item = table.item(r, c)
+                        cell_text = item.text().lower() if item else ""
+                    if search_text in cell_text:
+                        row_matches = True
+                        break
+                table.setRowHidden(r, not row_matches)
 
     def _remove_table_row(self, table):
         curr = table.currentRow()
@@ -983,6 +1026,9 @@ class SettingsDialog(QDialog):
         self.wrap_tags_table.setRowCount(0)
         for t in wrap_tags:
             self._add_table_row(self.wrap_tags_table, t.get("display", ""), t.get("open", ""), t.get("close", ""))
+
+        self.single_tags_table.setSortingEnabled(True)
+        self.wrap_tags_table.setSortingEnabled(True)
 
         self.on_provider_changed(self.translation_provider_combo.currentIndex())
         self.rules_changed_requires_rescan = False
