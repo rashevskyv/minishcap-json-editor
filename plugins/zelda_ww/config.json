@@ -151,5 +151,9 @@
             }
         }
     },
-    "lines_per_page": 4
+    "lines_per_page": 4,
+    "context_menu_tags": {
+        "single_tags": [],
+        "wrap_tags": []
+    }
 }

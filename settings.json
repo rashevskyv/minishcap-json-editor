@@ -1,6 +1,6 @@
 {
     "font_size": 13,
-    "active_game_plugin": "zelda_ww",
+    "active_game_plugin": "pokemon_fr",
     "window_was_maximized": false,
     "window_normal_geometry": {
         "x": 165,
@@ -45,5 +45,8 @@
         "D:\\git\\WW\\WindWaker\\project.uiproj",
         "C:\\Users\\Administrator\\Desktop\\pokemon\\Pokemon\\project.uiproj",
         "C:\\Users\\Administrator\\Desktop\\13\\project.uiproj"
-    ]
+    ],
+    "unsaved_session_data": {
+        "(0, 4)": "“Відібрані товари <buba>для</buba>{boba} <biba>вашої <biba>зручності!”\\nPOKéMON <buba>MART</buba>"
+    }
 }

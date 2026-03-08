@@ -125,3 +125,14 @@ class BaseGameRules:
 
     def get_editor_page_size(self) -> int:
         return 2
+
+    def get_custom_context_tags(self) -> Dict[str, List[Dict[str, str]]]:
+        if self.mw and hasattr(self.mw, 'context_menu_tags'):
+            return self.mw.context_menu_tags
+        return {"single_tags": [], "wrap_tags": []}
+
+    def save_custom_context_tags(self, tags_data: dict) -> None:
+        if self.mw and hasattr(self.mw, 'context_menu_tags'):
+            self.mw.context_menu_tags = tags_data
+            if hasattr(self.mw, 'settings_manager'):
+                self.mw.settings_manager.save_settings()

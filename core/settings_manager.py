@@ -186,7 +186,8 @@ class SettingsManager:
             "search_history": [],
             "translation_config": build_default_translation_config(),
             "autofix_enabled": DEFAULT_AUTOFIX_SETTINGS.copy(),
-            "detection_enabled": DEFAULT_DETECTION_SETTINGS.copy()
+            "detection_enabled": DEFAULT_DETECTION_SETTINGS.copy(),
+            "context_menu_tags": {"single_tags": [], "wrap_tags": []}
         }
         for key, value in defaults.items():
              self._settings[key] = value
@@ -211,6 +212,7 @@ class SettingsManager:
         if not hasattr(self.mw, 'block_color_markers'): self.mw.block_color_markers = {}
         if not hasattr(self.mw, 'default_tag_mappings'): self.mw.default_tag_mappings = {}
         if not hasattr(self.mw, 'string_metadata'): self.mw.string_metadata = {}
+        if not hasattr(self.mw, 'context_menu_tags'): self.mw.context_menu_tags = {"single_tags": [], "wrap_tags": []}
         
         self.mw.search_history_to_save = []
 
@@ -406,7 +408,8 @@ class SettingsManager:
             "search_history": self.mw.search_history_to_save,
             "autofix_enabled": self.mw.autofix_enabled,
             "detection_enabled": self.mw.detection_enabled,
-            "translation_config": self.mw.translation_config
+            "translation_config": self.mw.translation_config,
+            "context_menu_tags": getattr(self.mw, 'context_menu_tags', {"single_tags": [], "wrap_tags": []})
         }
         
         plugin_data.update(plugin_data_to_save)

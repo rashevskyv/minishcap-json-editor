@@ -44,19 +44,29 @@ class LNETMouseHandlers:
             self.editor._momentary_highlight_tag(block, start_in_block, len(token))
 
     def _wrap_selection_with_color(self, color_name: str):
+        prefix_tag = f"{{Color:{color_name.capitalize()}}}"
+        suffix_tag = "{Color:White}"
+        self.wrap_selection_with_custom_tags(prefix_tag, suffix_tag)
+
+    def insert_single_tag(self, tag: str):
+        cursor = self.editor.textCursor()
+        cursor.beginEditBlock()
+        cursor.insertText(tag)
+        cursor.endEditBlock()
+        log_debug(f"Inserted single tag: {tag}")
+
+    def wrap_selection_with_custom_tags(self, open_tag: str, close_tag: str):
         cursor = self.editor.textCursor()
         if not cursor.hasSelection():
             return
 
         selected_text = cursor.selectedText()
+        new_text = f"{open_tag}{selected_text}{close_tag}"
         
-        prefix_tag = f"{{Color:{color_name.capitalize()}}}"
-        suffix_tag = "{Color:White}"
-        
-        new_text = f"{prefix_tag}{selected_text}{suffix_tag}"
-        
+        cursor.beginEditBlock()
         cursor.insertText(new_text)
-        log_debug(f"Wrapped selection with {color_name}. New text: {new_text[:50]}...")
+        cursor.endEditBlock()
+        log_debug(f"Wrapped selection with {open_tag}...{close_tag}. New text length: {len(new_text)}")
 
     def copy_tag_to_clipboard(self, tag_text_curly):
          # self.editor тут - це LineNumberedTextEdit (original_text_edit)

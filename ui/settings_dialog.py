@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import (
     QDialogButtonBox, QWidget, QLabel, QTabWidget,
     QCheckBox, QLineEdit, QColorDialog, QPushButton,
     QHBoxLayout, QFileDialog, QMessageBox, QGroupBox,
-    QDoubleSpinBox, QSpinBox, QStackedWidget
+    QDoubleSpinBox, QSpinBox, QStackedWidget, QTableWidget, QTableWidgetItem
 )
 from PyQt5.QtGui import QColor, QPalette
 from PyQt5.QtCore import pyqtSignal, Qt
@@ -193,16 +193,19 @@ class SettingsDialog(QDialog):
         rules_tab = QWidget()
         detection_tab = QWidget()
         autofix_tab = QWidget()
+        context_tags_tab = QWidget()
 
         self.plugin_tabs.addTab(paths_tab, "File Paths")
         self.plugin_tabs.addTab(display_tab, "Display")
         self.plugin_tabs.addTab(rules_tab, "Rules")
+        self.plugin_tabs.addTab(context_tags_tab, "Context Tags")
         self.plugin_tabs.addTab(detection_tab, "Detection")
         self.plugin_tabs.addTab(autofix_tab, "Auto-fix")
 
         self._setup_paths_subtab(paths_tab)
         self._setup_display_subtab(display_tab)
         self._setup_rules_subtab(rules_tab)
+        self._setup_context_tags_subtab(context_tags_tab)
         
         self.detection_checkboxes.clear()
         self.autofix_checkboxes.clear()
@@ -311,6 +314,54 @@ class SettingsDialog(QDialog):
         self.lines_per_page_spinbox = LabeledSpinBox("Lines Per Page:", 1, 20, 4, parent=self)
         self.lines_per_page_spinbox.spin_box.valueChanged.connect(self.on_rules_changed)
         layout.addRow(self.lines_per_page_spinbox)
+
+    def _setup_context_tags_subtab(self, tab):
+        layout = QVBoxLayout(tab)
+        
+        # Single Tags
+        single_group = QGroupBox("Single Tags (ПКМ без виділення)", self)
+        single_layout = QVBoxLayout(single_group)
+        self.single_tags_table = QTableWidget(0, 2, self)
+        self.single_tags_table.setHorizontalHeaderLabels(["Відображення (Emoji/Hex)", "Тег"])
+        self.single_tags_table.horizontalHeader().setStretchLastSection(True)
+        single_layout.addWidget(self.single_tags_table)
+        
+        single_btn_row = QHBoxLayout()
+        add_single_btn = QPushButton("Додати ряд", self)
+        add_single_btn.clicked.connect(lambda: self._add_table_row(self.single_tags_table))
+        remove_single_btn = QPushButton("Видалити ряд", self)
+        remove_single_btn.clicked.connect(lambda: self._remove_table_row(self.single_tags_table))
+        single_btn_row.addWidget(add_single_btn); single_btn_row.addWidget(remove_single_btn)
+        single_layout.addLayout(single_btn_row)
+        layout.addWidget(single_group)
+        
+        # Wrap Tags
+        wrap_group = QGroupBox("Wrap Tags (ПКМ з виділенням)", self)
+        wrap_layout = QVBoxLayout(wrap_group)
+        self.wrap_tags_table = QTableWidget(0, 3, self)
+        self.wrap_tags_table.setHorizontalHeaderLabels(["Відображення (Emoji/Hex)", "Відкриваючий тег", "Закриваючий тег"])
+        self.wrap_tags_table.horizontalHeader().setStretchLastSection(True)
+        wrap_layout.addWidget(self.wrap_tags_table)
+        
+        wrap_btn_row = QHBoxLayout()
+        add_wrap_btn = QPushButton("Додати ряд", self)
+        add_wrap_btn.clicked.connect(lambda: self._add_table_row(self.wrap_tags_table))
+        remove_wrap_btn = QPushButton("Видалити ряд", self)
+        remove_wrap_btn.clicked.connect(lambda: self._remove_table_row(self.wrap_tags_table))
+        wrap_btn_row.addWidget(add_wrap_btn); wrap_btn_row.addWidget(remove_wrap_btn)
+        wrap_layout.addLayout(wrap_btn_row)
+        layout.addWidget(wrap_group)
+
+    def _add_table_row(self, table):
+        row = table.rowCount()
+        table.insertRow(row)
+        for col in range(table.columnCount()):
+            table.setItem(row, col, QTableWidgetItem(""))
+
+    def _remove_table_row(self, table):
+        curr = table.currentRow()
+        if curr != -1: table.removeRow(curr)
+        elif table.rowCount() > 0: table.removeRow(table.rowCount() - 1)
 
     def _setup_paths_subtab(self, tab):
         layout = QFormLayout(tab)
@@ -789,6 +840,22 @@ class SettingsDialog(QDialog):
         if lang_index != -1:
             self.spellcheck_language_combo.setCurrentIndex(lang_index)
 
+        # Load Context Menu Tags
+        tags_data = getattr(self.mw, 'context_menu_tags', {"single_tags": [], "wrap_tags": []})
+        
+        single_tags = tags_data.get("single_tags", [])
+        self.single_tags_table.setRowCount(len(single_tags))
+        for i, t in enumerate(single_tags):
+            self.single_tags_table.setItem(i, 0, QTableWidgetItem(t.get("display", "")))
+            self.single_tags_table.setItem(i, 1, QTableWidgetItem(t.get("tag", "")))
+            
+        wrap_tags = tags_data.get("wrap_tags", [])
+        self.wrap_tags_table.setRowCount(len(wrap_tags))
+        for i, t in enumerate(wrap_tags):
+            self.wrap_tags_table.setItem(i, 0, QTableWidgetItem(t.get("display", "")))
+            self.wrap_tags_table.setItem(i, 1, QTableWidgetItem(t.get("open", "")))
+            self.wrap_tags_table.setItem(i, 2, QTableWidgetItem(t.get("close", "")))
+
         self.on_provider_changed(self.translation_provider_combo.currentIndex())
         self.rules_changed_requires_rescan = False
 
@@ -875,4 +942,23 @@ class SettingsDialog(QDialog):
             'glossary_ai': glossary_ai_settings,
             'spellchecker_enabled': self.spellcheck_enabled_checkbox.isChecked(),
             'spellchecker_language': self.spellcheck_language_combo.currentData(),
+            'context_menu_tags': self._get_tags_from_tables()
         }
+
+    def _get_tags_from_tables(self):
+        single_tags = []
+        for r in range(self.single_tags_table.rowCount()):
+            disp = self.single_tags_table.item(r, 0).text().strip()
+            tag = self.single_tags_table.item(r, 1).text().strip()
+            if disp or tag:
+                single_tags.append({"display": disp, "tag": tag})
+                
+        wrap_tags = []
+        for r in range(self.wrap_tags_table.rowCount()):
+            disp = self.wrap_tags_table.item(r, 0).text().strip()
+            ot = self.wrap_tags_table.item(r, 1).text().strip()
+            ct = self.wrap_tags_table.item(r, 2).text().strip()
+            if disp or ot or ct:
+                wrap_tags.append({"display": disp, "open": ot, "close": ct})
+                
+        return {"single_tags": single_tags, "wrap_tags": wrap_tags}

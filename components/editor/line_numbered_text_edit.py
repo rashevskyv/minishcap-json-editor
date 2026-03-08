@@ -362,24 +362,25 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.critical_problem_line_color = CRITICAL_PROBLEM_LINE_COLOR
         self.warning_problem_line_color = WARNING_PROBLEM_LINE_COLOR
 
-    def _create_color_button(self, parent_widget, color_name: str, color_rgb_str: str, menu_to_close: QMenu):
+    def _create_tag_button(self, parent_widget, display: str, open_tag: str, close_tag: str = None):
         btn = QPushButton(parent_widget)
-        button_size = 22 
+        button_size = 24 
         btn.setFixedSize(button_size, button_size)
         
-        normal_style = f"background-color: {color_rgb_str}; border: 1px solid black; border-radius: 3px;"
-        pressed_style = f"background-color: {color_rgb_str}; border: 2px solid darkblue; border-radius: 3px;"
-        
-        btn.setStyleSheet(normal_style)
-        btn.setToolTip(f"Обгорнути тегом {{Color:{color_name.capitalize()}}}")
+        is_color = display.startswith('#')
+        if is_color:
+            style = f"background-color: {display}; border: 1px solid black; border-radius: 3px;"
+            btn.setStyleSheet(style)
+            btn.setToolTip(f"Обгорнути: {open_tag}{'...' + close_tag if close_tag else ''}")
+        else:
+            btn.setText(display)
+            btn.setToolTip(f"Вставити/Обгорнути: {open_tag}{'...' + close_tag if close_tag else ''}")
+            btn.setStyleSheet("padding: 0px; font-size: 14px;")
 
-        btn.pressed.connect(lambda s=pressed_style: btn.setStyleSheet(s))
-        
-        def on_button_clicked():
-            self.mouse_handler._wrap_selection_with_color(color_name)
-            btn.setStyleSheet(normal_style)
-
-        btn.clicked.connect(on_button_clicked)
+        if close_tag:
+            btn.clicked.connect(lambda: self.mouse_handler.wrap_selection_with_custom_tags(open_tag, close_tag))
+        else:
+            btn.clicked.connect(lambda: self.mouse_handler.insert_single_tag(open_tag))
         
         return btn
 
@@ -520,32 +521,42 @@ class LineNumberedTextEdit(QPlainTextEdit):
                     custom_actions_added = True
 
                 variation_action = menu.addAction("AI Variations for Selected")
-                variation_action.triggered.connect(translator.generate_variation_for_selection)
+                variation_action.triggered.connect(translator.generate_variation_for_current_string)
 
-            if has_selection:
-                if not custom_actions_added:
-                    menu.addSeparator()
-                    custom_actions_added = True
-
-                color_widget_action = QWidgetAction(menu)
-                color_palette_widget = QWidget(menu)
-                palette_layout = QHBoxLayout(color_palette_widget)
-                palette_layout.setContentsMargins(5, 3, 5, 3)
-                palette_layout.setSpacing(4)
-
-                colors_map = {
-                    "Red": "rgb(200,0,0)",
-                    "Green": "rgb(0,100,0)",
-                    "Blue": "rgb(0,0,200)"
-                }
-
-                for color_name_str, color_rgb_str in colors_map.items():
-                    color_button = self._create_color_button(color_palette_widget, color_name_str, color_rgb_str, menu)
-                    palette_layout.addWidget(color_button)
-
-                color_palette_widget.setLayout(palette_layout)
-                color_widget_action.setDefaultWidget(color_palette_widget)
-                menu.addAction(color_widget_action)
+            # Dynamic Tags Section
+            if main_window.current_game_rules:
+                tags_data = main_window.current_game_rules.get_custom_context_tags()
+                tags_to_show = []
+                if has_selection:
+                    tags_to_show = tags_data.get("wrap_tags", [])
+                else:
+                    tags_to_show = tags_data.get("single_tags", [])
+                
+                if tags_to_show:
+                    if not custom_actions_added:
+                        menu.addSeparator()
+                        custom_actions_added = True
+                    
+                    tag_widget_action = QWidgetAction(menu)
+                    tag_palette_widget = QWidget(menu)
+                    palette_layout = QHBoxLayout(tag_palette_widget)
+                    palette_layout.setContentsMargins(5, 3, 5, 3)
+                    palette_layout.setSpacing(4)
+                    
+                    for tag_info in tags_to_show:
+                        disp = tag_info.get("display", "?")
+                        if has_selection:
+                            ot = tag_info.get("open", "")
+                            ct = tag_info.get("close", "")
+                            btn = self._create_tag_button(tag_palette_widget, disp, ot, ct)
+                        else:
+                            t = tag_info.get("tag", "")
+                            btn = self._create_tag_button(tag_palette_widget, disp, t)
+                        palette_layout.addWidget(btn)
+                    
+                    tag_palette_widget.setLayout(palette_layout)
+                    tag_widget_action.setDefaultWidget(tag_palette_widget)
+                    menu.addAction(tag_widget_action)
         
         if self.objectName() == "preview_text_edit":
             if not custom_actions_added: menu.addSeparator(); custom_actions_added = True
