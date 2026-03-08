@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import (
     QDialogButtonBox, QWidget, QLabel, QTabWidget,
     QCheckBox, QLineEdit, QColorDialog, QPushButton,
     QHBoxLayout, QFileDialog, QMessageBox, QGroupBox,
-    QDoubleSpinBox, QSpinBox, QStackedWidget, QTableWidget, QTableWidgetItem
+    QDoubleSpinBox, QSpinBox, QStackedWidget, QTableWidget, QTableWidgetItem, QMenu
 )
 from PyQt5.QtGui import QColor, QPalette
 from PyQt5.QtCore import pyqtSignal, Qt
@@ -378,6 +378,8 @@ class SettingsDialog(QDialog):
         except ImportError:
             header.setStretchLastSection(True)
             
+        self.single_tags_table.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.single_tags_table.customContextMenuRequested.connect(lambda pos: self._show_table_context_menu(pos, self.single_tags_table))
         self.single_tags_table.mouseDoubleClickEvent = lambda e: self._handle_table_double_click(e, self.single_tags_table)
         single_layout.addWidget(self.single_tags_table)
         
@@ -403,6 +405,8 @@ class SettingsDialog(QDialog):
         except ImportError:
             header_wrap.setStretchLastSection(True)
             
+        self.wrap_tags_table.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.wrap_tags_table.customContextMenuRequested.connect(lambda pos: self._show_table_context_menu(pos, self.wrap_tags_table))
         self.wrap_tags_table.mouseDoubleClickEvent = lambda e: self._handle_table_double_click(e, self.wrap_tags_table)
         wrap_layout.addWidget(self.wrap_tags_table)
         
@@ -418,12 +422,45 @@ class SettingsDialog(QDialog):
     def _handle_table_double_click(self, event, table):
         item = table.itemAt(event.pos())
         if item is None:
-            self._add_table_row(table)
+            row = table.rowAt(event.pos().y())
+            if row == -1:
+                self._add_table_row(table)
+            else:
+                self._add_table_row(table, insert_at_row=row + 1)
         else:
             QTableWidget.mouseDoubleClickEvent(table, event)
 
-    def _add_table_row(self, table, display_text="", col1="", col2=""):
-        row = table.rowCount()
+    def _show_table_context_menu(self, pos, table):
+        menu = QMenu(self)
+        
+        item = table.itemAt(pos)
+        row = item.row() if item else -1
+        
+        if row == -1:
+            row = table.rowAt(pos.y())
+            
+        add_action = menu.addAction("Add Row")
+        delete_action = menu.addAction("Delete Row")
+        
+        if row == -1:
+            delete_action.setEnabled(False)
+            
+        action = menu.exec_(table.viewport().mapToGlobal(pos))
+        
+        if action == add_action:
+            if row != -1:
+                self._add_table_row(table, insert_at_row=row + 1)
+            else:
+                self._add_table_row(table)
+        elif action == delete_action:
+            if row != -1:
+                table.removeRow(row)
+
+    def _add_table_row(self, table, display_text="", col1="", col2="", insert_at_row=None):
+        if insert_at_row is not None:
+            row = insert_at_row
+        else:
+            row = table.rowCount()
         table.insertRow(row)
         
         table.setCellWidget(row, 0, TagDisplayWidget(display_text, table))
