@@ -33,6 +33,7 @@ def load_json_file(file_path, parent_widget=None):
 def save_json_file(file_path, data_to_save, parent_widget=None):
     log_info(f"Saving data to JSON file: '{file_path}'.")
     try:
+        os.makedirs(os.path.dirname(os.path.abspath(file_path)), exist_ok=True)
         with open(file_path, 'w', encoding='utf-8') as f:
             json.dump(data_to_save, f, ensure_ascii=False, indent=4)
         return True
@@ -77,6 +78,7 @@ def load_text_file(file_path, parent_widget=None):
 def save_text_file(file_path, text_content, parent_widget=None):
     log_info(f"Saving text content to file: '{file_path}'.")
     try:
+        os.makedirs(os.path.dirname(os.path.abspath(file_path)), exist_ok=True)
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(text_content)
         return True

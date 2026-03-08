@@ -78,28 +78,29 @@ class ProjectManager:
         if project_path:
             self.load(project_path)
 
-    def create_new_project(self, project_dir: str, name: str, plugin_name: str, description: str = "") -> bool:
+    def create_new_project(self, project_dir: str, name: str, plugin_name: str, description: str = "",
+                           source_path: str = "", translation_path: Optional[str] = None,
+                           is_directory_mode: bool = True, auto_create_translations: bool = False) -> bool:
         """
         Create a new project structure on disk.
 
         Args:
-            project_dir: Directory where project will be created
+            project_dir: Directory where project file will be created
             name: Project name
             plugin_name: Active game plugin
             description: Optional project description
+            source_path: External source file or directory
+            translation_path: External translation file or directory (optional if auto_create is True)
+            is_directory_mode: True if source_path/translation_path are directories
+            auto_create_translations: True to auto-create missing translation files
 
         Returns:
             True if successful, False otherwise
         """
         try:
-            # Create directory structure
+            # Create project directory
             project_path = Path(project_dir)
             project_path.mkdir(parents=True, exist_ok=True)
-
-            sources_path = project_path / self.SOURCES_DIR
-            translation_path = project_path / self.TRANSLATION_DIR
-            sources_path.mkdir(exist_ok=True)
-            translation_path.mkdir(exist_ok=True)
 
             # Create project metadata
             from datetime import datetime
@@ -112,6 +113,12 @@ class ProjectManager:
                 created_at=now,
                 modified_at=now
             )
+            
+            # Store external path settings
+            self.project.metadata['source_path'] = source_path
+            self.project.metadata['translation_path'] = translation_path
+            self.project.metadata['is_directory_mode'] = is_directory_mode
+            self.project.metadata['auto_create_translations'] = auto_create_translations
 
             self.project_dir = str(project_path)
             self.project_file_path = str(project_path / self.PROJECT_FILE_NAME)
@@ -193,15 +200,16 @@ class ProjectManager:
             log_error(f"Failed to save project: {e}")
             return False
 
-    def add_block(self, name: str, source_file_path: str, translation_file_path: Optional[str] = None, description: str = "") -> Optional[Block]:
+    def add_block(self, name: str, source_file_path: str, translation_file_path: Optional[str] = None, description: str = "", target_relative_path: str = "") -> Optional[Block]:
         """
-        Import a new block (file pair) into the project.
+        Register a new block (file pair) in the project. Does NOT copy files.
 
         Args:
             name: Display name for the block
-            source_file_path: Path to the source file to import
-            translation_file_path: Optional path to existing translation file. If None, source is copied.
+            source_file_path: Relative path to the source file
+            translation_file_path: Optional relative path to existing translation file
             description: Optional block description
+            target_relative_path: Optional relative directory path (deprecated/ignored)
 
         Returns:
             The created Block object, or None on failure
@@ -212,43 +220,91 @@ class ProjectManager:
 
         try:
             source_path = Path(source_file_path)
-            if not source_path.exists():
-                log_error(f"Source file not found: {source_file_path}")
-                return None
 
-            # Copy source file to project sources directory
-            dest_source_path = Path(self.project_dir) / self.SOURCES_DIR / source_path.name
-            import shutil
-            shutil.copy2(source_file_path, dest_source_path)
-
-            # Handle translation file
-            dest_translation_path = Path(self.project_dir) / self.TRANSLATION_DIR / source_path.name
-            if translation_file_path and Path(translation_file_path).exists():
-                # Copy existing translation file
-                shutil.copy2(translation_file_path, dest_translation_path)
-                log_debug(f"Copied translation file from {translation_file_path}")
-            else:
-                # Copy source as translation (user will edit it)
-                shutil.copy2(source_file_path, dest_translation_path)
-                log_debug(f"Copied source file as translation template")
+            source_rel_path = source_file_path.replace('\\', '/')
+            trans_rel_path = translation_file_path.replace('\\', '/') if translation_file_path else source_rel_path
 
             # Create block
             block = Block(
                 name=name or source_path.stem,
-                source_file=f"{self.SOURCES_DIR}/{source_path.name}",
-                translation_file=f"{self.TRANSLATION_DIR}/{source_path.name}",
+                source_file=source_rel_path,
+                translation_file=trans_rel_path,
                 description=description
             )
 
             self.project.add_block(block)
             self.save()
 
-            log_info(f"Added block '{block.name}' to project")
+            log_info(f"Registered block '{block.name}' loosely linked at {source_rel_path}")
             return block
 
         except Exception as e:
-            log_error(f"Failed to add block: {e}")
+            log_error(f"Failed to register block: {e}")
             return None
+
+    def sync_project_files(self):
+        """
+        Synchronize files from external directories with project blocks.
+        """
+        if not self.project:
+            return
+
+        source_path = self.project.metadata.get('source_path', '')
+        translation_path = self.project.metadata.get('translation_path')
+        is_directory_mode = self.project.metadata.get('is_directory_mode', True)
+        auto_create = self.project.metadata.get('auto_create_translations', False)
+        
+        if not source_path or not os.path.exists(source_path):
+            log_warning("Source path is invalid or missing during sync.")
+            return
+
+        supported_extensions = {'.json', '.txt'}
+        existing_blocks = {b.source_file: b for b in self.project.blocks}
+        found_sources = set()
+
+        if is_directory_mode:
+            root_path = Path(source_path)
+            for filepath in root_path.rglob('*'):
+                if filepath.is_file() and filepath.suffix.lower() in supported_extensions:
+                    rel_path = filepath.relative_to(root_path).as_posix()
+                    found_sources.add(rel_path)
+                    
+                    if rel_path not in existing_blocks:
+                        # Auto-create translation logic could go here or when saving
+                        self.add_block(
+                            name=filepath.stem,
+                            source_file_path=rel_path,
+                            translation_file_path=rel_path
+                        )
+        else:
+            # File mode
+            filepath = Path(source_path)
+            if filepath.is_file() and filepath.suffix.lower() in supported_extensions:
+                rel_path = filepath.name
+                found_sources.add(rel_path)
+                if rel_path not in existing_blocks:
+                    # In file mode, if translation isn't auto-created, translation_path is likely a file
+                    trans_rel_path = Path(translation_path).name if translation_path else rel_path
+                    self.add_block(
+                        name=filepath.stem,
+                        source_file_path=rel_path,
+                        translation_file_path=trans_rel_path
+                    )
+                    
+        # Remove blocks that no longer exist
+        blocks_to_remove = [b.id for b in self.project.blocks if b.source_file not in found_sources]
+        for bid in blocks_to_remove:
+            self.project.remove_block(bid)
+            
+        if blocks_to_remove or len(found_sources) > len(existing_blocks):
+            self.save()
+
+    def import_directory(self, root_dir_path: str) -> List[Block]:
+        """
+        Legacy functionality for loose imports. Not used in normal external directory modes.
+        """
+        # Kept for compatibility, redirects to normal behavior essentially
+        return []
 
     def get_uncategorized_lines(self, block_id: str, total_lines: int) -> List[int]:
         """
@@ -268,36 +324,56 @@ class ProjectManager:
         categorized = block.get_categorized_line_indices()
         return [i for i in range(total_lines) if i not in categorized]
 
-    def get_absolute_path(self, relative_path: str) -> str:
+    def get_absolute_path(self, relative_path: str, is_translation: bool = False) -> str:
         """
-        Convert a project-relative path to an absolute path.
+        Convert a block-relative path to an absolute path.
 
         Args:
-            relative_path: Relative path within project
+            relative_path: Relative path within external source/translation directory
+            is_translation: Determine whether to use source_path or translation_path
 
         Returns:
             Absolute file path
         """
-        if not self.project_dir:
+        if not self.project:
             return relative_path
-        return str(Path(self.project_dir) / relative_path)
+            
+        is_directory_mode = self.project.metadata.get('is_directory_mode', True)
+        base_path = self.project.metadata.get('translation_path') if is_translation else self.project.metadata.get('source_path')
+        
+        if not base_path:
+            # Fallback auto create translation path or default directory
+            if is_translation and self.project.metadata.get('auto_create_translations', False):
+                base_path = Path(self.project.metadata.get('source_path', '')).parent / 'translation'
+            else:
+                return relative_path
 
-    def get_relative_path(self, absolute_path: str) -> str:
+        if is_directory_mode:
+            return str(Path(base_path) / relative_path)
+        else:
+            return str(base_path)
+
+    def get_relative_path(self, absolute_path: str, is_translation: bool = False) -> str:
         """
-        Convert an absolute path to a project-relative path.
+        Convert an absolute path to a relative path against external directories.
 
         Args:
             absolute_path: Absolute file path
+            is_translation: True if checking against translation_path
 
         Returns:
             Relative path within project
         """
-        if not self.project_dir:
+        if not self.project:
             return absolute_path
+            
+        base_path = self.project.metadata.get('translation_path') if is_translation else self.project.metadata.get('source_path')
+        if not base_path:
+            return absolute_path
+            
         try:
-            return str(Path(absolute_path).relative_to(self.project_dir))
+            return str(Path(absolute_path).relative_to(base_path))
         except ValueError:
-            # Path is not relative to project dir
             return absolute_path
 
     def save_settings_to_project(self, main_window) -> bool:

@@ -27,7 +27,7 @@ class ListSelectionHandler(BaseHandler):
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         
         if previous_item:
-            previous_block_idx = previous_item.data(Qt.UserRole)
+            previous_block_idx = previous_item.data(0, Qt.UserRole)
             if previous_block_idx is not None:
                 self.ui_updater.update_block_item_text_with_problem_count(previous_block_idx)
 
@@ -52,7 +52,16 @@ class ListSelectionHandler(BaseHandler):
             self.mw.is_programmatically_changing_text = False
             return
 
-        block_index = current_item.data(Qt.UserRole)
+        block_index = current_item.data(0, Qt.UserRole)
+        if block_index is None:
+            self.mw.current_block_idx = -1
+            self.mw.current_string_idx = -1
+            self.ui_updater.populate_strings_for_block(-1)
+            if hasattr(self.mw, 'string_settings_updater'):
+                self.mw.string_settings_updater.update_string_settings_panel()
+            self._update_block_toolbar_button_states(-1)
+            self.mw.is_programmatically_changing_text = False
+            return
         
         if self.mw.current_block_idx != block_index:
             self.mw.current_block_idx = block_index
@@ -70,7 +79,13 @@ class ListSelectionHandler(BaseHandler):
 
     def _restore_block_selection(self):
         if self.mw.current_block_idx != -1:
-            self.mw.block_list_widget.setCurrentRow(self.mw.current_block_idx)
+            from PyQt5.QtWidgets import QTreeWidgetItemIterator
+            iterator = QTreeWidgetItemIterator(self.mw.block_list_widget)
+            while iterator.value():
+                if iterator.value().data(0, Qt.UserRole) == self.mw.current_block_idx:
+                    self.mw.block_list_widget.setCurrentItem(iterator.value())
+                    break
+                iterator += 1
         self._restoring_selection = False
 
     def _update_block_toolbar_button_states(self, block_idx: int):
@@ -164,7 +179,7 @@ class ListSelectionHandler(BaseHandler):
 
 
     def rename_block(self, item):
-        block_index_from_data = item.data(Qt.UserRole);
+        block_index_from_data = item.data(0, Qt.UserRole);
         if block_index_from_data is None: return
         block_index_str = str(block_index_from_data)
         current_name = self.mw.block_names.get(block_index_str, f"Block {block_index_from_data}")

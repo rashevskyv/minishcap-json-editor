@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
     QLabel, QLineEdit, QPushButton, QTextEdit,
     QComboBox, QFileDialog, QDialogButtonBox,
-    QMessageBox, QGroupBox
+    QMessageBox, QGroupBox, QRadioButton, QButtonGroup, QCheckBox
 )
 from PyQt5.QtCore import Qt
 from utils.logging_utils import log_debug, log_info
@@ -56,7 +56,7 @@ class NewProjectDialog(QDialog):
         # Project directory
         dir_layout = QHBoxLayout()
         self.dir_edit = QLineEdit(self)
-        self.dir_edit.setPlaceholderText("Select where to create the project...")
+        self.dir_edit.setPlaceholderText("Select where to create the project files (.uiproj)...")
         self.dir_edit.setReadOnly(True)
         dir_layout.addWidget(self.dir_edit)
 
@@ -64,7 +64,47 @@ class NewProjectDialog(QDialog):
         browse_button.clicked.connect(self._browse_directory)
         dir_layout.addWidget(browse_button)
 
-        form_layout.addRow("Location:", dir_layout)
+        form_layout.addRow("Project Location:", dir_layout)
+
+        # Mode selection
+        mode_layout = QHBoxLayout()
+        self.mode_group = QButtonGroup(self)
+        self.radio_folders = QRadioButton("Folders")
+        self.radio_files = QRadioButton("Files")
+        self.radio_folders.setChecked(True)
+        self.mode_group.addButton(self.radio_folders)
+        self.mode_group.addButton(self.radio_files)
+        mode_layout.addWidget(self.radio_folders)
+        mode_layout.addWidget(self.radio_files)
+        mode_layout.addStretch()
+        form_layout.addRow("Source Type:", mode_layout)
+
+        # Source location
+        source_layout = QHBoxLayout()
+        self.source_edit = QLineEdit(self)
+        self.source_edit.setPlaceholderText("Select source directory...")
+        self.source_edit.setReadOnly(True)
+        source_layout.addWidget(self.source_edit)
+        self.browse_source_btn = QPushButton("Browse...", self)
+        self.browse_source_btn.clicked.connect(self._browse_source)
+        source_layout.addWidget(self.browse_source_btn)
+        form_layout.addRow("Source:", source_layout)
+
+        # Translation location
+        trans_layout = QHBoxLayout()
+        self.trans_edit = QLineEdit(self)
+        self.trans_edit.setPlaceholderText("Select translation directory...")
+        self.trans_edit.setReadOnly(True)
+        trans_layout.addWidget(self.trans_edit)
+        self.browse_trans_btn = QPushButton("Browse...", self)
+        self.browse_trans_btn.clicked.connect(self._browse_translation)
+        trans_layout.addWidget(self.browse_trans_btn)
+        form_layout.addRow("Translation:", trans_layout)
+
+        # Auto-create Checkbox
+        self.auto_create_cb = QCheckBox("Auto-create translation files")
+        self.auto_create_cb.toggled.connect(self._on_auto_create_toggled)
+        form_layout.addRow("", self.auto_create_cb)
 
         # Plugin selection
         self.plugin_combo = QComboBox(self)
@@ -79,14 +119,9 @@ class NewProjectDialog(QDialog):
 
         layout.addLayout(form_layout)
 
-        # Info label
-        info_label = QLabel(
-            "A new project folder will be created with 'sources/' and 'translation/' subdirectories.",
-            self
-        )
-        info_label.setWordWrap(True)
-        info_label.setStyleSheet("color: gray; font-size: 9pt;")
-        layout.addWidget(info_label)
+        # Connect radio buttons
+        self.radio_folders.toggled.connect(self._on_mode_changed)
+        self.radio_files.toggled.connect(self._on_mode_changed)
 
         # Buttons
         button_box = QDialogButtonBox(
@@ -135,6 +170,23 @@ class NewProjectDialog(QDialog):
 
         return plugins
 
+    def _on_mode_changed(self):
+        is_folders = self.radio_folders.isChecked()
+        self.source_edit.clear()
+        self.trans_edit.clear()
+        if is_folders:
+            self.source_edit.setPlaceholderText("Select source directory...")
+            self.trans_edit.setPlaceholderText("Select translation directory...")
+        else:
+            self.source_edit.setPlaceholderText("Select source file...")
+            self.trans_edit.setPlaceholderText("Select translation file...")
+            
+    def _on_auto_create_toggled(self, checked):
+        self.trans_edit.setEnabled(not checked)
+        self.browse_trans_btn.setEnabled(not checked)
+        if checked:
+            self.trans_edit.clear()
+
     def _browse_directory(self):
         """Open directory picker for project location."""
         directory = QFileDialog.getExistingDirectory(
@@ -147,45 +199,63 @@ class NewProjectDialog(QDialog):
         if directory:
             self.dir_edit.setText(directory)
 
+    def _browse_source(self):
+        if self.radio_folders.isChecked():
+            directory = QFileDialog.getExistingDirectory(
+                self, "Select Source Directory", os.path.expanduser("~"),
+                QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks
+            )
+            if directory: self.source_edit.setText(directory)
+        else:
+            file_path, _ = QFileDialog.getOpenFileName(
+                self, "Select Source File", os.path.expanduser("~"),
+                "Supported Files (*.txt *.json);;All Files (*)"
+            )
+            if file_path: self.source_edit.setText(file_path)
+
+    def _browse_translation(self):
+        if self.radio_folders.isChecked():
+            directory = QFileDialog.getExistingDirectory(
+                self, "Select Translation Directory", os.path.expanduser("~"),
+                QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks
+            )
+            if directory: self.trans_edit.setText(directory)
+        else:
+            file_path, _ = QFileDialog.getOpenFileName(
+                self, "Select Translation File", os.path.expanduser("~"),
+                "Supported Files (*.txt *.json);;All Files (*)"
+            )
+            if file_path: self.trans_edit.setText(file_path)
+
     def _validate_and_accept(self):
         """Validate inputs before accepting."""
         # Validate project name
         name = self.name_edit.text().strip()
         if not name:
-            QMessageBox.warning(
-                self,
-                "Invalid Input",
-                "Please enter a project name."
-            )
+            QMessageBox.warning(self, "Invalid Input", "Please enter a project name.")
             self.name_edit.setFocus()
             return
 
         # Validate directory
         directory = self.dir_edit.text().strip()
-        if not directory:
-            QMessageBox.warning(
-                self,
-                "Invalid Input",
-                "Please select a location for the project."
-            )
+        if not directory or not os.path.exists(directory):
+            QMessageBox.warning(self, "Invalid Location", "Please select a valid location for the project.")
             return
 
-        if not os.path.exists(directory):
-            QMessageBox.warning(
-                self,
-                "Invalid Location",
-                f"The selected directory does not exist:\n{directory}"
-            )
+        source_path = self.source_edit.text().strip()
+        if not source_path or not os.path.exists(source_path):
+            QMessageBox.warning(self, "Invalid Source", "Please select a valid source.")
+            return
+            
+        trans_path = self.trans_edit.text().strip()
+        if not self.auto_create_cb.isChecked() and (not trans_path or not os.path.exists(trans_path)):
+            QMessageBox.warning(self, "Invalid Translation", "Please select a valid translation path or enable auto-create.")
             return
 
         # Validate plugin selection
         plugin = self.plugin_combo.currentData()
         if plugin is None:
-            QMessageBox.warning(
-                self,
-                "Invalid Input",
-                "Please select a game plugin for the project."
-            )
+            QMessageBox.warning(self, "Invalid Input", "Please select a game plugin for the project.")
             self.plugin_combo.setFocus()
             return
 
@@ -214,6 +284,11 @@ class NewProjectDialog(QDialog):
         self.project_dir = project_path
         self.plugin_name = self.plugin_combo.currentData()
         self.description = self.description_edit.toPlainText().strip()
+        
+        self.source_path = source_path
+        self.translation_path = trans_path if trans_path else None
+        self.is_directory_mode = self.radio_folders.isChecked()
+        self.auto_create_translations = self.auto_create_cb.isChecked()
 
         log_info(f"NewProjectDialog: Creating project '{name}' at {project_path}")
         self.accept()
@@ -230,7 +305,11 @@ class NewProjectDialog(QDialog):
                 'name': self.project_name,
                 'directory': self.project_dir,
                 'plugin': self.plugin_name,
-                'description': self.description
+                'description': self.description,
+                'source_path': self.source_path,
+                'translation_path': self.translation_path,
+                'is_directory_mode': self.is_directory_mode,
+                'auto_create_translations': self.auto_create_translations
             }
         return None
 

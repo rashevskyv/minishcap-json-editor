@@ -356,6 +356,9 @@ class AppActionHandler(BaseHandler):
     def import_block_action(self):
         self.mw.project_action_handler.import_block_action()
 
+    def import_directory_action(self):
+        self.mw.project_action_handler.import_directory_action()
+
     def _populate_blocks_from_project(self):
         self.mw.project_action_handler._populate_blocks_from_project()
 

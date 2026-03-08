@@ -8,7 +8,7 @@ from PyQt5.QtCore import Qt, QSize
 import os
 from PyQt5.QtGui import QIcon, QFont, QFontMetrics, QKeySequence 
 from components.editor.line_numbered_text_edit import LineNumberedTextEdit
-from components.custom_list_widget import CustomListWidget
+from components.custom_tree_widget import CustomTreeWidget
 
 def setup_main_window_ui(main_window):
     central_widget = QWidget(); main_window.setCentralWidget(central_widget)
@@ -27,7 +27,7 @@ def setup_main_window_ui(main_window):
     block_list_container_layout.setContentsMargins(0, 0, 0, 0)
     block_list_container_layout.setSpacing(0)
 
-    main_window.block_list_widget = CustomListWidget(main_window)
+    main_window.block_list_widget = CustomTreeWidget(main_window)
     block_list_container_layout.addWidget(main_window.block_list_widget)
 
     # Toolbar for block management (at bottom of list widget)
@@ -269,6 +269,10 @@ def setup_main_window_ui(main_window):
     main_window.import_block_action = QAction(QIcon.fromTheme("document-import"), '&Import Block...', main_window)
     main_window.import_block_action.setEnabled(False)  # Enabled when project is loaded
     file_menu.addAction(main_window.import_block_action)
+
+    main_window.import_directory_action = QAction(QIcon.fromTheme("folder-open"), 'Import &Directory...', main_window)
+    main_window.import_directory_action.setEnabled(False)
+    file_menu.addAction(main_window.import_directory_action)
     file_menu.addSeparator()
 
     main_window.save_action = QAction(save_icon, '&Save Changes', main_window)

@@ -49,7 +49,11 @@ class UIUpdater:
 
 
     def populate_blocks(self):
-        current_selection_block_idx = self.mw.block_list_widget.currentRow()
+        current_selection_block_idx = None
+        current_item = self.mw.block_list_widget.currentItem()
+        if current_item and current_item.data(0, Qt.UserRole) is not None:
+            current_selection_block_idx = current_item.data(0, Qt.UserRole)
+
         self.mw.block_list_widget.clear()
         if not self.mw.data: 
             return
@@ -57,6 +61,8 @@ class UIUpdater:
         problem_definitions = {}
         if self.mw.current_game_rules:
             problem_definitions = self.mw.current_game_rules.get_problem_definitions()
+
+        dir_nodes = {"": self.mw.block_list_widget.invisibleRootItem()}
 
         for i in range(len(self.mw.data)):
             base_display_name = self.mw.block_names.get(str(i), f"Block {i}")
@@ -79,18 +85,57 @@ class UIUpdater:
             if issue_texts:
                 display_name_with_issues = f"{base_display_name} ({', '.join(issue_texts)})"
                 
-            item = self.mw.block_list_widget.create_item(display_name_with_issues, i)
-            self.mw.block_list_widget.addItem(item)
+            import os
+            from PyQt5.QtWidgets import QTreeWidgetItem
+            from PyQt5.QtGui import QIcon
 
-        if 0 <= current_selection_block_idx < self.mw.block_list_widget.count():
-            self.mw.block_list_widget.setCurrentRow(current_selection_block_idx)
+            if hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project and i < len(self.mw.project_manager.project.blocks):
+                block = self.mw.project_manager.project.blocks[i]
+                rel_path = block.source_file
+                if rel_path.startswith(self.mw.project_manager.SOURCES_DIR + '/'):
+                    rel_path = rel_path[len(self.mw.project_manager.SOURCES_DIR) + 1:]
+                dir_path = os.path.dirname(rel_path)
+            else:
+                dir_path = ""
+
+            parts = dir_path.split('/') if dir_path else []
+            current_path = ""
+            for part in parts:
+                if not part: continue
+                parent_path = current_path
+                current_path = current_path + "/" + part if current_path else part
+                
+                if current_path not in dir_nodes:
+                    dir_item = QTreeWidgetItem([part])
+                    dir_item.setIcon(0, QIcon.fromTheme('folder'))
+                    dir_nodes[parent_path].addChild(dir_item)
+                    dir_item.setExpanded(True)
+                    dir_nodes[current_path] = dir_item
+
+            item = self.mw.block_list_widget.create_item(display_name_with_issues, i, Qt.UserRole)
+            parent_item = dir_nodes.get(dir_path, dir_nodes[""])
+            parent_item.addChild(item)
+
+            if i == current_selection_block_idx:
+                self.mw.block_list_widget.setCurrentItem(item)
+
         self.mw.block_list_widget.viewport().update()
 
     def update_block_item_text_with_problem_count(self, block_idx: int):
-        if not hasattr(self.mw, 'block_list_widget') or not (0 <= block_idx < self.mw.block_list_widget.count()):
+        if not hasattr(self.mw, 'block_list_widget'):
             return
         
-        item = self.mw.block_list_widget.item(block_idx)
+        from PyQt5.QtWidgets import QTreeWidgetItemIterator
+        
+        item = None
+        iterator = QTreeWidgetItemIterator(self.mw.block_list_widget)
+        while iterator.value():
+            tree_item = iterator.value()
+            if tree_item.data(0, Qt.UserRole) == block_idx:
+                item = tree_item
+                break
+            iterator += 1
+
         if not item: return
 
         base_display_name = self.mw.block_names.get(str(block_idx), f"Block {block_idx}")
@@ -114,8 +159,8 @@ class UIUpdater:
         if issue_texts:
             display_name_with_issues = f"{base_display_name} ({', '.join(issue_texts)})"
         
-        if item.text() != display_name_with_issues:
-            item.setText(display_name_with_issues)
+        if item.text(0) != display_name_with_issues:
+            item.setText(0, display_name_with_issues)
 
     def update_status_bar(self):
         if not hasattr(self.mw, 'edited_text_edit') or not self.mw.edited_text_edit or \
@@ -226,12 +271,19 @@ class UIUpdater:
 
     def clear_all_problem_block_highlights_and_text(self): 
         if not hasattr(self.mw, 'block_list_widget'): return
-        for i in range(self.mw.block_list_widget.count()):
-            item = self.mw.block_list_widget.item(i)
-            if item:
-                base_display_name = self.mw.block_names.get(str(i), f"Block {i}")
-                if item.text() != base_display_name: 
-                    item.setText(base_display_name) 
+        
+        from PyQt5.QtWidgets import QTreeWidgetItemIterator
+        
+        iterator = QTreeWidgetItemIterator(self.mw.block_list_widget)
+        while iterator.value():
+            item = iterator.value()
+            block_idx = item.data(0, Qt.UserRole)
+            if block_idx is not None:
+                base_display_name = self.mw.block_names.get(str(block_idx), f"Block {block_idx}")
+                if item.text(0) != base_display_name: 
+                    item.setText(0, base_display_name) 
+            iterator += 1
+
         if hasattr(self.mw, 'block_list_widget'):
             self.mw.block_list_widget.viewport().update()
 
@@ -311,8 +363,9 @@ class UIUpdater:
             # Also check for specific highlights that have their own methods in HighlightManager
             if problem_key in self.mw.problems_per_subline:
                  problems = self.mw.problems_per_subline[problem_key]
-                 if self.mw.current_game_rules.problem_ids.PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY in problems:
-                     editor.highlightManager.addEmptyOddSublineHighlight(i)
+                 if hasattr(self.mw.current_game_rules, 'problem_ids') and hasattr(self.mw.current_game_rules.problem_ids, 'PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY'):
+                     if self.mw.current_game_rules.problem_ids.PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY in problems:
+                         editor.highlightManager.addEmptyOddSublineHighlight(i)
 
     def populate_strings_for_block(self, block_idx):
         preview_edit = getattr(self.mw, 'preview_text_edit', None)

@@ -49,10 +49,15 @@ class ProjectActionHandler(BaseHandler):
             project_dir=info['directory'],
             name=info['name'],
             plugin_name=info['plugin'],
-            description=info['description']
+            description=info['description'],
+            source_path=info['source_path'],
+            translation_path=info['translation_path'],
+            is_directory_mode=info['is_directory_mode'],
+            auto_create_translations=info['auto_create_translations']
         )
 
         if success:
+            self.mw.project_manager.sync_project_files()
             project = self.mw.project_manager.project
             log_info(f"Project '{project.name}' created successfully at {info['directory']}.")
 
@@ -75,6 +80,8 @@ class ProjectActionHandler(BaseHandler):
                 self.mw.close_project_action.setEnabled(True)
             if hasattr(self.mw, 'import_block_action'):
                 self.mw.import_block_action.setEnabled(True)
+            if hasattr(self.mw, 'import_directory_action'):
+                self.mw.import_directory_action.setEnabled(True)
             if hasattr(self.mw, 'add_block_button'):
                 self.mw.add_block_button.setEnabled(True)
 
@@ -132,12 +139,15 @@ class ProjectActionHandler(BaseHandler):
             # Load project-specific settings from metadata
             if self.mw.project_manager:
                 self.mw.project_manager.load_settings_from_project(self.mw)
+                self.mw.project_manager.sync_project_files()
 
             # Enable project-specific actions
             if hasattr(self.mw, 'close_project_action'):
                 self.mw.close_project_action.setEnabled(True)
             if hasattr(self.mw, 'import_block_action'):
                 self.mw.import_block_action.setEnabled(True)
+            if hasattr(self.mw, 'import_directory_action'):
+                self.mw.import_directory_action.setEnabled(True)
             if hasattr(self.mw, 'add_block_button'):
                 self.mw.add_block_button.setEnabled(True)
 
@@ -187,6 +197,8 @@ class ProjectActionHandler(BaseHandler):
             self.mw.close_project_action.setEnabled(False)
         if hasattr(self.mw, 'import_block_action'):
             self.mw.import_block_action.setEnabled(False)
+        if hasattr(self.mw, 'import_directory_action'):
+            self.mw.import_directory_action.setEnabled(False)
         if hasattr(self.mw, 'add_block_button'):
             self.mw.add_block_button.setEnabled(False)
 
@@ -231,6 +243,35 @@ class ProjectActionHandler(BaseHandler):
             QMessageBox.information(self.mw, "Block Imported", f"Block '{info['name']}' has been imported.")
         else:
             QMessageBox.critical(self.mw, "Import Failed", "Failed to import block.")
+
+    def import_directory_action(self):
+        log_info("Import Directory action triggered.")
+
+        if not self.mw.project_manager or not self.mw.project_manager.project:
+            QMessageBox.warning(self.mw, "No Project", "Please open or create a project first.")
+            return
+
+        start_dir = os.path.expanduser("~")
+        directory_path = QFileDialog.getExistingDirectory(
+            self.mw,
+            "Select Directory to Import",
+            start_dir,
+            QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks
+        )
+
+        if not directory_path:
+            log_info("Import directory cancelled.")
+            return
+
+        # Import directory using ProjectManager
+        blocks = self.mw.project_manager.import_directory(directory_path)
+
+        if blocks:
+            log_info(f"{len(blocks)} blocks imported successfully from '{directory_path}'.")
+            self._populate_blocks_from_project()
+            QMessageBox.information(self.mw, "Directory Imported", f"{len(blocks)} blocks have been imported.")
+        else:
+            QMessageBox.information(self.mw, "Import Result", "No supported files found or failed to import.")
 
     def delete_block_action(self):
         log_info("Delete Block action triggered.")
@@ -342,7 +383,7 @@ class ProjectActionHandler(BaseHandler):
         # Load edited_file_data
         self.mw.edited_file_data = []
         for block in self.mw.project_manager.project.blocks:
-            translation_path = self.mw.project_manager.get_absolute_path(block.translation_file)
+            translation_path = self.mw.project_manager.get_absolute_path(block.translation_file, is_translation=True)
             edited_block_data = []
 
             if os.path.exists(translation_path):
@@ -363,7 +404,7 @@ class ProjectActionHandler(BaseHandler):
         if self.mw.data:
             first_block = self.mw.project_manager.project.blocks[0]
             self.mw.json_path = self.mw.project_manager.get_absolute_path(first_block.source_file)
-            self.mw.edited_json_path = self.mw.project_manager.get_absolute_path(first_block.translation_file)
+            self.mw.edited_json_path = self.mw.project_manager.get_absolute_path(first_block.translation_file, is_translation=True)
 
         # Perform initial scan
         if hasattr(self.mw, 'app_action_handler'):
@@ -464,6 +505,8 @@ class ProjectActionHandler(BaseHandler):
                 self.mw.close_project_action.setEnabled(True)
             if hasattr(self.mw, 'import_block_action'):
                 self.mw.import_block_action.setEnabled(True)
+            if hasattr(self.mw, 'import_directory_action'):
+                self.mw.import_directory_action.setEnabled(True)
             if hasattr(self.mw, 'add_block_button'):
                 self.mw.add_block_button.setEnabled(True)
 
