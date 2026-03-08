@@ -482,6 +482,10 @@
             {
                 "display": "😁",
                 "tag": "{boba}"
+            },
+            {
+                "display": "#FFFF0000",
+                "tag": "{COLOR:Red}"
             }
         ],
         "wrap_tags": [
@@ -489,6 +493,11 @@
                 "display": "😳",
                 "open": "<buba>",
                 "close": "</buba>"
+            },
+            {
+                "display": "#FF55AA7F",
+                "open": "{Color:Green}",
+                "close": "{Color:White}"
             }
         ]
     }

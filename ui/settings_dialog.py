@@ -59,6 +59,53 @@ class ColorPickerButton(QPushButton):
         if chosen.isValid():
             self.setColor(chosen)
 
+class TagDisplayWidget(QWidget):
+    def __init__(self, initial_text="", parent=None):
+        super().__init__(parent)
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(2, 2, 2, 2)
+        layout.setSpacing(4)
+        
+        self.line_edit = QLineEdit(initial_text, self)
+        layout.addWidget(self.line_edit)
+        
+        self.color_btn = QPushButton(self)
+        self.color_btn.setFixedSize(20, 20)
+        self.color_btn.setToolTip("Обрати колір")
+        layout.addWidget(self.color_btn)
+        
+        self.color_btn.clicked.connect(self._pick_color)
+        self.line_edit.textChanged.connect(self._update_btn_color)
+        self._update_btn_color()
+
+    def _update_btn_color(self):
+        text = self.line_edit.text().strip()
+        if text.startswith('#') and len(text) in (4, 7, 9):
+            self.color_btn.setStyleSheet(f"background-color: {text}; border: 1px solid gray; border-radius: 2px;")
+            self.color_btn.setText("")
+        else:
+            self.color_btn.setStyleSheet("border: 1px solid gray; border-radius: 2px;")
+            self.color_btn.setText("...")
+
+    def _pick_color(self):
+        current_text = self.line_edit.text().strip()
+        initial_color = QColor(current_text) if current_text.startswith('#') else QColor("white")
+        
+        try:
+            options = QColorDialog.ShowAlphaChannel
+        except Exception:
+            options = 0
+            
+        color = QColorDialog.getColor(initial_color, self.window(), "Обрати колір", options)
+        if color.isValid():
+            try:
+                self.line_edit.setText(color.name(QColor.HexArgb).upper())
+            except Exception:
+                self.line_edit.setText(color.name().upper())
+
+    def text(self):
+        return self.line_edit.text().strip()
+
 class SettingsDialog(QDialog):
     def __init__(self, main_window):
         super().__init__(main_window)
@@ -352,11 +399,15 @@ class SettingsDialog(QDialog):
         wrap_layout.addLayout(wrap_btn_row)
         layout.addWidget(wrap_group)
 
-    def _add_table_row(self, table):
+    def _add_table_row(self, table, display_text="", col1="", col2=""):
         row = table.rowCount()
         table.insertRow(row)
-        for col in range(table.columnCount()):
-            table.setItem(row, col, QTableWidgetItem(""))
+        
+        table.setCellWidget(row, 0, TagDisplayWidget(display_text, table))
+        table.setItem(row, 1, QTableWidgetItem(col1))
+        
+        if table.columnCount() > 2:
+            table.setItem(row, 2, QTableWidgetItem(col2))
 
     def _remove_table_row(self, table):
         curr = table.currentRow()
@@ -844,17 +895,14 @@ class SettingsDialog(QDialog):
         tags_data = getattr(self.mw, 'context_menu_tags', {"single_tags": [], "wrap_tags": []})
         
         single_tags = tags_data.get("single_tags", [])
-        self.single_tags_table.setRowCount(len(single_tags))
-        for i, t in enumerate(single_tags):
-            self.single_tags_table.setItem(i, 0, QTableWidgetItem(t.get("display", "")))
-            self.single_tags_table.setItem(i, 1, QTableWidgetItem(t.get("tag", "")))
+        self.single_tags_table.setRowCount(0)
+        for t in single_tags:
+            self._add_table_row(self.single_tags_table, t.get("display", ""), t.get("tag", ""))
             
         wrap_tags = tags_data.get("wrap_tags", [])
-        self.wrap_tags_table.setRowCount(len(wrap_tags))
-        for i, t in enumerate(wrap_tags):
-            self.wrap_tags_table.setItem(i, 0, QTableWidgetItem(t.get("display", "")))
-            self.wrap_tags_table.setItem(i, 1, QTableWidgetItem(t.get("open", "")))
-            self.wrap_tags_table.setItem(i, 2, QTableWidgetItem(t.get("close", "")))
+        self.wrap_tags_table.setRowCount(0)
+        for t in wrap_tags:
+            self._add_table_row(self.wrap_tags_table, t.get("display", ""), t.get("open", ""), t.get("close", ""))
 
         self.on_provider_changed(self.translation_provider_combo.currentIndex())
         self.rules_changed_requires_rescan = False
@@ -948,16 +996,21 @@ class SettingsDialog(QDialog):
     def _get_tags_from_tables(self):
         single_tags = []
         for r in range(self.single_tags_table.rowCount()):
-            disp = self.single_tags_table.item(r, 0).text().strip()
-            tag = self.single_tags_table.item(r, 1).text().strip()
+            widget = self.single_tags_table.cellWidget(r, 0)
+            disp = widget.text() if widget else ""
+            item1 = self.single_tags_table.item(r, 1)
+            tag = item1.text().strip() if item1 else ""
             if disp or tag:
                 single_tags.append({"display": disp, "tag": tag})
                 
         wrap_tags = []
         for r in range(self.wrap_tags_table.rowCount()):
-            disp = self.wrap_tags_table.item(r, 0).text().strip()
-            ot = self.wrap_tags_table.item(r, 1).text().strip()
-            ct = self.wrap_tags_table.item(r, 2).text().strip()
+            widget = self.wrap_tags_table.cellWidget(r, 0)
+            disp = widget.text() if widget else ""
+            item1 = self.wrap_tags_table.item(r, 1)
+            ot = item1.text().strip() if item1 else ""
+            item2 = self.wrap_tags_table.item(r, 2)
+            ct = item2.text().strip() if item2 else ""
             if disp or ot or ct:
                 wrap_tags.append({"display": disp, "open": ot, "close": ct})
                 
