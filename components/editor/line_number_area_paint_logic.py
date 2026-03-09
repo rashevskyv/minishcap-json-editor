@@ -40,7 +40,7 @@ class LNETLineNumberAreaPaintLogic:
 
         total_area_width = self.editor.lineNumberAreaWidth()
         extra_part_width = 0
-        if self.editor.objectName() in ["original_text_edit", "edited_text_edit"] and hasattr(self.mw, 'all_font_maps') and self.mw.all_font_maps:
+        if self.editor.objectName() in ["original_text_edit", "edited_text_edit"] and hasattr(self.mw, 'font_map') and self.mw.font_map:
             extra_part_width = self.editor.pixel_width_display_area_width
         elif self.editor.objectName() == "preview_text_edit":
             extra_part_width = self.editor.preview_indicator_area_width
@@ -153,7 +153,7 @@ class LNETLineNumberAreaPaintLogic:
                 painter.drawText(QRect(0, top, number_part_width - 3, line_height), Qt.AlignRight | Qt.AlignVCenter, display_number_for_line_area)
 
                 if extra_part_width > 0:
-                    if self.editor.objectName() == "edited_text_edit" and self.mw and hasattr(self.mw, 'all_font_maps') and self.mw.all_font_maps:
+                    if self.editor.objectName() == "edited_text_edit" and self.mw and hasattr(self.mw, 'font_map') and self.mw.font_map:
                         font_map_for_line = self.mw.helper.get_font_map_for_string(current_block_idx_data_mw, current_string_idx_data_mw)
                         
                         q_block_text_raw_dots_paint_text = current_q_block.text()

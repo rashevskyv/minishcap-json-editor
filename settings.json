@@ -45,5 +45,7 @@
         "D:\\git\\WW\\WindWaker\\project.uiproj",
         "C:\\Users\\Administrator\\Desktop\\pokemon\\Pokemon\\project.uiproj",
         "C:\\Users\\Administrator\\Desktop\\13\\project.uiproj"
-    ]
+    ],
+    "enable_console_logging": true,
+    "enable_file_logging": true
 }

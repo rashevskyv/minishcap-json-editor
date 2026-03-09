@@ -76,6 +76,11 @@ class SettingsManager:
         log_info(f"Loading settings from {self.settings_file_path}...")
         self._load_global_settings()
         self._load_plugin_settings()
+        
+        # Apply logging settings
+        from utils.logging_utils import update_logger_handlers
+        update_logger_handlers(self.get('enable_console_logging', True), self.get('enable_file_logging', True))
+        
         self.load_all_font_maps()
 
         self.mw.initial_load_path = getattr(self.mw, 'original_file_path', None)
@@ -98,6 +103,8 @@ class SettingsManager:
             "font_size": default_font_size,
             "active_game_plugin": "zelda_mc",
             "show_multiple_spaces_as_dots": True,
+            "enable_console_logging": True,
+            "enable_file_logging": True,
             "space_dot_color_hex": "#BBBBBB",
             "window_was_maximized": False,
             "window_normal_geometry": None,
@@ -337,6 +344,8 @@ class SettingsManager:
             "glossary_ai": getattr(self.mw, 'glossary_ai', {}),
             "spellchecker_enabled": getattr(self.mw, 'spellchecker_enabled', False),
             "spellchecker_language": getattr(self.mw, 'spellchecker_language', 'uk'),
+            "enable_console_logging": getattr(self.mw, 'enable_console_logging', True),
+            "enable_file_logging": getattr(self.mw, 'enable_file_logging', True)
         })
 
         if self.mw.restore_unsaved_on_startup and self.mw.edited_data:
@@ -500,30 +509,28 @@ class SettingsManager:
 
         fonts_dir = os.path.join("plugins", plugin_name, "fonts")
         if not os.path.isdir(fonts_dir):
-            log_warning(f"Fonts directory not found at '{fonts_dir}'.")
-            self.mw.icon_sequences = []
-            return
-        
-        log_debug(f"Loading all font maps from: {fonts_dir}")
-        for filename in os.listdir(fonts_dir):
-            if not filename.lower().endswith(".json"):
-                continue
-
-            font_map_path = os.path.join(fonts_dir, filename)
-            try:
-                with open(font_map_path, 'r', encoding='utf-8') as f:
-                    raw_font_data = json.load(f)
-
-                if "signature" in raw_font_data and raw_font_data["signature"] == "FFNT":
-                    parsed_map = self._parse_new_font_format(raw_font_data)
-                else:
-                    parsed_map = raw_font_data
-                
-                self.mw.all_font_maps[filename] = parsed_map
-                log_debug(f"Successfully loaded font map '{filename}'.")
-
-            except Exception as e:
-                log_warning(f"Error reading or parsing font map file '{filename}': {e}.")
+            log_warning(f"Fonts directory not found at '{fonts_dir}'. Skipping JSON font files loading.")
+        else:
+            log_debug(f"Loading all font maps from: {fonts_dir}")
+            for filename in os.listdir(fonts_dir):
+                if not filename.lower().endswith(".json"):
+                    continue
+    
+                font_map_path = os.path.join(fonts_dir, filename)
+                try:
+                    with open(font_map_path, 'r', encoding='utf-8') as f:
+                        raw_font_data = json.load(f)
+    
+                    if "signature" in raw_font_data and raw_font_data["signature"] == "FFNT":
+                        parsed_map = self._parse_new_font_format(raw_font_data)
+                    else:
+                        parsed_map = raw_font_data
+                    
+                    self.mw.all_font_maps[filename] = parsed_map
+                    log_debug(f"Successfully loaded font map '{filename}'.")
+    
+                except Exception as e:
+                    log_warning(f"Error reading or parsing font map file '{filename}': {e}.")
 
         default_font_filename = getattr(self.mw, 'default_font_file', None)
         if default_font_filename and default_font_filename in self.mw.all_font_maps:

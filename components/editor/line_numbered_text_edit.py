@@ -721,7 +721,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
         current_font_metrics = self.fontMetrics()
         base_width = current_font_metrics.horizontalAdvance('9') * (digits) + 10
         additional_width = 0
-        if self.objectName() in ["original_text_edit", "edited_text_edit"] and self.font_map:
+        if self.objectName() in ["original_text_edit", "edited_text_edit"] and hasattr(self.window(), 'font_map') and self.window().font_map:
             additional_width = self.pixel_width_display_area_width
         elif self.objectName() == "preview_text_edit":
             additional_width = self.preview_indicator_area_width

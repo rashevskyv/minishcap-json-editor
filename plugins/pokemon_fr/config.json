@@ -353,8 +353,8 @@
     "original_file_path": "C:\\Users\\Administrator\\Desktop\\PokemonRS\\sources\\data_event_scripts.s.json",
     "edited_file_path": "C:\\Users\\Administrator\\Desktop\\PokemonRS\\translation\\data_event_scripts.s.json",
     "last_selected_block_index": 0,
-    "last_selected_string_index": -1,
-    "last_cursor_position_in_edited": 0,
+    "last_selected_string_index": 4,
+    "last_cursor_position_in_edited": 52,
     "last_edited_text_edit_scroll_value_v": 0,
     "last_edited_text_edit_scroll_value_h": 0,
     "last_preview_text_edit_scroll_value_v": 0,
@@ -396,7 +396,11 @@
         "PKFR_SINGLE_WORD_SUBLINE": true,
         "PKFR_SHORT_LINE": true
     },
-    "string_metadata": {},
+    "string_metadata": {
+        "(0, 4)": {
+            "width": 140
+        }
+    },
     "default_font_file": "",
     "tag_color_rgba": "#ffa7a7b6",
     "tag_bold": false,

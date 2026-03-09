@@ -49,29 +49,49 @@ class DuplicateFilter(logging.Filter):
 
 
 logger = logging.getLogger("app_logger")
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(module)s - %(funcName)s - %(message)s')
+duplicate_filter = DuplicateFilter(time_window=0.5, max_history=100)
 
-if not logger.handlers:
-    logger.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(module)s - %(funcName)s - %(message)s')
+_file_handler = None
+_console_handler = None
 
-    # Create duplicate filter to prevent log spam
-    duplicate_filter = DuplicateFilter(time_window=0.5, max_history=100)
+def update_logger_handlers(enable_console: bool, enable_file: bool):
+    global _file_handler, _console_handler
+    
+    # Handle File Handler
+    if enable_file and not _file_handler:
+        _file_handler = logging.FileHandler(log_file_path, mode='w', encoding='utf-8')
+        _file_handler.setLevel(logging.DEBUG)
+        _file_handler.setFormatter(formatter)
+        _file_handler.addFilter(duplicate_filter)
+        logger.addHandler(_file_handler)
+    elif not enable_file and _file_handler:
+        logger.removeHandler(_file_handler)
+        _file_handler.close()
+        _file_handler = None
+        
+    # Handle Console Handler
+    if enable_console and not _console_handler:
+        _console_handler = logging.StreamHandler()
+        _console_handler.setLevel(logging.DEBUG)
+        _console_handler.setFormatter(formatter)
+        
+        # Safe encoding reconfiguration
+        if hasattr(_console_handler.stream, 'reconfigure'):
+            try:
+                _console_handler.stream.reconfigure(encoding='utf-8')
+            except Exception:
+                pass
+                
+        _console_handler.addFilter(duplicate_filter)
+        logger.addHandler(_console_handler)
+    elif not enable_console and _console_handler:
+        logger.removeHandler(_console_handler)
+        _console_handler = None
 
-    # Використовуємо 'w' режим, щоб файл очищався при кожному запуску
-    fh = logging.FileHandler(log_file_path, mode='w', encoding='utf-8')
-    fh.setLevel(logging.DEBUG)
-    fh.setFormatter(formatter)
-    fh.addFilter(duplicate_filter)  # Add filter to file handler
-    logger.addHandler(fh)
-
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    ch.setFormatter(formatter)
-    # Для консолі також можна спробувати встановити кодування, хоча це залежить від терміналу
-    # У VSCode це зазвичай працює добре
-    ch.stream.reconfigure(encoding='utf-8')
-    ch.addFilter(duplicate_filter)  # Add filter to console handler
-    logger.addHandler(ch)
+# Initialize default behavior (will be overwritten if settings exist)
+update_logger_handlers(True, True)
 
 def log_debug(message: str):
     logger.debug(message)
