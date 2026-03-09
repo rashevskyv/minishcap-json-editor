@@ -275,7 +275,16 @@ class SearchHandler(BaseHandler):
                            was_search_tagless_and_newline_agnostic: bool):
         log_debug(f"Navigating. Data: B:{block_idx_match_in_data}, S:{string_idx_match_in_data}. SearchTextPos:{char_pos_in_search_text}, SearchTextLen:{match_len_in_search_text}, TaglessNLSearch:{was_search_tagless_and_newline_agnostic}")
         self.clear_all_search_highlights()
-        if self.mw.current_block_idx != block_idx_match_in_data: self.mw.block_list_widget.setCurrentRow(block_idx_match_in_data)
+        if self.mw.current_block_idx != block_idx_match_in_data:
+            from PyQt5.QtWidgets import QTreeWidgetItemIterator
+            iterator = QTreeWidgetItemIterator(self.mw.block_list_widget)
+            while iterator.value():
+                item = iterator.value()
+                if item.data(0, Qt.UserRole) == block_idx_match_in_data:
+                    self.mw.block_list_widget.setCurrentItem(item)
+                    break
+                iterator += 1
+        
         if self.mw.current_string_idx != string_idx_match_in_data or self.mw.current_block_idx != block_idx_match_in_data:
              self.mw.list_selection_handler.string_selected_from_preview(string_idx_match_in_data)
         QApplication.processEvents()

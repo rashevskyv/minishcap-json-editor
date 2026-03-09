@@ -283,7 +283,7 @@ class ProjectActionHandler(BaseHandler):
         if not current_item:
             return
 
-        block_idx = current_item.data(Qt.UserRole)
+        block_idx = current_item.data(0, Qt.UserRole)
         block = self.mw.project_manager.project.blocks[block_idx]
         block_name = block.name
 
