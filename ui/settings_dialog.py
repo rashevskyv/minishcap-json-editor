@@ -60,18 +60,21 @@ class SettingsDialog(QDialog, SettingsDialogUiMixin):
         self.spelling_tab = QWidget()
         self.ai_translation_tab = QWidget()
         self.ai_glossary_tab = QWidget()
+        self.logging_tab = QWidget()
 
         self.tabs.addTab(self.general_tab, "Global")
         self.tabs.addTab(self.plugin_tab, "Plugin")
         self.tabs.addTab(self.spelling_tab, "Spelling")
         self.tabs.addTab(self.ai_translation_tab, "AI Translation")
         self.tabs.addTab(self.ai_glossary_tab, "AI Glossary")
+        self.tabs.addTab(self.logging_tab, "Logging")
         
         self.setup_general_tab()
         self.setup_plugin_tab()
         self.setup_spelling_tab()
         self.setup_ai_translation_tab()
         self.setup_ai_glossary_tab()
+        self.setup_logging_tab()
 
         self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
         self.button_box.accepted.connect(self.accept)
@@ -127,6 +130,14 @@ class SettingsDialog(QDialog, SettingsDialogUiMixin):
         self.space_dot_color_picker.setColor(QColor(self.mw.space_dot_color_hex))
         self.restore_session_checkbox.setChecked(self.mw.restore_unsaved_on_startup)
         self.prompt_editor_checkbox.setChecked(getattr(self.mw, 'prompt_editor_enabled', True))
+        
+        self.enable_console_logging_checkbox.setChecked(getattr(self.mw, 'enable_console_logging', True))
+        self.enable_file_logging_checkbox.setChecked(getattr(self.mw, 'enable_file_logging', True))
+        self.log_file_path_edit.setText(getattr(self.mw, 'log_file_path', ""))
+        
+        enabled_cats = getattr(self.mw, 'enabled_log_categories', ["general", "lifecycle", "file_ops", "settings", "ui_action", "ai", "scanner", "plugins"])
+        for cat_id, chk in self.log_categories_checkboxes.items():
+            chk.setChecked(cat_id in enabled_cats)
         
         self.original_path_edit.setText(self.mw.json_path or ""); self.edited_path_edit.setText(self.mw.edited_json_path or "")
         
@@ -335,6 +346,10 @@ class SettingsDialog(QDialog, SettingsDialogUiMixin):
             'glossary_ai': glossary_ai_settings,
             'spellchecker_enabled': self.spellcheck_enabled_checkbox.isChecked(),
             'spellchecker_language': self.spellcheck_language_combo.currentData(),
+            'enable_console_logging': self.enable_console_logging_checkbox.isChecked(),
+            'enable_file_logging': self.enable_file_logging_checkbox.isChecked(),
+            'log_file_path': self.log_file_path_edit.text(),
+            'enabled_log_categories': [cat_id for cat_id, chk in self.log_categories_checkboxes.items() if chk.isChecked()],
             'context_menu_tags': self._get_tags_from_tables()
         }
 

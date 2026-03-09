@@ -47,5 +47,16 @@
         "C:\\Users\\Administrator\\Desktop\\13\\project.uiproj"
     ],
     "enable_console_logging": true,
-    "enable_file_logging": true
+    "enable_file_logging": true,
+    "log_file_path": "",
+    "enabled_log_categories": [
+        "general",
+        "lifecycle",
+        "file_ops",
+        "settings",
+        "ui_action",
+        "ai",
+        "scanner",
+        "plugins"
+    ]
 }

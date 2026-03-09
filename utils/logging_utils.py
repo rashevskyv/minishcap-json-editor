@@ -1,12 +1,12 @@
-# --- START OF FILE utils/logging_utils.py ---
 import logging
 import os
 import time
 from collections import deque
+from pathlib import Path
 
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-log_file_path = os.path.join(project_root, 'app_debug.txt')
-
+default_log_file_path = os.path.join(project_root, 'app_debug.txt')
+log_file_path = default_log_file_path
 
 class DuplicateFilter(logging.Filter):
     """
@@ -14,101 +14,122 @@ class DuplicateFilter(logging.Filter):
     This prevents log spam from repeated identical messages.
     """
     def __init__(self, time_window=0.5, max_history=100):
-        """
-        Args:
-            time_window: Time window in seconds to consider messages as duplicates (default 0.5s)
-            max_history: Maximum number of recent messages to track (default 100)
-        """
         super().__init__()
         self.time_window = time_window
         self.max_history = max_history
-        # Store tuples of (message, timestamp)
         self.recent_messages = deque(maxlen=max_history)
 
     def filter(self, record):
-        """
-        Determine if a log record should be logged or filtered out.
-        Returns True to log, False to suppress.
-        """
         current_time = time.time()
         message = record.getMessage()
 
-        # Clean up old messages outside the time window
         while self.recent_messages and (current_time - self.recent_messages[0][1]) > self.time_window:
             self.recent_messages.popleft()
 
-        # Check if this message was logged recently
         for recent_msg, recent_time in self.recent_messages:
             if recent_msg == message and (current_time - recent_time) < self.time_window:
-                # Duplicate message within time window - suppress it
                 return False
 
-        # New message or outside time window - log it and remember it
         self.recent_messages.append((message, current_time))
         return True
 
 
 logger = logging.getLogger("app_logger")
 logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(module)s - %(funcName)s - %(message)s')
+formatter = logging.Formatter('%(asctime)s - %(levelname)s - [%(category)s] %(module)s - %(funcName)s - %(message)s')
 duplicate_filter = DuplicateFilter(time_window=0.5, max_history=100)
 
 _file_handler = None
 _console_handler = None
 
-def update_logger_handlers(enable_console: bool, enable_file: bool):
-    global _file_handler, _console_handler
+_enabled_categories = {
+    "general", "lifecycle", "file_ops", "settings", "ui_action", "ai", "scanner", "plugins"
+}
+
+def set_enabled_log_categories(categories: list):
+    global _enabled_categories
+    _enabled_categories = set(categories)
+
+def update_logger_handlers(enable_console: bool, enable_file: bool, file_path: str = None):
+    global _file_handler, _console_handler, log_file_path
     
-    # Handle File Handler
-    if enable_file and not _file_handler:
-        _file_handler = logging.FileHandler(log_file_path, mode='w', encoding='utf-8')
-        _file_handler.setLevel(logging.DEBUG)
-        _file_handler.setFormatter(formatter)
-        _file_handler.addFilter(duplicate_filter)
-        logger.addHandler(_file_handler)
-    elif not enable_file and _file_handler:
+    if file_path:
+        log_file_path = file_path
+        
+    # Rebuild file handler if path changed or state changed
+    if _file_handler and (not enable_file or _file_handler.baseFilename != os.path.abspath(log_file_path)):
         logger.removeHandler(_file_handler)
         _file_handler.close()
         _file_handler = None
+        
+    if enable_file and not _file_handler:
+        try:
+            # Ensure folder exists
+            Path(log_file_path).parent.mkdir(parents=True, exist_ok=True)
+            _file_handler = logging.FileHandler(log_file_path, mode='a', encoding='utf-8')
+            _file_handler.setLevel(logging.DEBUG)
+            _file_handler.setFormatter(formatter)
+            _file_handler.addFilter(duplicate_filter)
+            logger.addHandler(_file_handler)
+        except Exception as e:
+            print(f"Failed to create FileHandler: {e}")
         
     # Handle Console Handler
     if enable_console and not _console_handler:
         _console_handler = logging.StreamHandler()
         _console_handler.setLevel(logging.DEBUG)
         _console_handler.setFormatter(formatter)
-        
-        # Safe encoding reconfiguration
         if hasattr(_console_handler.stream, 'reconfigure'):
             try:
                 _console_handler.stream.reconfigure(encoding='utf-8')
             except Exception:
                 pass
-                
         _console_handler.addFilter(duplicate_filter)
         logger.addHandler(_console_handler)
     elif not enable_console and _console_handler:
         logger.removeHandler(_console_handler)
         _console_handler = None
 
-# Initialize default behavior (will be overwritten if settings exist)
+
+def _should_log(category: str) -> bool:
+    return category in _enabled_categories
+
+# Wrapper class to inject category into Formatter
+class CategoryAdapter(logging.LoggerAdapter):
+    def process(self, msg, kwargs):
+        extra = kwargs.get("extra", {})
+        extra["category"] = self.extra["category"].upper()
+        kwargs["extra"] = extra
+        return msg, kwargs
+
+def _log_message(level, message: str, category: str, exc_info=False):
+    if not _should_log(category):
+        return
+    adapter = CategoryAdapter(logger, {"category": category})
+    if level == logging.DEBUG:
+        adapter.debug(message)
+    elif level == logging.INFO:
+        adapter.info(message)
+    elif level == logging.WARNING:
+        adapter.warning(message)
+    elif level == logging.ERROR:
+        adapter.error(message, exc_info=exc_info)
+
+# Default initialization
 update_logger_handlers(True, True)
 
-def log_debug(message: str):
-    logger.debug(message)
+def log_debug(message: str, category: str = "general"):
+    _log_message(logging.DEBUG, message, category)
 
-def log_info(message: str):
-    logger.info(message)
+def log_info(message: str, category: str = "general"):
+    _log_message(logging.INFO, message, category)
 
-def log_warning(message: str):
-    logger.warning(message)
+def log_warning(message: str, category: str = "general"):
+    _log_message(logging.WARNING, message, category)
 
-def log_error(message: str, exc_info=False):
-    logger.error(message, exc_info=exc_info)
+def log_error(message: str, exc_info=False, category: str = "general"):
+    _log_message(logging.ERROR, message, category, exc_info)
 
 if __name__ == '__main__':
-    log_debug("This is a test debug message from utils.logging_utils.py.")
-    log_info("This is a test info message from utils.logging_utils.py.")
-    try:
-        1 / 0
-    except ZeroDivisionError:
-        log_error("A ZeroDivisionError occurred.", exc_info=True)
+    log_debug("Test generic debug")
+    log_info("Test file action", category="file_ops")

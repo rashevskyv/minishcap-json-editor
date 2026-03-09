@@ -78,8 +78,13 @@ class SettingsManager:
         self._load_plugin_settings()
         
         # Apply logging settings
-        from utils.logging_utils import update_logger_handlers
-        update_logger_handlers(self.get('enable_console_logging', True), self.get('enable_file_logging', True))
+        from utils.logging_utils import update_logger_handlers, set_enabled_log_categories, default_log_file_path
+        set_enabled_log_categories(self.get('enabled_log_categories', ["general", "lifecycle", "file_ops", "settings", "ui_action", "ai", "scanner", "plugins"]))
+        update_logger_handlers(
+            self.get('enable_console_logging', True), 
+            self.get('enable_file_logging', True),
+            self.get('log_file_path', default_log_file_path)
+        )
         
         self.load_all_font_maps()
 
@@ -105,6 +110,8 @@ class SettingsManager:
             "show_multiple_spaces_as_dots": True,
             "enable_console_logging": True,
             "enable_file_logging": True,
+            "log_file_path": "",
+            "enabled_log_categories": ["general", "lifecycle", "file_ops", "settings", "ui_action", "ai", "scanner", "plugins"],
             "space_dot_color_hex": "#BBBBBB",
             "window_was_maximized": False,
             "window_normal_geometry": None,
@@ -345,7 +352,9 @@ class SettingsManager:
             "spellchecker_enabled": getattr(self.mw, 'spellchecker_enabled', False),
             "spellchecker_language": getattr(self.mw, 'spellchecker_language', 'uk'),
             "enable_console_logging": getattr(self.mw, 'enable_console_logging', True),
-            "enable_file_logging": getattr(self.mw, 'enable_file_logging', True)
+            "enable_file_logging": getattr(self.mw, 'enable_file_logging', True),
+            "log_file_path": getattr(self.mw, 'log_file_path', ""),
+            "enabled_log_categories": getattr(self.mw, 'enabled_log_categories', ["general", "lifecycle", "file_ops", "settings", "ui_action", "ai", "scanner", "plugins"])
         })
 
         if self.mw.restore_unsaved_on_startup and self.mw.edited_data:

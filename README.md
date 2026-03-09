@@ -105,7 +105,6 @@ jsonreader/
 ## Documentation
 
 - **[CLAUDE.md](CLAUDE.md)** - Development guide and architecture documentation
-- **[PLAN.md](PLAN.md)** - Future features and roadmap
 - **[PROJECT_MANAGER_README.md](PROJECT_MANAGER_README.md)** - Project management features
 
 ## Development
