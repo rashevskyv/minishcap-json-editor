@@ -327,7 +327,10 @@ class ProjectActionHandler(BaseHandler):
         blocks[block_idx], blocks[block_idx - 1] = blocks[block_idx - 1], blocks[block_idx]
         self.mw.project_manager.save()
         self._populate_blocks_from_project()
-        self.mw.block_list_widget.setCurrentRow(block_idx - 1)
+        if block_idx > 0:
+            self.mw.block_list_widget.select_block_by_index(block_idx - 1)
+        elif len(self.mw.project_manager.project.blocks) > 0:
+            self.mw.block_list_widget.select_block_by_index(0)
 
     def move_block_down_action(self):
         log_info("Move Block Down action triggered.")
@@ -347,7 +350,10 @@ class ProjectActionHandler(BaseHandler):
         blocks[block_idx], blocks[block_idx + 1] = blocks[block_idx + 1], blocks[block_idx]
         self.mw.project_manager.save()
         self._populate_blocks_from_project()
-        self.mw.block_list_widget.setCurrentRow(block_idx + 1)
+        if block_idx + 1 < len(self.mw.project_manager.project.blocks):
+            self.mw.block_list_widget.select_block_by_index(block_idx + 1)
+        else:
+            self.mw.block_list_widget.select_block_by_index(block_idx)
 
     def _populate_blocks_from_project(self):
         """Populate block list from current project and load data."""

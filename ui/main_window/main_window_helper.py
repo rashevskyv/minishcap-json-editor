@@ -211,7 +211,7 @@ class MainWindowHelper:
 
             if self.mw.data and 0 <= self.mw.last_selected_block_index < len(self.mw.data):
                 self.mw.block_list_widget.currentItemChanged.disconnect()
-                self.mw.block_list_widget.setCurrentRow(self.mw.last_selected_block_index)
+                self.mw.block_list_widget.select_block_by_index(self.mw.last_selected_block_index)
 
                 selected_item = self.mw.block_list_widget.item(self.mw.last_selected_block_index)
                 if selected_item:

@@ -137,8 +137,8 @@ class TextAnalysisHandler(BaseHandler):
                 line_number = None
 
         block_widget = getattr(self.mw, 'block_list_widget', None)
-        if block_widget and 0 <= block_idx < block_widget.count():
-            block_widget.setCurrentRow(block_idx)
+        if block_widget and hasattr(block_widget, 'select_block_by_index'):
+            block_widget.select_block_by_index(block_idx)
 
         if hasattr(self.mw, 'list_selection_handler'):
             self.mw.list_selection_handler.string_selected_from_preview(string_idx)

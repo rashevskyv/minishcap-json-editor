@@ -56,6 +56,7 @@ class CustomTreeWidget(QTreeWidget):
             item = iterator.value()
             if item.data(0, Qt.UserRole) == block_idx:
                 self.setCurrentItem(item)
+                item.setSelected(True)
                 self.scrollToItem(item)
                 return True
             iterator += 1
