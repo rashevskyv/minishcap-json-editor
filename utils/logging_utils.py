@@ -44,6 +44,7 @@ logger = logging.getLogger("app_logger")
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - [%(category)s] %(module)s - %(funcName)s - %(message)s')
 duplicate_filter = DuplicateFilter(time_window=0.5, max_history=100)
+logger.addFilter(duplicate_filter)
 
 _file_handler = None
 _console_handler = None
@@ -75,7 +76,6 @@ def update_logger_handlers(enable_console: bool, enable_file: bool, file_path: s
             _file_handler = logging.FileHandler(log_file_path, mode='a', encoding='utf-8')
             _file_handler.setLevel(logging.DEBUG)
             _file_handler.setFormatter(formatter)
-            _file_handler.addFilter(duplicate_filter)
             logger.addHandler(_file_handler)
         except Exception as e:
             print(f"Failed to create FileHandler: {e}")
@@ -90,7 +90,6 @@ def update_logger_handlers(enable_console: bool, enable_file: bool, file_path: s
                 _console_handler.stream.reconfigure(encoding='utf-8')
             except Exception:
                 pass
-        _console_handler.addFilter(duplicate_filter)
         logger.addHandler(_console_handler)
     elif not enable_console and _console_handler:
         logger.removeHandler(_console_handler)
