@@ -88,6 +88,7 @@ class Block:
     description: str = ""
     categories: List[Category] = field(default_factory=list)  # Root categories
     metadata: Dict[str, Any] = field(default_factory=dict)  # Additional block-specific data
+    last_selected_string_idx: int = 0
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert block to dictionary for JSON serialization."""
@@ -98,7 +99,8 @@ class Block:
             'translation_file': self.translation_file,
             'description': self.description,
             'categories': [cat.to_dict() for cat in self.categories],
-            'metadata': self.metadata
+            'metadata': self.metadata,
+            'last_selected_string_idx': self.last_selected_string_idx
         }
 
     @staticmethod
@@ -112,7 +114,8 @@ class Block:
             translation_file=data.get('translation_file', ''),
             description=data.get('description', ''),
             categories=categories,
-            metadata=data.get('metadata', {})
+            metadata=data.get('metadata', {}),
+            last_selected_string_idx=data.get('last_selected_string_idx', 0)
         )
 
     def add_category(self, category: Category):

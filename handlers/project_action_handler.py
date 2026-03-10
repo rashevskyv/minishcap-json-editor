@@ -423,28 +423,33 @@ class ProjectActionHandler(BaseHandler):
 
         # Load edited_file_data
         self.mw.edited_file_data = []
-        for block in self.mw.project_manager.project.blocks:
+        for project_block_idx, block in enumerate(self.mw.project_manager.project.blocks):
             translation_path = self.mw.project_manager.get_absolute_path(block.translation_file, is_translation=True)
-            edited_block_data = []
+            
+            # How many blocks did the source file produce?
+            expected_count = source_parsed_counts[project_block_idx]
 
             if os.path.exists(translation_path):
                 file_extension = os.path.splitext(translation_path)[1].lower()
                 if file_extension == '.json':
                     file_content, error = load_json_file(translation_path, parent_widget=self.mw)
                 else:
-                    # Try loading as text for any other extension
                     file_content, error = load_text_file(translation_path, parent_widget=self.mw)
 
                 if not error and self.mw.current_game_rules:
                     parsed_edited_data, _ = self.mw.current_game_rules.load_data_from_json_obj(file_content)
-                    self.mw.edited_file_data.extend(parsed_edited_data)
+                    
+                    # Force match the number of blocks to the source structure
+                    for i in range(expected_count):
+                        if i < len(parsed_edited_data):
+                            self.mw.edited_file_data.append(parsed_edited_data[i])
+                        else:
+                            self.mw.edited_file_data.append([]) # Pad if translation has fewer blocks
                 else:
-                    count = source_parsed_counts[project_block_idx]
-                    for _ in range(count):
+                    for _ in range(expected_count):
                         self.mw.edited_file_data.append([])
             else:
-                count = source_parsed_counts[project_block_idx]
-                for _ in range(count):
+                for _ in range(expected_count):
                     self.mw.edited_file_data.append([])
 
         # Restore authoritative original keys
