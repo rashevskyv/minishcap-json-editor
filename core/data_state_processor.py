@@ -130,7 +130,16 @@ class DataStateProcessor:
                 self.mw.unsaved_changes = False
                 self.mw.edited_data = {} 
                 
+                # Backup and restore keys since we are just re-parsing to update UI data
+                plugin_keys_backup = None
+                if hasattr(self.mw.current_game_rules, 'original_keys'):
+                    plugin_keys_backup = list(self.mw.current_game_rules.original_keys)
+                    
                 reloaded_edited_data, _ = self.mw.current_game_rules.load_data_from_json_obj(final_obj_to_save)
+                
+                if plugin_keys_backup is not None and hasattr(self.mw.current_game_rules, 'original_keys'):
+                    self.mw.current_game_rules.original_keys = plugin_keys_backup
+                    
                 self.mw.edited_file_data = reloaded_edited_data
 
                 if ask_confirmation: QMessageBox.information(self.mw, "Saved", f"Changes saved to\n'{os.path.basename(self.mw.edited_json_path)}'.")
@@ -167,7 +176,16 @@ class DataStateProcessor:
             if save_file_success:
                 self.mw.unsaved_changes = False; self.mw.edited_data = {}; 
                 
+                # Backup and restore keys since we are reading translation data
+                plugin_keys_backup = None
+                if hasattr(self.mw.current_game_rules, 'original_keys'):
+                    plugin_keys_backup = list(self.mw.current_game_rules.original_keys)
+                    
                 reverted_data_list, _ = self.mw.current_game_rules.load_data_from_json_obj(output_data)
+                
+                if plugin_keys_backup is not None and hasattr(self.mw.current_game_rules, 'original_keys'):
+                    self.mw.current_game_rules.original_keys = plugin_keys_backup
+                    
                 self.mw.edited_file_data = reverted_data_list
 
                 QMessageBox.information(self.mw, "Reverted", f"Changes file '{os.path.basename(self.mw.edited_json_path)}' has been reverted to match the original.")

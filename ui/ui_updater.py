@@ -53,6 +53,10 @@ class UIUpdater:
         current_item = self.mw.block_list_widget.currentItem()
         if current_item and current_item.data(0, Qt.UserRole) is not None:
             current_selection_block_idx = current_item.data(0, Qt.UserRole)
+        
+        # Default to first block if nothing is selected and we have data
+        if current_selection_block_idx is None and self.mw.data:
+            current_selection_block_idx = 0
 
         self.mw.block_list_widget.clear()
         if not self.mw.data: 
@@ -118,6 +122,7 @@ class UIUpdater:
 
             if i == current_selection_block_idx:
                 self.mw.block_list_widget.setCurrentItem(item)
+                item.setSelected(True)
 
         self.mw.block_list_widget.viewport().update()
 

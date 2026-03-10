@@ -90,7 +90,16 @@ class AppActionHandler(BaseHandler):
                 QMessageBox.critical(self.mw, "Load Error", "No game plugin active to parse the file.")
                 return
 
+            # Backup authoritative original keys
+            plugin_keys_backup = None
+            if hasattr(self.mw.current_game_rules, 'original_keys'):
+                plugin_keys_backup = list(self.mw.current_game_rules.original_keys)
+
             new_edited_data, _ = self.mw.current_game_rules.load_data_from_json_obj(file_content)
+            
+            # Restore authoritative original keys
+            if plugin_keys_backup is not None and hasattr(self.mw.current_game_rules, 'original_keys'):
+                self.mw.current_game_rules.original_keys = plugin_keys_backup
             
             self.mw.edited_json_path = path
             self.mw.edited_file_data = new_edited_data
@@ -102,7 +111,9 @@ class AppActionHandler(BaseHandler):
             self.ui_updater.update_statusbar_paths()
             self.ui_updater.populate_blocks()
             if self.mw.block_list_widget.count() > 0 and self.mw.current_block_idx == -1:
-                 self.mw.block_list_widget.setCurrentRow(0)
+                 custom_tree = getattr(self.mw, 'block_list_widget', None)
+                 if custom_tree and hasattr(custom_tree, 'select_block_by_index'):
+                     custom_tree.select_block_by_index(0)
             else:
                  self.ui_updater.populate_strings_for_block(self.mw.current_block_idx)
 
@@ -160,6 +171,10 @@ class AppActionHandler(BaseHandler):
             self.mw.is_programmatically_changing_text = False
             QMessageBox.critical(self.mw, "Load Error", f"Failed to load: {original_file_path}\n{error}"); return
 
+        # Reset plugin state if it tracks keys (like pokemon_fr)
+        if hasattr(self.mw.current_game_rules, 'original_keys'):
+            self.mw.current_game_rules.original_keys = []
+            
         data, block_names_from_plugin = self.mw.current_game_rules.load_data_from_json_obj(file_content)
         if not data and file_content is not None:
             QMessageBox.critical(self.mw, "Plugin Error", f"The active plugin '{self.mw.current_game_rules.get_display_name()}' could not parse the file:\n{original_file_path}")
@@ -193,7 +208,15 @@ class AppActionHandler(BaseHandler):
             if edit_error:
                 QMessageBox.warning(self.mw, "Edited Load Warning", f"Could not load changes file: {self.mw.edited_json_path}\n{edit_error}")
             else:
+                plugin_keys_backup = None
+                if hasattr(self.mw.current_game_rules, 'original_keys'):
+                    plugin_keys_backup = list(self.mw.current_game_rules.original_keys)
+                    
                 edited_data_from_file, _ = self.mw.current_game_rules.load_data_from_json_obj(edited_file_content)
+                
+                if plugin_keys_backup is not None and hasattr(self.mw.current_game_rules, 'original_keys'):
+                    self.mw.current_game_rules.original_keys = plugin_keys_backup
+                    
                 self.mw.edited_file_data = edited_data_from_file
         
         self.mw.current_block_idx = -1; self.mw.current_string_idx = -1
@@ -210,9 +233,11 @@ class AppActionHandler(BaseHandler):
         self.ui_updater.update_title(); self.ui_updater.update_statusbar_paths()
         self.ui_updater.populate_blocks()
 
-        if self.mw.block_list_widget.count() > 0:
+        if self.mw.block_list_widget.invisibleRootItem().childCount() > 0:
             if not is_initial_load_from_settings: 
-                 self.mw.block_list_widget.setCurrentRow(0)
+                 custom_tree = getattr(self.mw, 'block_list_widget', None)
+                 if custom_tree and hasattr(custom_tree, 'select_block_by_index'):
+                     custom_tree.select_block_by_index(0)
         else:
             self.ui_updater.populate_strings_for_block(-1)
             

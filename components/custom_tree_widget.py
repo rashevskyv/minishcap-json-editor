@@ -1,7 +1,8 @@
 # --- START OF FILE components/custom_tree_widget.py ---
-from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QAction
-from PyQt5.QtCore import Qt, QPoint, QSize
-from PyQt5.QtGui import QIcon, QPixmap, QPainter, QColor
+from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QAction, QMessageBox, QTreeWidgetItemIterator, QApplication
+from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtGui import QColor, QIcon, QPixmap, QPainter
+import os
 
 from utils.logging_utils import log_debug, log_error
 
@@ -13,6 +14,21 @@ class CustomTreeWidget(QTreeWidget):
         
         self.setHeaderHidden(True)
         self.setSelectionMode(QTreeWidget.SingleSelection)
+        
+        # Ensure the selected item retains a prominent highlight even when the widget loses focus (e.g. to the text editor)
+        self.setStyleSheet("""
+            QTreeWidget::item:selected {
+                background-color: #0078D7 !important;
+                color: white !important;
+            }
+            QTreeWidget::item:selected:!active {
+                background-color: #0078D7 !important;
+                color: white !important;
+            }
+            QTreeWidget::item:hover {
+                background-color: #37373d;
+            }
+        """)
 
         self.color_marker_definitions = {
             "red": QColor(Qt.red),
@@ -36,6 +52,19 @@ class CustomTreeWidget(QTreeWidget):
         if block_idx is not None:
             item.setData(0, role, block_idx)
         return item
+
+    def select_block_by_index(self, block_idx: int):
+        from PyQt5.QtWidgets import QTreeWidgetItemIterator
+        iterator = QTreeWidgetItemIterator(self)
+        while iterator.value():
+            item = iterator.value()
+            if item.data(0, Qt.UserRole) == block_idx:
+                self.setCurrentItem(item)
+                item.setSelected(True)
+                self.scrollToItem(item)
+                return True
+            iterator += 1
+        return False
     
     def show_context_menu(self, pos: QPoint):
         item = self.itemAt(pos)
@@ -80,6 +109,16 @@ class CustomTreeWidget(QTreeWidget):
 
         menu.addSeparator()
 
+        reveal_menu = menu.addMenu("Reveal in Explorer")
+        
+        orig_action = reveal_menu.addAction("Original")
+        orig_action.triggered.connect(lambda checked=False, idx=block_idx: self._reveal_in_explorer(idx, is_translation=False))
+        
+        trans_action = reveal_menu.addAction("Translation")
+        trans_action.triggered.connect(lambda checked=False, idx=block_idx: self._reveal_in_explorer(idx, is_translation=True))
+
+        menu.addSeparator()
+
         current_markers = main_window.get_block_color_markers(block_idx)
         for color_name, q_color in self.color_marker_definitions.items():
             action = QAction(self._create_color_icon(q_color), f"Mark {color_name.capitalize()}", menu)
@@ -120,6 +159,51 @@ class CustomTreeWidget(QTreeWidget):
             generate_glossary = menu.addAction(f"AI Build Glossary for '{block_name}'")
             generate_glossary.triggered.connect(lambda checked=False, idx=block_idx: main_window.build_glossary_with_ai(idx))
         menu.exec_(self.mapToGlobal(pos))
+
+    def _reveal_in_explorer(self, block_idx: int, is_translation: bool = False):
+        main_window = self.window()
+        if not hasattr(main_window, 'project_manager') or not main_window.project_manager:
+            # Fallback for single file mode
+            path_to_reveal = main_window.edited_json_path if is_translation else main_window.json_path
+            if path_to_reveal and os.path.exists(path_to_reveal):
+                self._open_explorer_at_path(path_to_reveal)
+            return
+            
+        project = main_window.project_manager.project
+        if not project:
+            return
+
+        # Use mapping if available (for multi-block files), otherwise 1:1
+        project_block_idx = block_idx
+        if hasattr(main_window, 'block_to_project_file_map'):
+            project_block_idx = main_window.block_to_project_file_map.get(block_idx, block_idx)
+
+        if project_block_idx >= len(project.blocks):
+            return
+            
+        block = project.blocks[project_block_idx]
+        if is_translation:
+            abs_path = main_window.project_manager.get_absolute_path(block.translation_file, is_translation=True)
+        else:
+            abs_path = main_window.project_manager.get_absolute_path(block.source_file)
+        
+        if abs_path and os.path.exists(abs_path):
+            self._open_explorer_at_path(abs_path)
+
+    def _open_explorer_at_path(self, abs_path: str):
+        import subprocess
+        import platform
+        if os.path.exists(abs_path):
+            abs_path_norm = os.path.normpath(abs_path)
+            if platform.system() == "Windows":
+                subprocess.Popen(['explorer', '/select,', abs_path_norm])
+            elif platform.system() == "Darwin":
+                subprocess.Popen(['open', '-R', abs_path_norm])
+            else:
+                subprocess.Popen(['xdg-open', os.path.dirname(abs_path_norm)])
+        else:
+            from PyQt5.QtWidgets import QMessageBox
+            QMessageBox.warning(self, "Reveal", f"File not found:\n{abs_path}")
 
     def _open_spellcheck_for_block(self, block_idx: int):
         log_debug(f"CustomTreeWidget: _open_spellcheck_for_block called for block_idx={block_idx}")

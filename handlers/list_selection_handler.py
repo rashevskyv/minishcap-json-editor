@@ -65,7 +65,20 @@ class ListSelectionHandler(BaseHandler):
         
         if self.mw.current_block_idx != block_index:
             self.mw.current_block_idx = block_index
-            self.mw.current_string_idx = -1
+            
+            # Restore selection if project
+            restored_s_idx = 0
+            if hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project:
+                project = self.mw.project_manager.project
+                if hasattr(self.mw, 'block_to_project_file_map'):
+                    project_block_idx = self.mw.block_to_project_file_map.get(block_index)
+                    if project_block_idx is not None and project_block_idx < len(project.blocks):
+                        restored_s_idx = project.blocks[project_block_idx].last_selected_string_idx
+
+            self.mw.current_string_idx = restored_s_idx
+            
+            # Use QTimer to ensure populate_strings_for_block has finished before selecting string
+            QTimer.singleShot(0, lambda idx=restored_s_idx: self.string_selected_from_preview(idx))
             
         self.ui_updater.populate_strings_for_block(block_index)
         if hasattr(self.mw, 'string_settings_updater'):
@@ -157,6 +170,14 @@ class ListSelectionHandler(BaseHandler):
                 self.ui_updater.update_block_item_text_with_problem_count(self.mw.current_block_idx)
             
             self.ui_updater.populate_strings_for_block(self.mw.current_block_idx) 
+            
+            # Save selection to project
+            if hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project:
+                project = self.mw.project_manager.project
+                if hasattr(self.mw, 'block_to_project_file_map'):
+                    project_block_idx = self.mw.block_to_project_file_map.get(self.mw.current_block_idx)
+                    if project_block_idx is not None and project_block_idx < len(project.blocks):
+                        project.blocks[project_block_idx].last_selected_string_idx = line_number
 
         self.ui_updater.update_text_views()
         if hasattr(self.mw, 'string_settings_updater'):

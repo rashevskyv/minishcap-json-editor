@@ -104,8 +104,12 @@ class TagCheckerHandler:
                                   tag_text: str, tag_start_char_in_string_data: int, tag_end_char_in_string_data: int):
         self._remove_mismatch_highlight() 
         
-        if self.mw.block_list_widget.currentRow() != original_block_idx_data:
-            self.mw.block_list_widget.setCurrentRow(original_block_idx_data)
+        current_item = self.mw.block_list_widget.currentItem()
+        current_idx = current_item.data(0, Qt.UserRole) if current_item else -1
+        
+        if current_idx != original_block_idx_data:
+            if hasattr(self.mw.block_list_widget, 'select_block_by_index'):
+                self.mw.block_list_widget.select_block_by_index(original_block_idx_data)
             log_debug(f"TagChecker: Set current block in list to {original_block_idx_data}")
             QApplication.processEvents() 
 

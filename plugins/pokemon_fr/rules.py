@@ -25,7 +25,8 @@ class GameRules(BaseGameRules):
         if not isinstance(json_data, dict):
             return [], {}
         
-        self.original_keys = []
+        # We no longer clear self.original_keys here so it can accumulate across multiple blocks.
+        # It is cleared explicitly by ProjectActionHandler and AppActionHandler before loading starts.
         app_data = []
         block_names = {}
         
@@ -57,12 +58,14 @@ class GameRules(BaseGameRules):
             
             keys_for_block = self.original_keys[i]
             if len(keys_for_block) != len(block_data):
-                raise ValueError(f"Mismatch in number of strings for block '{block_name}'. Expected {len(keys_for_block)}, got {len(block_data)}. Cannot save.")
+                log_debug(f"[PokemonFR Plugin] Mismatch in string count for '{block_name}': expected {len(keys_for_block)}, got {len(block_data)}. Data will be padded/truncated.")
 
             string_obj = OrderedDict()
-            for j, string_value in enumerate(block_data):
-                key = keys_for_block[j]
-                string_obj[key] = string_value
+            for j, key in enumerate(keys_for_block):
+                if j < len(block_data):
+                    string_obj[key] = block_data[j]
+                else:
+                    string_obj[key] = "" # Pad with empty string if missing
             
             output_json[block_name] = string_obj
             

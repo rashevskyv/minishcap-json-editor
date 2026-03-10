@@ -327,7 +327,10 @@ class ProjectActionHandler(BaseHandler):
         blocks[block_idx], blocks[block_idx - 1] = blocks[block_idx - 1], blocks[block_idx]
         self.mw.project_manager.save()
         self._populate_blocks_from_project()
-        self.mw.block_list_widget.setCurrentRow(block_idx - 1)
+        if block_idx > 0:
+            self.mw.block_list_widget.select_block_by_index(block_idx - 1)
+        elif len(self.mw.project_manager.project.blocks) > 0:
+            self.mw.block_list_widget.select_block_by_index(0)
 
     def move_block_down_action(self):
         log_info("Move Block Down action triggered.")
@@ -347,7 +350,10 @@ class ProjectActionHandler(BaseHandler):
         blocks[block_idx], blocks[block_idx + 1] = blocks[block_idx + 1], blocks[block_idx]
         self.mw.project_manager.save()
         self._populate_blocks_from_project()
-        self.mw.block_list_widget.setCurrentRow(block_idx + 1)
+        if block_idx + 1 < len(self.mw.project_manager.project.blocks):
+            self.mw.block_list_widget.select_block_by_index(block_idx + 1)
+        else:
+            self.mw.block_list_widget.select_block_by_index(block_idx)
 
     def _populate_blocks_from_project(self):
         """Populate block list from current project and load data."""
@@ -359,10 +365,17 @@ class ProjectActionHandler(BaseHandler):
         self.mw.data = []
         self.mw.edited_data = {}
         self.mw.block_names = {}
+        self.mw.block_to_project_file_map = {} # Mapping data_block_idx -> project_block_idx
+        
+        # Reset plugin state if it tracks keys (like pokemon_fr)
+        if hasattr(self.mw.current_game_rules, 'original_keys'):
+            self.mw.current_game_rules.original_keys = []
 
         # Load each block's data
-        for block_idx, block in enumerate(self.mw.project_manager.project.blocks):
-            self.mw.block_names[str(block_idx)] = block.name
+        self.mw.block_to_project_file_map = {}
+        source_parsed_counts = []
+        
+        for project_block_idx, block in enumerate(self.mw.project_manager.project.blocks):
             source_path = self.mw.project_manager.get_absolute_path(block.source_file)
             
             block_data = []
@@ -375,30 +388,73 @@ class ProjectActionHandler(BaseHandler):
                     file_content, error = load_text_file(source_path, parent_widget=self.mw)
 
                 if not error and self.mw.current_game_rules:
-                    parsed_data, _ = self.mw.current_game_rules.load_data_from_json_obj(file_content)
-                    block_data = parsed_data[0] if parsed_data and len(parsed_data) > 0 else []
-            
-            self.mw.data.append(block_data if block_data else [])
+                    parsed_data, names = self.mw.current_game_rules.load_data_from_json_obj(file_content)
+                    count = len(parsed_data) if parsed_data else 1
+                    source_parsed_counts.append(count)
+                    
+                    for sub_block_idx, block_content in enumerate(parsed_data):
+                        data_block_idx = len(self.mw.data)
+                        self.mw.data.append(block_content)
+                        self.mw.block_to_project_file_map[data_block_idx] = project_block_idx
+                        
+                        # Handle block names
+                        if count > 1:
+                            p_name = names.get(str(sub_block_idx), f"{block.name} (Part {sub_block_idx+1})")
+                            self.mw.block_names[str(data_block_idx)] = p_name
+                        else:
+                            self.mw.block_names[str(data_block_idx)] = block.name
+                else:
+                    source_parsed_counts.append(1)
+                    data_block_idx = len(self.mw.data)
+                    self.mw.data.append([])
+                    self.mw.block_to_project_file_map[data_block_idx] = project_block_idx
+                    self.mw.block_names[str(data_block_idx)] = block.name
+            else:
+                source_parsed_counts.append(1)
+                data_block_idx = len(self.mw.data)
+                self.mw.data.append([])
+                self.mw.block_to_project_file_map[data_block_idx] = project_block_idx
+                self.mw.block_names[str(data_block_idx)] = block.name
+
+        # Backup authoritative original keys from source files
+        plugin_keys_backup = None
+        if hasattr(self.mw.current_game_rules, 'original_keys'):
+            plugin_keys_backup = list(self.mw.current_game_rules.original_keys)
 
         # Load edited_file_data
         self.mw.edited_file_data = []
-        for block in self.mw.project_manager.project.blocks:
+        for project_block_idx, block in enumerate(self.mw.project_manager.project.blocks):
             translation_path = self.mw.project_manager.get_absolute_path(block.translation_file, is_translation=True)
-            edited_block_data = []
+            
+            # How many blocks did the source file produce?
+            expected_count = source_parsed_counts[project_block_idx]
 
             if os.path.exists(translation_path):
                 file_extension = os.path.splitext(translation_path)[1].lower()
                 if file_extension == '.json':
                     file_content, error = load_json_file(translation_path, parent_widget=self.mw)
                 else:
-                    # Try loading as text for any other extension
                     file_content, error = load_text_file(translation_path, parent_widget=self.mw)
 
                 if not error and self.mw.current_game_rules:
                     parsed_edited_data, _ = self.mw.current_game_rules.load_data_from_json_obj(file_content)
-                    edited_block_data = parsed_edited_data[0] if parsed_edited_data and len(parsed_edited_data) > 0 else []
+                    
+                    # Force match the number of blocks to the source structure
+                    for i in range(expected_count):
+                        if i < len(parsed_edited_data):
+                            self.mw.edited_file_data.append(parsed_edited_data[i])
+                        else:
+                            self.mw.edited_file_data.append([]) # Pad if translation has fewer blocks
+                else:
+                    for _ in range(expected_count):
+                        self.mw.edited_file_data.append([])
+            else:
+                for _ in range(expected_count):
+                    self.mw.edited_file_data.append([])
 
-            self.mw.edited_file_data.append(edited_block_data if edited_block_data else [])
+        # Restore authoritative original keys
+        if plugin_keys_backup is not None and hasattr(self.mw.current_game_rules, 'original_keys'):
+            self.mw.current_game_rules.original_keys = plugin_keys_backup
 
         # Update paths for old-style save/load compatibility
         if self.mw.data:
