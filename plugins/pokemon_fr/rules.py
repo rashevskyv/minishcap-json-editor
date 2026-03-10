@@ -25,7 +25,8 @@ class GameRules(BaseGameRules):
         if not isinstance(json_data, dict):
             return [], {}
         
-        self.original_keys = []
+        # We no longer clear self.original_keys here so it can accumulate across multiple blocks.
+        # It is cleared explicitly by ProjectActionHandler and AppActionHandler before loading starts.
         app_data = []
         block_names = {}
         

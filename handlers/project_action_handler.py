@@ -359,6 +359,10 @@ class ProjectActionHandler(BaseHandler):
         self.mw.data = []
         self.mw.edited_data = {}
         self.mw.block_names = {}
+        
+        # Reset plugin state if it tracks keys (like pokemon_fr)
+        if hasattr(self.mw.current_game_rules, 'original_keys'):
+            self.mw.current_game_rules.original_keys = []
 
         # Load each block's data
         for block_idx, block in enumerate(self.mw.project_manager.project.blocks):
@@ -378,7 +382,13 @@ class ProjectActionHandler(BaseHandler):
                     parsed_data, _ = self.mw.current_game_rules.load_data_from_json_obj(file_content)
                     block_data = parsed_data[0] if parsed_data and len(parsed_data) > 0 else []
             
+            
             self.mw.data.append(block_data if block_data else [])
+
+        # Backup authoritative original keys from source files
+        plugin_keys_backup = None
+        if hasattr(self.mw.current_game_rules, 'original_keys'):
+            plugin_keys_backup = list(self.mw.current_game_rules.original_keys)
 
         # Load edited_file_data
         self.mw.edited_file_data = []
@@ -399,6 +409,10 @@ class ProjectActionHandler(BaseHandler):
                     edited_block_data = parsed_edited_data[0] if parsed_edited_data and len(parsed_edited_data) > 0 else []
 
             self.mw.edited_file_data.append(edited_block_data if edited_block_data else [])
+
+        # Restore authoritative original keys
+        if plugin_keys_backup is not None and hasattr(self.mw.current_game_rules, 'original_keys'):
+            self.mw.current_game_rules.original_keys = plugin_keys_backup
 
         # Update paths for old-style save/load compatibility
         if self.mw.data:

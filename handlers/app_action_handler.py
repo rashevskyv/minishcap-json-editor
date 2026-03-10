@@ -90,7 +90,16 @@ class AppActionHandler(BaseHandler):
                 QMessageBox.critical(self.mw, "Load Error", "No game plugin active to parse the file.")
                 return
 
+            # Backup authoritative original keys
+            plugin_keys_backup = None
+            if hasattr(self.mw.current_game_rules, 'original_keys'):
+                plugin_keys_backup = list(self.mw.current_game_rules.original_keys)
+
             new_edited_data, _ = self.mw.current_game_rules.load_data_from_json_obj(file_content)
+            
+            # Restore authoritative original keys
+            if plugin_keys_backup is not None and hasattr(self.mw.current_game_rules, 'original_keys'):
+                self.mw.current_game_rules.original_keys = plugin_keys_backup
             
             self.mw.edited_json_path = path
             self.mw.edited_file_data = new_edited_data
@@ -160,6 +169,10 @@ class AppActionHandler(BaseHandler):
             self.mw.is_programmatically_changing_text = False
             QMessageBox.critical(self.mw, "Load Error", f"Failed to load: {original_file_path}\n{error}"); return
 
+        # Reset plugin state if it tracks keys (like pokemon_fr)
+        if hasattr(self.mw.current_game_rules, 'original_keys'):
+            self.mw.current_game_rules.original_keys = []
+            
         data, block_names_from_plugin = self.mw.current_game_rules.load_data_from_json_obj(file_content)
         if not data and file_content is not None:
             QMessageBox.critical(self.mw, "Plugin Error", f"The active plugin '{self.mw.current_game_rules.get_display_name()}' could not parse the file:\n{original_file_path}")
