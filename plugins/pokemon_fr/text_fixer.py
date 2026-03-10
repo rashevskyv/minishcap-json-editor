@@ -33,7 +33,7 @@ class TextFixer(GenericTextFixer):
         sublines = self._get_sublines_with_tags(text)
         new_sublines_reassembled = []
         for text_part, original_newline_tag in sublines:
-            width = calculate_string_width(remove_all_tags(text_part), font_map)
+            width = calculate_string_width(text_part, font_map)
             if width <= threshold:
                 new_sublines_reassembled.append((text_part, original_newline_tag))
                 continue
@@ -44,7 +44,7 @@ class TextFixer(GenericTextFixer):
                     current_line = word
                     continue
                 temp_line = current_line + ' ' + word
-                if calculate_string_width(remove_all_tags(temp_line), font_map) > threshold:
+                if calculate_string_width(temp_line, font_map) > threshold:
                     new_sublines_reassembled.append((current_line, '\\n'))
                     current_line = word
                 else:

@@ -39,13 +39,13 @@ class GenericTextFixer:
         final_lines = []
 
         for line in sub_lines:
-            while calculate_string_width(remove_all_tags(line), font_map) > threshold:
+            while calculate_string_width(line, font_map) > threshold:
                 made_change = True
                 line_parts = re.findall(r'(\{[^}]*\}|\[[^\]]*\]|\S+|\s+)', line)
                 best_split_point = -1
                 for j in range(len(line_parts) - 1, 0, -1):
                     line_part_one = "".join(line_parts[:j]).rstrip()
-                    if calculate_string_width(remove_all_tags(line_part_one), font_map) <= threshold:
+                    if calculate_string_width(line_part_one, font_map) <= threshold:
                         best_split_point = j
                         break
                 if best_split_point == -1 and len(line_parts) > 1:

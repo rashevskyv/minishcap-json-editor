@@ -34,7 +34,7 @@ class GenericProblemAnalyzer:
         found_problems = set()
         
         # Common width check
-        pixel_width = calculate_string_width(remove_all_tags(text).rstrip(), editor_font_map)
+        pixel_width = calculate_string_width(text.rstrip(), editor_font_map)
         if pixel_width > editor_line_width_threshold:
             if hasattr(self.problem_ids, 'PROBLEM_WIDTH_EXCEEDED'):
                 found_problems.add(self.problem_ids.PROBLEM_WIDTH_EXCEEDED)

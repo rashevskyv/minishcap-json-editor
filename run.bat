@@ -17,4 +17,3 @@ echo Starting the program...
 python main.py
 
 echo.
-pause

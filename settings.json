@@ -47,7 +47,7 @@
         "C:\\Users\\Administrator\\Desktop\\13\\project.uiproj"
     ],
     "enable_console_logging": true,
-    "enable_file_logging": true,
+    "enable_file_logging": false,
     "log_file_path": "",
     "enabled_log_categories": [
         "general",
@@ -59,8 +59,5 @@
         "scanner",
         "plugins"
     ],
-    "unsaved_session_data": {
-        "(0, 4)": "“Відібрані товари для вашої зручності!”\\nPOKéMON MART{PLAYER}"
-    },
     "settings_window_width": 800
 }

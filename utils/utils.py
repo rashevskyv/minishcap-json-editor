@@ -23,8 +23,12 @@ def calculate_string_width(text: str, font_map: dict, default_char_width: int = 
     
     # Сортуємо послідовності від найдовшої до найкоротшої, щоб уникнути неправильного визначення
     # наприклад, [L] замість [L-Stick]
-    if icon_sequences is None:
-        icon_sequences = [str(k) for k in font_map.keys() if len(str(k)) > 1]
+    font_map_icons = [str(k) for k in font_map.keys() if len(str(k)) > 1]
+    
+    if not icon_sequences:
+        icon_sequences = font_map_icons
+    else:
+        icon_sequences = list(set(icon_sequences + font_map_icons))
     sequences_to_use = sorted(icon_sequences, key=len, reverse=True)
 
     while i < text_len:

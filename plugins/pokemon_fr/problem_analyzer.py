@@ -48,7 +48,7 @@ class ProblemAnalyzer(GenericProblemAnalyzer):
         first_word_next = next_subline_no_tags_stripped.split(maxsplit=1)[0]
         if not first_word_next:
             return False
-        width_current = calculate_string_width(remove_all_tags(current_subline), font_map)
+        width_current = calculate_string_width(current_subline, font_map)
         width_first_word_next = calculate_string_width(first_word_next, font_map)
         space_width = calculate_string_width(" ", font_map)
         return (width_current + space_width + width_first_word_next) <= threshold
@@ -61,7 +61,7 @@ class ProblemAnalyzer(GenericProblemAnalyzer):
         is_only_one_subline_in_total = len(sublines_with_tags) == 1
         for i, (text_part, newline_tag) in enumerate(sublines_with_tags):
             text_part_no_tags = remove_all_tags(text_part)
-            width = calculate_string_width(text_part_no_tags, font_map)
+            width = calculate_string_width(text_part, font_map)
             if (text_part.count('{') != text_part.count('}')) or (text_part.count('[') != text_part.count(']')):
                 problems_per_subline_idx[i].add(self.problem_ids['TAG'])
             if not text_part_no_tags.strip():

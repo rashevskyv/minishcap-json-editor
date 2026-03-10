@@ -633,6 +633,14 @@ class SettingsManager:
                         continue
                     if isinstance(value, dict) and 'width' in value:
                         sequences.add(key)
+        
+        # Also include sequences directly from the active font_map (for overrides)
+        current_map = getattr(self.mw, 'font_map', {})
+        if isinstance(current_map, dict):
+            for key, value in current_map.items():
+                if isinstance(key, str) and len(key) > 1 and isinstance(value, dict) and 'width' in value:
+                    sequences.add(key)
+                    
         self.mw.icon_sequences = sorted(sequences, key=len, reverse=True)
 
     def add_recent_project(self, project_path: str, max_recent: int = 10):
