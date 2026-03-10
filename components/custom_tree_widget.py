@@ -13,6 +13,18 @@ class CustomTreeWidget(QTreeWidget):
         
         self.setHeaderHidden(True)
         self.setSelectionMode(QTreeWidget.SingleSelection)
+        
+        # Ensure the selected item retains a prominent highlight even when the widget loses focus (e.g. to the text editor)
+        self.setStyleSheet("""
+            QTreeWidget::item:selected {
+                background-color: #0078D7;
+                color: white;
+            }
+            QTreeWidget::item:selected:!active {
+                background-color: #0078D7;
+                color: white;
+            }
+        """)
 
         self.color_marker_definitions = {
             "red": QColor(Qt.red),
@@ -80,6 +92,11 @@ class CustomTreeWidget(QTreeWidget):
 
         menu.addSeparator()
 
+        reveal_action = menu.addAction(f"Reveal '{block_name}' in Explorer")
+        reveal_action.triggered.connect(lambda checked=False, idx=block_idx: self._reveal_in_explorer(idx))
+
+        menu.addSeparator()
+
         current_markers = main_window.get_block_color_markers(block_idx)
         for color_name, q_color in self.color_marker_definitions.items():
             action = QAction(self._create_color_icon(q_color), f"Mark {color_name.capitalize()}", menu)
@@ -120,6 +137,31 @@ class CustomTreeWidget(QTreeWidget):
             generate_glossary = menu.addAction(f"AI Build Glossary for '{block_name}'")
             generate_glossary.triggered.connect(lambda checked=False, idx=block_idx: main_window.build_glossary_with_ai(idx))
         menu.exec_(self.mapToGlobal(pos))
+
+    def _reveal_in_explorer(self, block_idx: int):
+        main_window = self.window()
+        if not hasattr(main_window, 'project_manager') or not main_window.project_manager:
+            return
+            
+        project = main_window.project_manager.project
+        if not project or block_idx >= len(project.blocks):
+            return
+            
+        block = project.blocks[block_idx]
+        abs_path = main_window.project_manager.get_absolute_path(block.source_file)
+        
+        import os, subprocess, platform
+        if os.path.exists(abs_path):
+            abs_path_norm = os.path.normpath(abs_path)
+            if platform.system() == "Windows":
+                subprocess.Popen(['explorer', '/select,', abs_path_norm])
+            elif platform.system() == "Darwin":
+                subprocess.Popen(['open', '-R', abs_path_norm])
+            else:
+                subprocess.Popen(['xdg-open', os.path.dirname(abs_path_norm)])
+        else:
+            from PyQt5.QtWidgets import QMessageBox
+            QMessageBox.warning(self, "Reveal", f"File not found:\n{abs_path}")
 
     def _open_spellcheck_for_block(self, block_idx: int):
         log_debug(f"CustomTreeWidget: _open_spellcheck_for_block called for block_idx={block_idx}")
