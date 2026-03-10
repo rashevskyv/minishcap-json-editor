@@ -79,9 +79,9 @@ class AppActionHandler(BaseHandler):
             file_content, error = None, None
             file_extension = os.path.splitext(path)[1].lower()
             if file_extension == '.json':
-                file_content, error = load_json_file(path, parent_widget=self.mw)
+                file_content, error = load_json_file(path)
             elif file_extension == '.txt':
-                file_content, error = load_text_file(path, parent_widget=self.mw)
+                file_content, error = load_text_file(path)
             else:
                 error = f"Unsupported file type: {file_extension}"
 

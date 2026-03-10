@@ -4,6 +4,7 @@ import time
 import threading
 from collections import deque
 from pathlib import Path
+from logging.handlers import RotatingFileHandler
 
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 default_log_file_path = os.path.join(project_root, 'app_debug.txt')
@@ -73,12 +74,19 @@ def update_logger_handlers(enable_console: bool, enable_file: bool, file_path: s
         try:
             # Ensure folder exists
             Path(log_file_path).parent.mkdir(parents=True, exist_ok=True)
-            _file_handler = logging.FileHandler(log_file_path, mode='a', encoding='utf-8')
+            
+            # Use RotatingFileHandler: 2MB per file, max 5 backups
+            _file_handler = RotatingFileHandler(
+                log_file_path, 
+                maxBytes=2 * 1024 * 1024, 
+                backupCount=5, 
+                encoding='utf-8'
+            )
             _file_handler.setLevel(logging.DEBUG)
             _file_handler.setFormatter(formatter)
             logger.addHandler(_file_handler)
         except Exception as e:
-            print(f"Failed to create FileHandler: {e}")
+            print(f"Failed to create RotatingFileHandler: {e}")
         
     # Handle Console Handler
     if enable_console and not _console_handler:

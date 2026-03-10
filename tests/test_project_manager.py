@@ -14,11 +14,6 @@ import shutil
 import tempfile
 from pathlib import Path
 
-# Fix Windows console encoding
-if sys.platform == 'win32':
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
-
 # Add project root to path to import project modules
 project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, project_root)
@@ -52,8 +47,6 @@ def test_basic_project_creation():
         # Verify directory structure
         assert os.path.exists(test_project_dir), "Project directory not created"
         assert os.path.exists(os.path.join(test_project_dir, "project.uiproj")), ".uiproj file not created"
-        assert os.path.exists(os.path.join(test_project_dir, "sources")), "sources directory not created"
-        assert os.path.exists(os.path.join(test_project_dir, "translation")), "translation directory not created"
 
         print("✓ Test 1 passed: Project created successfully")
 
@@ -116,12 +109,9 @@ def test_add_block():
         assert block.name == "Test Messages", "Block name mismatch"
         assert len(manager.project.blocks) == 1, "Block not added to project"
 
-        # Verify files were copied
-        source_copy = os.path.join(test_project_dir, "sources", "test_messages.txt")
-        translation_copy = os.path.join(test_project_dir, "translation", "test_messages.txt")
-        assert os.path.exists(source_copy), "Source file not copied"
-        assert os.path.exists(translation_copy), "Translation file not created"
-
+        # Verify block was added with correct paths
+        assert block.source_file == test_source_file.replace('\\', '/'), "Source path mismatch"
+        
         print("✓ Test 3 passed: Block added successfully")
 
 

@@ -4,9 +4,11 @@ import os
 import json
 from PyQt5.QtWidgets import QMessageBox, QFileDialog
 from PyQt5.QtCore import Qt
+from core.project_manager import ProjectManager
+from core.data_manager import load_json_file, load_text_file
 from .base_handler import BaseHandler
 from utils.logging_utils import log_info, log_warning, log_error, log_debug
-from core.data_manager import load_json_file, load_text_file
+# from core.data_manager import load_json_file, load_text_file
 
 class ProjectActionHandler(BaseHandler):
     def __init__(self, main_window, data_processor, ui_updater):
@@ -382,10 +384,10 @@ class ProjectActionHandler(BaseHandler):
             if os.path.exists(source_path):
                 file_extension = os.path.splitext(source_path)[1].lower()
                 if file_extension == '.json':
-                    file_content, error = load_json_file(source_path, parent_widget=self.mw)
+                    file_content, error = load_json_file(source_path)
                 else:
                     # Try loading as text for any other extension
-                    file_content, error = load_text_file(source_path, parent_widget=self.mw)
+                    file_content, error = load_text_file(source_path)
 
                 if not error and self.mw.current_game_rules:
                     parsed_data, names = self.mw.current_game_rules.load_data_from_json_obj(file_content)
@@ -432,9 +434,9 @@ class ProjectActionHandler(BaseHandler):
             if os.path.exists(translation_path):
                 file_extension = os.path.splitext(translation_path)[1].lower()
                 if file_extension == '.json':
-                    file_content, error = load_json_file(translation_path, parent_widget=self.mw)
+                    file_content, error = load_json_file(translation_path)
                 else:
-                    file_content, error = load_text_file(translation_path, parent_widget=self.mw)
+                    file_content, error = load_text_file(translation_path)
 
                 if not error and self.mw.current_game_rules:
                     parsed_edited_data, _ = self.mw.current_game_rules.load_data_from_json_obj(file_content)

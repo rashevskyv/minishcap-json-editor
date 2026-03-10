@@ -110,90 +110,256 @@ class DataStateProcessor:
                     output_data_list[b_idx][s_idx] = edited_text_from_memory
                 else:
                     log_debug(f"Save: Memory edit for key ({b_idx},{s_idx}) is out of bounds for output_data. Ignored.")
-            
-            final_obj_to_save = self.mw.current_game_rules.save_data_to_json_obj(output_data_list, self.mw.block_names)
 
-            save_file_success = False
-            file_extension = os.path.splitext(self.mw.edited_json_path)[1].lower()
+            # Check if we are inside a project mode
+            is_project_mode = hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project
             
-            if file_extension == '.json':
-                save_file_success = save_json_file(self.mw.edited_json_path, final_obj_to_save, parent_widget=self.mw)
-            elif file_extension == '.txt':
-                if isinstance(final_obj_to_save, str):
-                    save_file_success = save_text_file(self.mw.edited_json_path, final_obj_to_save, parent_widget=self.mw)
-                else:
-                    log_debug("Save Error: Plugin for .txt file did not return a string for saving.")
-                    QMessageBox.critical(self.mw, "Save Error", "Plugin save format error: expected a string for .txt file.")
-                    return False
-            
-            if save_file_success:
-                self.mw.unsaved_changes = False
-                self.mw.edited_data = {} 
+            if is_project_mode:
+                log_debug("Saving in Project Mode: Splitting blocks into their corresponding files")
+                blocks = self.mw.project_manager.project.blocks
+                success_all = True
                 
-                # Backup and restore keys since we are just re-parsing to update UI data
-                plugin_keys_backup = None
+                # Group data_block indices by project_block index
+                project_block_to_data_blocks = {}
+                for data_b_idx, p_b_idx in self.mw.block_to_project_file_map.items():
+                    if p_b_idx not in project_block_to_data_blocks:
+                        project_block_to_data_blocks[p_b_idx] = []
+                    project_block_to_data_blocks[p_b_idx].append(data_b_idx)
+                
+                # Backup original keys for pokemon plugin logic, as parsing might rely on the internal state
+                global_keys_backup = None
                 if hasattr(self.mw.current_game_rules, 'original_keys'):
-                    plugin_keys_backup = list(self.mw.current_game_rules.original_keys)
-                    
-                reloaded_edited_data, _ = self.mw.current_game_rules.load_data_from_json_obj(final_obj_to_save)
-                
-                if plugin_keys_backup is not None and hasattr(self.mw.current_game_rules, 'original_keys'):
-                    self.mw.current_game_rules.original_keys = plugin_keys_backup
-                    
-                self.mw.edited_file_data = reloaded_edited_data
+                    global_keys_backup = list(self.mw.current_game_rules.original_keys)
 
-                if ask_confirmation: QMessageBox.information(self.mw, "Saved", f"Changes saved to\n'{os.path.basename(self.mw.edited_json_path)}'.")
-                return True
-            else: return False
+                for p_b_idx, data_indices in project_block_to_data_blocks.items():
+                    if p_b_idx >= len(blocks): continue
+                    
+                    # Check if this specific file has any unsaved edits
+                    has_edits = False
+                    for d_idx in data_indices:
+                        if isinstance(output_data_list[d_idx], list):
+                            for s_idx in range(len(output_data_list[d_idx])):
+                                if (d_idx, s_idx) in self.mw.edited_data:
+                                    has_edits = True
+                                    break
+                        if has_edits: break
+                    
+                    if not has_edits:
+                        log_debug(f"Skipping save for project block '{blocks[p_b_idx].name}' as it has no pending edits.")
+                        continue
+
+                    block = blocks[p_b_idx]
+                    trans_path = self.mw.project_manager.get_absolute_path(block.translation_file, is_translation=True)
+                    
+                    # Extract sublists and names for this specific file
+                    file_data_list = [output_data_list[d_idx] for d_idx in data_indices]
+                    file_block_names = {str(i): self.mw.block_names.get(str(d_idx), 'Unknown') for i, d_idx in enumerate(data_indices)}
+
+                    # Override the plugins 'original_keys' array to only include keys for this specific file
+                    if global_keys_backup is not None:
+                        # Extract the slice of keys corresponding to these data indices
+                        sliced_keys = [global_keys_backup[d_idx] for d_idx in data_indices]
+                        self.mw.current_game_rules.original_keys = sliced_keys
+                    
+                    # Call plugin to map data back into its JSON/Txt structure
+                    final_obj_to_save = self.mw.current_game_rules.save_data_to_json_obj(file_data_list, file_block_names)
+                    
+                    # Save to the specific translation path
+                    file_extension = os.path.splitext(trans_path)[1].lower()
+                    if file_extension == '.json':
+                        save_file_success = save_json_file(trans_path, final_obj_to_save)
+                    elif file_extension == '.txt':
+                        if isinstance(final_obj_to_save, str):
+                            save_file_success = save_text_file(trans_path, final_obj_to_save)
+                        else:
+                            log_debug(f"Save Error: Plugin for .txt file {trans_path} did not return a string.")
+                            save_file_success = False
+                    else:
+                        # Fallback for unknown extensions
+                        save_file_success = save_text_file(trans_path, str(final_obj_to_save))
+
+                    if not save_file_success:
+                        success_all = False
+                        break
+                
+                if success_all:
+                    self.mw.unsaved_changes = False
+                    self.mw.edited_data = {}
+                    if global_keys_backup is not None:
+                        self.mw.current_game_rules.original_keys = global_keys_backup
+                        
+                    # Reload all modified edited paths to reflect saved changes
+                    if hasattr(self.mw, 'project_action_handler') and self.mw.project_action_handler:
+                        self.mw.project_action_handler._populate_blocks_from_project()
+
+                    if ask_confirmation: QMessageBox.information(self.mw, "Project Saved", "All project translation files saved successfully.")
+                    return True
+                else: 
+                    # Try to restore keys on failure
+                    if global_keys_backup is not None:
+                        self.mw.current_game_rules.original_keys = global_keys_backup
+                    return False
+                
+            else:
+                # Normal single-file save mode
+                final_obj_to_save = self.mw.current_game_rules.save_data_to_json_obj(output_data_list, self.mw.block_names)
+    
+                save_file_success = False
+                file_extension = os.path.splitext(self.mw.edited_json_path)[1].lower()
+                
+                if file_extension == '.json':
+                    save_file_success = save_json_file(self.mw.edited_json_path, final_obj_to_save)
+                elif file_extension == '.txt':
+                    if isinstance(final_obj_to_save, str):
+                        save_file_success = save_text_file(self.mw.edited_json_path, final_obj_to_save)
+                    else:
+                        log_debug("Save Error: Plugin for .txt file did not return a string for saving.")
+                        QMessageBox.critical(self.mw, "Save Error", "Plugin save format error: expected a string for .txt file.")
+                        return False
+                
+                if save_file_success:
+                    self.mw.unsaved_changes = False
+                    self.mw.edited_data = {} 
+                    
+                    # Backup and restore keys since we are just re-parsing to update UI data
+                    plugin_keys_backup = None
+                    if hasattr(self.mw.current_game_rules, 'original_keys'):
+                        plugin_keys_backup = list(self.mw.current_game_rules.original_keys)
+                        
+                    reloaded_edited_data, _ = self.mw.current_game_rules.load_data_from_json_obj(final_obj_to_save)
+                    
+                    if plugin_keys_backup is not None and hasattr(self.mw.current_game_rules, 'original_keys'):
+                        self.mw.current_game_rules.original_keys = plugin_keys_backup
+                        
+                    self.mw.edited_file_data = reloaded_edited_data
+    
+                    if ask_confirmation: QMessageBox.information(self.mw, "Saved", f"Changes saved to\n'{os.path.basename(self.mw.edited_json_path)}'.")
+                    return True
+                else: return False
         except Exception as e:
             log_error(f"Unexpected error during save prep: {e}", exc_info=True)
             QMessageBox.critical(self.mw, "Save Error", f"Unexpected error during save prep:\n{e}"); 
             return False
 
     def revert_edited_file_to_original(self):
-        if not self.mw.json_path or not self.mw.edited_json_path: QMessageBox.warning(self.mw, "Revert Error", "Original or Changes file path is not set."); return False
-        if not self.mw.data: QMessageBox.warning(self.mw, "Revert Error", "Original data is not loaded."); return False
-        if not self.mw.current_game_rules: QMessageBox.critical(self.mw, "Revert Error", "No game plugin active to format the save file."); return False
+        is_project_mode = hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project
 
-        reply = QMessageBox.question(self.mw, 'Revert Changes File', f"This will overwrite the file:\n{os.path.basename(self.mw.edited_json_path)}\nwith the content from:\n{os.path.basename(self.mw.json_path)}\n\nAll previous edits in the changes file will be lost.\nCurrent unsaved edits in memory will also be discarded.\n\nAre you sure?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-        if reply == QMessageBox.No: return False
-        try:
-            output_data = self.mw.current_game_rules.save_data_to_json_obj(self.mw.data, self.mw.block_names)
+        if not is_project_mode:
+            if not self.mw.json_path or not self.mw.edited_json_path: QMessageBox.warning(self.mw, "Revert Error", "Original or Changes file path is not set."); return False
+            if not self.mw.data: QMessageBox.warning(self.mw, "Revert Error", "Original data is not loaded."); return False
+            if not self.mw.current_game_rules: QMessageBox.critical(self.mw, "Revert Error", "No game plugin active to format the save file."); return False
+    
+            reply = QMessageBox.question(self.mw, 'Revert Changes File', f"This will overwrite the file:\n{os.path.basename(self.mw.edited_json_path)}\nwith the content from:\n{os.path.basename(self.mw.json_path)}\n\nAll previous edits in the changes file will be lost.\nCurrent unsaved edits in memory will also be discarded.\n\nAre you sure?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if reply == QMessageBox.No: return False
+            try:
+                output_data = self.mw.current_game_rules.save_data_to_json_obj(self.mw.data, self.mw.block_names)
+    
+                save_file_success = False
+                file_extension = os.path.splitext(self.mw.edited_json_path)[1].lower()
+    
+                if file_extension == '.json':
+                    save_file_success = save_json_file(self.mw.edited_json_path, output_data)
+                elif file_extension == '.txt':
+                    if isinstance(output_data, str):
+                        save_file_success = save_text_file(self.mw.edited_json_path, output_data)
+                    else:
+                        log_debug("Revert Error: Plugin for .txt file did not return a string for saving.")
+                        QMessageBox.critical(self.mw, "Revert Error", "Plugin save format error: expected a string for .txt file.")
+                        return False
+    
+                if save_file_success:
+                    self.mw.unsaved_changes = False; self.mw.edited_data = {}; 
+                    
+                    # Backup and restore keys since we are reading translation data
+                    plugin_keys_backup = None
+                    if hasattr(self.mw.current_game_rules, 'original_keys'):
+                        plugin_keys_backup = list(self.mw.current_game_rules.original_keys)
+                        
+                    reverted_data_list, _ = self.mw.current_game_rules.load_data_from_json_obj(output_data)
+                    
+                    if plugin_keys_backup is not None and hasattr(self.mw.current_game_rules, 'original_keys'):
+                        self.mw.current_game_rules.original_keys = plugin_keys_backup
+                        
+                    self.mw.edited_file_data = reverted_data_list
+    
+                    QMessageBox.information(self.mw, "Reverted", f"Changes file '{os.path.basename(self.mw.edited_json_path)}' has been reverted to match the original.")
+                    self.mw.ui_updater.update_title(); 
+                    self.mw.ui_updater.populate_strings_for_block(self.mw.current_block_idx) 
+                    return True
+                else: return False
+            except Exception as e:
+                log_error(f"Unexpected error during revert: {e}", exc_info=True)
+                QMessageBox.critical(self.mw, "Revert Error", f"Unexpected error during revert:\n{e}"); 
+                return False
+        else:
+            # Project mode revert
+            reply = QMessageBox.question(self.mw, 'Revert Project Changes', "This will overwrite all active block translation files with original data.\nAll previous edits in the translation files will be lost.\nCurrent unsaved edits in memory will also be discarded.\n\nAre you sure?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if reply == QMessageBox.No: return False
+            
+            try:
+                log_debug("Reverting in Project Mode: Splitting blocks back to their original state")
+                blocks = self.mw.project_manager.project.blocks
+                success_all = True
+                
+                project_block_to_data_blocks = {}
+                for data_b_idx, p_b_idx in self.mw.block_to_project_file_map.items():
+                    if p_b_idx not in project_block_to_data_blocks:
+                        project_block_to_data_blocks[p_b_idx] = []
+                    project_block_to_data_blocks[p_b_idx].append(data_b_idx)
+                
+                global_keys_backup = None
+                if hasattr(self.mw.current_game_rules, 'original_keys'):
+                    global_keys_backup = list(self.mw.current_game_rules.original_keys)
 
-            save_file_success = False
-            file_extension = os.path.splitext(self.mw.edited_json_path)[1].lower()
+                for p_b_idx, data_indices in project_block_to_data_blocks.items():
+                    if p_b_idx >= len(blocks): continue
+                    
+                    block = blocks[p_b_idx]
+                    trans_path = self.mw.project_manager.get_absolute_path(block.translation_file, is_translation=True)
+                    
+                    # Extract original self.mw.data
+                    file_data_list = [self.mw.data[d_idx] for d_idx in data_indices]
+                    file_block_names = {str(i): self.mw.block_names.get(str(d_idx), 'Unknown') for i, d_idx in enumerate(data_indices)}
 
-            if file_extension == '.json':
-                save_file_success = save_json_file(self.mw.edited_json_path, output_data, parent_widget=self.mw)
-            elif file_extension == '.txt':
-                if isinstance(output_data, str):
-                    save_file_success = save_text_file(self.mw.edited_json_path, output_data, parent_widget=self.mw)
-                else:
-                    log_debug("Revert Error: Plugin for .txt file did not return a string for saving.")
-                    QMessageBox.critical(self.mw, "Revert Error", "Plugin save format error: expected a string for .txt file.")
+                    if global_keys_backup is not None:
+                        sliced_keys = [global_keys_backup[d_idx] for d_idx in data_indices]
+                        self.mw.current_game_rules.original_keys = sliced_keys
+                    
+                    final_obj_to_save = self.mw.current_game_rules.save_data_to_json_obj(file_data_list, file_block_names)
+                    
+                    file_extension = os.path.splitext(trans_path)[1].lower()
+                    if file_extension == '.json':
+                        save_file_success = save_json_file(trans_path, final_obj_to_save)
+                    elif file_extension == '.txt':
+                        if isinstance(final_obj_to_save, str):
+                            save_file_success = save_text_file(trans_path, final_obj_to_save)
+                        else:
+                            save_file_success = False
+                    else:
+                        save_file_success = save_text_file(trans_path, str(final_obj_to_save))
+
+                    if not save_file_success:
+                        success_all = False
+                        break
+                        
+                if success_all:
+                    self.mw.unsaved_changes = False
+                    self.mw.edited_data = {}
+                    if global_keys_backup is not None:
+                        self.mw.current_game_rules.original_keys = global_keys_backup
+                        
+                    # Reload blocks
+                    if hasattr(self.mw, 'project_action_handler') and self.mw.project_action_handler:
+                        self.mw.project_action_handler._populate_blocks_from_project()
+
+                    QMessageBox.information(self.mw, "Project Reverted", "All project translation files reverted successfully.")
+                    return True
+                else: 
+                    if global_keys_backup is not None:
+                        self.mw.current_game_rules.original_keys = global_keys_backup
                     return False
 
-            if save_file_success:
-                self.mw.unsaved_changes = False; self.mw.edited_data = {}; 
-                
-                # Backup and restore keys since we are reading translation data
-                plugin_keys_backup = None
-                if hasattr(self.mw.current_game_rules, 'original_keys'):
-                    plugin_keys_backup = list(self.mw.current_game_rules.original_keys)
-                    
-                reverted_data_list, _ = self.mw.current_game_rules.load_data_from_json_obj(output_data)
-                
-                if plugin_keys_backup is not None and hasattr(self.mw.current_game_rules, 'original_keys'):
-                    self.mw.current_game_rules.original_keys = plugin_keys_backup
-                    
-                self.mw.edited_file_data = reverted_data_list
-
-                QMessageBox.information(self.mw, "Reverted", f"Changes file '{os.path.basename(self.mw.edited_json_path)}' has been reverted to match the original.")
-                self.mw.ui_updater.update_title(); 
-                self.mw.ui_updater.populate_strings_for_block(self.mw.current_block_idx) 
-                return True
-            else: return False
-        except Exception as e:
-            log_error(f"Unexpected error during revert: {e}", exc_info=True)
-            QMessageBox.critical(self.mw, "Revert Error", f"Unexpected error during revert:\n{e}"); 
-            return False
+            except Exception as e:
+                log_error(f"Unexpected error during project revert: {e}", exc_info=True)
+                QMessageBox.critical(self.mw, "Revert Error", f"Unexpected error during project revert:\n{e}"); 
+                return False
