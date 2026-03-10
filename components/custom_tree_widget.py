@@ -17,12 +17,15 @@ class CustomTreeWidget(QTreeWidget):
         # Ensure the selected item retains a prominent highlight even when the widget loses focus (e.g. to the text editor)
         self.setStyleSheet("""
             QTreeWidget::item:selected {
-                background-color: #0078D7;
-                color: white;
+                background-color: #0078D7 !important;
+                color: white !important;
             }
             QTreeWidget::item:selected:!active {
-                background-color: #0078D7;
-                color: white;
+                background-color: #0078D7 !important;
+                color: white !important;
+            }
+            QTreeWidget::item:hover {
+                background-color: #37373d;
             }
         """)
 
@@ -105,8 +108,13 @@ class CustomTreeWidget(QTreeWidget):
 
         menu.addSeparator()
 
-        reveal_action = menu.addAction(f"Reveal '{block_name}' in Explorer")
-        reveal_action.triggered.connect(lambda checked=False, idx=block_idx: self._reveal_in_explorer(idx))
+        reveal_menu = menu.addMenu("Reveal in Explorer")
+        
+        orig_action = reveal_menu.addAction("Original")
+        orig_action.triggered.connect(lambda checked=False, idx=block_idx: self._reveal_in_explorer(idx, is_translation=False))
+        
+        trans_action = reveal_menu.addAction("Translation")
+        trans_action.triggered.connect(lambda checked=False, idx=block_idx: self._reveal_in_explorer(idx, is_translation=True))
 
         menu.addSeparator()
 
@@ -151,18 +159,37 @@ class CustomTreeWidget(QTreeWidget):
             generate_glossary.triggered.connect(lambda checked=False, idx=block_idx: main_window.build_glossary_with_ai(idx))
         menu.exec_(self.mapToGlobal(pos))
 
-    def _reveal_in_explorer(self, block_idx: int):
+    def _reveal_in_explorer(self, block_idx: int, is_translation: bool = False):
         main_window = self.window()
         if not hasattr(main_window, 'project_manager') or not main_window.project_manager:
+            # Fallback for single file mode
+            path_to_reveal = main_window.edited_json_path if is_translation else main_window.json_path
+            if path_to_reveal and os.path.exists(path_to_reveal):
+                self._open_explorer_at_path(path_to_reveal)
             return
             
         project = main_window.project_manager.project
-        if not project or block_idx >= len(project.blocks):
+        if not project:
+            return
+
+        # Use mapping if available (for multi-block files), otherwise 1:1
+        project_block_idx = block_idx
+        if hasattr(main_window, 'block_to_project_file_map'):
+            project_block_idx = main_window.block_to_project_file_map.get(block_idx, block_idx)
+
+        if project_block_idx >= len(project.blocks):
             return
             
-        block = project.blocks[block_idx]
-        abs_path = main_window.project_manager.get_absolute_path(block.source_file)
+        block = project.blocks[project_block_idx]
+        if is_translation:
+            abs_path = main_window.project_manager.get_absolute_path(block.translation_file, is_translation=True)
+        else:
+            abs_path = main_window.project_manager.get_absolute_path(block.source_file)
         
+        if abs_path and os.path.exists(abs_path):
+            self._open_explorer_at_path(abs_path)
+
+    def _open_explorer_at_path(self, abs_path: str):
         import os, subprocess, platform
         if os.path.exists(abs_path):
             abs_path_norm = os.path.normpath(abs_path)

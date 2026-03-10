@@ -365,14 +365,17 @@ class ProjectActionHandler(BaseHandler):
         self.mw.data = []
         self.mw.edited_data = {}
         self.mw.block_names = {}
+        self.mw.block_to_project_file_map = {} # Mapping data_block_idx -> project_block_idx
         
         # Reset plugin state if it tracks keys (like pokemon_fr)
         if hasattr(self.mw.current_game_rules, 'original_keys'):
             self.mw.current_game_rules.original_keys = []
 
         # Load each block's data
-        for block_idx, block in enumerate(self.mw.project_manager.project.blocks):
-            self.mw.block_names[str(block_idx)] = block.name
+        self.mw.block_to_project_file_map = {}
+        source_parsed_counts = []
+        
+        for project_block_idx, block in enumerate(self.mw.project_manager.project.blocks):
             source_path = self.mw.project_manager.get_absolute_path(block.source_file)
             
             block_data = []
@@ -385,11 +388,33 @@ class ProjectActionHandler(BaseHandler):
                     file_content, error = load_text_file(source_path, parent_widget=self.mw)
 
                 if not error and self.mw.current_game_rules:
-                    parsed_data, _ = self.mw.current_game_rules.load_data_from_json_obj(file_content)
-                    block_data = parsed_data[0] if parsed_data and len(parsed_data) > 0 else []
-            
-            
-            self.mw.data.append(block_data if block_data else [])
+                    parsed_data, names = self.mw.current_game_rules.load_data_from_json_obj(file_content)
+                    count = len(parsed_data) if parsed_data else 1
+                    source_parsed_counts.append(count)
+                    
+                    for sub_block_idx, block_content in enumerate(parsed_data):
+                        data_block_idx = len(self.mw.data)
+                        self.mw.data.append(block_content)
+                        self.mw.block_to_project_file_map[data_block_idx] = project_block_idx
+                        
+                        # Handle block names
+                        if count > 1:
+                            p_name = names.get(str(sub_block_idx), f"{block.name} (Part {sub_block_idx+1})")
+                            self.mw.block_names[str(data_block_idx)] = p_name
+                        else:
+                            self.mw.block_names[str(data_block_idx)] = block.name
+                else:
+                    source_parsed_counts.append(1)
+                    data_block_idx = len(self.mw.data)
+                    self.mw.data.append([])
+                    self.mw.block_to_project_file_map[data_block_idx] = project_block_idx
+                    self.mw.block_names[str(data_block_idx)] = block.name
+            else:
+                source_parsed_counts.append(1)
+                data_block_idx = len(self.mw.data)
+                self.mw.data.append([])
+                self.mw.block_to_project_file_map[data_block_idx] = project_block_idx
+                self.mw.block_names[str(data_block_idx)] = block.name
 
         # Backup authoritative original keys from source files
         plugin_keys_backup = None
@@ -412,9 +437,15 @@ class ProjectActionHandler(BaseHandler):
 
                 if not error and self.mw.current_game_rules:
                     parsed_edited_data, _ = self.mw.current_game_rules.load_data_from_json_obj(file_content)
-                    edited_block_data = parsed_edited_data[0] if parsed_edited_data and len(parsed_edited_data) > 0 else []
-
-            self.mw.edited_file_data.append(edited_block_data if edited_block_data else [])
+                    self.mw.edited_file_data.extend(parsed_edited_data)
+                else:
+                    count = source_parsed_counts[project_block_idx]
+                    for _ in range(count):
+                        self.mw.edited_file_data.append([])
+            else:
+                count = source_parsed_counts[project_block_idx]
+                for _ in range(count):
+                    self.mw.edited_file_data.append([])
 
         # Restore authoritative original keys
         if plugin_keys_backup is not None and hasattr(self.mw.current_game_rules, 'original_keys'):
