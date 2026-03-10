@@ -48,6 +48,18 @@ class CustomTreeWidget(QTreeWidget):
         if block_idx is not None:
             item.setData(0, role, block_idx)
         return item
+
+    def select_block_by_index(self, block_idx: int):
+        from PyQt5.QtWidgets import QTreeWidgetItemIterator
+        iterator = QTreeWidgetItemIterator(self)
+        while iterator.value():
+            item = iterator.value()
+            if item.data(0, Qt.UserRole) == block_idx:
+                self.setCurrentItem(item)
+                self.scrollToItem(item)
+                return True
+            iterator += 1
+        return False
     
     def show_context_menu(self, pos: QPoint):
         item = self.itemAt(pos)
