@@ -25,7 +25,10 @@ class SettingsDialog(QDialog, SettingsDialogUiMixin):
         super().__init__(main_window)
         self.mw = main_window
         self.setWindowTitle("Settings")
-        self.setMinimumWidth(500)
+        initial_width = getattr(self.mw, 'settings_window_width', 800)
+        self.setMinimumWidth(800)
+        self.resize(initial_width, self.height())
+        
         
         self.autofix_checkboxes = {}
         self.detection_checkboxes = {}
@@ -346,6 +349,7 @@ class SettingsDialog(QDialog, SettingsDialogUiMixin):
             'glossary_ai': glossary_ai_settings,
             'spellchecker_enabled': self.spellcheck_enabled_checkbox.isChecked(),
             'spellchecker_language': self.spellcheck_language_combo.currentData(),
+            'settings_window_width': self.width(),
             'enable_console_logging': self.enable_console_logging_checkbox.isChecked(),
             'enable_file_logging': self.enable_file_logging_checkbox.isChecked(),
             'log_file_path': self.log_file_path_edit.text(),

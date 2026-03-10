@@ -111,6 +111,7 @@ class SettingsManager:
             "enable_console_logging": True,
             "enable_file_logging": True,
             "log_file_path": "",
+            "settings_window_width": 800,
             "enabled_log_categories": ["general", "lifecycle", "file_ops", "settings", "ui_action", "ai", "scanner", "plugins"],
             "space_dot_color_hex": "#BBBBBB",
             "window_was_maximized": False,
@@ -353,6 +354,7 @@ class SettingsManager:
             "spellchecker_language": getattr(self.mw, 'spellchecker_language', 'uk'),
             "enable_console_logging": getattr(self.mw, 'enable_console_logging', True),
             "enable_file_logging": getattr(self.mw, 'enable_file_logging', True),
+            "settings_window_width": getattr(self.mw, 'settings_window_width', 800),
             "log_file_path": getattr(self.mw, 'log_file_path', ""),
             "enabled_log_categories": getattr(self.mw, 'enabled_log_categories', ["general", "lifecycle", "file_ops", "settings", "ui_action", "ai", "scanner", "plugins"])
         })

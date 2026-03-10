@@ -12,6 +12,18 @@ A PyQt5-based translation workbench for video game localization, specifically de
 - **Multi-line Analysis**: Visual feedback for line width violations
 - **Spellchecking**: Integrated spellchecking with custom dictionary support
 
+## Visual Problem Markers
+
+The application uses colored markers in the line numbers area to indicate structural or length issues in the text.
+Some markers might be rendered at **half-height** (for example, the purple Empty Odd Subline marker in Zelda MC tags), which visually signifies that the problem is not critical and relates to an empty line meant for spacing.
+
+### Pokémon FireRed Plugin Colors:
+- **Red (Width Exceeded)**: The subline is too wide for the in-game text box bounds. Text will likely bleed out of the display.
+- **Green (Short Line)**: The subline is too short. It does not end with punctuation and there is actually enough space to fit the first word of the following line, meaning the wrapping is suboptimal.
+- **Orange (Empty Subline)**: There is an entirely empty line (created by consecutive newlines), which might waste text box space if not intended.
+- **Blue (Single Word Subline)**: The subline consists only of one word. This usually looks awkward in the game dialog.
+- **Yellow (Tag Warning)**: A game control code tag inside `{}` or `[]` is either unknown, misspelled, or lacking a closing bracket.
+
 ## Setup
 
 ### 1. Prerequisites

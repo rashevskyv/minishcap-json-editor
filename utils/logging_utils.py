@@ -1,6 +1,7 @@
 import logging
 import os
 import time
+import threading
 from collections import deque
 from pathlib import Path
 
@@ -18,20 +19,25 @@ class DuplicateFilter(logging.Filter):
         self.time_window = time_window
         self.max_history = max_history
         self.recent_messages = deque(maxlen=max_history)
+        self._lock = threading.Lock()
 
     def filter(self, record):
-        current_time = time.time()
-        message = record.getMessage()
+        try:
+            current_time = time.time()
+            message = record.getMessage()
 
-        while self.recent_messages and (current_time - self.recent_messages[0][1]) > self.time_window:
-            self.recent_messages.popleft()
+            with self._lock:
+                while self.recent_messages and (current_time - self.recent_messages[0][1]) > self.time_window:
+                    self.recent_messages.popleft()
 
-        for recent_msg, recent_time in self.recent_messages:
-            if recent_msg == message and (current_time - recent_time) < self.time_window:
-                return False
+                for recent_msg, recent_time in self.recent_messages:
+                    if recent_msg == message and (current_time - recent_time) < self.time_window:
+                        return False
 
-        self.recent_messages.append((message, current_time))
-        return True
+                self.recent_messages.append((message, current_time))
+            return True
+        except Exception:
+            return True
 
 
 logger = logging.getLogger("app_logger")
