@@ -62,7 +62,66 @@ def calculate_string_width(text: str, font_map: dict, default_char_width: int = 
                 continue
 
         # 3. Якщо це не іконка і не тег, обробляємо як звичайний символ
-        total_width += font_map.get(char, {}).get('width', default_char_width)
+        char_info = font_map.get(char)
+        if char_info is None:
+            total_width += default_char_width
+        else:
+            total_width += char_info.get('width', default_char_width)
+        i += 1
+        
+    return total_width
+
+def calculate_strict_string_width(text: str, font_map: dict, icon_sequences: Optional[List[str]] = None) -> Optional[int]:
+    """
+    Calculates string width strictly based on the font_map.
+    If ANY character is missing from the font_map, it returns None.
+    Does not use a default fallback width.
+    """
+    total_width = 0
+    i = 0
+    text_len = len(text)
+    
+    font_map_icons = [str(k) for k in font_map.keys() if len(str(k)) > 1]
+    
+    if not icon_sequences:
+        icon_sequences = font_map_icons
+    else:
+        icon_sequences = list(set(icon_sequences + font_map_icons))
+    sequences_to_use = sorted(icon_sequences, key=len, reverse=True)
+
+    while i < text_len:
+        matched_sequence = None
+        for seq in sequences_to_use:
+            if text.startswith(seq, i):
+                matched_sequence = seq
+                break
+        
+        if matched_sequence:
+            seq_info = font_map.get(matched_sequence)
+            if seq_info is None or 'width' not in seq_info:
+                return None
+            total_width += seq_info['width']
+            i += len(matched_sequence)
+            continue
+
+        char = text[i]
+        if char == '[':
+            end_index = text.find(']', i)
+            if end_index != -1:
+                i = end_index + 1
+                continue
+        
+        if char == '{':
+            end_index = text.find('}', i)
+            if end_index != -1:
+                i = end_index + 1
+                continue
+
+        char_info = font_map.get(char)
+        if char_info is None or 'width' not in char_info:
+            return None # Missing character or width definition
+            
+        total_width += char_info['width']
         i += 1
         
     return total_width

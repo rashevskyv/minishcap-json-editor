@@ -188,9 +188,8 @@ class DataStateProcessor:
                     if global_keys_backup is not None:
                         self.mw.current_game_rules.original_keys = global_keys_backup
                         
-                    # Reload all modified edited paths to reflect saved changes
-                    if hasattr(self.mw, 'project_action_handler') and self.mw.project_action_handler:
-                        self.mw.project_action_handler._populate_blocks_from_project()
+                    # Don't reload entire project to avoid freezing on full issue recalculation
+                    self.mw.edited_file_data = output_data_list
 
                     if ask_confirmation: QMessageBox.information(self.mw, "Project Saved", "All project translation files saved successfully.")
                     return True

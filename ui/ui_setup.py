@@ -99,6 +99,10 @@ def setup_main_window_ui(main_window):
     original_header_layout = QHBoxLayout()
     original_label = QLabel("Original (Read-Only):")
     original_header_layout.addWidget(original_label)
+    
+    main_window.original_width_label = QLabel("")
+    original_header_layout.addWidget(main_window.original_width_label)
+    
     original_header_layout.addStretch(1)
     bottom_left_layout.addLayout(original_header_layout)
 

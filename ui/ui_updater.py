@@ -4,7 +4,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QBrush, QTextCursor
 from PyQt5.QtWidgets import QApplication
 from utils.logging_utils import log_debug
-from utils.utils import convert_spaces_to_dots_for_display, convert_dots_to_spaces_from_editor, remove_curly_tags, calculate_string_width, remove_all_tags
+from utils.utils import convert_spaces_to_dots_for_display, convert_dots_to_spaces_from_editor, remove_curly_tags, calculate_string_width, calculate_strict_string_width, remove_all_tags
 from core.glossary_manager import GlossaryOccurrence
 
 class UIUpdater:
@@ -476,6 +476,22 @@ class UIUpdater:
                 else: restored_cursor.setPosition(new_edited_cursor_pos)
                 edited_widget.setTextCursor(restored_cursor)
             
+        # Optional: Calculate original strictly (without fallback char width) width
+        if hasattr(self.mw, 'original_width_label'):
+            if self.mw.current_block_idx != -1 and self.mw.current_string_idx != -1:
+                font_map_for_string = self.mw.helper.get_font_map_for_string(self.mw.current_block_idx, self.mw.current_string_idx)
+                icon_sequences = getattr(self.mw, 'icon_sequences', [])
+                strict_width = calculate_strict_string_width(str(original_text_raw), font_map_for_string, icon_sequences=icon_sequences)
+                if strict_width is not None:
+                    self.mw.original_width_label.setText(f"Width: {strict_width}px")
+                    self.mw.original_width_label.show()
+                else:
+                    self.mw.original_width_label.setText("")
+                    self.mw.original_width_label.hide()
+            else:
+                self.mw.original_width_label.setText("")
+                self.mw.original_width_label.hide()
+
         self.mw.is_programmatically_changing_text = is_programmatic_call_flag_original
 
         # Apply highlights to editors
