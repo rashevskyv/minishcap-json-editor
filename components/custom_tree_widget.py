@@ -1,7 +1,8 @@
 # --- START OF FILE components/custom_tree_widget.py ---
-from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QAction
-from PyQt5.QtCore import Qt, QPoint, QSize
-from PyQt5.QtGui import QIcon, QPixmap, QPainter, QColor
+from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QAction, QMessageBox, QTreeWidgetItemIterator, QApplication
+from PyQt5.QtCore import Qt, QPoint
+from PyQt5.QtGui import QColor, QIcon, QPixmap, QPainter
+import os
 
 from utils.logging_utils import log_debug, log_error
 
@@ -190,7 +191,8 @@ class CustomTreeWidget(QTreeWidget):
             self._open_explorer_at_path(abs_path)
 
     def _open_explorer_at_path(self, abs_path: str):
-        import os, subprocess, platform
+        import subprocess
+        import platform
         if os.path.exists(abs_path):
             abs_path_norm = os.path.normpath(abs_path)
             if platform.system() == "Windows":
