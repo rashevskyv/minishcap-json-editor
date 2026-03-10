@@ -11,8 +11,8 @@ class TitleStatusBarUpdater(BaseUIUpdater):
         title = "JSON Text Editor"
 
         # Check if a project is open
-        if hasattr(self.mw, 'project_manager') and self.mw.project_manager and hasattr(self.mw.project_manager, 'current_project') and self.mw.project_manager.current_project:
-            project_name = self.mw.project_manager.current_project.name
+        if hasattr(self.mw, 'project_manager') and self.mw.project_manager and hasattr(self.mw.project_manager, 'project') and self.mw.project_manager.project:
+            project_name = self.mw.project_manager.project.name
             title += f" - [{project_name}]"
         elif self.mw.json_path:
             title += f" - [{os.path.basename(self.mw.json_path)}]"

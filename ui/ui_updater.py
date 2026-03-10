@@ -290,7 +290,9 @@ class UIUpdater:
             
     def update_title(self):
         title = "JSON Text Editor"
-        if self.mw.json_path: 
+        if hasattr(self.mw, 'project_manager') and self.mw.project_manager and hasattr(self.mw.project_manager, 'project') and self.mw.project_manager.project:
+            title += f" - [{self.mw.project_manager.project.name}]"
+        elif self.mw.json_path: 
             title += f" - [{os.path.basename(self.mw.json_path)}]"
         else: 
             title += " - [No File Open]"
