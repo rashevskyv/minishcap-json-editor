@@ -16,7 +16,7 @@ from PyQt5.QtWidgets import QWidget, QMainWindow
 
 from .logging_utils import log_debug
 from .utils import SPACE_DOT_SYMBOL
-from plugins.pokemon_fr.config import P_NEWLINE_MARKER, L_NEWLINE_MARKER, P_VISUAL_EDITOR_MARKER, L_VISUAL_EDITOR_MARKER
+from plugins.common.markers import P_NEWLINE_MARKER, L_NEWLINE_MARKER, P_VISUAL_EDITOR_MARKER, L_VISUAL_EDITOR_MARKER
 from core.glossary_manager import GlossaryManager, GlossaryMatch
 
 class JsonTagHighlighter(QSyntaxHighlighter):

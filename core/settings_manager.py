@@ -11,7 +11,7 @@ from utils.constants import (
     DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS,
     DEFAULT_LINE_WIDTH_WARNING_THRESHOLD
 )
-from plugins.pokemon_fr.config import DEFAULT_AUTOFIX_SETTINGS, DEFAULT_DETECTION_SETTINGS
+
 from core.translation.config import build_default_translation_config, merge_translation_config
 
 # Load environment variables from .env file
@@ -200,8 +200,8 @@ class SettingsManager:
             "last_original_text_edit_scroll_value_v": 0, "last_original_text_edit_scroll_value_h": 0,
             "search_history": [],
             "translation_config": build_default_translation_config(),
-            "autofix_enabled": DEFAULT_AUTOFIX_SETTINGS.copy(),
-            "detection_enabled": DEFAULT_DETECTION_SETTINGS.copy(),
+            "autofix_enabled": {},
+            "detection_enabled": {},
             "context_menu_tags": {"single_tags": [], "wrap_tags": []}
         }
         for key, value in defaults.items():
@@ -303,14 +303,10 @@ class SettingsManager:
             self.mw.search_history_to_save = plugin_data.get("search_history", [])
             
             loaded_autofix = plugin_data.get("autofix_enabled", {})
-            autofix_settings = DEFAULT_AUTOFIX_SETTINGS.copy()
-            autofix_settings.update(loaded_autofix)
-            self.mw.autofix_enabled = autofix_settings
+            self.mw.autofix_enabled = loaded_autofix
 
             loaded_detection = plugin_data.get("detection_enabled", {})
-            detection_settings = DEFAULT_DETECTION_SETTINGS.copy()
-            detection_settings.update(loaded_detection)
-            self.mw.detection_enabled = detection_settings
+            self.mw.detection_enabled = loaded_detection
 
             loaded_translation = plugin_data.get("translation_config", {})
             if isinstance(loaded_translation, dict):
