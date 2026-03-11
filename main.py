@@ -231,7 +231,7 @@ class MainWindow(QMainWindow):
         self.event_handler = MainWindowEventHandler(self)
         self.block_handler = MainWindowBlockHandler(self)
 
-        self.load_game_plugin() 
+        self.plugin_handler.load_game_plugin() 
         if self.current_game_rules:
             self.default_tag_mappings = self.current_game_rules.get_default_tag_mappings()
 
@@ -261,14 +261,14 @@ class MainWindow(QMainWindow):
             self.text_analysis_handler.ensure_menu_action()
 
         log_info("Initializing dynamic UI from plugin...")
-        self.setup_plugin_ui()
+        self.plugin_handler.setup_plugin_ui()
 
         self.search_panel_widget = SearchPanelWidget(self)
         self.main_vertical_layout.insertWidget(0, self.search_panel_widget)
         self.search_panel_widget.setVisible(False)
 
 
-        self.connect_signals()
+        self.event_handler.connect_signals()
 
         self.event_filter = MainWindowEventFilter(self)
         self.installEventFilter(self.event_filter)
@@ -291,7 +291,7 @@ class MainWindow(QMainWindow):
                     editor_widget.updateLineNumberAreaWidth(0)
 
         self.helper.restore_state_after_settings_load()
-        self.apply_font_size()
+        self.ui_handler.apply_font_size()
         self.helper.apply_text_wrap_settings()
         self.string_settings_updater.update_font_combobox()
         self.string_settings_updater.update_string_settings_panel()
@@ -316,7 +316,7 @@ class MainWindow(QMainWindow):
         if hasattr(self, 'project_action_handler') and hasattr(self.project_action_handler, '_update_recent_projects_menu'):
             self.project_action_handler._update_recent_projects_menu()
 
-        QTimer.singleShot(100, self.force_focus)
+        QTimer.singleShot(100, self.ui_handler.force_focus)
 
         log_info("Main window initialization complete.")
     
