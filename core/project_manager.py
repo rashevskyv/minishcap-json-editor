@@ -130,7 +130,7 @@ class ProjectManager:
             return True
 
         except Exception as e:
-            log_error(f"Failed to create project: {e}")
+            log_error(f"Failed to create project: {e}", exc_info=True)
             return False
 
     def load(self, path: str) -> bool:
@@ -170,7 +170,7 @@ class ProjectManager:
             return True
 
         except Exception as e:
-            log_error(f"Failed to load project: {e}")
+            log_error(f"Failed to load project: {e}", exc_info=True)
             return False
 
     def save(self) -> bool:
@@ -197,7 +197,7 @@ class ProjectManager:
             return True
 
         except Exception as e:
-            log_error(f"Failed to save project: {e}")
+            log_error(f"Failed to save project: {e}", exc_info=True)
             return False
 
     def add_block(self, name: str, source_file_path: str, translation_file_path: Optional[str] = None, description: str = "", target_relative_path: str = "") -> Optional[Block]:
@@ -239,7 +239,7 @@ class ProjectManager:
             return block
 
         except Exception as e:
-            log_error(f"Failed to register block: {e}")
+            log_error(f"Failed to register block: {e}", exc_info=True)
             return None
 
     def sync_project_files(self):
@@ -405,7 +405,7 @@ class ProjectManager:
             return self.save()
 
         except Exception as e:
-            log_error(f"Failed to save settings to project: {e}")
+            log_error(f"Failed to save settings to project: {e}", exc_info=True)
             return False
 
     def load_settings_from_project(self, main_window) -> bool:
@@ -439,7 +439,7 @@ class ProjectManager:
             return True
 
         except Exception as e:
-            log_error(f"Failed to load settings from project: {e}")
+            log_error(f"Failed to load settings from project: {e}", exc_info=True)
             return False
 
     @property

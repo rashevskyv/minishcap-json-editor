@@ -98,7 +98,7 @@ class SpellcheckerManager:
 
             log_debug(f"Loaded {len(self.custom_words)} words from user dictionary.")
         except Exception as e:
-            log_warning(f"Failed to load user dictionary: {e}")
+            log_error(f"Failed to load user dictionary: {e}", exc_info=True)
 
     def reload_glossary_words(self):
         """Public method to reload glossary words. Called after glossary is initialized."""
@@ -168,7 +168,7 @@ class SpellcheckerManager:
                     if hasattr(self.mw.edited_text_edit, 'highlighter') and self.mw.edited_text_edit.highlighter:
                         self.mw.edited_text_edit.highlighter.rehighlight()
             except Exception as e:
-                log_warning(f"Failed to save user dictionary: {e}")
+                log_error(f"Failed to save user dictionary: {e}", exc_info=True)
 
     def is_misspelled(self, word: str) -> bool:
         if not self.enabled:

@@ -84,7 +84,7 @@ class MainWindowPluginHandler:
             self._load_fallback_rules(error_msg)
         except Exception as e:
             error_msg = f"Unexpected error loading game plugin {module_path}:\n{e}\n\n{traceback.format_exc()}"
-            log_error(error_msg)
+            log_error(error_msg, exc_info=True)
             self._load_fallback_rules(error_msg)
             
         if hasattr(self.mw, 'translation_handler'):
@@ -105,7 +105,7 @@ class MainWindowPluginHandler:
             self.mw.current_game_rules = BaseGameRules(main_window_ref=self.mw)
             log_info("Loaded fallback BaseGameRules.")
         except Exception as e:
-            log_error(f"CRITICAL ERROR: Could not load fallback game rules: {e}")
+            log_error(f"CRITICAL ERROR: Could not load fallback game rules: {e}", exc_info=True)
             self.mw.current_game_rules = None
 
     def trigger_check_tags_action(self):

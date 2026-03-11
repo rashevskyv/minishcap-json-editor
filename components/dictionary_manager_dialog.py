@@ -47,7 +47,7 @@ class DownloadThread(QThread):
                 
                 self.progress.emit(f"Downloaded {file_name}", 100)
             except Exception as e:
-                log_error(f"Failed to download dictionary from {url}: {e}")
+                log_error(f"Failed to download dictionary from {url}: {e}", exc_info=True)
                 self.finished.emit(url, False, str(e))
                 return
         self.finished.emit("", True, "All files downloaded successfully.")
@@ -121,7 +121,7 @@ class DictionaryManagerDialog(QDialog):
         except Exception as e:
             error_message = f"Error fetching list: {e}"
             self.status_label.setText(error_message)
-            log_error(f"Could not fetch dictionary list: {e}")
+            log_error(f"Could not fetch dictionary list: {e}", exc_info=True)
         
         self.refresh_list()
 
@@ -228,7 +228,7 @@ class DownloadThread(QThread):
                 
                 self.progress.emit(f"Downloaded {file_name}", 100)
             except Exception as e:
-                log_error(f"Failed to download dictionary from {url}: {e}")
+                log_error(f"Failed to download dictionary from {url}: {e}", exc_info=True)
                 self.finished.emit(url, False, str(e))
                 return
         self.finished.emit("", True, "All files downloaded successfully.")
@@ -302,7 +302,7 @@ class DictionaryManagerDialog(QDialog):
         except Exception as e:
             error_message = f"Error fetching list: {e}"
             self.status_label.setText(error_message)
-            log_error(f"Could not fetch dictionary list: {e}")
+            log_error(f"Could not fetch dictionary list: {e}", exc_info=True)
         
         self.refresh_list()
 

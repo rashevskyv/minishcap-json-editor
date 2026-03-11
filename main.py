@@ -377,7 +377,14 @@ class MainWindow(QMainWindow):
         handler.build_glossary_for_block(target_block_idx)
 
 
+def global_exception_handler(exc_type, exc_value, exc_traceback):
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+    log_error(f"Uncaught exception: {exc_type.__name__}: {exc_value}", exc_info=(exc_type, exc_value, exc_traceback), category="general")
+
 if __name__ == '__main__':
+    sys.excepthook = global_exception_handler
     log_info("================= Application Start =================")
     app = QApplication(sys.argv)
     
@@ -388,15 +395,15 @@ if __name__ == '__main__':
     except FileNotFoundError:
         pass
     except Exception as e:
-        log_warning(f"Error reading settings.json for theme: {e}")
+        log_error(f"Error reading settings.json for theme: {e}", exc_info=True)
         
     theme_to_apply = temp_settings.get("theme", "auto")
     MainWindowUIHandler.apply_theme(app, theme_to_apply)
 
     window = MainWindow()
     window.show()
-    log_info("Starting Qt event loop...")
+    log_info("Starting Qt event loop...", category="lifecycle")
     exit_code = app.exec_()
-    log_info(f"Qt event loop finished with exit code: {exit_code}")
+    log_info(f"Qt event loop finished with exit code: {exit_code}", category="lifecycle")
     log_info("================= Application End =================")
     sys.exit(exit_code)

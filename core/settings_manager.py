@@ -179,7 +179,7 @@ class SettingsManager:
             self.mw.window_was_maximized_at_save = settings_data.get("window_was_maximized", False)
             log_debug("Global settings loaded.")
         except Exception as e:
-            log_warning(f"Error loading global settings: {e}")
+            log_error(f"Error loading global settings: {e}", exc_info=True)
 
     def _load_plugin_settings(self):
         plugin_config_path = self._get_plugin_config_path()
@@ -250,7 +250,7 @@ class SettingsManager:
             try:
                 self.mw.string_metadata = {eval(k): v for k, v in loaded_metadata_str_keys.items()}
             except Exception as e:
-                log_warning(f"Error deserializing string_metadata keys: {e}. Metadata will be empty.")
+                log_error(f"Error deserializing string_metadata keys: {e}. Metadata will be empty.", exc_info=True)
                 self.mw.string_metadata = {}
             
             for key, value in plugin_data.items():
@@ -318,7 +318,7 @@ class SettingsManager:
 
             log_debug(f"Plugin settings loaded from '{plugin_config_path}'.")
         except Exception as e:
-            log_warning(f"Error loading plugin settings from '{plugin_config_path}': {e}")
+            log_error(f"Error loading plugin settings from '{plugin_config_path}': {e}", exc_info=True)
 
     def save_settings(self):
         log_debug("Saving all settings...")
@@ -332,7 +332,7 @@ class SettingsManager:
                 with open(self.settings_file_path, 'r', encoding='utf-8') as f:
                     global_data = json.load(f)
         except Exception as e:
-             log_warning(f"Could not read existing global settings, will create a new one. Error: {e}")
+             log_error(f"Could not read existing global settings, will create a new one. Error: {e}", exc_info=True)
 
         global_data.update({
             "font_size": self.mw.current_font_size,
@@ -376,7 +376,7 @@ class SettingsManager:
                 json.dump(global_data, f, indent=4, ensure_ascii=False)
             log_debug("Global settings saved.")
         except Exception as e:
-            log_warning(f"ERROR saving global settings: {e}")
+            log_error(f"ERROR saving global settings: {e}", exc_info=True)
 
     def _save_plugin_settings(self):
         plugin_config_path = self._get_plugin_config_path()
@@ -388,7 +388,7 @@ class SettingsManager:
                 with open(plugin_config_path, 'r', encoding='utf-8') as f:
                     plugin_data = json.load(f)
         except Exception as e:
-            log_warning(f"Could not read existing plugin config, will create a new one. Error: {e}")
+            log_error(f"Could not read existing plugin config, will create a new one. Error: {e}", exc_info=True)
 
         plugin_data_to_save = {
             "default_tag_mappings": self.mw.default_tag_mappings,
@@ -435,7 +435,7 @@ class SettingsManager:
                 json.dump(plugin_data, f, indent=4, ensure_ascii=False)
             log_debug(f"Plugin settings saved to '{plugin_config_path}'.")
         except Exception as e:
-            log_warning(f"ERROR saving plugin settings to '{plugin_config_path}': {e}")
+            log_error(f"ERROR saving plugin settings to '{plugin_config_path}': {e}", exc_info=True)
             QMessageBox.critical(self.mw, "Save Error", f"Could not save plugin configuration to\n{plugin_config_path}")
 
     def save_block_names(self):
@@ -450,7 +450,7 @@ class SettingsManager:
                 with open(plugin_config_path, 'r', encoding='utf-8') as f:
                     plugin_data = json.load(f)
         except Exception as e:
-            log_warning(f"Could not read existing plugin config at {plugin_config_path} to save block names. A new one will be created. Error: {e}")
+            log_error(f"Could not read existing plugin config at {plugin_config_path} to save block names. A new one will be created. Error: {e}", exc_info=True)
 
         plugin_data["block_names"] = self.mw.block_names
         
@@ -459,7 +459,7 @@ class SettingsManager:
                 json.dump(plugin_data, f, indent=4, ensure_ascii=False)
             log_debug(f"Block names saved successfully to '{plugin_config_path}'.")
         except Exception as e:
-            log_warning(f"ERROR saving block names to '{plugin_config_path}': {e}")
+            log_error(f"ERROR saving block names to '{plugin_config_path}': {e}", exc_info=True)
             QMessageBox.critical(self.mw, "Save Error", f"Could not save block names to\n{plugin_config_path}")
 
     def load_unsaved_session(self):
@@ -486,7 +486,7 @@ class SettingsManager:
                 log_debug("Restore unsaved session is disabled in settings. Skipping load.")
 
         except Exception as e:
-            log_warning(f"Error loading unsaved session data: {e}")
+            log_error(f"Error loading unsaved session data: {e}", exc_info=True)
 
     def _parse_new_font_format(self, font_data):
         """Парсить новий формат файлу шрифту і повертає font_map."""
@@ -537,7 +537,7 @@ class SettingsManager:
                     log_debug(f"Successfully loaded font map '{filename}'.")
     
                 except Exception as e:
-                    log_warning(f"Error reading or parsing font map file '{filename}': {e}.")
+                    log_error(f"Error reading or parsing font map file '{filename}': {e}.", exc_info=True)
 
         default_font_filename = getattr(self.mw, 'default_font_file', None)
         if default_font_filename and default_font_filename in self.mw.all_font_maps:
@@ -570,7 +570,7 @@ class SettingsManager:
             with open(override_path, 'r', encoding='utf-8') as f:
                 raw_data = json.load(f)
         except Exception as exc:
-            log_warning(f"Failed to read font override map '{override_path}': {exc}")
+            log_error(f"Failed to read font override map '{override_path}': {exc}", exc_info=True)
             return overrides
 
         if not isinstance(raw_data, dict):
