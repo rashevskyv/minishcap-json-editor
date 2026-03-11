@@ -254,21 +254,30 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         entry = self._find_glossary_entry_at(event.pos())
+        warning_tooltip = self._find_warning_tooltip_at(event.pos())
+        
         tooltip_text = None
         if entry:
-            lines = [f"{entry.original} → {entry.translation}"]
+            lines = [f"<b>{entry.original}</b> → {entry.translation}"]
             if entry.notes:
-                lines.append(entry.notes)
-            tooltip_text = "\n".join(lines)
+                lines.append(f"<i>{entry.notes}</i>")
+            tooltip_text = "<br>".join(lines)
+            
+        if warning_tooltip:
+            if tooltip_text:
+                tooltip_text = f"{tooltip_text}<hr>{warning_tooltip}"
+            else:
+                tooltip_text = warning_tooltip
 
-        if tooltip_text and tooltip_text != self._current_glossary_tooltip:
+        if tooltip_text and tooltip_text != getattr(self, '_current_combined_tooltip', None):
             QToolTip.showText(self.mapToGlobal(event.pos()), tooltip_text, self)
-            self._current_glossary_tooltip = tooltip_text
-        elif not tooltip_text and self._current_glossary_tooltip:
+            self._current_combined_tooltip = tooltip_text
+        elif not tooltip_text and getattr(self, '_current_combined_tooltip', None):
             QToolTip.hideText()
-            self._current_glossary_tooltip = None
+            self._current_combined_tooltip = None
 
         self._hovered_glossary_entry = entry
+        self._hovered_warning_text = warning_tooltip
 
         if self.objectName() == "preview_text_edit" and event.buttons() == Qt.LeftButton and self._selected_lines:
             if self.drag_start_pos is not None and (event.pos() - self.drag_start_pos).manhattanLength() > QApplication.startDragDistance():
@@ -311,26 +320,72 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.selectionChanged.emit(self.get_selected_lines())
 
     def leaveEvent(self, event) -> None:
-        if self._current_glossary_tooltip:
+        if getattr(self, '_current_combined_tooltip', None):
             QToolTip.hideText()
-            self._current_glossary_tooltip = None
+            self._current_combined_tooltip = None
         self._hovered_glossary_entry = None
+        self._hovered_warning_text = None
         super().leaveEvent(event)
 
-    def _find_glossary_entry_at(self, pos) -> Optional[GlossaryEntry]:
+    def _find_glossary_entry_at(self, pos):
+        if not hasattr(self, 'glossary_manager') or not self.glossary_manager:
+            return None
         cursor = self.cursorForPosition(pos)
         block = cursor.block()
         if not block.isValid():
             return None
-        data = block.userData()
-        matches = getattr(data, 'matches', None)
-        if not matches:
+        pos_in_block = cursor.positionInBlock()
+        return self.glossary_manager.find_entry_at(block.blockNumber(), pos_in_block)
+
+    def _find_warning_tooltip_at(self, pos: QPoint) -> Optional[str]:
+        # Get line under mouse
+        cursor = self.cursorForPosition(pos)
+        block = cursor.block()
+        if not block.isValid():
             return None
-        relative_pos = cursor.position() - block.position()
-        for match in matches:
-            if match.start <= relative_pos < match.end:
-                return match.entry
-        return None
+        
+        line_idx_in_widget = block.blockNumber() 
+        main_window = self.window()
+        if not hasattr(main_window, 'current_block_idx'):
+            return None
+            
+        block_idx = main_window.current_block_idx
+        
+        problems = set()
+        if self.objectName() == "preview_text_edit":
+            # In preview_text_edit, each visual line (block) is one entire string.
+            # We want to show all problems associated with any subline of this string.
+            string_idx = line_idx_in_widget
+            for key, probs in getattr(main_window, 'problems_per_subline', {}).items():
+                if key[0] == block_idx and key[1] == string_idx:
+                    problems.update(probs)
+        else:
+            # In edited_text_edit or original_text_edit, we show sublines of a SINGLE string.
+            if not hasattr(main_window, 'current_string_idx'):
+                return None
+            string_idx = main_window.current_string_idx
+            problems = getattr(main_window, 'problems_per_subline', {}).get((block_idx, string_idx, line_idx_in_widget), set())
+        
+        tooltip_lines = []
+        
+        if problems:
+            problem_definitions = main_window.current_game_rules.get_problem_definitions() if main_window.current_game_rules else {}
+            for prob_id in sorted(list(problems)):
+                prob_def = problem_definitions.get(prob_id, {})
+                desc = prob_def.get("description", prob_id)
+                name = prob_def.get("name", "")
+                
+                # Check detection settings if they exist
+                detection_config = getattr(main_window, 'detection_enabled', {})
+                if not detection_config.get(prob_id, True):
+                    continue
+
+                if name:
+                    tooltip_lines.append(f"<b>{name}</b>: {desc}")
+                else:
+                    tooltip_lines.append(desc)
+        
+        return "<br>".join(tooltip_lines) if tooltip_lines else None
 
     def _set_theme_colors(self, main_window_ref):
         theme = 'light'

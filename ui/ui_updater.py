@@ -88,6 +88,17 @@ class UIUpdater:
             
             if issue_texts:
                 display_name_with_issues = f"{base_display_name} ({', '.join(issue_texts)})"
+            
+            tooltip_lines = []
+            for problem_id in sorted_problem_ids_for_display:
+                count_sublines = block_problem_counts[problem_id]
+                if count_sublines > 0:
+                    prob_def = problem_definitions.get(problem_id, {})
+                    full_name = prob_def.get("name", problem_id)
+                    desc = prob_def.get("description", "")
+                    tooltip_lines.append(f"<b>{full_name}</b>: {count_sublines} sublines<br><i>{desc}</i>")
+            
+            block_tooltip = "<br><br>".join(tooltip_lines) if tooltip_lines else "No issues found"
                 
             import os
             from PyQt5.QtWidgets import QTreeWidgetItem
@@ -117,6 +128,7 @@ class UIUpdater:
                     dir_nodes[current_path] = dir_item
 
             item = self.mw.block_list_widget.create_item(display_name_with_issues, i, Qt.UserRole)
+            item.setToolTip(0, block_tooltip)
             parent_item = dir_nodes.get(dir_path, dir_nodes[""])
             parent_item.addChild(item)
 
@@ -164,8 +176,20 @@ class UIUpdater:
         if issue_texts:
             display_name_with_issues = f"{base_display_name} ({', '.join(issue_texts)})"
         
+        tooltip_lines = []
+        for problem_id in sorted_problem_ids_for_display:
+            count_sublines = block_problem_counts[problem_id]
+            if count_sublines > 0:
+                prob_def = problem_definitions.get(problem_id, {})
+                full_name = prob_def.get("name", problem_id)
+                desc = prob_def.get("description", "")
+                tooltip_lines.append(f"<b>{full_name}</b>: {count_sublines} sublines<br><i>{desc}</i>")
+        
+        block_tooltip = "<br><br>".join(tooltip_lines) if tooltip_lines else "No issues found"
+        
         if item.text(0) != display_name_with_issues:
             item.setText(0, display_name_with_issues)
+        item.setToolTip(0, block_tooltip)
 
     def update_status_bar(self):
         if not hasattr(self.mw, 'edited_text_edit') or not self.mw.edited_text_edit or \
