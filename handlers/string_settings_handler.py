@@ -13,7 +13,7 @@ class StringSettingsHandler(BaseHandler):
 
         if current_block_idx != -1:
             log_debug(f"Refreshing UI for block {current_block_idx}")
-            self.mw.app_action_handler._perform_issues_scan_for_block(current_block_idx)
+            self.mw.issue_scan_handler._perform_issues_scan_for_block(current_block_idx)
             self.mw.ui_updater.populate_blocks()
             self.mw.ui_updater.populate_strings_for_block(current_block_idx)
             

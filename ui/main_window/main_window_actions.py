@@ -214,7 +214,7 @@ class MainWindowActions:
                 QMessageBox.information(self.mw, "Tag Mappings Reloaded", f"Default tag mappings reloaded from\n{os.path.basename(plugin_config_path)}.")
                 if self.mw.current_block_idx != -1:
                     if QMessageBox.question(self.mw, "Rescan Block", "Rescan the current block with the new mappings?", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes) == QMessageBox.Yes:
-                        self.mw.app_action_handler.rescan_issues_for_single_block(self.mw.current_block_idx, use_default_mappings=True)
+                        self.mw.issue_scan_handler.rescan_issues_for_single_block(self.mw.current_block_idx, use_default_mappings=True)
             else:
                 QMessageBox.warning(self.mw, "Reload Error", "'default_tag_mappings' not found in plugin config.")
 
@@ -244,5 +244,5 @@ class MainWindowActions:
                                     "This change will be saved to the plugin's config file when settings are saved.")
             if self.mw.current_block_idx != -1:
                 if QMessageBox.question(self.mw, "Rescan Block", "Rescan the current block with the new mapping now?", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes) == QMessageBox.Yes:
-                    self.mw.app_action_handler.rescan_issues_for_single_block(self.mw.current_block_idx, use_default_mappings=True)
+                    self.mw.issue_scan_handler.rescan_issues_for_single_block(self.mw.current_block_idx, use_default_mappings=True)
         else: log_info("User cancelled overwrite or no action taken.")

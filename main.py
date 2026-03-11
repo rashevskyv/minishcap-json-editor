@@ -24,6 +24,8 @@ from components.search_panel import SearchPanelWidget
 from ui.themes import DARK_THEME_STYLESHEET, LIGHT_THEME_STYLESHEET
 
 from handlers.app_action_handler import AppActionHandler
+from handlers.project_action_handler import ProjectActionHandler
+from handlers.issue_scan_handler import IssueScanHandler
 from handlers.list_selection_handler import ListSelectionHandler
 from handlers.text_operation_handler import TextOperationHandler
 from handlers.search_handler import SearchHandler
@@ -238,6 +240,8 @@ class MainWindow(QMainWindow):
         self.list_selection_handler = ListSelectionHandler(self, self.data_processor, self.ui_updater)
         self.editor_operation_handler = TextOperationHandler(self, self.data_processor, self.ui_updater)
         self.app_action_handler = AppActionHandler(self, self.data_processor, self.ui_updater, self.current_game_rules) 
+        self.project_action_handler = ProjectActionHandler(self, self.data_processor, self.ui_updater)
+        self.issue_scan_handler = IssueScanHandler(self, self.data_processor, self.ui_updater)
         self.search_handler = SearchHandler(self, self.data_processor, self.ui_updater)
         self.string_settings_handler = StringSettingsHandler(self, self.data_processor, self.ui_updater)
         self.translation_handler = TranslationHandler(self, self.data_processor, self.ui_updater)
@@ -247,18 +251,13 @@ class MainWindow(QMainWindow):
 
         setup_main_window_ui(self)
 
-        if hasattr(self, 'open_glossary_button'):
-            self.open_glossary_button.clicked.connect(self.translation_handler.show_glossary_dialog)
+        self.open_glossary_button.clicked.connect(self.translation_handler.show_glossary_dialog)
+        self.translation_handler.initialize_glossary_highlighting()
 
-        if hasattr(self, 'translation_handler'):
-            self.translation_handler.initialize_glossary_highlighting()
+        if self.spellchecker_manager:
+            self.spellchecker_manager.reload_glossary_words()
 
-            # Load glossary words into spellchecker after glossary is initialized
-            if hasattr(self, 'spellchecker_manager') and self.spellchecker_manager:
-                self.spellchecker_manager.reload_glossary_words()
-
-        if hasattr(self, 'text_analysis_handler'):
-            self.text_analysis_handler.ensure_menu_action()
+        self.text_analysis_handler.ensure_menu_action()
 
         log_info("Initializing dynamic UI from plugin...")
         self.plugin_handler.setup_plugin_ui()
@@ -299,22 +298,16 @@ class MainWindow(QMainWindow):
         self.helper.rebuild_unsaved_block_indices()
 
         # Initialize spellchecker state
-        log_info(f"Checking spellchecker initialization: has spellchecker_enabled={hasattr(self, 'spellchecker_enabled')}, has spellchecker_manager={hasattr(self, 'spellchecker_manager')}")
-        if hasattr(self, 'spellchecker_manager'):
-            spellchecker_enabled = getattr(self, 'spellchecker_enabled', False)
-            spellchecker_language = getattr(self, 'spellchecker_language', 'uk')
-            log_info(f"Initializing spellchecker: enabled={spellchecker_enabled}, language={spellchecker_language}")
-            log_info(f"Spellchecker manager hunspell object: {self.spellchecker_manager.hunspell is not None}")
-            if self.spellchecker_manager.hunspell:
-                log_info(f"Spellchecker dictionary language: {self.spellchecker_manager.language}")
-            self.spellchecker_manager.set_enabled(spellchecker_enabled)
-            log_info(f"Spellchecker initialization complete. Manager enabled state: {self.spellchecker_manager.enabled}")
-        else:
-            log_info("Spellchecker manager not found, skipping initialization")
+        log_info("Initializing spellchecker...")
+        spellchecker_enabled = getattr(self, 'spellchecker_enabled', False)
+        spellchecker_language = getattr(self, 'spellchecker_language', 'uk')
+        if self.spellchecker_manager.hunspell:
+            log_info(f"Spellchecker dictionary language: {self.spellchecker_manager.language}")
+        self.spellchecker_manager.set_enabled(spellchecker_enabled)
+        log_info(f"Spellchecker initialization complete. Manager enabled state: {self.spellchecker_manager.enabled}")
 
         # Update recent projects menu
-        if hasattr(self, 'project_action_handler') and hasattr(self.project_action_handler, '_update_recent_projects_menu'):
-            self.project_action_handler._update_recent_projects_menu()
+        self.project_action_handler._update_recent_projects_menu()
 
         QTimer.singleShot(100, self.ui_handler.force_focus)
 

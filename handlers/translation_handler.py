@@ -897,7 +897,7 @@ class TranslationHandler(BaseHandler):
                 self.ui_handler.finish_ai_operation()
                 self.ui_updater.update_text_views()
                 if hasattr(self.mw, 'app_action_handler'):
-                    self.mw.app_action_handler.rescan_issues_for_single_block(block_idx, show_message_on_completion=False)
+                    self.mw.issue_scan_handler.rescan_issues_for_single_block(block_idx, show_message_on_completion=False)
                 
                 if block_idx in self.translation_progress:
                     del self.translation_progress[block_idx]
@@ -930,7 +930,7 @@ class TranslationHandler(BaseHandler):
             self.ui_updater.populate_strings_for_block(context['block_idx'])
             self.ui_updater.update_text_views()
             if hasattr(self.mw, 'app_action_handler'):
-                self.mw.app_action_handler.rescan_issues_for_single_block(context['block_idx'], show_message_on_completion=False)
+                self.mw.issue_scan_handler.rescan_issues_for_single_block(context['block_idx'], show_message_on_completion=False)
 
         except (json.JSONDecodeError, ValueError) as e:
             self._handle_ai_error(f"Validation failed: {e}", context)

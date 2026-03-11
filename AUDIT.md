@@ -352,6 +352,9 @@ def create_new_project_action(self):
 - Використати `RotatingFileHandler` з `maxBytes=5*1024*1024` і `backupCount=3`
 - Видалити поточний 9 МБ файл
 
+> [!NOTE]
+> ✅ **ВИРІШЕНО** (2026-03-11): Логер (`utils/logging_utils.py`) переведено на `RotatingFileHandler` з лімітом у 2 MB та 5 бекапами.
+
 ---
 
 ### 3.7. Змішування `os.path` та `pathlib.Path`
@@ -404,6 +407,9 @@ except Exception as e:
 **Рішення:**
 - Використовувати `log_error(msg, exc_info=True)` для всіх невідомих виключень
 - Чітко розділяти очікувані помилки (file not found) від неочікуваних
+
+> [!NOTE]
+> ✅ **ВИРІШЕНО** (2026-03-11): Усі блоки `except Exception:` по всьому коду (включаючи `core/`, `handlers/`, `ui/`, `data_manager` тощо) були оновлені, щоб передавати `exc_info=True` у `log_error` для збереження повного stack trace. Також додано глобальний `sys.excepthook` у `main.py` для перехоплення непередбачуваних помилок поза try-catch блоками.
 
 ---
 

@@ -14,19 +14,6 @@ class AppActionHandler(BaseHandler):
     def __init__(self, main_window, data_processor, ui_updater, game_rules_plugin: Optional[BaseGameRules]):
         super().__init__(main_window, data_processor, ui_updater)
         self.game_rules_plugin = game_rules_plugin
-        from .project_action_handler import ProjectActionHandler
-        from .issue_scan_handler import IssueScanHandler
-        self.mw.project_action_handler = ProjectActionHandler(main_window, data_processor, ui_updater)
-        self.mw.issue_scan_handler = IssueScanHandler(main_window, data_processor, ui_updater)
-
-    def _perform_issues_scan_for_block(self, block_idx: int, is_single_block_scan: bool = False, use_default_mappings_in_scan: bool = False):
-        self.mw.issue_scan_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan, use_default_mappings_in_scan)
-
-    def _perform_initial_silent_scan_all_issues(self):
-        self.mw.issue_scan_handler._perform_initial_silent_scan_all_issues()
-
-    def rescan_issues_for_single_block(self, block_idx: int = -1, show_message_on_completion: bool = True, use_default_mappings: bool = True):
-        self.mw.issue_scan_handler.rescan_issues_for_single_block(block_idx, show_message_on_completion, use_default_mappings)
 
     def rescan_all_tags(self):
         self.mw.issue_scan_handler.rescan_all_tags()

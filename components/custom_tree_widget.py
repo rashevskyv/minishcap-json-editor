@@ -131,7 +131,7 @@ class CustomTreeWidget(QTreeWidget):
 
         if hasattr(main_window, 'app_action_handler') and hasattr(main_window.app_action_handler, 'rescan_issues_for_single_block'):
             rescan_action = menu.addAction(f"Rescan Issues in '{block_name}'")
-            rescan_action.triggered.connect(lambda checked=False, idx=block_idx: main_window.app_action_handler.rescan_issues_for_single_block(idx))
+            rescan_action.triggered.connect(lambda checked=False, idx=block_idx: main_window.issue_scan_handler.rescan_issues_for_single_block(idx))
 
         if hasattr(main_window, 'app_action_handler') and hasattr(main_window.app_action_handler, 'calculate_widths_for_block_action'):
             calc_widths_action = menu.addAction(f"Calculate Line Widths for Block '{block_name}'")

@@ -466,7 +466,7 @@ class ProjectActionHandler(BaseHandler):
 
         # Perform initial scan
         if hasattr(self.mw, 'app_action_handler'):
-            self.mw.app_action_handler._perform_initial_silent_scan_all_issues()
+            self.mw.issue_scan_handler._perform_initial_silent_scan_all_issues()
 
         # Update UI
         self.ui_updater.populate_blocks()

@@ -472,7 +472,7 @@ class TextAutofixLogic:
                 if self.mw.original_text_edit.toPlainText() != original_text_for_display:
                     self.mw.original_text_edit.setPlainText(original_text_for_display)
 
-            self.mw.app_action_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False)
+            self.mw.issue_scan_handler._perform_issues_scan_for_block(block_idx, is_single_block_scan=True, use_default_mappings_in_scan=False)
             self.ui_updater.populate_strings_for_block(block_idx) 
             
             self.ui_updater.update_status_bar()
