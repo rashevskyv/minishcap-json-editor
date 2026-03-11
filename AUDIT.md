@@ -247,6 +247,9 @@ def load_game_plugin(self):
 - Методи, що викликаються тільки зсередини: замінити на прямі виклики (`self.plugin_handler.load_game_plugin()`)
 - Методи, що є частиною публічного API: залишити, але задокументувати чому
 
+> [!NOTE]
+> ✅ **ВИРІШЕНО** (2026-03-11): Видалено порожні методи-обгортки з `main.py` (`force_focus`, `setup_plugin_ui`, `load_game_plugin` тощо). Всі модулі тепер використовують прямі виклики відповідних хендлерів.
+
 ---
 
 ### 3.3. `DummyEditor` всередині `__init__`
@@ -271,6 +274,9 @@ class DummyEditor:
 **Рішення:**
 - Функція `calculate_string_width` повинна приймати `font_map` та `threshold` як аргументи, а не об'єкт редактора
 - Видалити `DummyEditor`
+
+> [!NOTE]
+> ✅ **ВИРІШЕНО** (2026-03-11): `DummyEditor` повністю видалено з `list_selection_handler.py`. Ширина розраховується функцією без необхідності імітації віджету редактора.
 
 ---
 
@@ -305,6 +311,9 @@ def create_new_project_action(self):
 **Рішення:**
 - `AppActionHandler` не має обгортати `ProjectActionHandler` — зовнішній код повинен викликати `ProjectActionHandler` напряму
 - Або об'єднати їх в один клас
+
+> [!NOTE]
+> ✅ **ВИРІШЕНО** (2026-03-11): Видалено всі дублюючі делегати проектних дій з `AppActionHandler`. UI-сигнали (`ui/main_window/main_window_event_handler.py`) тепер під'єднані до методів `ProjectActionHandler` напряму.
 
 ---
 

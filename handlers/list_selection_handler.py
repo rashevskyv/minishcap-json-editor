@@ -5,24 +5,11 @@ from PyQt5.QtGui import QTextCursor, QTextBlockFormat, QColor, QTextBlock
 from .base_handler import BaseHandler
 from utils.logging_utils import log_debug
 from utils.utils import calculate_string_width, remove_all_tags, ALL_TAGS_PATTERN
-from components.editor.paint_handlers import LNETPaintHandlers
 
 class ListSelectionHandler(BaseHandler):
     def __init__(self, main_window, data_processor, ui_updater):
         super().__init__(main_window, data_processor, ui_updater)
         self._restoring_selection = False
-        if hasattr(self.mw, 'preview_text_edit') and hasattr(self.mw.preview_text_edit, 'paint_handler'):
-            self._paint_handler_for_blue_rule = self.mw.preview_text_edit.paint_handler 
-        else:
-            class DummyEditor:
-                def __init__(self):
-                    self.font_map = {} 
-                    self.LINE_WIDTH_WARNING_THRESHOLD_PIXELS = 208
-                def window(self):
-                    return None
-            self._paint_handler_for_blue_rule = LNETPaintHandlers(DummyEditor())
-
-
     def block_selected(self, current_item, previous_item):
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         

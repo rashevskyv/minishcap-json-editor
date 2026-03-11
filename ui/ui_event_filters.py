@@ -52,11 +52,11 @@ class MainWindowEventFilter(QObject):
             if event.key() == Qt.Key_F3:
                 if event.modifiers() & Qt.ShiftModifier:
                     log_debug("EventFilter: Shift+F3 pressed - Find Previous")
-                    self.mw.execute_find_previous_shortcut()
+                    self.mw.helper.execute_find_previous_shortcut()
                     return True 
                 else:
                     log_debug("EventFilter: F3 pressed - Find Next")
-                    self.mw.execute_find_next_shortcut()
+                    self.mw.helper.execute_find_next_shortcut()
                     return True
             
         return super().eventFilter(obj, event)

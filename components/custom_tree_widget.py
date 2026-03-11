@@ -119,12 +119,12 @@ class CustomTreeWidget(QTreeWidget):
 
         menu.addSeparator()
 
-        current_markers = main_window.get_block_color_markers(block_idx)
+        current_markers = main_window.block_handler.get_block_color_markers(block_idx)
         for color_name, q_color in self.color_marker_definitions.items():
             action = QAction(self._create_color_icon(q_color), f"Mark {color_name.capitalize()}", menu)
             action.setCheckable(True)
             action.setChecked(color_name in current_markers)
-            action.triggered.connect(lambda checked, b_idx=block_idx, c_name=color_name: main_window.toggle_block_color_marker(b_idx, c_name))
+            action.triggered.connect(lambda checked, b_idx=block_idx, c_name=color_name: main_window.block_handler.toggle_block_color_marker(b_idx, c_name))
             menu.addAction(action)
 
         menu.addSeparator()

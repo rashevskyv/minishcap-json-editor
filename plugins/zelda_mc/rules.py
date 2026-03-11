@@ -98,7 +98,7 @@ class GameRules(BaseGameRules):
                 'text': 'Check Tags Mismatch',
                 'tooltip': 'Check for tags mismatch between original and translation',
                 'shortcut': None, 
-                'handler': self.mw.trigger_check_tags_action,
+                'handler': self.mw.plugin_handler.trigger_check_tags_action,
                 'menu': 'Tools'
             }
         ]

@@ -123,8 +123,8 @@ class CustomListItemDelegate(QStyledItemDelegate):
             if hasattr(main_window, 'unsaved_block_indices'):
                  has_unsaved_changes_in_block = block_idx_data in main_window.unsaved_block_indices
             
-            if hasattr(main_window, 'get_block_color_markers'):
-                active_color_markers_for_block = main_window.get_block_color_markers(block_idx_data)
+            if hasattr(main_window, 'block_handler') and hasattr(main_window.block_handler, 'get_block_color_markers'):
+                active_color_markers_for_block = main_window.block_handler.get_block_color_markers(block_idx_data)
 
             if hasattr(main_window, 'current_game_rules') and main_window.current_game_rules:
                 problem_definitions = main_window.current_game_rules.get_problem_definitions()

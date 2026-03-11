@@ -42,25 +42,25 @@ class MainWindowEventHandler:
 
         # Project actions
         if hasattr(self.mw, 'new_project_action'):
-            self.mw.new_project_action.triggered.connect(self.mw.app_action_handler.create_new_project_action)
+            self.mw.new_project_action.triggered.connect(self.mw.project_action_handler.create_new_project_action)
         if hasattr(self.mw, 'open_project_action'):
-            self.mw.open_project_action.triggered.connect(self.mw.app_action_handler.open_project_action)
+            self.mw.open_project_action.triggered.connect(self.mw.project_action_handler.open_project_action)
         if hasattr(self.mw, 'close_project_action'):
-            self.mw.close_project_action.triggered.connect(self.mw.app_action_handler.close_project_action)
+            self.mw.close_project_action.triggered.connect(self.mw.project_action_handler.close_project_action)
         if hasattr(self.mw, 'import_block_action'):
-            self.mw.import_block_action.triggered.connect(self.mw.app_action_handler.import_block_action)
+            self.mw.import_block_action.triggered.connect(self.mw.project_action_handler.import_block_action)
         if hasattr(self.mw, 'add_block_button'):
-            self.mw.add_block_button.clicked.connect(self.mw.app_action_handler.import_block_action)
+            self.mw.add_block_button.clicked.connect(self.mw.project_action_handler.import_block_action)
 
         # Block toolbar buttons
         if hasattr(self.mw, 'delete_block_button'):
-            self.mw.delete_block_button.clicked.connect(self.mw.app_action_handler.delete_block_action)
+            self.mw.delete_block_button.clicked.connect(self.mw.project_action_handler.delete_block_action)
         if hasattr(self.mw, 'rename_block_button'):
             self.mw.rename_block_button.clicked.connect(lambda: self.mw.list_selection_handler.rename_block(self.mw.block_list_widget.currentItem()))
         if hasattr(self.mw, 'move_block_up_button'):
-            self.mw.move_block_up_button.clicked.connect(self.mw.app_action_handler.move_block_up_action)
+            self.mw.move_block_up_button.clicked.connect(self.mw.project_action_handler.move_block_up_action)
         if hasattr(self.mw, 'move_block_down_button'):
-            self.mw.move_block_down_button.clicked.connect(self.mw.app_action_handler.move_block_down_action)
+            self.mw.move_block_down_button.clicked.connect(self.mw.project_action_handler.move_block_down_action)
 
         # File actions
         if hasattr(self.mw, 'save_action'): self.mw.save_action.triggered.connect(self.mw.actions.trigger_save_action)

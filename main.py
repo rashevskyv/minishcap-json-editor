@@ -313,71 +313,15 @@ class MainWindow(QMainWindow):
             log_info("Spellchecker manager not found, skipping initialization")
 
         # Update recent projects menu
-        if hasattr(self, 'app_action_handler') and hasattr(self.app_action_handler, '_update_recent_projects_menu'):
-            self.app_action_handler._update_recent_projects_menu()
+        if hasattr(self, 'project_action_handler') and hasattr(self.project_action_handler, '_update_recent_projects_menu'):
+            self.project_action_handler._update_recent_projects_menu()
 
         QTimer.singleShot(100, self.force_focus)
 
         log_info("Main window initialization complete.")
     
-    def force_focus(self):
-        self.ui_handler.force_focus()
-
-    def setup_plugin_ui(self):
-        self.plugin_handler.setup_plugin_ui()
-
-    def load_game_plugin(self):
-        self.plugin_handler.load_game_plugin()
-
-
-    def get_block_color_markers(self, block_idx: int) -> set:
-        return self.block_handler.get_block_color_markers(block_idx)
-
-    def toggle_block_color_marker(self, block_idx: int, color_name: str):
-        self.block_handler.toggle_block_color_marker(block_idx, color_name) 
-
-    def _rebuild_unsaved_block_indices(self):
-        self.block_handler.rebuild_unsaved_block_indices()
-
     def keyPressEvent(self, event: QKeyEvent):
         super().keyPressEvent(event)
-
-
-    def execute_find_next_shortcut(self):
-        self.helper.execute_find_next_shortcut()
-
-    def execute_find_previous_shortcut(self):
-        self.helper.execute_find_previous_shortcut()
-    
-    def trigger_check_tags_action(self):
-        self.plugin_handler.trigger_check_tags_action()
-
-    def handle_edited_cursor_position_changed(self):
-        self.event_handler.handle_edited_cursor_position_changed()
-
-
-    def handle_edited_selection_changed(self):
-        self.event_handler.handle_edited_selection_changed()
-
-
-    def connect_signals(self):
-        self.event_handler.connect_signals()
-
-    def apply_font_size(self):
-        self.ui_handler.apply_font_size()
-
-
-    def handle_panel_find_next(self, query, case_sensitive, search_in_original, ignore_tags):
-        self.helper.handle_panel_find_next(query, case_sensitive, search_in_original, ignore_tags)
-
-    def handle_panel_find_previous(self, query, case_sensitive, search_in_original, ignore_tags):
-        self.helper.handle_panel_find_previous(query, case_sensitive, search_in_original, ignore_tags)
-
-    def toggle_search_panel(self):
-        self.helper.toggle_search_panel()
-
-    def hide_search_panel(self):
-        self.helper.hide_search_panel()
 
     # --- Settings Properties ---
     @property
@@ -414,17 +358,6 @@ class MainWindow(QMainWindow):
     def line_width_warning_threshold_pixels(self): return self.settings_manager.get('line_width_warning_threshold_pixels', DEFAULT_LINE_WIDTH_WARNING_THRESHOLD)
     @line_width_warning_threshold_pixels.setter
     def line_width_warning_threshold_pixels(self, val): self.settings_manager.set('line_width_warning_threshold_pixels', val)
-
-    def load_all_data_for_path(self, original_file_path, manually_set_edited_path=None, is_initial_load_from_settings=False):
-        self.helper.load_all_data_for_path(original_file_path, manually_set_edited_path, is_initial_load_from_settings)
-
-
-    def _apply_text_wrap_settings(self):
-        self.ui_handler.apply_text_wrap_settings()
-
-
-    def _reconfigure_all_highlighters(self):
-        self.ui_handler.reconfigure_all_highlighters()
 
 
     def closeEvent(self, event):

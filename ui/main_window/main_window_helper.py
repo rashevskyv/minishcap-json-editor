@@ -198,10 +198,10 @@ class MainWindowHelper:
             last_project_path = self.mw.recent_projects[0]
             if os.path.exists(last_project_path):
                 log_info(f"Auto-opening last project from recent projects: {last_project_path}")
-                if hasattr(self.mw.app_action_handler, '_open_recent_project'):
-                    self.mw.app_action_handler._open_recent_project(last_project_path)
+                if hasattr(self.mw.project_action_handler, '_open_recent_project'):
+                    self.mw.project_action_handler._open_recent_project(last_project_path)
                 else:
-                    log_info("app_action_handler._open_recent_project not available")
+                    log_info("project_action_handler._open_recent_project not available")
             else:
                 log_info(f"Last project path does not exist: {last_project_path}")
         # Priority 2: Auto-open last file if no projects
