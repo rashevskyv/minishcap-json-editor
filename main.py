@@ -65,20 +65,7 @@ from ui.main_window.main_window_block_handler import MainWindowBlockHandler
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
-        super().__init__()
-        log_info("Initializing main window...")
-
-        self.EDITOR_PLAYER_TAG = EDITOR_PLAYER_TAG
-        self.ORIGINAL_PLAYER_TAG = ORIGINAL_PLAYER_TAG
-        
-        self.general_font_family = GENERAL_APP_FONT_FAMILY
-        self.editor_font_family = MONOSPACE_EDITOR_FONT_FAMILY
-        self.display_name = ""
-
-        from core.state_manager import StateManager, AppState
-        self.state = StateManager()
-
+    # --- State Properties (Proxy to StateManager) ---
     @property
     def is_adjusting_cursor(self): return self.state.is_active(AppState.ADJUSTING_CURSOR)
     @is_adjusting_cursor.setter
@@ -309,13 +296,7 @@ class MainWindow(QMainWindow):
     @is_updating_search_panel_ui_state.setter
     def is_updating_search_panel_ui_state(self, v): self.state.set_active(AppState.UPDATING_SEARCH_PANEL_UI_STATE, v)
 
-        # Project management
-        self.project_manager = None  # Will be initialized when project is created/opened
-
-        from core.data_store import AppDataStore
-        self.data_store = AppDataStore()
-
-    # Data Properties (Proxy to AppDataStore)
+    # --- Data Properties (Proxy to AppDataStore) ---
     @property
     def json_path(self): return self.data_store.json_path
     @json_path.setter
@@ -380,6 +361,27 @@ class MainWindow(QMainWindow):
     def last_selected_string_index(self): return self.data_store.last_selected_string_index
     @last_selected_string_index.setter
     def last_selected_string_index(self, v): self.data_store.last_selected_string_index = v
+
+    def __init__(self):
+        super().__init__()
+        log_info("Initializing main window...")
+
+        self.EDITOR_PLAYER_TAG = EDITOR_PLAYER_TAG
+        self.ORIGINAL_PLAYER_TAG = ORIGINAL_PLAYER_TAG
+        
+        self.general_font_family = GENERAL_APP_FONT_FAMILY
+        self.editor_font_family = MONOSPACE_EDITOR_FONT_FAMILY
+        self.display_name = ""
+
+        from core.state_manager import StateManager, AppState
+        self.state = StateManager()
+
+        from core.data_store import AppDataStore
+        self.data_store = AppDataStore()
+
+        # Project management
+        self.project_manager = None  # Will be initialized when project is created/opened
+
         self.last_cursor_position_in_edited = 0
         self.previous_cursor_pos = 0
         self.last_edited_text_edit_scroll_value_v = 0
