@@ -1,8 +1,8 @@
 # --- START OF FILE components/custom_list_item_delegate.py ---
 # --- START OF FILE components/CustomListItemDelegate.py ---
-from PyQt5.QtWidgets import QStyledItemDelegate, QStyle, QStyleOptionViewItem
+from PyQt5.QtWidgets import QStyledItemDelegate, QStyle, QStyleOptionViewItem, QToolTip
 from PyQt5.QtGui import QPainter, QColor, QPalette, QBrush, QPen, QFontMetrics, QFont
-from PyQt5.QtCore import QRect, Qt, QPoint, QSize, QModelIndex
+from PyQt5.QtCore import QRect, Qt, QPoint, QSize, QModelIndex, QEvent
 from utils.logging_utils import log_debug
 from utils.constants import LT_PREVIEW_SELECTED_LINE_COLOR, DT_PREVIEW_SELECTED_LINE_COLOR
 
@@ -204,3 +204,79 @@ class CustomListItemDelegate(QStyledItemDelegate):
             painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, elided_text)
 
         painter.restore()
+
+    def helpEvent(self, event, view, option, index) -> bool:
+        log_debug(f"Delegate: helpEvent called for event type {event.type()} on item {index.row()}")
+        if event.type() == QEvent.ToolTip:
+            main_window = self.list_widget.window() if self.list_widget else None
+            if not main_window:
+                return super().helpEvent(event, view, option, index)
+
+            item_rect = option.rect
+            mouse_pos = event.pos()
+            log_debug(f"Delegate: ToolTip event at {mouse_pos}, item_rect={item_rect}, index_row={index.row()}")
+            
+            # 1. Check Number Area
+            current_number_area_width = self._get_current_number_area_width(option)
+            number_rect = QRect(item_rect.left(), item_rect.top(), current_number_area_width, item_rect.height())
+            
+            if number_rect.contains(mouse_pos):
+                block_idx = index.data(Qt.UserRole)
+                if block_idx is not None:
+                    problem_definitions = {}
+                    if hasattr(main_window, 'current_game_rules') and main_window.current_game_rules:
+                        problem_definitions = main_window.current_game_rules.get_problem_definitions()
+                    
+                    if hasattr(main_window, 'ui_updater') and hasattr(main_window.ui_updater, '_get_aggregated_problems_for_block'):
+                        block_problem_counts = main_window.ui_updater._get_aggregated_problems_for_block(block_idx)
+                        
+                        tooltip_lines = []
+                        if problem_definitions and block_problem_counts:
+                            sorted_ids = sorted(block_problem_counts.keys(), key=lambda pid: problem_definitions.get(pid, {}).get("priority", 99))
+                            for pid in sorted_ids:
+                                count = block_problem_counts[pid]
+                                if count > 0:
+                                    prob_def = problem_definitions.get(pid, {})
+                                    name = prob_def.get("name", pid)
+                                    desc = prob_def.get("description", "")
+                                    tooltip_lines.append(f"<b>{name}</b>: {count} sublines<br><i>{desc}</i>")
+                        
+                        if tooltip_lines:
+                            log_debug(f"Delegate: Showing number tooltip for block_idx {block_idx}")
+                            QToolTip.showText(event.globalPos(), "<br><br>".join(tooltip_lines), view)
+                            return True
+                        else:
+                            log_debug(f"Delegate: No problems found for block_idx {block_idx}")
+
+            # 2. Check Color Markers Area
+            active_color_markers = set()
+            block_idx = index.data(Qt.UserRole)
+            if main_window and block_idx is not None and hasattr(main_window, 'block_handler'):
+                active_color_markers = main_window.block_handler.get_block_color_markers(block_idx)
+            
+            if active_color_markers:
+                color_marker_zone_x_start = number_rect.right() + self.padding_after_number_area
+                current_color_marker_x = color_marker_zone_x_start
+                sorted_active_markers = sorted(list(active_color_markers))
+                
+                marker_definitions = {}
+                if hasattr(main_window, 'current_game_rules') and main_window.current_game_rules:
+                    marker_definitions = main_window.current_game_rules.get_color_marker_definitions()
+
+                for i, color_name in enumerate(sorted_active_markers):
+                    if i >= self.max_color_markers: break
+                    
+                    marker_rect = QRect(current_color_marker_x, 
+                                        item_rect.top() + (item_rect.height() - self.color_marker_size) // 2,
+                                        self.color_marker_size, self.color_marker_size)
+                    
+                    if marker_rect.contains(mouse_pos):
+                        desc = marker_definitions.get(color_name, color_name.capitalize())
+                        QToolTip.showText(event.globalPos(), f"<b>{color_name.capitalize()} Marker</b><br>{desc}", view)
+                        return True
+                    
+                    current_color_marker_x += self.color_marker_size + self.color_marker_spacing
+
+        # If we reached here, we are not over number area or markers
+        QToolTip.hideText()
+        return super().helpEvent(event, view, option, index)

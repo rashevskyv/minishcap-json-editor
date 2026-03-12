@@ -1,7 +1,7 @@
 # --- START OF FILE components/custom_list_widget.py ---
 # --- START OF FILE components/CustomListWidget.py ---
 from PyQt5.QtWidgets import QListWidget, QListWidgetItem, QMenu, QAction
-from PyQt5.QtCore import Qt, QPoint, QSize
+from PyQt5.QtCore import Qt, QPoint, QSize, QEvent
 from PyQt5.QtGui import QIcon, QPixmap, QPainter, QColor
 from .custom_list_item_delegate import CustomListItemDelegate
 from utils.logging_utils import log_debug, log_error
@@ -16,6 +16,7 @@ class CustomListWidget(QListWidget):
         
         delegate = CustomListItemDelegate(self)
         self.setItemDelegate(delegate)
+        self.viewport().setMouseTracking(True)
 
         self.color_marker_definitions = {
             "red": QColor(Qt.red),
@@ -69,9 +70,14 @@ class CustomListWidget(QListWidget):
 
         menu.addSeparator()
 
+        marker_definitions = {}
+        if hasattr(main_window, 'current_game_rules') and main_window.current_game_rules:
+            marker_definitions = main_window.current_game_rules.get_color_marker_definitions()
+
         current_markers = main_window.block_handler.get_block_color_markers(block_idx)
         for color_name, q_color in self.color_marker_definitions.items():
-            action = QAction(self._create_color_icon(q_color), f"Mark {color_name.capitalize()}", menu)
+            label = marker_definitions.get(color_name, color_name.capitalize())
+            action = QAction(self._create_color_icon(q_color), f"Mark '{label}'", menu)
             action.setCheckable(True)
             action.setChecked(color_name in current_markers)
             action.triggered.connect(lambda checked, b_idx=block_idx, c_name=color_name: main_window.block_handler.toggle_block_color_marker(b_idx, c_name))
@@ -109,6 +115,19 @@ class CustomListWidget(QListWidget):
             generate_glossary = menu.addAction(f"AI Build Glossary for '{block_name}'")
             generate_glossary.triggered.connect(lambda checked=False, idx=block_idx: main_window.build_glossary_with_ai(idx))
         menu.exec_(self.mapToGlobal(pos))
+
+    def viewportEvent(self, event):
+        if event.type() == QEvent.ToolTip:
+            log_debug(f"CustomListWidget: viewport ToolTip event at {event.pos()}")
+            index = self.indexAt(event.pos())
+            if index.isValid():
+                delegate = self.itemDelegate(index)
+                if delegate:
+                    option = self.viewOptions()
+                    option.rect = self.visualRect(index)
+                    if delegate.helpEvent(event, self, option, index):
+                        return True
+        return super().viewportEvent(event)
 
     def _open_spellcheck_for_block(self, block_idx: int):
         """Open spellcheck dialog for a specific block."""

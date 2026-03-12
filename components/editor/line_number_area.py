@@ -1,14 +1,15 @@
 # --- START OF FILE components/editor/line_number_area.py ---
 # --- START OF FILE components/line_number_area.py ---
 # --- START OF FILE components/LineNumberArea.py ---
-from PyQt5.QtWidgets import QWidget
+from PyQt5.QtWidgets import QWidget, QToolTip
 from PyQt5.QtGui import QPainter, QColor, QPen, QMouseEvent
-from PyQt5.QtCore import Qt, QRect, QSize
+from PyQt5.QtCore import Qt, QRect, QSize, QPoint
 
 class LineNumberArea(QWidget):
     def __init__(self, editor):
         super().__init__(editor)
         self.codeEditor = editor 
+        self.setMouseTracking(True)
         
         self.odd_line_background = QColor(Qt.lightGray).lighter(115) 
         self.even_line_background = QColor(Qt.white) 
@@ -35,3 +36,12 @@ class LineNumberArea(QWidget):
         if event.button() == Qt.LeftButton:
             self.codeEditor.handle_line_number_click(event.pos().y())
         super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event: QMouseEvent):
+        # Delegate tooltip generation to the editor
+        self.codeEditor.handle_line_number_area_mouse_move(event)
+        super().mouseMoveEvent(event)
+
+    def leaveEvent(self, event):
+        QToolTip.hideText()
+        super().leaveEvent(event)

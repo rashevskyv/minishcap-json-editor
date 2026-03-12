@@ -73,3 +73,9 @@ DEFAULT_AUTOFIX_SETTINGS = {
     PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY: True,
     PROBLEM_SINGLE_WORD_SUBLINE: False
 }
+
+COLOR_MARKER_DEFINITIONS = {
+    "red": "Критична помилка або потребує повної перевірки",
+    "green": "Перевірено, помилок немає",
+    "blue": "Викликає сумніви або потребує уточнення"
+}

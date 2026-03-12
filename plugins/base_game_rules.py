@@ -64,6 +64,15 @@ class BaseGameRules:
     def get_problem_definitions(self) -> Dict[str, Dict[str, Any]]:
         return {}
 
+    def get_color_marker_definitions(self) -> Dict[str, str]:
+        """Returns descriptions for manual color markers."""
+        return {}
+
+    def get_spellcheck_ignore_pattern(self) -> str:
+        """Returns a regex pattern of sequences to ignore during spellcheck (e.g. tags, control codes)."""
+        # Default: ignore standard curly and square bracket tags
+        return r'\{[^}]*\}|\[[^\]]*\]'
+
     def analyze_subline(self,
                         text: str,
                         next_text: Optional[str],

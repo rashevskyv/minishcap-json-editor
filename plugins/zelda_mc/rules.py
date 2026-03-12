@@ -16,7 +16,8 @@ from .config import (
     PROBLEM_SHORT_LINE,
     PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY,
     PROBLEM_TAG_WARNING,
-    PROBLEM_SINGLE_WORD_SUBLINE
+    PROBLEM_SINGLE_WORD_SUBLINE,
+    COLOR_MARKER_DEFINITIONS
 )
 from .tag_manager import TagManager
 from .problem_analyzer import ProblemAnalyzer
@@ -82,6 +83,9 @@ class GameRules(BaseGameRules):
 
     def get_problem_definitions(self) -> Dict[str, Dict[str, Any]]:
         return self.problem_definitions_cache
+
+    def get_color_marker_definitions(self) -> Dict[str, str]:
+        return COLOR_MARKER_DEFINITIONS
 
     def get_short_problem_name(self, problem_id: str) -> str:
         if problem_id == PROBLEM_WIDTH_EXCEEDED: return "Width"

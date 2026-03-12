@@ -40,6 +40,10 @@ class TextEditEventFilter(QObject):
                         self.mw.list_selection_handler.navigate_to_problem_string(direction_down=True)
                     return True
                     
+        if event.type() == QEvent.ToolTip:
+            name = obj.objectName() if hasattr(obj, 'objectName') else str(obj)
+            log_debug(f"EventFilter: ToolTip event on {name}")
+            
         return super().eventFilter(obj, event)
 
 class MainWindowEventFilter(QObject):

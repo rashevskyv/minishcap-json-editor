@@ -24,6 +24,13 @@ Some markers might be rendered at **half-height** (for example, the purple Empty
 - **Blue (Single Word Subline)**: The subline consists only of one word. This usually looks awkward in the game dialog.
 - **Yellow (Tag Warning)**: A game control code tag inside `{}` or `[]` is either unknown, misspelled, or lacking a closing bracket.
 
+### Plugin Customization (descriptions & markers)
+All labels and descriptions for these markers are defined in the plugin's `config.py` file. You can customize them there:
+- **`PROBLEM_DEFINITIONS`**: A dictionary mapping problem IDs to their names, descriptions, colors, and priorities. These appear when you hover over the number area or the text with errors.
+- **`COLOR_MARKER_DEFINITIONS`**: A dictionary for manual markers (red, green, blue). You can change their descriptions here to match your workflow (e.g., "Red" -> "Needs Review").
+
+Descriptions from these dictionaries will appear as **tooltips** throughout the application (in the block list, editor view, and line number area).
+
 ## Setup
 
 ### 1. Prerequisites
@@ -126,6 +133,19 @@ See [CLAUDE.md](CLAUDE.md) for detailed development documentation including:
 - Plugin development
 - Adding new game support
 - Code organization
+
+## Plugins and Extensibility
+
+The workbench is highly modular. Each plugin in the `plugins/` directory is a self-contained unit that defines:
+1. **Rules (`rules.py`)**: Inherits from `BaseGameRules`. Manages tag parsing, pasted text processing, and UI actions.
+2. **Configuration (`config.py`)**: Defines constants, problem types, and marker descriptions.
+3. **Fonts (`fonts/` directory)**: Contains JSON font maps used for pixel-perfect width calculations.
+4. **Tag Logic (`tag_manager.py`, `tag_logic.py`)**: Handles game-specific control codes and formatting.
+
+To add a new game:
+1. Create a new directory in `plugins/`.
+2. Implement your rules by inheriting from `BaseGameRules`.
+3. Define your font maps and control codes.
 
 ## Logs
 

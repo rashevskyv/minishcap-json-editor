@@ -128,7 +128,6 @@ class UIUpdater:
                     dir_nodes[current_path] = dir_item
 
             item = self.mw.block_list_widget.create_item(display_name_with_issues, i, Qt.UserRole)
-            item.setToolTip(0, block_tooltip)
             parent_item = dir_nodes.get(dir_path, dir_nodes[""])
             parent_item.addChild(item)
 
@@ -189,7 +188,6 @@ class UIUpdater:
         
         if item.text(0) != display_name_with_issues:
             item.setText(0, display_name_with_issues)
-        item.setToolTip(0, block_tooltip)
 
     def update_status_bar(self):
         if not hasattr(self.mw, 'edited_text_edit') or not self.mw.edited_text_edit or \

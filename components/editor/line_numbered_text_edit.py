@@ -263,11 +263,9 @@ class LineNumberedTextEdit(QPlainTextEdit):
                 lines.append(f"<i>{entry.notes}</i>")
             tooltip_text = "<br>".join(lines)
             
-        if warning_tooltip:
-            if tooltip_text:
-                tooltip_text = f"{tooltip_text}<hr>{warning_tooltip}"
-            else:
-                tooltip_text = warning_tooltip
+        # USER_REQUEST: Tooltips should be EXCLUSIVELY on the number area.
+        # Warning tooltips from the main text area are now handled only by handle_line_number_area_mouse_move
+        # for the LineNumberArea. We keep glossary tooltips here if needed, but remove warning_tooltip logic.
 
         if tooltip_text and tooltip_text != getattr(self, '_current_combined_tooltip', None):
             QToolTip.showText(self.mapToGlobal(event.pos()), tooltip_text, self)
@@ -293,6 +291,71 @@ class LineNumberedTextEdit(QPlainTextEdit):
                 self.drag_start_pos = None
 
         super().mouseMoveEvent(event)
+
+    def handle_line_number_area_mouse_move(self, event: QMouseEvent):
+        # Calculate which line is at this Y position
+        line_idx = self._get_line_index_from_y(event.pos().y())
+        if line_idx == -1:
+            QToolTip.hideText()
+            return
+            
+        tooltip_text = self._get_line_area_tooltip(line_idx)
+        
+        if tooltip_text:
+            QToolTip.showText(event.globalPos(), tooltip_text, self.lineNumberArea)
+        else:
+            QToolTip.hideText()
+
+    def _get_line_index_from_y(self, y: int) -> int:
+        block = self.firstVisibleBlock()
+        top = int(self.blockBoundingGeometry(block).translated(self.contentOffset()).top())
+        bottom = top + int(self.blockBoundingRect(block).height())
+
+        while block.isValid() and top <= y:
+            if block.isVisible() and y >= top and y <= bottom:
+                return block.blockNumber()
+            block = block.next()
+            top = bottom
+            bottom = top + int(self.blockBoundingRect(block).height())
+        return -1
+
+    def _get_line_area_tooltip(self, line_idx: int) -> Optional[str]:
+        main_window = self.window()
+        if not hasattr(main_window, 'current_block_idx'):
+            return None
+            
+        block_idx = main_window.current_block_idx
+        problems = set()
+        
+        if self.objectName() == "preview_text_edit":
+            string_idx = line_idx
+            for key, probs in getattr(main_window, 'problems_per_subline', {}).items():
+                if key[0] == block_idx and key[1] == string_idx:
+                    problems.update(probs)
+        else:
+            if not hasattr(main_window, 'current_string_idx'):
+                return None
+            string_idx = main_window.current_string_idx
+            problems = getattr(main_window, 'problems_per_subline', {}).get((block_idx, string_idx, line_idx), set())
+            
+        tooltip_lines = []
+        if problems:
+            problem_definitions = main_window.current_game_rules.get_problem_definitions() if main_window.current_game_rules else {}
+            for prob_id in sorted(list(problems)):
+                prob_def = problem_definitions.get(prob_id, {})
+                desc = prob_def.get("description", prob_id)
+                name = prob_def.get("name", "")
+                
+                detection_config = getattr(main_window, 'detection_enabled', {})
+                if not detection_config.get(prob_id, True):
+                    continue
+
+                if name:
+                    tooltip_lines.append(f"<b>{name}</b>: {desc}")
+                else:
+                    tooltip_lines.append(desc)
+                    
+        return "<br>".join(tooltip_lines) if tooltip_lines else None
 
     def get_selected_lines(self):
         return sorted(list(self._selected_lines))
