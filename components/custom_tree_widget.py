@@ -13,7 +13,10 @@ class CustomTreeWidget(QTreeWidget):
         self.customContextMenuRequested.connect(self.show_context_menu)
         self.viewport().setMouseTracking(True)
         self.setMouseTracking(True)
+        
+        # Enable tooltips
         self.setAttribute(Qt.WA_AlwaysShowToolTips)
+        self.viewport().setAttribute(Qt.WA_AlwaysShowToolTips)
         
         from .custom_list_item_delegate import CustomListItemDelegate
         self.setItemDelegate(CustomListItemDelegate(self))
@@ -178,15 +181,19 @@ class CustomTreeWidget(QTreeWidget):
 
     def viewportEvent(self, event):
         if event.type() == QEvent.ToolTip:
+            # System ToolTip event
             log_debug(f"CustomTreeWidget: viewport ToolTip event at {event.pos()}")
+        elif event.type() == QEvent.MouseMove:
+            # Trigger our custom tooltip logic
             index = self.indexAt(event.pos())
             if index.isValid():
                 delegate = self.itemDelegate(index)
-                if delegate:
+                if delegate and hasattr(delegate, 'handle_tooltip'):
                     option = self.viewOptions()
                     option.rect = self.visualRect(index)
-                    if delegate.helpEvent(event, self, option, index):
-                        return True
+                    delegate.handle_tooltip(event, self, option, index)
+            else:
+                QToolTip.hideText()
         return super().viewportEvent(event)
 
     def _reveal_in_explorer(self, block_idx: int, is_translation: bool = False):
