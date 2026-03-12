@@ -76,52 +76,238 @@ class MainWindow(QMainWindow):
         self.editor_font_family = MONOSPACE_EDITOR_FONT_FAMILY
         self.display_name = ""
 
-        self.is_adjusting_cursor = False
-        self.is_adjusting_selection = False
-        self.is_programmatically_changing_text = False
-        self.is_restart_in_progress = False
-        self.is_closing = False
-        self.is_loading_data = False
-        self.is_saving_data = False
-        self.is_reverting_data = False
-        self.is_reloading_data = False
-        self.is_pasting_block = False
-        self.is_undoing_paste = False
-        self.is_auto_fixing = False
-        self.is_checking_tags = False
-        self.is_renaming_block = False
-        self.is_rebuilding_indices = False
-        self.is_updating_ui = False
-        self.is_updating_status_bar = False
-        self.is_updating_title = False
-        self.is_updating_block_list = False
-        self.is_updating_preview = False
-        self.is_updating_edited = False
-        self.is_updating_highlighters = False
-        self.is_updating_font = False
-        self.is_updating_theme = False
-        self.is_updating_settings = False
-        self.is_updating_plugin = False
-        self.is_updating_tag_mappings = False
-        self.is_updating_tag_colors = False
-        self.is_updating_tag_patterns = False
-        self.is_updating_tag_checkers = False
-        self.is_updating_text_fixers = False
-        self.is_updating_problem_analyzers = False
-        self.is_updating_import_rules = False
-        self.is_updating_game_rules = False
-        self.is_updating_search_panel = False
-        self.is_updating_search_results = False
-        self.is_updating_search_history = False
-        self.is_updating_search_settings = False
-        self.is_updating_search_state = False
-        self.is_updating_search_ui = False
-        self.is_updating_search_panel_ui = False
-        self.is_updating_search_panel_state = False
-        self.is_updating_search_panel_settings = False
-        self.is_updating_search_panel_history = False
-        self.is_updating_search_panel_results = False
-        self.is_updating_search_panel_ui_state = False
+        from core.state_manager import StateManager, AppState
+        self.state = StateManager()
+
+    @property
+    def is_adjusting_cursor(self): return self.state.is_active(AppState.ADJUSTING_CURSOR)
+    @is_adjusting_cursor.setter
+    def is_adjusting_cursor(self, v): self.state.set_active(AppState.ADJUSTING_CURSOR, v)
+
+    @property
+    def is_adjusting_selection(self): return self.state.is_active(AppState.ADJUSTING_SELECTION)
+    @is_adjusting_selection.setter
+    def is_adjusting_selection(self, v): self.state.set_active(AppState.ADJUSTING_SELECTION, v)
+
+    @property
+    def is_programmatically_changing_text(self): return self.state.is_active(AppState.PROGRAMMATIC_TEXT_CHANGE)
+    @is_programmatically_changing_text.setter
+    def is_programmatically_changing_text(self, v): self.state.set_active(AppState.PROGRAMMATIC_TEXT_CHANGE, v)
+
+    @property
+    def is_restart_in_progress(self): return self.state.is_active(AppState.RESTART_IN_PROGRESS)
+    @is_restart_in_progress.setter
+    def is_restart_in_progress(self, v): self.state.set_active(AppState.RESTART_IN_PROGRESS, v)
+
+    @property
+    def is_closing(self): return self.state.is_active(AppState.CLOSING)
+    @is_closing.setter
+    def is_closing(self, v): self.state.set_active(AppState.CLOSING, v)
+
+    @property
+    def is_loading_data(self): return self.state.is_active(AppState.LOADING_DATA)
+    @is_loading_data.setter
+    def is_loading_data(self, v): self.state.set_active(AppState.LOADING_DATA, v)
+
+    @property
+    def is_saving_data(self): return self.state.is_active(AppState.SAVING_DATA)
+    @is_saving_data.setter
+    def is_saving_data(self, v): self.state.set_active(AppState.SAVING_DATA, v)
+
+    @property
+    def is_reverting_data(self): return self.state.is_active(AppState.REVERTING_DATA)
+    @is_reverting_data.setter
+    def is_reverting_data(self, v): self.state.set_active(AppState.REVERTING_DATA, v)
+
+    @property
+    def is_reloading_data(self): return self.state.is_active(AppState.RELOADING_DATA)
+    @is_reloading_data.setter
+    def is_reloading_data(self, v): self.state.set_active(AppState.RELOADING_DATA, v)
+
+    @property
+    def is_pasting_block(self): return self.state.is_active(AppState.PASTING_BLOCK)
+    @is_pasting_block.setter
+    def is_pasting_block(self, v): self.state.set_active(AppState.PASTING_BLOCK, v)
+
+    @property
+    def is_undoing_paste(self): return self.state.is_active(AppState.UNDOING_PASTE)
+    @is_undoing_paste.setter
+    def is_undoing_paste(self, v): self.state.set_active(AppState.UNDOING_PASTE, v)
+
+    @property
+    def is_auto_fixing(self): return self.state.is_active(AppState.AUTO_FIXING)
+    @is_auto_fixing.setter
+    def is_auto_fixing(self, v): self.state.set_active(AppState.AUTO_FIXING, v)
+
+    @property
+    def is_checking_tags(self): return self.state.is_active(AppState.CHECKING_TAGS)
+    @is_checking_tags.setter
+    def is_checking_tags(self, v): self.state.set_active(AppState.CHECKING_TAGS, v)
+
+    @property
+    def is_renaming_block(self): return self.state.is_active(AppState.RENAMING_BLOCK)
+    @is_renaming_block.setter
+    def is_renaming_block(self, v): self.state.set_active(AppState.RENAMING_BLOCK, v)
+
+    @property
+    def is_rebuilding_indices(self): return self.state.is_active(AppState.REBUILDING_INDICES)
+    @is_rebuilding_indices.setter
+    def is_rebuilding_indices(self, v): self.state.set_active(AppState.REBUILDING_INDICES, v)
+
+    @property
+    def is_updating_ui(self): return self.state.is_active(AppState.UPDATING_UI)
+    @is_updating_ui.setter
+    def is_updating_ui(self, v): self.state.set_active(AppState.UPDATING_UI, v)
+
+    @property
+    def is_updating_status_bar(self): return self.state.is_active(AppState.UPDATING_STATUS_BAR)
+    @is_updating_status_bar.setter
+    def is_updating_status_bar(self, v): self.state.set_active(AppState.UPDATING_STATUS_BAR, v)
+
+    @property
+    def is_updating_title(self): return self.state.is_active(AppState.UPDATING_TITLE)
+    @is_updating_title.setter
+    def is_updating_title(self, v): self.state.set_active(AppState.UPDATING_TITLE, v)
+
+    @property
+    def is_updating_block_list(self): return self.state.is_active(AppState.UPDATING_BLOCK_LIST)
+    @is_updating_block_list.setter
+    def is_updating_block_list(self, v): self.state.set_active(AppState.UPDATING_BLOCK_LIST, v)
+
+    @property
+    def is_updating_preview(self): return self.state.is_active(AppState.UPDATING_PREVIEW)
+    @is_updating_preview.setter
+    def is_updating_preview(self, v): self.state.set_active(AppState.UPDATING_PREVIEW, v)
+
+    @property
+    def is_updating_edited(self): return self.state.is_active(AppState.UPDATING_EDITED)
+    @is_updating_edited.setter
+    def is_updating_edited(self, v): self.state.set_active(AppState.UPDATING_EDITED, v)
+
+    @property
+    def is_updating_highlighters(self): return self.state.is_active(AppState.UPDATING_HIGHLIGHTERS)
+    @is_updating_highlighters.setter
+    def is_updating_highlighters(self, v): self.state.set_active(AppState.UPDATING_HIGHLIGHTERS, v)
+
+    @property
+    def is_updating_font(self): return self.state.is_active(AppState.UPDATING_FONT)
+    @is_updating_font.setter
+    def is_updating_font(self, v): self.state.set_active(AppState.UPDATING_FONT, v)
+
+    @property
+    def is_updating_theme(self): return self.state.is_active(AppState.UPDATING_THEME)
+    @is_updating_theme.setter
+    def is_updating_theme(self, v): self.state.set_active(AppState.UPDATING_THEME, v)
+
+    @property
+    def is_updating_settings(self): return self.state.is_active(AppState.UPDATING_SETTINGS)
+    @is_updating_settings.setter
+    def is_updating_settings(self, v): self.state.set_active(AppState.UPDATING_SETTINGS, v)
+
+    @property
+    def is_updating_plugin(self): return self.state.is_active(AppState.UPDATING_PLUGIN)
+    @is_updating_plugin.setter
+    def is_updating_plugin(self, v): self.state.set_active(AppState.UPDATING_PLUGIN, v)
+
+    @property
+    def is_updating_tag_mappings(self): return self.state.is_active(AppState.UPDATING_TAG_MAPPINGS)
+    @is_updating_tag_mappings.setter
+    def is_updating_tag_mappings(self, v): self.state.set_active(AppState.UPDATING_TAG_MAPPINGS, v)
+
+    @property
+    def is_updating_tag_colors(self): return self.state.is_active(AppState.UPDATING_TAG_COLORS)
+    @is_updating_tag_colors.setter
+    def is_updating_tag_colors(self, v): self.state.set_active(AppState.UPDATING_TAG_COLORS, v)
+
+    @property
+    def is_updating_tag_patterns(self): return self.state.is_active(AppState.UPDATING_TAG_PATTERNS)
+    @is_updating_tag_patterns.setter
+    def is_updating_tag_patterns(self, v): self.state.set_active(AppState.UPDATING_TAG_PATTERNS, v)
+
+    @property
+    def is_updating_tag_checkers(self): return self.state.is_active(AppState.UPDATING_TAG_CHECKERS)
+    @is_updating_tag_checkers.setter
+    def is_updating_tag_checkers(self, v): self.state.set_active(AppState.UPDATING_TAG_CHECKERS, v)
+
+    @property
+    def is_updating_text_fixers(self): return self.state.is_active(AppState.UPDATING_TEXT_FIXERS)
+    @is_updating_text_fixers.setter
+    def is_updating_text_fixers(self, v): self.state.set_active(AppState.UPDATING_TEXT_FIXERS, v)
+
+    @property
+    def is_updating_problem_analyzers(self): return self.state.is_active(AppState.UPDATING_PROBLEM_ANALYZERS)
+    @is_updating_problem_analyzers.setter
+    def is_updating_problem_analyzers(self, v): self.state.set_active(AppState.UPDATING_PROBLEM_ANALYZERS, v)
+
+    @property
+    def is_updating_import_rules(self): return self.state.is_active(AppState.UPDATING_IMPORT_RULES)
+    @is_updating_import_rules.setter
+    def is_updating_import_rules(self, v): self.state.set_active(AppState.UPDATING_IMPORT_RULES, v)
+
+    @property
+    def is_updating_game_rules(self): return self.state.is_active(AppState.UPDATING_GAME_RULES)
+    @is_updating_game_rules.setter
+    def is_updating_game_rules(self, v): self.state.set_active(AppState.UPDATING_GAME_RULES, v)
+
+    @property
+    def is_updating_search_panel(self): return self.state.is_active(AppState.UPDATING_SEARCH_PANEL)
+    @is_updating_search_panel.setter
+    def is_updating_search_panel(self, v): self.state.set_active(AppState.UPDATING_SEARCH_PANEL, v)
+
+    @property
+    def is_updating_search_results(self): return self.state.is_active(AppState.UPDATING_SEARCH_RESULTS)
+    @is_updating_search_results.setter
+    def is_updating_search_results(self, v): self.state.set_active(AppState.UPDATING_SEARCH_RESULTS, v)
+
+    @property
+    def is_updating_search_history(self): return self.state.is_active(AppState.UPDATING_SEARCH_HISTORY)
+    @is_updating_search_history.setter
+    def is_updating_search_history(self, v): self.state.set_active(AppState.UPDATING_SEARCH_HISTORY, v)
+
+    @property
+    def is_updating_search_settings(self): return self.state.is_active(AppState.UPDATING_SEARCH_SETTINGS)
+    @is_updating_search_settings.setter
+    def is_updating_search_settings(self, v): self.state.set_active(AppState.UPDATING_SEARCH_SETTINGS, v)
+
+    @property
+    def is_updating_search_state(self): return self.state.is_active(AppState.UPDATING_SEARCH_STATE)
+    @is_updating_search_state.setter
+    def is_updating_search_state(self, v): self.state.set_active(AppState.UPDATING_SEARCH_STATE, v)
+
+    @property
+    def is_updating_search_ui(self): return self.state.is_active(AppState.UPDATING_SEARCH_UI)
+    @is_updating_search_ui.setter
+    def is_updating_search_ui(self, v): self.state.set_active(AppState.UPDATING_SEARCH_UI, v)
+
+    @property
+    def is_updating_search_panel_ui(self): return self.state.is_active(AppState.UPDATING_SEARCH_PANEL_UI)
+    @is_updating_search_panel_ui.setter
+    def is_updating_search_panel_ui(self, v): self.state.set_active(AppState.UPDATING_SEARCH_PANEL_UI, v)
+
+    @property
+    def is_updating_search_panel_state(self): return self.state.is_active(AppState.UPDATING_SEARCH_PANEL_STATE)
+    @is_updating_search_panel_state.setter
+    def is_updating_search_panel_state(self, v): self.state.set_active(AppState.UPDATING_SEARCH_PANEL_STATE, v)
+
+    @property
+    def is_updating_search_panel_settings(self): return self.state.is_active(AppState.UPDATING_SEARCH_PANEL_SETTINGS)
+    @is_updating_search_panel_settings.setter
+    def is_updating_search_panel_settings(self, v): self.state.set_active(AppState.UPDATING_SEARCH_PANEL_SETTINGS, v)
+
+    @property
+    def is_updating_search_panel_history(self): return self.state.is_active(AppState.UPDATING_SEARCH_PANEL_HISTORY)
+    @is_updating_search_panel_history.setter
+    def is_updating_search_panel_history(self, v): self.state.set_active(AppState.UPDATING_SEARCH_PANEL_HISTORY, v)
+
+    @property
+    def is_updating_search_panel_results(self): return self.state.is_active(AppState.UPDATING_SEARCH_PANEL_RESULTS)
+    @is_updating_search_panel_results.setter
+    def is_updating_search_panel_results(self, v): self.state.set_active(AppState.UPDATING_SEARCH_PANEL_RESULTS, v)
+
+    @property
+    def is_updating_search_panel_ui_state(self): return self.state.is_active(AppState.UPDATING_SEARCH_PANEL_UI_STATE)
+    @is_updating_search_panel_ui_state.setter
+    def is_updating_search_panel_ui_state(self, v): self.state.set_active(AppState.UPDATING_SEARCH_PANEL_UI_STATE, v)
 
         # Project management
         self.project_manager = None  # Will be initialized when project is created/opened

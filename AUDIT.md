@@ -51,6 +51,57 @@
 - Додавання нового функціоналу вимагає нового прапорця та ручної перевірки всіх місць
 - Легко забути встановити/зняти прапорець — ризик дедлоку або неконсистентного стану
 -  Значна частина прапорців не використовується взагалі (мертвий код)
+54: 
+55: **Повний список 46 прапорців (до рефакторингу):**
+56: 
+57: | № | Назва прапорця (Boolean Flag) | Статус |
+58: |---|---|---|
+59: | 1 | `is_adjusting_cursor` | ✅ Переведено на StateManager |
+60: | 2 | `is_adjusting_selection` | ✅ Переведено на StateManager |
+61: | 3 | `is_programmatically_changing_text` | ✅ Переведено на StateManager |
+62: | 4 | `is_restart_in_progress` | ✅ Переведено на StateManager |
+63: | 5 | `is_closing` | ✅ Переведено на StateManager |
+64: | 6 | `is_loading_data` | ✅ Переведено на StateManager |
+65: | 7 | `is_saving_data` | ✅ Переведено на StateManager |
+66: | 8 | `is_reverting_data` | ✅ Переведено на StateManager |
+67: | 9 | `is_reloading_data` | ✅ Переведено на StateManager |
+68: | 10 | `is_pasting_block` | ✅ Переведено на StateManager |
+69: | 11 | `is_undoing_paste` | ✅ Переведено на StateManager |
+70: | 12 | `is_auto_fixing` | ✅ Переведено на StateManager |
+71: | 13 | `is_checking_tags` | ✅ Переведено на StateManager |
+72: | 14 | `is_renaming_block` | ✅ Переведено на StateManager |
+73: | 15 | `is_rebuilding_indices` | ✅ Переведено на StateManager |
+74: | 16 | `is_updating_ui` | ✅ Переведено на StateManager |
+75: | 17 | `is_updating_status_bar` | ✅ Переведено на StateManager |
+76: | 18 | `is_updating_title` | ✅ Переведено на StateManager |
+77: | 19 | `is_updating_block_list` | ✅ Переведено на StateManager |
+78: | 20 | `is_updating_preview` | ✅ Переведено на StateManager |
+79: | 21 | `is_updating_edited` | ✅ Переведено на StateManager |
+80: | 22 | `is_updating_highlighters` | ✅ Переведено на StateManager |
+81: | 23 | `is_updating_font` | ✅ Переведено на StateManager |
+82: | 24 | `is_updating_theme` | ✅ Переведено на StateManager |
+83: | 25 | `is_updating_settings` | ✅ Переведено на StateManager |
+84: | 26 | `is_updating_plugin` | ✅ Переведено на StateManager |
+85: | 27 | `is_updating_tag_mappings` | ✅ Переведено на StateManager |
+86: | 28 | `is_updating_tag_colors` | ✅ Переведено на StateManager |
+87: | 29 | `is_updating_tag_patterns` | ✅ Переведено на StateManager |
+88: | 30 | `is_updating_tag_checkers` | ✅ Переведено на StateManager |
+89: | 31 | `is_updating_text_fixers` | ✅ Переведено на StateManager |
+90: | 32 | `is_updating_problem_analyzers` | ✅ Переведено на StateManager |
+91: | 33 | `is_updating_import_rules` | ✅ Переведено на StateManager |
+92: | 34 | `is_updating_game_rules` | ✅ Переведено на StateManager |
+93: | 35 | `is_updating_search_panel` | ✅ Переведено на StateManager |
+94: | 36 | `is_updating_search_results` | ✅ Переведено на StateManager |
+95: | 37 | `is_updating_search_history` | ✅ Переведено на StateManager |
+96: | 38 | `is_updating_search_settings` | ✅ Переведено на StateManager |
+97: | 39 | `is_updating_search_state` | ✅ Переведено на StateManager |
+98: | 40 | `is_updating_search_ui` | ✅ Переведено на StateManager |
+99: | 41 | `is_updating_search_panel_ui` | ✅ Переведено на StateManager |
+100: | 42 | `is_updating_search_panel_state` | ✅ Переведено на StateManager |
+101: | 43 | `is_updating_search_panel_settings` | ✅ Переведено на StateManager |
+102: | 44 | `is_updating_search_panel_history` | ✅ Переведено на StateManager |
+103: | 45 | `is_updating_search_panel_results` | ✅ Переведено на StateManager |
+104: | 46 | `is_updating_search_panel_ui_state` | ✅ Переведено на StateManager |
 
 **Рішення:**
 
