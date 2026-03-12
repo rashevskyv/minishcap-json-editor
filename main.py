@@ -312,16 +312,74 @@ class MainWindow(QMainWindow):
         # Project management
         self.project_manager = None  # Will be initialized when project is created/opened
 
-        # Legacy data structures (still used internally)
-        self.json_path = None; self.edited_json_path = None
-        self.data = []; self.edited_data = {}; self.edited_file_data = []
-        self.block_names = {}; self.current_block_idx = -1; self.current_string_idx = -1
-        self.unsaved_changes = False
-        self.unsaved_block_indices = set()
-        self.problems_per_subline = {}
-        
-        self.last_selected_block_index = -1
-        self.last_selected_string_index = -1
+        from core.data_store import AppDataStore
+        self.data_store = AppDataStore()
+
+    # Data Properties (Proxy to AppDataStore)
+    @property
+    def json_path(self): return self.data_store.json_path
+    @json_path.setter
+    def json_path(self, v): self.data_store.json_path = v
+
+    @property
+    def edited_json_path(self): return self.data_store.edited_json_path
+    @edited_json_path.setter
+    def edited_json_path(self, v): self.data_store.edited_json_path = v
+
+    @property
+    def data(self): return self.data_store.data
+    @data.setter
+    def data(self, v): self.data_store.data = v
+
+    @property
+    def edited_data(self): return self.data_store.edited_data
+    @edited_data.setter
+    def edited_data(self, v): self.data_store.edited_data = v
+
+    @property
+    def edited_file_data(self): return self.data_store.edited_file_data
+    @edited_file_data.setter
+    def edited_file_data(self, v): self.data_store.edited_file_data = v
+
+    @property
+    def block_names(self): return self.data_store.block_names
+    @block_names.setter
+    def block_names(self, v): self.data_store.block_names = v
+
+    @property
+    def current_block_idx(self): return self.data_store.current_block_idx
+    @current_block_idx.setter
+    def current_block_idx(self, v): self.data_store.current_block_idx = v
+
+    @property
+    def current_string_idx(self): return self.data_store.current_string_idx
+    @current_string_idx.setter
+    def current_string_idx(self, v): self.data_store.current_string_idx = v
+
+    @property
+    def unsaved_changes(self): return self.data_store.unsaved_changes
+    @unsaved_changes.setter
+    def unsaved_changes(self, v): self.data_store.unsaved_changes = v
+
+    @property
+    def unsaved_block_indices(self): return self.data_store.unsaved_block_indices
+    @unsaved_block_indices.setter
+    def unsaved_block_indices(self, v): self.data_store.unsaved_block_indices = v
+
+    @property
+    def problems_per_subline(self): return self.data_store.problems_per_subline
+    @problems_per_subline.setter
+    def problems_per_subline(self, v): self.data_store.problems_per_subline = v
+
+    @property
+    def last_selected_block_index(self): return self.data_store.last_selected_block_index
+    @last_selected_block_index.setter
+    def last_selected_block_index(self, v): self.data_store.last_selected_block_index = v
+
+    @property
+    def last_selected_string_index(self): return self.data_store.last_selected_string_index
+    @last_selected_string_index.setter
+    def last_selected_string_index(self, v): self.data_store.last_selected_string_index = v
         self.last_cursor_position_in_edited = 0
         self.previous_cursor_pos = 0
         self.last_edited_text_edit_scroll_value_v = 0
