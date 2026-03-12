@@ -4,7 +4,7 @@ from collections import OrderedDict
 from PyQt5.QtGui import QTextCharFormat, QColor, QFont
 from plugins.base_game_rules import BaseGameRules
 from .config import (PROBLEM_DEFINITIONS, DEFAULT_AUTOFIX_SETTINGS, DEFAULT_DETECTION_SETTINGS, DEFAULT_TAG_MAPPINGS_POKEMON_FR, 
-                     P_NEWLINE_MARKER, L_NEWLINE_MARKER, P_VISUAL_EDITOR_MARKER, L_VISUAL_EDITOR_MARKER)
+                     P_NEWLINE_MARKER, L_NEWLINE_MARKER, P_VISUAL_EDITOR_MARKER, L_VISUAL_EDITOR_MARKER, CONTROL_CODES)
 from .tag_manager import TagManager
 from .problem_analyzer import ProblemAnalyzer
 from .text_fixer import TextFixer

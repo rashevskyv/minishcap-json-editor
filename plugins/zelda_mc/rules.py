@@ -17,7 +17,8 @@ from .config import (
     PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY,
     PROBLEM_TAG_WARNING,
     PROBLEM_SINGLE_WORD_SUBLINE,
-    COLOR_MARKER_DEFINITIONS
+    COLOR_MARKER_DEFINITIONS,
+    CONTROL_CODES
 )
 from .tag_manager import TagManager
 from .problem_analyzer import ProblemAnalyzer

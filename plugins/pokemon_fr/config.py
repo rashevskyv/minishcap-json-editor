@@ -84,3 +84,5 @@ DEFAULT_TAG_MAPPINGS_POKEMON_FR = {
     "{ID}{NO}": "{ID}{NO}",
     "{PKMN}": "{PKMN}"
 }
+
+CONTROL_CODES = ["\\p", "\\l", "\\n"]

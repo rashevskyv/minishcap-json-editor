@@ -71,7 +71,26 @@ class BaseGameRules:
     def get_spellcheck_ignore_pattern(self) -> str:
         """Returns a regex pattern of sequences to ignore during spellcheck (e.g. tags, control codes)."""
         # Default: ignore standard curly and square bracket tags
-        return r'\{[^}]*\}|\[[^\]]*\]'
+        patterns = [r'\{[^}]*\}', r'\[[^\]]*\]']
+        
+        # Add control codes from plugin if defined
+        # We check both class attribute and module-level constant
+        codes = []
+        if hasattr(self, 'CONTROL_CODES'):
+            codes = self.CONTROL_CODES
+        else:
+            # Try to get from the module where the subclass is defined
+            import sys
+            module = sys.modules.get(self.__class__.__module__)
+            if module and hasattr(module, 'CONTROL_CODES'):
+                codes = module.CONTROL_CODES
+        
+        if codes:
+            # Escape each code to handle special regex characters like backslash or dots
+            escaped_codes = [re.escape(c) for c in codes]
+            patterns.extend(escaped_codes)
+            
+        return '|'.join(patterns)
 
     def analyze_subline(self,
                         text: str,

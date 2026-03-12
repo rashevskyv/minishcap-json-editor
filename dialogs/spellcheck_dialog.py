@@ -73,6 +73,7 @@ class SpellcheckDialog(QDialog):
 
         self.misspelled_list = QListWidget()
         self.misspelled_list.itemClicked.connect(self.jump_to_word_from_list)
+        self.misspelled_list.itemDoubleClicked.connect(self._on_list_double_click)
         left_layout.addWidget(self.misspelled_list)
 
         splitter.addWidget(left_widget)
@@ -287,23 +288,58 @@ class SpellcheckDialog(QDialog):
             self.status_label.setText(f"Error loading spellchecker: {e}")
 
     def find_misspelled_words(self):
-        """Find all misspelled words in the text."""
+        """Find all misspelled words in the text, ignoring tags and control codes."""
         self.misspelled_words = []
-        word_pattern = re.compile(r'[a-zA-Zа-яА-ЯіїІїЄєґҐ\']+'   )
+        word_pattern = re.compile(r'[a-zA-Zа-яА-ЯіїІїЄєґҐ\']+')
+
+        # Get ignore pattern from plugin if available
+        ignore_pattern = None
+        main_window = self._find_main_window()
+        if main_window and hasattr(main_window, 'current_game_rules'):
+            ignore_pattern = main_window.current_game_rules.get_spellcheck_ignore_pattern()
+        
+        ignore_re = re.compile(ignore_pattern) if ignore_pattern else None
 
         lines = self.current_text.split('\n')
         char_offset = 0
         for line_idx, line in enumerate(lines):
-            # Replace middle dots with spaces for word detection
-            line_with_spaces = line.replace('·', ' ')
+            # 1. First, create a version of the line where ignored patterns are replaced by spaces 
+            # of the same length to keep offsets correct for highlighting.
+            line_cleaned = line
+            if ignore_re:
+                # We replace matches with spaces to maintain character offsets
+                def replace_with_spaces(match):
+                    return ' ' * len(match.group(0))
+                line_cleaned = ignore_re.sub(replace_with_spaces, line)
+            
+            # 2. Replace middle dots with spaces for word detection
+            line_for_detection = line_cleaned.replace('·', ' ')
 
-            for match in word_pattern.finditer(line_with_spaces):
+            # 3. Find words in the cleaned line
+            for match in word_pattern.finditer(line_for_detection):
                 word = match.group(0)
                 if self.spellchecker_manager.is_misspelled(word):
                     start_pos = char_offset + match.start()
                     end_pos = char_offset + match.end()
                     self.misspelled_words.append((start_pos, end_pos, word, line_idx))
+                    
             char_offset += len(line) + 1  # +1 for newline character
+
+    def _find_main_window(self):
+        """Helper to navigate up to find the QMainWindow."""
+        from PyQt5.QtWidgets import QMainWindow
+        parent = self.parent()
+        while parent:
+            if isinstance(parent, QMainWindow):
+                return parent
+            parent = parent.parent() if hasattr(parent, 'parent') else None
+        
+        # Fallback to top level widgets
+        from PyQt5.QtWidgets import QApplication
+        for widget in QApplication.topLevelWidgets():
+            if isinstance(widget, QMainWindow) and widget.objectName() != '':
+                return widget
+        return None
 
     def pre_highlight_all_misspelled_words(self):
         """Highlight all misspelled words with red wavy underline."""
@@ -424,12 +460,19 @@ class SpellcheckDialog(QDialog):
             cursor.mergeCharFormat(fmt)
 
     def jump_to_word_from_list(self, item):
-        """Jump to word when clicked in the misspelled words list."""
+        """Jump to word when clicked in the misspelled words list and navigate in main window."""
         clicked_index = self.misspelled_list.row(item)
         if clicked_index != self.current_word_index:
             self.clear_current_word_highlight()
             self.current_word_index = clicked_index
             self.show_current_word()
+            
+            # Navigate in main window (Request 5)
+            if clicked_index < len(self.misspelled_words):
+                _, _, _, line_idx = self.misspelled_words[clicked_index]
+                if self.line_numbers and line_idx < len(self.line_numbers):
+                    string_number = self.line_numbers[line_idx]
+                    self._navigate_to_string_in_main_window(string_number)
 
     def ignore_word(self):
         """Ignore current word and move to next."""
@@ -516,10 +559,43 @@ class SpellcheckDialog(QDialog):
         """Get the corrected text."""
         return self.current_text
 
+    def _navigate_to_string_in_main_window(self, string_number: int):
+        """Helper to navigate to a specific string in the main window."""
+        if string_number is None:
+            return
+
+        main_window = self._find_main_window()
+        if main_window and hasattr(main_window, 'ui_updater'):
+            log_debug(f"SpellcheckDialog: Navigating to string {string_number}")
+
+            # 1. Update the current string index
+            main_window.current_string_idx = string_number
+
+            # 2. Select the string in the list
+            if hasattr(main_window, 'strings_list_widget'):
+                main_window.strings_list_widget.setCurrentRow(string_number)
+
+            # 3. Update text views
+            main_window.ui_updater.update_text_views()
+
+            # 4. Bring main window to front and give it focus
+            main_window.raise_()
+            main_window.activateWindow()
+            log_debug(f"SpellcheckDialog: Navigation to {string_number} complete")
+
+    def _on_list_double_click(self, item):
+        """Handle double-click on misspelled list item to navigate in main window."""
+        index = self.misspelled_list.row(item)
+        if index < len(self.misspelled_words):
+            _, _, _, line_idx = self.misspelled_words[index]
+            
+            # Get real string number from our line_numbers mapping
+            if self.line_numbers and line_idx < len(self.line_numbers):
+                string_number = self.line_numbers[line_idx]
+                self._navigate_to_string_in_main_window(string_number)
+
     def _on_text_double_click(self, event):
         """Handle double-click on text to navigate to string in main window."""
-        from PyQt5.QtWidgets import QMainWindow
-
         # Get the block number that was clicked
         cursor = self.text_edit.cursorForPosition(event.pos())
         block_number = cursor.blockNumber()
@@ -539,45 +615,7 @@ class SpellcheckDialog(QDialog):
                                 break
 
                 if string_number is not None:
-                    # Find the main window
-                    main_window = None
-                    parent = self.parent()
-                    while parent:
-                        if isinstance(parent, QMainWindow):
-                            main_window = parent
-                            break
-                        parent = parent.parent() if hasattr(parent, 'parent') else None
-
-                    # If not found via parent chain, try to find it differently
-                    if not main_window:
-                        from PyQt5.QtWidgets import QApplication
-                        for widget in QApplication.topLevelWidgets():
-                            if isinstance(widget, QMainWindow) and widget.objectName() != '':
-                                main_window = widget
-                                break
-
-                    if main_window and hasattr(main_window, 'ui_updater'):
-                        # Navigate to the string in the main window
-                        log_debug(f"SpellcheckDialog: Navigating to string {string_number}")
-
-                        # Get current block index from main window
-                        current_block_idx = getattr(main_window, 'current_block_index', -1)
-                        if current_block_idx != -1:
-                            # Select the string in the list
-                            if hasattr(main_window, 'strings_list_widget'):
-                                main_window.strings_list_widget.setCurrentRow(string_number)
-
-                            # Update the current string index
-                            main_window.current_string_idx = string_number
-
-                            # Update text views
-                            main_window.ui_updater.update_text_views()
-
-                            # Bring main window to front and give it focus
-                            main_window.raise_()
-                            main_window.activateWindow()
-
-                            log_debug(f"SpellcheckDialog: Navigation complete")
+                    self._navigate_to_string_in_main_window(string_number)
 
         # Call the original double click handler
         from PyQt5.QtWidgets import QPlainTextEdit
