@@ -64,10 +64,10 @@ def create_tag_button(editor, parent_widget, display: str, open_tag: str,
     if is_color:
         style = f"background-color: {display}; border: 1px solid black; border-radius: 3px;"
         btn.setStyleSheet(style)
-        btn.setToolTip(f"Обгорнути: {open_tag}{'...' + close_tag if close_tag else ''}")
+        btn.setToolTip(f"Wrap: {open_tag}{'...' + close_tag if close_tag else ''}")
     else:
         btn.setText(display)
-        btn.setToolTip(f"Вставити/Обгорнути: {open_tag}{'...' + close_tag if close_tag else ''}")
+        btn.setToolTip(f"Insert/Wrap: {open_tag}{'...' + close_tag if close_tag else ''}")
         btn.setStyleSheet("padding: 0px; font-size: 14px;")
 
     def on_click():

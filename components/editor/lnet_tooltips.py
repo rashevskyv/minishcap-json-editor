@@ -46,7 +46,7 @@ class LNETTooltipLogic:
             is_unsaved = (block_idx, string_idx) in getattr(main_window, 'edited_data', {})
         
         if is_unsaved:
-             tooltip_lines.append("<b>*</b>: Незбережені зміни")
+             tooltip_lines.append("<b>*</b>: Unsaved changes")
 
         # Check for Metadata indicators in Preview
         if is_preview:
@@ -56,11 +56,11 @@ class LNETTooltipLogic:
                 if "font_file" in string_meta:
                     from pathlib import Path
                     font_name = Path(string_meta['font_file']).name
-                    meta_info.append(f"шрифт (<b>{font_name}</b>)")
+                    meta_info.append(f"font (<b>{font_name}</b>)")
                 if "width" in string_meta:
-                    meta_info.append(f"ширину (<b>{string_meta['width']}px</b>)")
+                    meta_info.append(f"width (<b>{string_meta['width']}px</b>)")
                 
-                tooltip_lines.append(f"<span style='color: DarkViolet;'>■</span>: Рядок має індивідуальні налаштування: {', '.join(meta_info)}")
+                tooltip_lines.append(f"<span style='color: DarkViolet;'>■</span>: Line has individual settings: {', '.join(meta_info)}")
 
         if problems:
             problem_definitions = main_window.current_game_rules.get_problem_definitions() if main_window.current_game_rules else {}
