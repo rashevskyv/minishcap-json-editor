@@ -272,6 +272,10 @@ class UndoManager:
                     cursor.movePosition(QTextCursor.End)
                     self.mw.edited_text_edit.setTextCursor(cursor)
                 
+                # Perform necessary issue rescan
+                if hasattr(self.mw, 'editor_operation_handler'):
+                    self.mw.editor_operation_handler._rescan_issues_for_current_string(block_idx, string_idx, text)
+
                 # Perform necessary UI refreshes
                 self.mw.editor_operation_handler.preview_update_timer.start(50)
                 self.mw.ui_updater.update_title()
