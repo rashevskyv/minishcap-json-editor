@@ -135,51 +135,50 @@ class LNETLineNumberAreaPaintLogic:
                 filtered_problems = {p_id for p_id in problem_ids_for_this_qtextblock if detection_config.get(p_id, True)}
                 
                 if is_editor and filtered_problems:
-                    sorted_subline_problem_ids = sorted(
+                    sorted_probs = sorted(
                         list(filtered_problems),
                         key=lambda pid: problem_definitions.get(pid, {}).get("priority", 99)
                     )
                     
-                    # 1. Background (only for the highest priority problem if it's "Priority 1")
-                    highest_priority_pid = sorted_subline_problem_ids[0]
-                    highest_priority_def = problem_definitions.get(highest_priority_pid, {})
-                    highest_priority_val = highest_priority_def.get("priority", 99)
-                    
-                    has_priority_background = highest_priority_val == 1
-                    if has_priority_background:
-                        color_val = highest_priority_def.get("color")
-                        if color_val:
-                            bg_color_extra_info_area = QColor(color_val)
-                    
-                    # Paint numbers and background
+                    # Paint base backgrounds
                     painter.fillRect(number_part_rect, bg_color_number_area)
                     painter.fillRect(extra_info_part_rect, bg_color_extra_info_area)
                     
-                    # 2. Stripes for other problems
-                    problems_to_draw_as_stripes = sorted_subline_problem_ids
-                    # If we used the highest one for background, we can still repeat it as a stripe for consistency,
-                    # or skip it. The user said: "Якщо приоритет є, то відображаєш фарбованим фоном маркер найвищогно приоритета, всі інші смужками."
-                    # So we skip the highest one if it was used for background.
-                    if has_priority_background:
-                         problems_to_draw_as_stripes = sorted_subline_problem_ids[1:]
+                    # Indicator area starts at the beginning of the extra info part
+                    indicator_x = extra_info_part_rect.left() + 2
+                    indicator_width = 10
+                    indicator_top = top + 2
+                    indicator_height = line_height - 4
                     
-                    stripe_width = 3
-                    # Start stripes from the left of the extra area
-                    current_stripe_x = extra_info_part_rect.left() + 2
+                    # 1. Background color (highest priority or first)
+                    bg_prob_id = sorted_probs[0]
+                    bg_prob_def = problem_definitions.get(bg_prob_id, {})
+                    bg_color = QColor(bg_prob_def.get("color", Qt.transparent))
                     
-                    for prob_id in problems_to_draw_as_stripes:
-                        prob_def = problem_definitions.get(prob_id)
-                        if prob_def and "color" in prob_def:
-                            stripe_color = QColor(prob_def["color"])
-                            # Ensure stripes are visible
-                            if stripe_color.alpha() < 180:
-                                stripe_color.setAlpha(220)
-                            
-                            # Limit stripes to not overflow the extra area width
-                            if current_stripe_x + stripe_width <= extra_info_part_rect.right():
-                                stripe_rect = QRect(current_stripe_x, top + 2, stripe_width, line_height - 4)
-                                painter.fillRect(stripe_rect, stripe_color)
-                                current_stripe_x += stripe_width + 2
+                    # Ensure background color is somewhat opaque if it's too transparent
+                    if bg_color.alpha() < 120:
+                        bg_color.setAlpha(160)
+                        
+                    painter.fillRect(indicator_x, indicator_top, indicator_width, indicator_height, bg_color)
+                    
+                    # 2. Draw other warnings as thin stripes on top
+                    if len(sorted_probs) > 1:
+                        stripe_w = 2
+                        current_stripe_x = indicator_x + 1
+                        for prob_id in sorted_probs[1:]:
+                            prob_def = problem_definitions.get(prob_id, {})
+                            stripe_color = QColor(prob_def.get("color", Qt.transparent))
+                            if stripe_color.isValid():
+                                # Make stripes more visible
+                                if stripe_color.alpha() < 180:
+                                    stripe_color.setAlpha(220)
+                                
+                                # Draw a thin vertical bar over the background
+                                painter.fillRect(current_stripe_x, indicator_top + 1, stripe_w, indicator_height - 2, stripe_color)
+                                current_stripe_x += stripe_w + 1
+                                # Don't exceed the background block width
+                                if current_stripe_x + stripe_w > indicator_x + indicator_width:
+                                    break
                 else:
                     painter.fillRect(number_part_rect, bg_color_number_area)
                     painter.fillRect(extra_info_part_rect, bg_color_extra_info_area)
