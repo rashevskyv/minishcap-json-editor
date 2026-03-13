@@ -25,6 +25,18 @@ class TextHighlightManager:
         self._tag_highlight_timer = QTimer()
         self._tag_highlight_timer.setSingleShot(True)
         self._tag_highlight_timer.timeout.connect(self.clearTagInteractionHighlight)
+        
+        self._current_selected_lines = []
+        self._origin_line_number = None
+        self._origin_line_alpha = 1.0
+        
+        self._origin_stay_timer = QTimer()
+        self._origin_stay_timer.setSingleShot(True)
+        self._origin_stay_timer.timeout.connect(self._start_origin_fade)
+        
+        self._origin_fade_timer = QTimer()
+        self._origin_fade_timer.setInterval(50)
+        self._origin_fade_timer.timeout.connect(self._tick_origin_fade)
 
     def _create_block_background_selection(self, block: QTextBlock, color: QColor, use_full_width: bool = False) -> Optional[QTextEdit.ExtraSelection]:
         if not block.isValid(): return None
@@ -142,8 +154,11 @@ class TextHighlightManager:
               self.applyHighlights()
 
     def setPreviewSelectedLineHighlight(self, line_numbers: List[int], previous_line_number: Optional[int] = None):
+        self._current_selected_lines = line_numbers.copy()
         new_selections = []
         doc = self.editor.document()
+
+        # Normal selection
         for line_number in line_numbers:
             if line_number >= 0 and line_number < doc.blockCount():
                 block = doc.findBlockByNumber(line_number)
@@ -151,16 +166,52 @@ class TextHighlightManager:
                 if selection:
                     new_selections.append(selection)
                     
+        # Manage origin line state
         if previous_line_number is not None and previous_line_number not in line_numbers:
-            if previous_line_number >= 0 and previous_line_number < doc.blockCount():
-                block = doc.findBlockByNumber(previous_line_number)
-                color = getattr(self.editor, 'previously_selected_line_color', self.editor.preview_selected_line_color)
-                selection = self._create_block_background_selection(block, color, use_full_width=True)
-                if selection:
-                    new_selections.append(selection)
+            # We only adopt a new origin line if we are not currently holding/fading one OR
+            # if the previous line actually jumped from somewhere that isn't the origin.
+            # But the requirement states: "the line from which we started the movement".
+            # If `_origin_line_number` is already set and we just moved again, keep it.
+            if self._origin_line_number is None or self._origin_line_alpha <= 0.0:
+                self._origin_line_number = previous_line_number
+                
+            self._origin_line_alpha = 1.0
+            self._origin_stay_timer.start(7000)
+            self._origin_fade_timer.stop()
+            
+        # Clear origin if we moved back to it
+        if self._origin_line_number in line_numbers:
+            self._origin_line_number = None
+            self._origin_stay_timer.stop()
+            self._origin_fade_timer.stop()
+
+        # Apply origin highlight
+        if self._origin_line_number is not None and self._origin_line_number < doc.blockCount():
+            block = doc.findBlockByNumber(self._origin_line_number)
+            base_color = getattr(self.editor, 'previously_selected_line_color', self.editor.preview_selected_line_color)
+            
+            fade_color = QColor(base_color)
+            max_alpha = 120 # About half of 255 base opacity
+            fade_color.setAlpha(int(max_alpha * self._origin_line_alpha))
+            
+            selection = self._create_block_background_selection(block, fade_color, use_full_width=True)
+            if selection:
+                new_selections.append(selection)
         
         self._preview_selected_line_selections = new_selections
         self.applyHighlights()
+
+    def _start_origin_fade(self):
+        self._origin_fade_timer.start()
+        
+    def _tick_origin_fade(self):
+        self._origin_line_alpha -= 0.025
+        if self._origin_line_alpha <= 0:
+            self._origin_line_alpha = 0.0
+            self._origin_line_number = None
+            self._origin_fade_timer.stop()
+            
+        self.setPreviewSelectedLineHighlight(self._current_selected_lines)
 
     def set_background_for_lines(self, lines_to_highlight: set, lines_to_clear: set):
         doc = self.editor.document()
