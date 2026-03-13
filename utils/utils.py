@@ -1,7 +1,6 @@
 # --- START OF FILE utils/utils.py ---
 import datetime
 import re
-import os
 import difflib # Додано
 from typing import Optional, List
 from plugins.common.markers import P_VISUAL_EDITOR_MARKER, L_VISUAL_EDITOR_MARKER

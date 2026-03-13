@@ -7,7 +7,7 @@ Dialog windows for project management:
 - ImportBlockDialog: Import a new block into the project
 """
 
-import os
+from pathlib import Path
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
     QLabel, QLineEdit, QPushButton, QTextEdit,
@@ -148,25 +148,24 @@ class NewProjectDialog(QDialog):
     def _scan_plugins(self):
         """Scan plugins directory to find available plugins."""
         plugins = {}
-        plugins_dir = "plugins"
+        plugins_dir = Path("plugins")
 
-        if not os.path.isdir(plugins_dir):
+        if not plugins_dir.is_dir():
             return plugins
 
-        for item in os.listdir(plugins_dir):
-            item_path = os.path.join(plugins_dir, item)
-            config_path = os.path.join(item_path, "config.json")
+        for item_path in plugins_dir.iterdir():
+            config_path = item_path / "config.json"
 
-            if os.path.isdir(item_path) and os.path.exists(config_path):
+            if item_path.is_dir() and config_path.exists():
                 try:
                     import json
                     with open(config_path, 'r', encoding='utf-8') as f:
                         config_data = json.load(f)
-                    display_name = config_data.get("display_name", item)
-                    plugins[display_name] = item
+                    display_name = config_data.get("display_name", item_path.name)
+                    plugins[display_name] = item_path.name
                 except Exception as e:
-                    log_debug(f"Could not read config for plugin '{item}': {e}")
-                    plugins[item] = item
+                    log_debug(f"Could not read config for plugin '{item_path.name}': {e}")
+                    plugins[item_path.name] = item_path.name
 
         return plugins
 
@@ -192,7 +191,7 @@ class NewProjectDialog(QDialog):
         directory = QFileDialog.getExistingDirectory(
             self,
             "Select Project Location",
-            os.path.expanduser("~"),
+            Path.home().as_posix(),
             QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks
         )
 
@@ -202,13 +201,13 @@ class NewProjectDialog(QDialog):
     def _browse_source(self):
         if self.radio_folders.isChecked():
             directory = QFileDialog.getExistingDirectory(
-                self, "Select Source Directory", os.path.expanduser("~"),
+                self, "Select Source Directory", Path.home().as_posix(),
                 QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks
             )
             if directory: self.source_edit.setText(directory)
         else:
             file_path, _ = QFileDialog.getOpenFileName(
-                self, "Select Source File", os.path.expanduser("~"),
+                self, "Select Source File", Path.home().as_posix(),
                 "Supported Files (*.txt *.json);;All Files (*)"
             )
             if file_path: self.source_edit.setText(file_path)
@@ -216,13 +215,13 @@ class NewProjectDialog(QDialog):
     def _browse_translation(self):
         if self.radio_folders.isChecked():
             directory = QFileDialog.getExistingDirectory(
-                self, "Select Translation Directory", os.path.expanduser("~"),
+                self, "Select Translation Directory", Path.home().as_posix(),
                 QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks
             )
             if directory: self.trans_edit.setText(directory)
         else:
             file_path, _ = QFileDialog.getOpenFileName(
-                self, "Select Translation File", os.path.expanduser("~"),
+                self, "Select Translation File", Path.home().as_posix(),
                 "Supported Files (*.txt *.json);;All Files (*)"
             )
             if file_path: self.trans_edit.setText(file_path)
@@ -238,17 +237,17 @@ class NewProjectDialog(QDialog):
 
         # Validate directory
         directory = self.dir_edit.text().strip()
-        if not directory or not os.path.exists(directory):
+        if not directory or not Path(directory).exists():
             QMessageBox.warning(self, "Invalid Location", "Please select a valid location for the project.")
             return
 
         source_path = self.source_edit.text().strip()
-        if not source_path or not os.path.exists(source_path):
+        if not source_path or not Path(source_path).exists():
             QMessageBox.warning(self, "Invalid Source", "Please select a valid source.")
             return
             
         trans_path = self.trans_edit.text().strip()
-        if not self.auto_create_cb.isChecked() and (not trans_path or not os.path.exists(trans_path)):
+        if not self.auto_create_cb.isChecked() and (not trans_path or not Path(trans_path).exists()):
             QMessageBox.warning(self, "Invalid Translation", "Please select a valid translation path or enable auto-create.")
             return
 
@@ -264,10 +263,10 @@ class NewProjectDialog(QDialog):
         safe_name = "".join(c for c in name if c.isalnum() or c in (' ', '-', '_')).strip()
         safe_name = safe_name.replace(' ', '_')
 
-        project_path = os.path.join(directory, safe_name)
+        project_path = (Path(directory) / safe_name).as_posix()
 
         # Check if project already exists
-        if os.path.exists(project_path):
+        if Path(project_path).exists():
             reply = QMessageBox.question(
                 self,
                 "Project Exists",
@@ -374,7 +373,7 @@ class OpenProjectDialog(QDialog):
     def _browse_file(self):
         """Browse for .uiproj file."""
         # Try to start in a sensible location (user's home or recent projects directory)
-        start_dir = os.path.expanduser("~")
+        start_dir = Path.home().as_posix()
 
         file_path, _ = QFileDialog.getOpenFileName(
             self,
@@ -398,7 +397,7 @@ class OpenProjectDialog(QDialog):
             )
             return
 
-        if not os.path.exists(path):
+        if not Path(path).exists():
             QMessageBox.warning(
                 self,
                 "File Not Found",
@@ -407,7 +406,7 @@ class OpenProjectDialog(QDialog):
             return
 
         # Validate it's a .uiproj file
-        if not os.path.isfile(path):
+        if not Path(path).is_file():
             QMessageBox.warning(
                 self,
                 "Invalid Selection",
@@ -542,7 +541,7 @@ class ImportBlockDialog(QDialog):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Select Source File",
-            os.path.expanduser("~"),
+            Path.home().as_posix(),
             "Supported Files (*.txt *.json);;Text Files (*.txt);;JSON Files (*.json);;All Files (*)"
         )
 
@@ -551,7 +550,7 @@ class ImportBlockDialog(QDialog):
 
     def _browse_translation_file(self):
         """Browse for translation file."""
-        start_dir = os.path.dirname(self.file_edit.text()) if self.file_edit.text() else os.path.expanduser("~")
+        start_dir = Path(self.file_edit.text()).parent.as_posix() if self.file_edit.text() else Path.home().as_posix()
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Select Translation File (Optional)",
@@ -565,10 +564,9 @@ class ImportBlockDialog(QDialog):
     def _on_source_file_selected(self, file_path):
         """Auto-fill block name from filename if not already set."""
         if file_path and not self.name_edit.text():
-            filename = os.path.basename(file_path)
-            name_without_ext = os.path.splitext(filename)[0]
+            path_obj = Path(file_path)
             # Make it more readable
-            display_name = name_without_ext.replace('_', ' ').title()
+            display_name = path_obj.stem.replace('_', ' ').title()
             self.name_edit.setText(display_name)
 
     def _validate_and_accept(self):
@@ -583,7 +581,7 @@ class ImportBlockDialog(QDialog):
             )
             return
 
-        if not os.path.exists(file_path):
+        if not Path(file_path).exists():
             QMessageBox.warning(
                 self,
                 "File Not Found",
@@ -595,7 +593,7 @@ class ImportBlockDialog(QDialog):
         name = self.name_edit.text().strip()
         if not name:
             # Use filename as fallback
-            name = os.path.splitext(os.path.basename(file_path))[0]
+            name = Path(file_path).stem
             name = name.replace('_', ' ').title()
 
         # Store results

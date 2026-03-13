@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QMessageBox, QApplication
 from PyQt5.QtCore import QRect, QProcess
 from utils.logging_utils import log_debug, log_info
 import copy
-import os
+from pathlib import Path
 import sys
 
 if TYPE_CHECKING:
@@ -196,7 +196,7 @@ class MainWindowHelper:
         # Priority 1: Auto-open last project from recent projects
         if hasattr(self.mw, 'recent_projects') and self.mw.recent_projects and hasattr(self.mw, 'app_action_handler'):
             last_project_path = self.mw.recent_projects[0]
-            if os.path.exists(last_project_path):
+            if Path(last_project_path).exists():
                 log_info(f"Auto-opening last project from recent projects: {last_project_path}")
                 if hasattr(self.mw.project_action_handler, '_open_recent_project'):
                     self.mw.project_action_handler._open_recent_project(last_project_path)
@@ -205,7 +205,7 @@ class MainWindowHelper:
             else:
                 log_info(f"Last project path does not exist: {last_project_path}")
         # Priority 2: Auto-open last file if no projects
-        elif self.mw.initial_load_path and os.path.exists(self.mw.initial_load_path):
+        elif self.mw.initial_load_path and Path(self.mw.initial_load_path).exists():
             log_info(f"Attempting to load initial file from settings: {self.mw.initial_load_path}")
             self.mw.app_action_handler.load_all_data_for_path(self.mw.initial_load_path, self.mw.initial_edited_load_path, is_initial_load_from_settings=True)
 

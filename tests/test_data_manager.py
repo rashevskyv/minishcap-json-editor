@@ -3,7 +3,7 @@
 Tests for core/data_manager.py — JSON/text file loading and saving.
 These tests act as a safety net for refactoring Issue #9 (removing QMessageBox from core).
 """
-import os
+from pathlib import Path
 import json
 import pytest
 
@@ -21,8 +21,8 @@ class TestLoadJsonFile:
 
     def test_load_nonexistent_file(self, temp_dir):
         """Non-existent file should return None data and an error message."""
-        path = os.path.join(temp_dir, "does_not_exist.json")
-        data, error = load_json_file(path)
+        path = Path(temp_dir) / "does_not_exist.json"
+        data, error = load_json_file(str(path))
         assert data is None
         assert error is not None
         assert "not found" in error.lower()
@@ -35,29 +35,29 @@ class TestLoadJsonFile:
 
     def test_load_empty_json_object(self, temp_dir):
         """An empty JSON object {} should load as an empty dict."""
-        path = os.path.join(temp_dir, "empty.json")
+        path = Path(temp_dir) / "empty.json"
         with open(path, 'w') as f:
             f.write("{}")
-        data, error = load_json_file(path)
+        data, error = load_json_file(str(path))
         assert data == {}
         assert error is None
 
     def test_load_json_array(self, temp_dir):
         """A JSON array should load correctly."""
-        path = os.path.join(temp_dir, "array.json")
+        path = Path(temp_dir) / "array.json"
         with open(path, 'w') as f:
             json.dump(["a", "b", "c"], f)
-        data, error = load_json_file(path)
+        data, error = load_json_file(str(path))
         assert data == ["a", "b", "c"]
         assert error is None
 
     def test_load_json_with_cyrillic(self, temp_dir):
         """JSON with Cyrillic text should load correctly (UTF-8)."""
-        path = os.path.join(temp_dir, "cyrillic.json")
+        path = Path(temp_dir) / "cyrillic.json"
         expected = {"text": "Привіт, світе!"}
         with open(path, 'w', encoding='utf-8') as f:
             json.dump(expected, f, ensure_ascii=False)
-        data, error = load_json_file(path)
+        data, error = load_json_file(str(path))
         assert data == expected
         assert error is None
 
@@ -67,8 +67,8 @@ class TestLoadJsonFile:
 class TestSaveJsonFile:
     def test_save_and_reload(self, temp_dir, sample_json_data):
         """Save data to a file and reload it — data should match."""
-        path = os.path.join(temp_dir, "output.json")
-        result = save_json_file(path, sample_json_data)
+        path = Path(temp_dir) / "output.json"
+        result = save_json_file(str(path), sample_json_data)
         assert result is True
 
         data, error = load_json_file(path)
@@ -77,16 +77,16 @@ class TestSaveJsonFile:
 
     def test_save_creates_parent_dirs(self, temp_dir):
         """Saving to a nested path should create parent directories."""
-        path = os.path.join(temp_dir, "sub", "deep", "output.json")
-        result = save_json_file(path, {"key": "value"})
+        path = Path(temp_dir) / "sub" / "deep" / "output.json"
+        result = save_json_file(str(path), {"key": "value"})
         assert result is True
-        assert os.path.exists(path)
+        assert path.exists()
 
     def test_save_with_cyrillic(self, temp_dir):
         """Saved JSON should preserve Cyrillic characters (ensure_ascii=False)."""
-        path = os.path.join(temp_dir, "cyrillic_out.json")
+        path = Path(temp_dir) / "cyrillic_out.json"
         data = {"text": "Зельда: Мініш Кап"}
-        save_json_file(path, data)
+        save_json_file(str(path), data)
         with open(path, 'r', encoding='utf-8') as f:
             content = f.read()
         assert "Зельда" in content  # Not escaped as \u...
@@ -110,8 +110,8 @@ class TestLoadTextFile:
 
     def test_load_nonexistent(self, temp_dir):
         """Non-existent text file should return None content and error."""
-        path = os.path.join(temp_dir, "nope.txt")
-        content, error = load_text_file(path)
+        path = Path(temp_dir) / "nope.txt"
+        content, error = load_text_file(str(path))
         assert content is None
         assert error is not None
 
@@ -121,17 +121,17 @@ class TestLoadTextFile:
 class TestSaveTextFile:
     def test_save_and_reload(self, temp_dir):
         """Save text and reload — content should match."""
-        path = os.path.join(temp_dir, "output.txt")
+        path = Path(temp_dir) / "output.txt"
         text = "Рядок 1\nРядок 2\n"
-        result = save_text_file(path, text)
+        result = save_text_file(str(path), text)
         assert result is True
 
-        content, error = load_text_file(path)
+        content, error = load_text_file(str(path))
         assert content == text
 
     def test_save_creates_parent_dirs(self, temp_dir):
         """Saving text to a nested path should create parent directories."""
-        path = os.path.join(temp_dir, "a", "b", "c.txt")
-        result = save_text_file(path, "test")
+        path = Path(temp_dir) / "a" / "b" / "c.txt"
+        result = save_text_file(str(path), "test")
         assert result is True
-        assert os.path.exists(path)
+        assert path.exists()

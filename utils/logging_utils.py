@@ -1,13 +1,12 @@
 import logging
-import os
 import time
 import threading
 from collections import deque
 from pathlib import Path
 from logging.handlers import RotatingFileHandler
 
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-default_log_file_path = os.path.join(project_root, 'app_debug.txt')
+project_root = Path(__file__).resolve().parent.parent
+default_log_file_path = str(project_root / 'app_debug.txt')
 log_file_path = default_log_file_path
 
 class DuplicateFilter(logging.Filter):
@@ -65,7 +64,7 @@ def update_logger_handlers(enable_console: bool, enable_file: bool, file_path: s
         log_file_path = file_path
         
     # Rebuild file handler if path changed or state changed
-    if _file_handler and (not enable_file or _file_handler.baseFilename != os.path.abspath(log_file_path)):
+    if _file_handler and (not enable_file or _file_handler.baseFilename != str(Path(log_file_path).resolve())):
         logger.removeHandler(_file_handler)
         _file_handler.close()
         _file_handler = None

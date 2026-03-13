@@ -1,6 +1,6 @@
 # --- START OF FILE handlers/project_action_handler.py ---
 # handlers/project_action_handler.py
-import os
+from pathlib import Path
 import json
 from PyQt5.QtWidgets import QMessageBox, QFileDialog
 from PyQt5.QtCore import Qt
@@ -20,19 +20,18 @@ class ProjectActionHandler(BaseHandler):
 
         # Get available plugins
         plugins = {}
-        plugins_dir = "plugins"
-        if os.path.isdir(plugins_dir):
-            for item in os.listdir(plugins_dir):
-                item_path = os.path.join(plugins_dir, item)
-                config_path = os.path.join(item_path, "config.json")
-                if os.path.isdir(item_path) and os.path.exists(config_path):
+        plugins_dir = Path("plugins")
+        if plugins_dir.is_dir():
+            for item_path in plugins_dir.iterdir():
+                config_path = item_path / "config.json"
+                if item_path.is_dir() and config_path.exists():
                     try:
                         with open(config_path, 'r', encoding='utf-8') as f:
                             config_data = json.load(f)
-                        display_name = config_data.get("display_name", item)
-                        plugins[display_name] = item
+                        display_name = config_data.get("display_name", item_path.name)
+                        plugins[display_name] = item_path.name
                     except Exception as e:
-                        log_debug(f"Could not read config for plugin '{item}': {e}")
+                        log_debug(f"Could not read config for plugin '{item_path.name}': {e}")
 
         dialog = NewProjectDialog(self.mw, available_plugins=plugins)
         if dialog.exec_() != dialog.Accepted:
@@ -64,7 +63,7 @@ class ProjectActionHandler(BaseHandler):
             log_info(f"Project '{project.name}' created successfully at {info['directory']}.")
 
             # Update recent projects
-            project_file = os.path.join(info['directory'], "project.uiproj")
+            project_file = str(Path(info['directory']) / "project.uiproj")
             if hasattr(self.mw, 'settings_manager'):
                 self.mw.settings_manager.add_recent_project(project_file)
                 self.mw.settings_manager.save_settings()
@@ -103,7 +102,7 @@ class ProjectActionHandler(BaseHandler):
         log_info("Open Project action triggered.")
 
         # Open file dialog directly
-        start_dir = os.path.expanduser("~")
+        start_dir = str(Path.home())
         project_path, _ = QFileDialog.getOpenFileName(
             self.mw,
             "Open Project",
@@ -253,7 +252,7 @@ class ProjectActionHandler(BaseHandler):
             QMessageBox.warning(self.mw, "No Project", "Please open or create a project first.")
             return
 
-        start_dir = os.path.expanduser("~")
+        start_dir = str(Path.home())
         directory_path = QFileDialog.getExistingDirectory(
             self.mw,
             "Select Directory to Import",
@@ -381,8 +380,8 @@ class ProjectActionHandler(BaseHandler):
             source_path = self.mw.project_manager.get_absolute_path(block.source_file)
             
             block_data = []
-            if os.path.exists(source_path):
-                file_extension = os.path.splitext(source_path)[1].lower()
+            if Path(source_path).exists():
+                file_extension = Path(source_path).suffix.lower()
                 if file_extension == '.json':
                     file_content, error = load_json_file(source_path)
                 else:
@@ -431,8 +430,8 @@ class ProjectActionHandler(BaseHandler):
             # How many blocks did the source file produce?
             expected_count = source_parsed_counts[project_block_idx]
 
-            if os.path.exists(translation_path):
-                file_extension = os.path.splitext(translation_path)[1].lower()
+            if Path(translation_path).exists():
+                file_extension = Path(translation_path).suffix.lower()
                 if file_extension == '.json':
                     file_content, error = load_json_file(translation_path)
                 else:
@@ -492,12 +491,13 @@ class ProjectActionHandler(BaseHandler):
         # Add action for each recent project
         for project_path in recent_projects:
             # Check if file exists
-            if os.path.exists(project_path):
+            p = Path(project_path)
+            if p.exists():
                 # Get project name from path
-                project_name = os.path.splitext(os.path.basename(project_path))[0]
+                project_name = p.stem
                 if project_name == "project":
                     # Use directory name if file is named "project.uiproj"
-                    project_name = os.path.basename(os.path.dirname(project_path))
+                    project_name = p.parent.name
 
                 action = self.mw.recent_projects_menu.addAction(project_name)
                 action.setToolTip(project_path)
@@ -505,7 +505,7 @@ class ProjectActionHandler(BaseHandler):
                 action.triggered.connect(lambda checked=False, path=project_path: self._open_recent_project(path))
             else:
                 # Project file doesn't exist, show as unavailable
-                action = self.mw.recent_projects_menu.addAction(f"{os.path.basename(project_path)} (missing)")
+                action = self.mw.recent_projects_menu.addAction(f"{Path(project_path).name} (missing)")
                 action.setEnabled(False)
 
         # Add separator and "Clear Recent Projects" action
@@ -517,7 +517,7 @@ class ProjectActionHandler(BaseHandler):
         """Open a project from the recent projects list."""
         log_info(f"Opening recent project: {project_path}")
 
-        if not os.path.exists(project_path):
+        if not Path(project_path).exists():
             QMessageBox.critical(
                 self.mw,
                 "Project Not Found",

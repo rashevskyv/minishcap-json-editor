@@ -2,7 +2,7 @@
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QAction, QMessageBox, QTreeWidgetItemIterator, QApplication
 from PyQt5.QtCore import Qt, QPoint, QEvent
 from PyQt5.QtGui import QColor, QIcon, QPixmap, QPainter
-import os
+from pathlib import Path
 
 from utils.logging_utils import log_debug, log_error
 
@@ -201,7 +201,7 @@ class CustomTreeWidget(QTreeWidget):
         if not hasattr(main_window, 'project_manager') or not main_window.project_manager:
             # Fallback for single file mode
             path_to_reveal = main_window.edited_json_path if is_translation else main_window.json_path
-            if path_to_reveal and os.path.exists(path_to_reveal):
+            if path_to_reveal and Path(path_to_reveal).exists():
                 self._open_explorer_at_path(path_to_reveal)
             return
             
@@ -223,20 +223,20 @@ class CustomTreeWidget(QTreeWidget):
         else:
             abs_path = main_window.project_manager.get_absolute_path(block.source_file)
         
-        if abs_path and os.path.exists(abs_path):
+        if abs_path and Path(abs_path).exists():
             self._open_explorer_at_path(abs_path)
 
     def _open_explorer_at_path(self, abs_path: str):
         import subprocess
         import platform
-        if os.path.exists(abs_path):
-            abs_path_norm = os.path.normpath(abs_path)
+        abs_path_obj = Path(abs_path)
+        if abs_path_obj.exists():
             if platform.system() == "Windows":
-                subprocess.Popen(['explorer', '/select,', abs_path_norm])
+                subprocess.Popen(['explorer', '/select,', str(abs_path_obj)])
             elif platform.system() == "Darwin":
-                subprocess.Popen(['open', '-R', abs_path_norm])
+                subprocess.Popen(['open', '-R', str(abs_path_obj)])
             else:
-                subprocess.Popen(['xdg-open', os.path.dirname(abs_path_norm)])
+                subprocess.Popen(['xdg-open', str(abs_path_obj.parent)])
         else:
             from PyQt5.QtWidgets import QMessageBox
             QMessageBox.warning(self, "Reveal", f"File not found:\n{abs_path}")

@@ -7,14 +7,13 @@ Demo script showing how to use the ProjectManager.
 This demonstrates the workflow described in PLAN.md.
 """
 
-import os
 import sys
 import io
 import tempfile
 from pathlib import Path
 
-# Add parent directory to path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+# Add project root to path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from core.project_manager import ProjectManager, Category
 
@@ -29,13 +28,14 @@ def demo_scenario_1():
     print()
 
     with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir)
         # Step 1: User creates a new project
         print("Step 1: User creates new project 'Wind Waker Translation'")
-        project_dir = os.path.join(temp_dir, "ZeldaWW")
+        project_dir = temp_path / "ZeldaWW"
 
         manager = ProjectManager()
         manager.create_new_project(
-            project_dir=project_dir,
+            project_dir=str(project_dir),
             name="Переклад Wind Waker",
             plugin_name="zelda_ww",
             description="Повний переклад The Legend of Zelda: The Wind Waker"
@@ -47,7 +47,7 @@ def demo_scenario_1():
 
         # Step 2: Create a sample source file
         print("Step 2: Creating sample source file 'message_orig.txt'")
-        source_file = os.path.join(temp_dir, "message_orig.txt")
+        source_file = temp_path / "message_orig.txt"
         with open(source_file, 'w', encoding='utf-8') as f:
             # Simulate game text with multiple lines
             for i in range(100):
@@ -65,7 +65,7 @@ def demo_scenario_1():
         print("Step 3: Importing block into project")
         block = manager.add_block(
             name="Main Messages",
-            source_file_path=source_file,
+            source_file_path=str(source_file),
             description="Main game dialog messages"
         )
 

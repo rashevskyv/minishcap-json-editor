@@ -9,7 +9,6 @@ This module provides data models and management for the project-oriented paradig
 - Category: Virtual grouping of strings within a block
 """
 
-import os
 import json
 from typing import List, Dict, Optional, Set, Any
 from pathlib import Path
@@ -158,7 +157,7 @@ class ProjectManager:
                 return False
 
             # Load project file
-            if not os.path.exists(self.project_file_path):
+            if not Path(self.project_file_path).exists():
                 log_error(f"Project file not found: {self.project_file_path}")
                 return False
 
@@ -254,7 +253,7 @@ class ProjectManager:
         is_directory_mode = self.project.metadata.get('is_directory_mode', True)
         auto_create = self.project.metadata.get('auto_create_translations', False)
         
-        if not source_path or not os.path.exists(source_path):
+        if not source_path or not Path(source_path).exists():
             log_warning("Source path is invalid or missing during sync.")
             return
 

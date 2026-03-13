@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 
 # --- Конфігурація ---
 # Файли та директорії, які потрібно виключити з обробки.
@@ -17,7 +17,7 @@ def add_header_if_missing(file_path, root_dir):
     """
     try:
         # Обчислюємо відносний шлях, який буде вставлено в коментар.
-        relative_path = os.path.relpath(file_path, root_dir).replace('\\', '/')
+        relative_path = Path(file_path).relative_to(root_dir).as_posix()
         expected_header = f"# --- START OF FILE {relative_path} ---\n"
 
         # Намагаємося прочитати файл у кодуванні utf-8.
@@ -50,11 +50,12 @@ def tree(dir_path, root_dir, prefix="", log_file=None, is_last=True, root=True):
     Повертає загальну кількість рядків коду.
     """
     lines_count = 0
-    entries = [e for e in os.listdir(dir_path) if e not in EXCLUDE_FILES and e not in EXCLUDE_DIRS]
-    entries = sorted(entries, key=lambda x: (not os.path.isdir(os.path.join(dir_path, x)), x.lower()))
+    dir_path_obj = Path(dir_path)
+    entries = [e.name for e in dir_path_obj.iterdir() if e.name not in EXCLUDE_FILES and e.name not in EXCLUDE_DIRS]
+    entries = sorted(entries, key=lambda x: (not (dir_path_obj / x).is_dir(), x.lower()))
     
     for idx, entry in enumerate(entries):
-        path = os.path.join(dir_path, entry)
+        path = dir_path_obj / entry
         
         # Запис у лог-файл tree.txt (як і раніше).
         if log_file:
@@ -62,17 +63,17 @@ def tree(dir_path, root_dir, prefix="", log_file=None, is_last=True, root=True):
             line = ("" if root else prefix) + connector + entry
             log_file.write(line + "\n")
         
-        if os.path.isdir(path):
+        if path.is_dir():
             # Якщо це директорія, продовжуємо обхід і додаємо рядки з піддиректорій.
             extension = "    " if idx == len(entries) - 1 else "│   "
             lines_count += tree(path, root_dir, prefix + extension, log_file, idx == len(entries) - 1, False)
         else:
             # Якщо це файл, перевіряємо його розширення для додавання заголовка.
-            if path.lower().endswith(TARGET_EXTENSIONS):
+            if path.suffix.lower() in TARGET_EXTENSIONS:
                 add_header_if_missing(path, root_dir)
 
             # --- НОВИЙ БЛОК: Підрахунок рядків для .py файлів ---
-            if path.lower().endswith('.py'):
+            if path.suffix.lower() == '.py':
                 try:
                     with open(path, 'r', encoding='utf-8') as f:
                         lines_count += len(f.readlines())
@@ -84,11 +85,11 @@ def tree(dir_path, root_dir, prefix="", log_file=None, is_last=True, root=True):
 
 if __name__ == "__main__":
     # Визначаємо кореневу директорію, де лежить скрипт.
-    root_dir = os.path.dirname(os.path.abspath(__file__))
+    root_dir = Path(__file__).resolve().parent
     
     total_lines = 0
     # Запускаємо процес.
-    with open(os.path.join(root_dir, "tree.txt"), "w", encoding="utf-8") as log:
+    with open(root_dir / "tree.txt", "w", encoding="utf-8") as log:
         # Функція tree тепер повертає загальну кількість рядків,
         # яку ми зберігаємо у змінну total_lines.
         total_lines = tree(root_dir, root_dir=root_dir, log_file=log)

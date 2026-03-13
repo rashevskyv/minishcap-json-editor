@@ -1,6 +1,6 @@
 # --- START OF FILE core/data_state_processor.py ---
 import json
-import os
+from pathlib import Path
 from PyQt5.QtWidgets import QMessageBox
 from .data_manager import load_json_file, save_json_file, save_text_file
 from utils.logging_utils import log_debug, log_error
@@ -92,7 +92,7 @@ class DataStateProcessor:
             return True
 
         if ask_confirmation:
-            reply = QMessageBox.question(self.mw, 'Save Changes', f"Save changes to '{os.path.basename(self.mw.edited_json_path)}'?", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+            reply = QMessageBox.question(self.mw, 'Save Changes', f"Save changes to '{Path(self.mw.edited_json_path).name}'?", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
             if reply == QMessageBox.No: return False
         
         try:
@@ -165,7 +165,7 @@ class DataStateProcessor:
                     final_obj_to_save = self.mw.current_game_rules.save_data_to_json_obj(file_data_list, file_block_names)
                     
                     # Save to the specific translation path
-                    file_extension = os.path.splitext(trans_path)[1].lower()
+                    file_extension = Path(trans_path).suffix.lower()
                     if file_extension == '.json':
                         save_file_success = save_json_file(trans_path, final_obj_to_save)
                     elif file_extension == '.txt':
@@ -204,7 +204,7 @@ class DataStateProcessor:
                 final_obj_to_save = self.mw.current_game_rules.save_data_to_json_obj(output_data_list, self.mw.block_names)
     
                 save_file_success = False
-                file_extension = os.path.splitext(self.mw.edited_json_path)[1].lower()
+                file_extension = Path(self.mw.edited_json_path).suffix.lower()
                 
                 if file_extension == '.json':
                     save_file_success = save_json_file(self.mw.edited_json_path, final_obj_to_save)
@@ -232,7 +232,7 @@ class DataStateProcessor:
                         
                     self.mw.edited_file_data = reloaded_edited_data
     
-                    if ask_confirmation: QMessageBox.information(self.mw, "Saved", f"Changes saved to\n'{os.path.basename(self.mw.edited_json_path)}'.")
+                    if ask_confirmation: QMessageBox.information(self.mw, "Saved", f"Changes saved to\n'{Path(self.mw.edited_json_path).name}'.")
                     return True
                 else: return False
         except Exception as e:
@@ -248,13 +248,13 @@ class DataStateProcessor:
             if not self.mw.data: QMessageBox.warning(self.mw, "Revert Error", "Original data is not loaded."); return False
             if not self.mw.current_game_rules: QMessageBox.critical(self.mw, "Revert Error", "No game plugin active to format the save file."); return False
     
-            reply = QMessageBox.question(self.mw, 'Revert Changes File', f"This will overwrite the file:\n{os.path.basename(self.mw.edited_json_path)}\nwith the content from:\n{os.path.basename(self.mw.json_path)}\n\nAll previous edits in the changes file will be lost.\nCurrent unsaved edits in memory will also be discarded.\n\nAre you sure?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            reply = QMessageBox.question(self.mw, 'Revert Changes File', f"This will overwrite the file:\n{Path(self.mw.edited_json_path).name}\nwith the content from:\n{Path(self.mw.json_path).name}\n\nAll previous edits in the changes file will be lost.\nCurrent unsaved edits in memory will also be discarded.\n\nAre you sure?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.No: return False
             try:
                 output_data = self.mw.current_game_rules.save_data_to_json_obj(self.mw.data, self.mw.block_names)
     
                 save_file_success = False
-                file_extension = os.path.splitext(self.mw.edited_json_path)[1].lower()
+                file_extension = Path(self.mw.edited_json_path).suffix.lower()
     
                 if file_extension == '.json':
                     save_file_success = save_json_file(self.mw.edited_json_path, output_data)
@@ -281,7 +281,7 @@ class DataStateProcessor:
                         
                     self.mw.edited_file_data = reverted_data_list
     
-                    QMessageBox.information(self.mw, "Reverted", f"Changes file '{os.path.basename(self.mw.edited_json_path)}' has been reverted to match the original.")
+                    QMessageBox.information(self.mw, "Reverted", f"Changes file '{Path(self.mw.edited_json_path).name}' has been reverted to match the original.")
                     self.mw.ui_updater.update_title(); 
                     self.mw.ui_updater.populate_strings_for_block(self.mw.current_block_idx) 
                     return True
@@ -326,7 +326,7 @@ class DataStateProcessor:
                     
                     final_obj_to_save = self.mw.current_game_rules.save_data_to_json_obj(file_data_list, file_block_names)
                     
-                    file_extension = os.path.splitext(trans_path)[1].lower()
+                    file_extension = Path(trans_path).suffix.lower()
                     if file_extension == '.json':
                         save_file_success = save_json_file(trans_path, final_obj_to_save)
                     elif file_extension == '.txt':

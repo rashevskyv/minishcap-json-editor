@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import (QPlainTextEdit, QMainWindow, QMenu, QApplication, Q
 from PyQt5.QtGui import (QPainter, QFont, QPaintEvent, QKeyEvent, QKeySequence, QMouseEvent, QIcon, QPixmap, QColor, QTextLine, QTextCursor, QDrag)
 from PyQt5.QtCore import Qt, QRect, QSize, QRectF, pyqtSignal, QPoint, QMimeData, QByteArray
 from typing import Optional, List, Tuple
-import os
+from pathlib import Path
 
 from .line_number_area import LineNumberArea
 from .text_highlight_manager import TextHighlightManager
@@ -327,7 +327,10 @@ class LineNumberedTextEdit(QPlainTextEdit):
         block_idx = main_window.current_block_idx
         problems = set()
         
-        if self.objectName() == "preview_text_edit":
+        is_preview = self.objectName() == "preview_text_edit"
+        is_editor = self.objectName() in ["original_text_edit", "edited_text_edit"]
+        
+        if is_preview:
             string_idx = line_idx
             for key, probs in getattr(main_window, 'problems_per_subline', {}).items():
                 if key[0] == block_idx and key[1] == string_idx:
@@ -339,6 +342,35 @@ class LineNumberedTextEdit(QPlainTextEdit):
             problems = getattr(main_window, 'problems_per_subline', {}).get((block_idx, string_idx, line_idx), set())
             
         tooltip_lines = []
+        
+        # Check for Unsaved Changes indicator (*)
+        is_unsaved = False
+        if is_preview:
+            is_unsaved = (block_idx, string_idx) in getattr(main_window, 'edited_data', {})
+        elif is_editor and string_idx != -1:
+            is_unsaved = (block_idx, string_idx) in getattr(main_window, 'edited_data', {})
+        
+        if is_unsaved:
+             tooltip_lines.append("<b>*</b>: Рядок має незбережені зміни")
+
+        # Check for Metadata indicators in Preview
+        if is_preview:
+            string_meta = getattr(main_window, 'string_metadata', {}).get((block_idx, string_idx), {})
+            if "font_file" in string_meta or "width" in string_meta:
+                meta_info = []
+                if "font_file" in string_meta:
+                    from pathlib import Path
+                    font_name = Path(string_meta['font_file']).name
+                    meta_info.append(f"шрифт (<b>{font_name}</b>)")
+                if "width" in string_meta:
+                    meta_info.append(f"ширину (<b>{string_meta['width']}px</b>)")
+                
+                tooltip_lines.append(f"<span style='color: DarkViolet;'>■</span>: Рядок має індивідуальні налаштування: {', '.join(meta_info)}")
+
+        # Description for Pixel Width (for edited and original editors)
+        if self.objectName() in ["edited_text_edit", "original_text_edit"] and hasattr(self.window(), 'font_map') and self.window().font_map:
+             tooltip_lines.append("<i>Цифри праворуч показують поточну ширину рядка в пікселях.</i>")
+
         if problems:
             problem_definitions = main_window.current_game_rules.get_problem_definitions() if main_window.current_game_rules else {}
             for prob_id in sorted(list(problems)):
@@ -413,17 +445,17 @@ class LineNumberedTextEdit(QPlainTextEdit):
             return None
             
         block_idx = main_window.current_block_idx
-        
         problems = set()
-        if self.objectName() == "preview_text_edit":
-            # In preview_text_edit, each visual line (block) is one entire string.
-            # We want to show all problems associated with any subline of this string.
+        
+        is_preview = self.objectName() == "preview_text_edit"
+        is_editor = self.objectName() in ["original_text_edit", "edited_text_edit"]
+
+        if is_preview:
             string_idx = line_idx_in_widget
             for key, probs in getattr(main_window, 'problems_per_subline', {}).items():
                 if key[0] == block_idx and key[1] == string_idx:
                     problems.update(probs)
         else:
-            # In edited_text_edit or original_text_edit, we show sublines of a SINGLE string.
             if not hasattr(main_window, 'current_string_idx'):
                 return None
             string_idx = main_window.current_string_idx
@@ -431,6 +463,34 @@ class LineNumberedTextEdit(QPlainTextEdit):
         
         tooltip_lines = []
         
+        # Check for Unsaved Changes indicator (*)
+        is_unsaved = False
+        if is_preview:
+            is_unsaved = (block_idx, string_idx) in getattr(main_window, 'edited_data', {})
+        elif is_editor and string_idx != -1:
+            is_unsaved = (block_idx, string_idx) in getattr(main_window, 'edited_data', {})
+        
+        if is_unsaved:
+             tooltip_lines.append("<b>*</b>: Рядок має незбережені зміни")
+
+        # Check for Metadata indicators in Preview
+        if is_preview:
+            string_meta = getattr(main_window, 'string_metadata', {}).get((block_idx, string_idx), {})
+            if "font_file" in string_meta or "width" in string_meta:
+                meta_info = []
+                if "font_file" in string_meta:
+                    from pathlib import Path
+                    font_name = Path(string_meta['font_file']).name
+                    meta_info.append(f"шрифт (<b>{font_name}</b>)")
+                if "width" in string_meta:
+                    meta_info.append(f"ширину (<b>{string_meta['width']}px</b>)")
+                
+                tooltip_lines.append(f"<span style='color: DarkViolet;'>■</span>: Рядок має індивідуальні налаштування: {', '.join(meta_info)}")
+
+        # Description for Pixel Width (for edited and original editors)
+        if self.objectName() in ["edited_text_edit", "original_text_edit"] and hasattr(self.window(), 'font_map') and self.window().font_map:
+             tooltip_lines.append("<i>Цифри праворуч показують поточну ширину рядка в пікселях.</i>")
+
         if problems:
             problem_definitions = main_window.current_game_rules.get_problem_definitions() if main_window.current_game_rules else {}
             for prob_id in sorted(list(problems)):
@@ -438,7 +498,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
                 desc = prob_def.get("description", prob_id)
                 name = prob_def.get("name", "")
                 
-                # Check detection settings if they exist
                 detection_config = getattr(main_window, 'detection_enabled', {})
                 if not detection_config.get(prob_id, True):
                     continue
@@ -1092,11 +1151,11 @@ class MassFontDialog(QDialog):
         
         plugin_dir_name = main_window.active_game_plugin
         if plugin_dir_name:
-            fonts_dir = os.path.join("plugins", plugin_dir_name, "fonts")
-            if os.path.isdir(fonts_dir):
-                for filename in sorted(os.listdir(fonts_dir)):
-                    if filename.lower().endswith(".json"):
-                        self.font_combo.addItem(filename, filename)
+            fonts_dir = Path("plugins") / plugin_dir_name / "fonts"
+            if fonts_dir.is_dir():
+                for font_file in sorted(fonts_dir.iterdir()):
+                    if font_file.suffix.lower() == ".json":
+                        self.font_combo.addItem(font_file.name, font_file.name)
 
     def get_selected_font(self):
         return self.font_combo.currentData()

@@ -1,6 +1,6 @@
 # --- START OF FILE ui/settings_dialog.py ---
 # /home/runner/work/RAG_project/RAG_project/ui/settings_dialog.py
-import os
+from pathlib import Path
 import json
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QFormLayout, QComboBox,
@@ -109,7 +109,7 @@ class SettingsDialog(QDialog, SettingsDialogUiMixin):
         return widget
 
     def _browse_for_file(self, line_edit: QLineEdit):
-        start_dir = os.path.dirname(line_edit.text()) if line_edit.text() else ""
+        start_dir = Path(line_edit.text()).parent.as_posix() if line_edit.text() else ""
         path, _ = QFileDialog.getOpenFileName(self, "Select File", start_dir, "JSON Files (*.json);;All Files (*)")
         if path:
             line_edit.setText(path)

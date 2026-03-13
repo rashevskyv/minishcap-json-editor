@@ -11,11 +11,11 @@ Usage:
 """
 
 import sys
-import os
 import io
+from pathlib import Path
 
 # Add parent directory to path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from PyQt5.QtWidgets import QApplication, QPushButton, QVBoxLayout, QWidget, QLabel
 from components.project_dialogs import NewProjectDialog, OpenProjectDialog, ImportBlockDialog

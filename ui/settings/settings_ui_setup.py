@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 import pycountry
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -116,11 +116,11 @@ class SettingsDialogUiMixin:
         if not plugin_dir_name:
             return
             
-        fonts_dir = os.path.join("plugins", plugin_dir_name, "fonts")
-        if os.path.isdir(fonts_dir):
-            for filename in sorted(os.listdir(fonts_dir)):
-                if filename.lower().endswith(".json"):
-                    self.font_file_combo.addItem(filename, filename)
+        fonts_dir = Path("plugins") / plugin_dir_name / "fonts"
+        if fonts_dir.is_dir():
+            for font_path in sorted(fonts_dir.iterdir()):
+                if font_path.suffix.lower() == ".json":
+                    self.font_file_combo.addItem(font_path.name, font_path.name)
 
     def _setup_display_subtab(self, tab):
         layout = QFormLayout(tab)
@@ -657,23 +657,22 @@ class SettingsDialogUiMixin:
 
 
     def find_plugins(self):
-        plugins_dir = "plugins"
+        plugins_dir = Path("plugins")
         found_plugins = {}
-        if not os.path.isdir(plugins_dir):
+        if not plugins_dir.is_dir():
             return found_plugins
         
-        for item in os.listdir(plugins_dir):
-            item_path = os.path.join(plugins_dir, item)
-            config_path = os.path.join(item_path, "config.json")
-            if os.path.isdir(item_path) and os.path.exists(config_path) and item != "import_plugins":
+        for item_path in plugins_dir.iterdir():
+            config_path = item_path / "config.json"
+            if item_path.is_dir() and config_path.exists() and item_path.name != "import_plugins":
                 try:
                     with open(config_path, 'r', encoding='utf-8') as f:
                         config_data = json.load(f)
-                    display_name = config_data.get("display_name", item)
-                    found_plugins[display_name] = item
+                    display_name = config_data.get("display_name", item_path.name)
+                    found_plugins[display_name] = item_path.name
                 except Exception as e:
-                    log_debug(f"Could not read config for plugin '{item}': {e}")
-                    found_plugins[item] = item
+                    log_debug(f"Could not read config for plugin '{item_path.name}': {e}")
+                    found_plugins[item_path.name] = item_path.name
         return found_plugins
 
     def populate_plugin_list(self):

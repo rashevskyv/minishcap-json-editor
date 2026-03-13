@@ -4,3 +4,11 @@ class BaseHandler:
         self.mw = main_window
         self.data_processor = data_processor
         self.ui_updater = ui_updater
+
+    @property
+    def state(self):
+        return self.mw.state
+
+    @property
+    def data_store(self):
+        return self.mw.data_store

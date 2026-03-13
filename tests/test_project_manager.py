@@ -7,7 +7,6 @@ Test script for ProjectManager functionality.
 This is a simple test to verify the project management system works correctly.
 """
 
-import os
 import sys
 import io
 import shutil
@@ -15,8 +14,8 @@ import tempfile
 from pathlib import Path
 
 # Add project root to path to import project modules
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, project_root)
+project_root = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(project_root))
 
 from core.project_manager import ProjectManager
 from core.project_models import Project, Block, Category
@@ -28,12 +27,13 @@ def test_basic_project_creation():
 
     # Create temporary directory for testing
     with tempfile.TemporaryDirectory() as temp_dir:
-        test_project_dir = os.path.join(temp_dir, "test_translation_project")
+        temp_path = Path(temp_dir)
+        test_project_dir = temp_path / "test_translation_project"
 
         # Create project
         manager = ProjectManager()
         success = manager.create_new_project(
-            project_dir=test_project_dir,
+            project_dir=str(test_project_dir),
             name="Test Translation Project",
             plugin_name="zelda_mc",
             description="A test project for Zelda: Minish Cap translation"
@@ -45,8 +45,8 @@ def test_basic_project_creation():
         assert manager.project.plugin_name == "zelda_mc", "Plugin name mismatch"
 
         # Verify directory structure
-        assert os.path.exists(test_project_dir), "Project directory not created"
-        assert os.path.exists(os.path.join(test_project_dir, "project.uiproj")), ".uiproj file not created"
+        assert test_project_dir.exists(), "Project directory not created"
+        assert (test_project_dir / "project.uiproj").exists(), ".uiproj file not created"
 
         print("✓ Test 1 passed: Project created successfully")
 
@@ -56,19 +56,19 @@ def test_load_save_project():
     print("\nTest 2: Loading and saving project...")
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        test_project_dir = os.path.join(temp_dir, "test_project")
+        test_project_dir = Path(temp_dir) / "test_project"
 
         # Create project
         manager1 = ProjectManager()
         manager1.create_new_project(
-            project_dir=test_project_dir,
+            project_dir=str(test_project_dir),
             name="Test Project",
             plugin_name="zelda_ww"
         )
 
         # Load project in new manager instance
         manager2 = ProjectManager()
-        success = manager2.load(test_project_dir)
+        success = manager2.load(str(test_project_dir))
 
         assert success, "Failed to load project"
         assert manager2.project is not None, "Loaded project is None"
@@ -83,17 +83,18 @@ def test_add_block():
     print("\nTest 3: Adding a block to project...")
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        test_project_dir = os.path.join(temp_dir, "test_project")
+        temp_path = Path(temp_dir)
+        test_project_dir = temp_path / "test_project"
 
         # Create a test source file
-        test_source_file = os.path.join(temp_dir, "test_messages.txt")
+        test_source_file = temp_path / "test_messages.txt"
         with open(test_source_file, 'w', encoding='utf-8') as f:
             f.write("Line 1\nLine 2\nLine 3\n")
 
         # Create project
         manager = ProjectManager()
         manager.create_new_project(
-            project_dir=test_project_dir,
+            project_dir=str(test_project_dir),
             name="Test Project",
             plugin_name="zelda_mc"
         )
@@ -101,7 +102,7 @@ def test_add_block():
         # Add block
         block = manager.add_block(
             name="Test Messages",
-            source_file_path=test_source_file,
+            source_file_path=str(test_source_file),
             description="Test message file"
         )
 
@@ -110,7 +111,7 @@ def test_add_block():
         assert len(manager.project.blocks) == 1, "Block not added to project"
 
         # Verify block was added with correct paths
-        assert block.source_file == test_source_file.replace('\\', '/'), "Source path mismatch"
+        assert block.source_file == test_source_file.as_posix(), "Source path mismatch"
         
         print("✓ Test 3 passed: Block added successfully")
 
@@ -164,12 +165,12 @@ def test_uncategorized_lines():
     print("\nTest 5: Testing uncategorized lines calculation...")
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        test_project_dir = os.path.join(temp_dir, "test_project")
+        test_project_dir = Path(temp_dir) / "test_project"
 
         # Create project with block
         manager = ProjectManager()
         manager.create_new_project(
-            project_dir=test_project_dir,
+            project_dir=str(test_project_dir),
             name="Test Project",
             plugin_name="zelda_mc"
         )

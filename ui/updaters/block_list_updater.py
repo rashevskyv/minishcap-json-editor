@@ -71,7 +71,7 @@ class BlockListUpdater(BaseUIUpdater):
             if issue_texts:
                 display_name_with_issues = f"{base_display_name} ({', '.join(issue_texts)})"
                 
-            import os
+            from pathlib import Path
             from PyQt5.QtWidgets import QTreeWidgetItem
             from PyQt5.QtGui import QIcon
 
@@ -80,7 +80,7 @@ class BlockListUpdater(BaseUIUpdater):
                 rel_path = block.source_file
                 if rel_path.startswith(self.mw.project_manager.SOURCES_DIR + '/'):
                     rel_path = rel_path[len(self.mw.project_manager.SOURCES_DIR) + 1:]
-                dir_path = os.path.dirname(rel_path)
+                dir_path = Path(rel_path).parent.as_posix()
             else:
                 dir_path = ""
 

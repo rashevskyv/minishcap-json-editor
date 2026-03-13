@@ -1,6 +1,7 @@
 # --- START OF FILE core/settings_manager.py ---
 import json
 import os
+from pathlib import Path
 import base64
 from typing import Dict, Optional, List
 from PyQt5.QtCore import QByteArray, QRect, QTimer
@@ -70,7 +71,7 @@ class SettingsManager:
         plugin_name = getattr(self.mw, 'active_game_plugin', None)
         if not plugin_name:
             return None
-        return os.path.join("plugins", plugin_name, "config.json")
+        return str(Path("plugins") / plugin_name / "config.json")
 
     def load_settings(self):
         log_info(f"Loading settings from {self.settings_file_path}...")
@@ -146,7 +147,7 @@ class SettingsManager:
         
         self.mw.current_font_size = defaults['font_size']
 
-        if not os.path.exists(self.settings_file_path):
+        if not Path(self.settings_file_path).exists():
             return
 
         try:
@@ -231,7 +232,7 @@ class SettingsManager:
         
         self.mw.search_history_to_save = []
 
-        if not plugin_config_path or not os.path.exists(plugin_config_path):
+        if not plugin_config_path or not Path(plugin_config_path).exists():
             log_warning(f"Plugin config not found at '{plugin_config_path}'. Using defaults.")
             return
 
@@ -328,7 +329,7 @@ class SettingsManager:
     def _save_global_settings(self):
         global_data = {}
         try:
-            if os.path.exists(self.settings_file_path):
+            if Path(self.settings_file_path).exists():
                 with open(self.settings_file_path, 'r', encoding='utf-8') as f:
                     global_data = json.load(f)
         except Exception as e:
@@ -384,7 +385,7 @@ class SettingsManager:
 
         plugin_data = {}
         try:
-            if os.path.exists(plugin_config_path):
+            if Path(plugin_config_path).exists():
                 with open(plugin_config_path, 'r', encoding='utf-8') as f:
                     plugin_data = json.load(f)
         except Exception as e:
@@ -446,7 +447,7 @@ class SettingsManager:
 
         plugin_data = {}
         try:
-            if os.path.exists(plugin_config_path):
+            if Path(plugin_config_path).exists():
                 with open(plugin_config_path, 'r', encoding='utf-8') as f:
                     plugin_data = json.load(f)
         except Exception as e:
@@ -464,7 +465,7 @@ class SettingsManager:
 
     def load_unsaved_session(self):
         log_debug("Attempting to load unsaved session data...")
-        if not os.path.exists(self.settings_file_path):
+        if not Path(self.settings_file_path).exists():
             return
         
         try:
@@ -514,18 +515,18 @@ class SettingsManager:
             log_warning("No active plugin. Character width calculations will use fallback.")
             return
 
-        fonts_dir = os.path.join("plugins", plugin_name, "fonts")
-        if not os.path.isdir(fonts_dir):
+        fonts_dir = Path("plugins") / plugin_name / "fonts"
+        if not fonts_dir.is_dir():
             log_warning(f"Fonts directory not found at '{fonts_dir}'. Skipping JSON font files loading.")
         else:
             log_debug(f"Loading all font maps from: {fonts_dir}")
-            for filename in os.listdir(fonts_dir):
-                if not filename.lower().endswith(".json"):
+            for font_file in fonts_dir.iterdir():
+                if not font_file.is_file() or not font_file.suffix.lower() == ".json":
                     continue
     
-                font_map_path = os.path.join(fonts_dir, filename)
+                font_map_path = font_file
                 try:
-                    with open(font_map_path, 'r', encoding='utf-8') as f:
+                    with font_map_path.open('r', encoding='utf-8') as f:
                         raw_font_data = json.load(f)
     
                     if "signature" in raw_font_data and raw_font_data["signature"] == "FFNT":
@@ -533,11 +534,11 @@ class SettingsManager:
                     else:
                         parsed_map = raw_font_data
                     
-                    self.mw.all_font_maps[filename] = parsed_map
-                    log_debug(f"Successfully loaded font map '{filename}'.")
+                    self.mw.all_font_maps[font_file.name] = parsed_map
+                    log_debug(f"Successfully loaded font map '{font_file.name}'.")
     
                 except Exception as e:
-                    log_error(f"Error reading or parsing font map file '{filename}': {e}.", exc_info=True)
+                    log_error(f"Error reading or parsing font map file '{font_file.name}': {e}.", exc_info=True)
 
         default_font_filename = getattr(self.mw, 'default_font_file', None)
         if default_font_filename and default_font_filename in self.mw.all_font_maps:
@@ -562,8 +563,8 @@ class SettingsManager:
         if not plugin_name:
             return overrides
 
-        override_path = os.path.join('plugins', plugin_name, 'font_map.json')
-        if not os.path.isfile(override_path):
+        override_path = Path('plugins') / (plugin_name or "") / 'font_map.json'
+        if not override_path.is_file():
             return overrides
 
         try:
@@ -651,7 +652,7 @@ class SettingsManager:
             self.mw.recent_projects = []
 
         # Normalize path
-        project_path = os.path.abspath(project_path)
+        project_path = str(Path(project_path).resolve())
 
         # Remove if already in list
         if project_path in self.mw.recent_projects:
@@ -670,7 +671,7 @@ class SettingsManager:
         if not hasattr(self.mw, 'recent_projects'):
             return
 
-        project_path = os.path.abspath(project_path)
+        project_path = str(Path(project_path).resolve())
         if project_path in self.mw.recent_projects:
             self.mw.recent_projects.remove(project_path)
             log_debug(f"Removed '{project_path}' from recent projects")

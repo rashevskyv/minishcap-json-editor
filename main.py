@@ -1,6 +1,5 @@
 # --- START OF FILE main.py ---
 import sys
-import os
 import json
 import re
 import importlib
@@ -37,6 +36,8 @@ from handlers.ai_chat_handler import AIChatHandler
 
 from core.settings_manager import SettingsManager
 from core.data_state_processor import DataStateProcessor
+from core.state_manager import StateManager, AppState
+from core.data_store import AppDataStore
 from core.translation.config import build_default_translation_config
 from core.spellchecker_manager import SpellcheckerManager
 from core.project_manager import ProjectManager
@@ -373,10 +374,7 @@ class MainWindow(QMainWindow):
         self.editor_font_family = MONOSPACE_EDITOR_FONT_FAMILY
         self.display_name = ""
 
-        from core.state_manager import StateManager, AppState
         self.state = StateManager()
-
-        from core.data_store import AppDataStore
         self.data_store = AppDataStore()
 
         # Project management

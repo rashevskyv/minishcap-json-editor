@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 from PyQt5.QtWidgets import QApplication, QMessageBox
 from utils.logging_utils import log_info
 import copy
-import os
+from pathlib import Path
 import json
 from ui.settings_dialog import SettingsDialog
 
@@ -201,7 +201,7 @@ class MainWindowActions:
         
         if not self.mw.settings_manager: return
         plugin_config_path = self.mw.settings_manager._get_plugin_config_path()
-        if not plugin_config_path or not os.path.exists(plugin_config_path):
+        if not plugin_config_path or not Path(plugin_config_path).exists():
             QMessageBox.warning(self.mw, "Reload Error", "Plugin configuration file not found.")
             return
 
@@ -211,7 +211,7 @@ class MainWindowActions:
             
             if "default_tag_mappings" in plugin_data:
                 self.mw.default_tag_mappings = plugin_data["default_tag_mappings"]
-                QMessageBox.information(self.mw, "Tag Mappings Reloaded", f"Default tag mappings reloaded from\n{os.path.basename(plugin_config_path)}.")
+                QMessageBox.information(self.mw, "Tag Mappings Reloaded", f"Default tag mappings reloaded from\n{Path(plugin_config_path).name}.")
                 if self.mw.current_block_idx != -1:
                     if QMessageBox.question(self.mw, "Rescan Block", "Rescan the current block with the new mappings?", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes) == QMessageBox.Yes:
                         self.mw.issue_scan_handler.rescan_issues_for_single_block(self.mw.current_block_idx, use_default_mappings=True)

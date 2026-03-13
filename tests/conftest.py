@@ -2,7 +2,6 @@
 """
 Shared fixtures for all test modules.
 """
-import os
 import sys
 import json
 import tempfile
@@ -10,9 +9,9 @@ import pytest
 from pathlib import Path
 
 # Add project root to path
-project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if project_root not in sys.path:
-    sys.path.insert(0, project_root)
+project_root = Path(__file__).resolve().parent.parent
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
 
 
 @pytest.fixture
@@ -34,10 +33,10 @@ def sample_json_data():
 @pytest.fixture
 def sample_json_path(temp_dir, sample_json_data):
     """A temporary JSON file with sample data."""
-    path = os.path.join(temp_dir, "test_data.json")
+    path = Path(temp_dir) / "test_data.json"
     with open(path, 'w', encoding='utf-8') as f:
         json.dump(sample_json_data, f, ensure_ascii=False)
-    return path
+    return str(path)
 
 
 @pytest.fixture
@@ -49,28 +48,28 @@ def sample_text_content():
 @pytest.fixture
 def sample_text_path(temp_dir, sample_text_content):
     """A temporary text file with sample Kruptar-format content."""
-    path = os.path.join(temp_dir, "test_data.txt")
+    path = Path(temp_dir) / "test_data.txt"
     with open(path, 'w', encoding='utf-8') as f:
         f.write(sample_text_content)
-    return path
+    return str(path)
 
 
 @pytest.fixture
 def sample_utf16_path(temp_dir):
     """A temporary UTF-16 encoded text file."""
-    path = os.path.join(temp_dir, "test_utf16.txt")
+    path = Path(temp_dir) / "test_utf16.txt"
     with open(path, 'w', encoding='utf-16') as f:
         f.write("Тестовий текст UTF-16")
-    return path
+    return str(path)
 
 
 @pytest.fixture
 def invalid_json_path(temp_dir):
     """A temporary file with invalid JSON."""
-    path = os.path.join(temp_dir, "bad.json")
+    path = Path(temp_dir) / "bad.json"
     with open(path, 'w', encoding='utf-8') as f:
         f.write("{invalid json content!!")
-    return path
+    return str(path)
 
 
 @pytest.fixture

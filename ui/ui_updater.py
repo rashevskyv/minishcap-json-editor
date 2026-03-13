@@ -1,8 +1,8 @@
 # --- START OF FILE ui/ui_updater.py ---
-import os
+from pathlib import Path
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor, QBrush, QTextCursor
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtGui import QColor, QBrush, QTextCursor, QIcon
+from PyQt5.QtWidgets import QApplication, QTreeWidgetItem, QTreeWidgetItemIterator
 from utils.logging_utils import log_debug
 from utils.utils import convert_spaces_to_dots_for_display, convert_dots_to_spaces_from_editor, remove_curly_tags, calculate_string_width, calculate_strict_string_width, remove_all_tags
 from core.glossary_manager import GlossaryOccurrence
@@ -100,16 +100,12 @@ class UIUpdater:
             
             block_tooltip = "<br><br>".join(tooltip_lines) if tooltip_lines else "No issues found"
                 
-            import os
-            from PyQt5.QtWidgets import QTreeWidgetItem
-            from PyQt5.QtGui import QIcon
-
             if hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project and i < len(self.mw.project_manager.project.blocks):
                 block = self.mw.project_manager.project.blocks[i]
                 rel_path = block.source_file
                 if rel_path.startswith(self.mw.project_manager.SOURCES_DIR + '/'):
                     rel_path = rel_path[len(self.mw.project_manager.SOURCES_DIR) + 1:]
-                dir_path = os.path.dirname(rel_path)
+                dir_path = Path(rel_path).parent.as_posix()
             else:
                 dir_path = ""
 
@@ -140,8 +136,6 @@ class UIUpdater:
     def update_block_item_text_with_problem_count(self, block_idx: int):
         if not hasattr(self.mw, 'block_list_widget'):
             return
-        
-        from PyQt5.QtWidgets import QTreeWidgetItemIterator
         
         item = None
         iterator = QTreeWidgetItemIterator(self.mw.block_list_widget)
@@ -299,8 +293,6 @@ class UIUpdater:
     def clear_all_problem_block_highlights_and_text(self): 
         if not hasattr(self.mw, 'block_list_widget'): return
         
-        from PyQt5.QtWidgets import QTreeWidgetItemIterator
-        
         iterator = QTreeWidgetItemIterator(self.mw.block_list_widget)
         while iterator.value():
             item = iterator.value()
@@ -320,7 +312,7 @@ class UIUpdater:
         if hasattr(self.mw, 'project_manager') and self.mw.project_manager and hasattr(self.mw.project_manager, 'project') and self.mw.project_manager.project:
             title += f" - [{self.mw.project_manager.project.name}]"
         elif self.mw.json_path: 
-            title += f" - [{os.path.basename(self.mw.json_path)}]"
+            title += f" - [{Path(self.mw.json_path).name}]"
         else: 
             title += " - [No File Open]"
         if self.mw.unsaved_changes: 
@@ -337,11 +329,11 @@ class UIUpdater:
 
     def update_statusbar_paths(self):
         if hasattr(self.mw, 'original_path_label') and self.mw.original_path_label:
-            orig_filename = os.path.basename(self.mw.json_path) if self.mw.json_path else "[not specified]"
+            orig_filename = Path(self.mw.json_path).name if self.mw.json_path else "[not specified]"
             self.mw.original_path_label.setText(f"Original: {orig_filename}")
             self.mw.original_path_label.setToolTip(self.mw.json_path if self.mw.json_path else "Path to original file")
         if hasattr(self.mw, 'edited_path_label') and self.mw.edited_path_label:
-            edited_filename = os.path.basename(self.mw.edited_json_path) if self.mw.edited_json_path else "[not specified]"
+            edited_filename = Path(self.mw.edited_json_path).name if self.mw.edited_json_path else "[not specified]"
             self.mw.edited_path_label.setText(f"Changes: {edited_filename}")
             self.mw.edited_path_label.setToolTip(self.mw.edited_json_path if self.mw.edited_json_path else "Path to changes file")
 

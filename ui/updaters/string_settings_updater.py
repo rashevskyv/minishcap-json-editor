@@ -1,5 +1,5 @@
 # --- START OF FILE ui/updaters/string_settings_updater.py ---
-import os
+from pathlib import Path
 from PyQt5.QtWidgets import QMainWindow
 from PyQt5.QtGui import QColor, QPalette
 from .base_ui_updater import BaseUIUpdater
@@ -23,10 +23,11 @@ class StringSettingsUpdater(BaseUIUpdater):
             self.mw.font_combobox.blockSignals(False)
             return
         
-        fonts_dir = os.path.join("plugins", plugin_dir_name, "fonts")
-        if os.path.isdir(fonts_dir):
-            for filename in sorted(os.listdir(fonts_dir)):
-                if filename.lower().endswith(".json"):
+        fonts_dir = Path("plugins") / plugin_dir_name / "fonts"
+        if fonts_dir.is_dir():
+            for font_file in sorted(fonts_dir.iterdir()):
+                if font_file.is_file() and font_file.suffix.lower() == ".json":
+                    filename = font_file.name
                     if filename != self.mw.default_font_file:
                         self.mw.font_combobox.addItem(filename, filename)
         

@@ -1,5 +1,5 @@
 # --- START OF FILE handlers/app_action_handler.py ---
-import os
+from pathlib import Path
 from typing import Optional 
 from PyQt5.QtWidgets import QMessageBox, QFileDialog, QProgressDialog, QPlainTextEdit
 from PyQt5.QtCore import Qt
@@ -37,9 +37,8 @@ class AppActionHandler(BaseHandler):
             
     def _derive_edited_path(self, original_path):
         if not original_path: return None
-        dir_name = os.path.dirname(original_path)
-        base, ext = os.path.splitext(os.path.basename(original_path))
-        return os.path.join(dir_name, f"{base}_edited{ext}")
+        p = Path(original_path)
+        return str(p.parent / f"{p.stem}_edited{p.suffix}")
 
     def open_file_dialog_action(self):
         log_info("Open File Dialog action triggered.")
@@ -48,7 +47,7 @@ class AppActionHandler(BaseHandler):
             if reply == QMessageBox.Save:
                 if not self.save_data_action(ask_confirmation=True): return
             elif reply == QMessageBox.Cancel: return
-        start_dir = os.path.dirname(self.mw.json_path) if self.mw.json_path else ""
+        start_dir = str(Path(self.mw.json_path).parent) if self.mw.json_path else ""
         path, _ = QFileDialog.getOpenFileName(self.mw, "Open Original File", start_dir, "Supported Files (*.json *.txt);;JSON (*.json);;Text files (*.txt);;All (*)")
         if path:
             self.load_all_data_for_path(path, manually_set_edited_path=None, is_initial_load_from_settings=False)
@@ -56,7 +55,7 @@ class AppActionHandler(BaseHandler):
     def open_changes_file_dialog_action(self):
         log_info("Open Changes File Dialog action triggered.")
         if not self.mw.json_path: QMessageBox.warning(self.mw, "Open Changes File", "Please open an original file first."); return
-        start_dir = os.path.dirname(self.mw.edited_json_path) if self.mw.edited_json_path else (os.path.dirname(self.mw.json_path) if self.mw.json_path else "")
+        start_dir = str(Path(self.mw.edited_json_path).parent) if self.mw.edited_json_path else (str(Path(self.mw.json_path).parent) if self.mw.json_path else "")
         path, _ = QFileDialog.getOpenFileName(self.mw, "Open Changes (Edited) File", start_dir, "Supported Files (*.json *.txt);;JSON Files (*.json);;Text Files (*.txt);;All Files (*)")
         if path:
             if self.mw.unsaved_changes:
@@ -64,7 +63,7 @@ class AppActionHandler(BaseHandler):
                  if reply == QMessageBox.No: return
             
             file_content, error = None, None
-            file_extension = os.path.splitext(path)[1].lower()
+            file_extension = Path(path).suffix.lower()
             if file_extension == '.json':
                 file_content, error = load_json_file(path)
             elif file_extension == '.txt':
@@ -115,7 +114,8 @@ class AppActionHandler(BaseHandler):
         log_info("Save As Dialog action triggered.")
         if not self.mw.json_path: QMessageBox.warning(self.mw, "Save As Error", "No original file open."); return
         current_edited_path = self.mw.edited_json_path if self.mw.edited_json_path else self._derive_edited_path(self.mw.json_path)
-        if not current_edited_path: current_edited_path = os.path.join(os.path.dirname(self.mw.json_path) if self.mw.json_path else ".", "untitled_edited.json")
+        if not current_edited_path: 
+            current_edited_path = str(Path(self.mw.json_path).parent / "untitled_edited.json") if self.mw.json_path else "untitled_edited.json"
         new_edited_path, _ = QFileDialog.getSaveFileName(self.mw, "Save Changes As...", current_edited_path, "Supported Files (*.json *.txt);;JSON (*.json);;All (*)")
         if new_edited_path:
             original_edited_path_backup = self.mw.edited_json_path
@@ -140,7 +140,7 @@ class AppActionHandler(BaseHandler):
 
         file_content = None
         error = None
-        file_extension = os.path.splitext(original_file_path)[1].lower()
+        file_extension = Path(original_file_path).suffix.lower()
 
         if file_extension == '.json':
             file_content, error = load_json_file(original_file_path, parent_widget=self.mw)
@@ -182,10 +182,10 @@ class AppActionHandler(BaseHandler):
         
         self.mw.edited_json_path = manually_set_edited_path if manually_set_edited_path else self._derive_edited_path(self.mw.json_path)
         self.mw.edited_file_data = []
-        if self.mw.edited_json_path and os.path.exists(self.mw.edited_json_path):
+        if self.mw.edited_json_path and Path(self.mw.edited_json_path).exists():
             edited_file_content = None
             edit_error = None
-            edited_file_extension = os.path.splitext(self.mw.edited_json_path)[1].lower()
+            edited_file_extension = Path(self.mw.edited_json_path).suffix.lower()
 
             if edited_file_extension == '.json':
                 edited_file_content, edit_error = load_json_file(self.mw.edited_json_path, parent_widget=self.mw)
