@@ -220,44 +220,49 @@ class LNETLineNumberAreaPaintLogic:
                                 painter.fillRect(bottom_half, self.metadata_indicator_color)
                             indicator_x_start += self.editor.lineNumberArea.preview_indicator_width + self.editor.lineNumberArea.preview_indicator_spacing
 
-                        indicators_to_draw_preview = []
-                        preview_problem_key = (current_block_idx_data_mw, current_q_block_number_in_editor_doc)
-                        aggregated_problems_for_preview_line = set()
+                        # 2. Warning Indicators (Consolidated with stripes)
+                        aggregated_probs = set()
+                        preview_prob_key = (current_block_idx_data_mw, current_q_block_number_in_editor_doc)
                         if hasattr(main_window_ref, 'problems_per_subline'):
                             for key, problems in main_window_ref.problems_per_subline.items():
                                 if key[0] == preview_problem_key[0] and key[1] == preview_problem_key[1]:
-                                     aggregated_problems_for_preview_line.update(problems)
+                                     aggregated_probs.update(problems)
 
-                        filtered_problems_preview = {p_id for p_id in aggregated_problems_for_preview_line if detection_config.get(p_id, True)}
+                        filtered_preview_probs = {p_id for p_id in aggregated_probs if detection_config.get(p_id, True)}
 
-                        sorted_problem_ids_for_preview_indicator = sorted(
-                            list(filtered_problems_preview),
-                            key=lambda pid: problem_definitions.get(pid, {}).get("priority", 99)
-                        )
-
-                        for problem_id in sorted_problem_ids_for_preview_indicator:
-                            if len(indicators_to_draw_preview) >= 3:
-                                break
-                            problem_def_preview = problem_definitions.get(problem_id)
-                            if problem_def_preview:
-                                color = problem_def_preview.get("color")
-                                if color:
-                                    indicator_color = QColor(color)
-                                    if indicator_color.alpha() < 120 and theme == 'dark':
-                                         indicator_color.setAlpha(180)
-                                    if indicator_color not in indicators_to_draw_preview:
-                                        indicators_to_draw_preview.append(indicator_color)
-
-                        current_indicator_x_preview = indicator_x_start
-                        for color_idx, color_val in enumerate(indicators_to_draw_preview):
-                            if current_indicator_x_preview + self.editor.lineNumberArea.preview_indicator_width <= number_part_width + extra_part_width -1:
-                                ind_rect = QRect(current_indicator_x_preview,
-                                                 top + 2,
-                                                 self.editor.lineNumberArea.preview_indicator_width,
-                                                 line_height - 4)
-                                painter.fillRect(ind_rect, color_val)
-                                current_indicator_x_preview += self.editor.lineNumberArea.preview_indicator_width + self.editor.lineNumberArea.preview_indicator_spacing
-                            else: break
+                        if filtered_preview_probs:
+                            sorted_preview_probs = sorted(
+                                list(filtered_preview_probs),
+                                key=lambda pid: problem_definitions.get(pid, {}).get("priority", 99)
+                            )
+                            
+                            warn_indicator_width = 10
+                            warn_indicator_top = top + 2
+                            warn_indicator_height = line_height - 4
+                            
+                            # Background (Highest priority)
+                            bg_p_id = sorted_preview_probs[0]
+                            bg_p_def = problem_definitions.get(bg_p_id, {})
+                            bg_p_color = QColor(bg_p_def.get("color", Qt.transparent))
+                            if bg_p_color.alpha() < 120:
+                                bg_p_color.setAlpha(160)
+                                
+                            painter.fillRect(indicator_x_start, warn_indicator_top, warn_indicator_width, warn_indicator_height, bg_p_color)
+                            
+                            # Stripes for others
+                            if len(sorted_preview_probs) > 1:
+                                s_w = 2
+                                s_x = indicator_x_start + 1
+                                for p_id in sorted_preview_probs[1:]:
+                                    p_def = problem_definitions.get(p_id, {})
+                                    s_color = QColor(p_def.get("color", Qt.transparent))
+                                    if s_color.isValid():
+                                        if s_color.alpha() < 180:
+                                            s_color.setAlpha(220)
+                                        painter.fillRect(s_x, warn_indicator_top + 1, s_w, warn_indicator_height - 2, s_color)
+                                        s_x += s_w + 1
+                                        if s_x + s_w > indicator_x_start + warn_indicator_width:
+                                            break
 
             current_q_block = current_q_block.next()
             top = bottom
