@@ -23,8 +23,8 @@ from utils.constants import (
     DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS
 )
 from .constants import (
-    LT_CURRENT_LINE_COLOR, LT_LINKED_CURSOR_BLOCK_COLOR, LT_PREVIEW_SELECTED_LINE_COLOR,
-    DT_CURRENT_LINE_COLOR, DT_LINKED_CURSOR_BLOCK_COLOR, DT_PREVIEW_SELECTED_LINE_COLOR,
+    LT_CURRENT_LINE_COLOR, LT_LINKED_CURSOR_BLOCK_COLOR, LT_PREVIEW_SELECTED_LINE_COLOR, LT_PREVIOUSLY_SELECTED_LINE_COLOR,
+    DT_CURRENT_LINE_COLOR, DT_LINKED_CURSOR_BLOCK_COLOR, DT_PREVIEW_SELECTED_LINE_COLOR, DT_PREVIOUSLY_SELECTED_LINE_COLOR,
     LINKED_CURSOR_POS_COLOR, TAG_INTERACTION_HIGHLIGHT_COLOR,
     SEARCH_MATCH_HIGHLIGHT_COLOR, WIDTH_EXCEEDED_LINE_COLOR, SHORT_LINE_COLOR,
     EMPTY_ODD_SUBLINE_COLOR, NEW_BLUE_SUBLINE_COLOR,
@@ -511,6 +511,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
             self.current_line_color = DT_CURRENT_LINE_COLOR
             self.linked_cursor_block_color = DT_LINKED_CURSOR_BLOCK_COLOR
             self.preview_selected_line_color = DT_PREVIEW_SELECTED_LINE_COLOR
+            self.previously_selected_line_color = DT_PREVIOUSLY_SELECTED_LINE_COLOR
             self.lineNumberArea.odd_line_background = QColor("#303030") 
             self.lineNumberArea.even_line_background = QColor("#383838")
             self.lineNumberArea.number_color = QColor("#B0B0B0")
@@ -518,6 +519,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
             self.current_line_color = LT_CURRENT_LINE_COLOR
             self.linked_cursor_block_color = LT_LINKED_CURSOR_BLOCK_COLOR
             self.preview_selected_line_color = LT_PREVIEW_SELECTED_LINE_COLOR
+            self.previously_selected_line_color = LT_PREVIOUSLY_SELECTED_LINE_COLOR
             self.lineNumberArea.odd_line_background = QColor(Qt.lightGray).lighter(115) 
             self.lineNumberArea.even_line_background = QColor(Qt.white) 
             self.lineNumberArea.number_color = QColor(Qt.darkGray)

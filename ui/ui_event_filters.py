@@ -11,12 +11,12 @@ class TextEditEventFilter(QObject):
     def eventFilter(self, obj, event):
         if event.type() == QEvent.KeyPress:
             is_ctrl_pressed = event.modifiers() & Qt.ControlModifier
+            is_alt_pressed = event.modifiers() & Qt.AltModifier
             
             if obj is self.mw.preview_text_edit:
-                # Check if a multi-line selection is active
                 is_multi_selection_active = len(self.mw.preview_text_edit.get_selected_lines()) > 1
                 
-                if not is_ctrl_pressed and not is_multi_selection_active:
+                if not is_ctrl_pressed and not is_alt_pressed and not is_multi_selection_active:
                     if event.key() == Qt.Key_Up:
                         current_row = self.mw.current_string_idx
                         if current_row > 0:
@@ -28,7 +28,19 @@ class TextEditEventFilter(QObject):
                             self.mw.list_selection_handler.string_selected_from_preview(current_row + 1)
                         return True
 
-            if is_ctrl_pressed:
+            if is_alt_pressed and not is_ctrl_pressed:
+                if event.key() == Qt.Key_Up:
+                    current_row = self.mw.current_string_idx
+                    if current_row > 0:
+                        self.mw.list_selection_handler.string_selected_from_preview(current_row - 1)
+                    return True
+                elif event.key() == Qt.Key_Down:
+                    current_row = self.mw.current_string_idx
+                    if self.mw.current_block_idx != -1 and self.mw.data and current_row < len(self.mw.data[self.mw.current_block_idx]) - 1:
+                        self.mw.list_selection_handler.string_selected_from_preview(current_row + 1)
+                    return True
+
+            if is_ctrl_pressed and not is_alt_pressed:
                 if event.key() == Qt.Key_Up:
                     log_debug(f"TextEditEventFilter: Ctrl+Up captured on {obj.objectName()}. Calling navigation.")
                     if hasattr(self.mw, 'list_selection_handler'):
