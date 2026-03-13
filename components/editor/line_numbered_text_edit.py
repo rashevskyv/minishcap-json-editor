@@ -367,9 +367,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
                 
                 tooltip_lines.append(f"<span style='color: DarkViolet;'>■</span>: Рядок має індивідуальні налаштування: {', '.join(meta_info)}")
 
-        # Description for Pixel Width (for edited and original editors)
-        if self.objectName() in ["edited_text_edit", "original_text_edit"] and hasattr(self.window(), 'font_map') and self.window().font_map:
-             tooltip_lines.append("<i>Цифри праворуч показують поточну ширину рядка в пікселях.</i>")
 
         if problems:
             problem_definitions = main_window.current_game_rules.get_problem_definitions() if main_window.current_game_rules else {}
@@ -487,9 +484,6 @@ class LineNumberedTextEdit(QPlainTextEdit):
                 
                 tooltip_lines.append(f"<span style='color: DarkViolet;'>■</span>: Рядок має індивідуальні налаштування: {', '.join(meta_info)}")
 
-        # Description for Pixel Width (for edited and original editors)
-        if self.objectName() in ["edited_text_edit", "original_text_edit"] and hasattr(self.window(), 'font_map') and self.window().font_map:
-             tooltip_lines.append("<i>Цифри праворуч показують поточну ширину рядка в пікселях.</i>")
 
         if problems:
             problem_definitions = main_window.current_game_rules.get_problem_definitions() if main_window.current_game_rules else {}
