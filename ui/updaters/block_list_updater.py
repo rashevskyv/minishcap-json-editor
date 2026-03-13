@@ -32,7 +32,9 @@ class BlockListUpdater(BaseUIUpdater):
             
             block_problem_counts = {pid: 0 for pid in problem_definitions.keys()}
             
+            string_count = 0
             if isinstance(self.mw.data[i], list):
+                string_count = len(self.mw.data[i])
                 for data_string_idx in range(len(self.mw.data[i])):
                     data_string_text, _ = self.data_processor.get_current_string_text(i, data_string_idx) 
                     if data_string_text is not None:
@@ -44,7 +46,8 @@ class BlockListUpdater(BaseUIUpdater):
                                 if problem_id in block_problem_counts:
                                     block_problem_counts[problem_id] += 1
             
-            display_name_with_issues = base_display_name
+            base_display_name_with_count = f"{base_display_name} [{string_count}]"
+            display_name_with_issues = base_display_name_with_count
             issue_texts = []
             
             sorted_problem_ids_for_display = sorted(
@@ -69,7 +72,7 @@ class BlockListUpdater(BaseUIUpdater):
                     issue_texts.append(f"{count} {problem_name_short}")
             
             if issue_texts:
-                display_name_with_issues = f"{base_display_name} ({', '.join(issue_texts)})"
+                display_name_with_issues = f"{base_display_name_with_count} ({', '.join(issue_texts)})"
                 
             from pathlib import Path
             from PyQt5.QtWidgets import QTreeWidgetItem
@@ -134,6 +137,7 @@ class BlockListUpdater(BaseUIUpdater):
         block_problem_counts = {pid: 0 for pid in problem_definitions.keys()}
 
         if block_idx < len(self.mw.data) and isinstance(self.mw.data[block_idx], list):
+            string_count = len(self.mw.data[block_idx])
             for data_string_idx in range(len(self.mw.data[block_idx])):
                 data_string_text, _ = self.data_processor.get_current_string_text(block_idx, data_string_idx)
                 if data_string_text is not None:
@@ -145,7 +149,8 @@ class BlockListUpdater(BaseUIUpdater):
                             if problem_id in block_problem_counts:
                                 block_problem_counts[problem_id] += 1
         
-        display_name_with_issues = base_display_name
+        base_display_name_with_count = f"{base_display_name} [{string_count}]"
+        display_name_with_issues = base_display_name_with_count
         issue_texts = []
 
         sorted_problem_ids_for_display = sorted(
@@ -169,7 +174,7 @@ class BlockListUpdater(BaseUIUpdater):
                 issue_texts.append(f"{count} {problem_name_short}")
         
         if issue_texts:
-            display_name_with_issues = f"{base_display_name} ({', '.join(issue_texts)})"
+            display_name_with_issues = f"{base_display_name_with_count} ({', '.join(issue_texts)})"
         
         if item.text(0) != display_name_with_issues:
             item.setText(0, display_name_with_issues)

@@ -128,7 +128,7 @@ class ListSelectionHandler(BaseHandler):
                 self.mw.move_block_down_button.setEnabled(False)
 
 
-    def string_selected_from_preview(self, line_number: int):
+    def string_selected_from_preview(self, line_number: int, is_manual_click: bool = False):
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
 
         original_programmatic_state = self.mw.is_programmatically_changing_text
@@ -182,7 +182,8 @@ class ListSelectionHandler(BaseHandler):
         if preview_edit and self.mw.current_string_idx != -1 and \
            0 <= self.mw.current_string_idx < preview_edit.document().blockCount():
             if hasattr(preview_edit, 'highlightManager'): 
-                preview_edit.highlightManager.setPreviewSelectedLineHighlight([self.mw.current_string_idx], previous_string_idx)
+                origin_line = None if is_manual_click else previous_string_idx
+                preview_edit.highlightManager.setPreviewSelectedLineHighlight([self.mw.current_string_idx], origin_line)
             
             block_to_show = preview_edit.document().findBlockByNumber(self.mw.current_string_idx)
             if block_to_show.isValid():
@@ -317,3 +318,77 @@ class ListSelectionHandler(BaseHandler):
         
         if hasattr(preview_edit, 'highlightManager'):
             preview_edit.highlightManager.setPreviewSelectedLineHighlight(selected_lines)
+
+    def navigate_between_blocks(self, direction_down: bool):
+        if not hasattr(self.mw, 'block_list_widget'): return
+        
+        current_item = self.mw.block_list_widget.currentItem()
+        if not current_item:
+            # Select first block if nothing is selected
+            iterator = QTreeWidgetItemIterator(self.mw.block_list_widget)
+            while iterator.value():
+                item = iterator.value()
+                if item.data(0, Qt.UserRole) is not None:
+                    self.mw.block_list_widget.setCurrentItem(item)
+                    return
+                iterator += 1
+            return
+
+        # Find all items that are blocks (have block_idx data)
+        block_items = []
+        iterator = QTreeWidgetItemIterator(self.mw.block_list_widget)
+        while iterator.value():
+            item = iterator.value()
+            if item.data(0, Qt.UserRole) is not None:
+                block_items.append(item)
+            iterator += 1
+        
+        if not block_items: return
+        
+        try:
+            current_idx = block_items.index(current_item)
+        except ValueError:
+            # If current item isn't a block (maybe a folder), find nearest block
+            if direction_down:
+                self.mw.block_list_widget.setCurrentItem(block_items[0])
+            else:
+                self.mw.block_list_widget.setCurrentItem(block_items[-1])
+            return
+
+        next_idx = current_idx + (1 if direction_down else -1)
+        if 0 <= next_idx < len(block_items):
+            self.mw.block_list_widget.setCurrentItem(block_items[next_idx])
+
+    def navigate_between_folders(self, direction_down: bool):
+        if not hasattr(self.mw, 'block_list_widget'): return
+        
+        current_item = self.mw.block_list_widget.currentItem()
+        
+        # Find all items that are folders (no block_idx data)
+        folder_items = []
+        iterator = QTreeWidgetItemIterator(self.mw.block_list_widget)
+        while iterator.value():
+            item = iterator.value()
+            if item.data(0, Qt.UserRole) is None:
+                folder_items.append(item)
+            iterator += 1
+        
+        if not folder_items: return
+        
+        # Determine starting index
+        current_idx = -1
+        if current_item in folder_items:
+            current_idx = folder_items.index(current_item)
+        else:
+            # If a block is selected, find its parent or just use current list order
+            parent = current_item.parent() if current_item else None
+            if parent and parent in folder_items:
+                current_idx = folder_items.index(parent)
+
+        if current_idx == -1 and not direction_down:
+            current_idx = len(folder_items)
+
+        next_idx = current_idx + (1 if direction_down else -1)
+        if 0 <= next_idx < len(folder_items):
+            self.mw.block_list_widget.setCurrentItem(folder_items[next_idx])
+            folder_items[next_idx].setExpanded(True)

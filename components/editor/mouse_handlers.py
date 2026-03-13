@@ -200,6 +200,61 @@ class LNETMouseHandlers:
                         if hasattr(actual_main_window, 'statusBar'): actual_main_window.statusBar.showMessage(f"Clipboard does not contain a valid tag for replacement.", 2000)
                     event.accept(); return
 
+    def handle_line_number_click(self, y_pos: int):
+        """Handle a click on the line number area."""
+        editor = self.editor
+        cursor = editor.cursorForPosition(QPoint(5, y_pos))
+        if cursor.isNull():
+            return
+
+        block = cursor.block()
+        if not block.isValid():
+            return
+
+        if editor.objectName() == "preview_text_edit":
+            editor.lineClicked.emit(block.blockNumber())
+        else:
+            scroll_value = editor.horizontalScrollBar().value()
+
+            selection_cursor = QTextCursor(block)
+            selection_cursor.select(QTextCursor.BlockUnderCursor)
+            editor.setTextCursor(selection_cursor)
+
+            editor.horizontalScrollBar().setValue(scroll_value)
+            editor.setFocus()
+
+    def handle_line_number_area_mouse_move(self, event):
+        """Show tooltip when hovering over the line number area."""
+        from PyQt5.QtWidgets import QToolTip
+
+        line_idx = self._get_line_index_from_y(event.pos().y())
+        if line_idx == -1:
+            QToolTip.hideText()
+            return
+
+        dummy_pos = QPoint(self.editor.lineNumberArea.width() + 10, event.pos().y())
+        tooltip_text = self.editor.tooltip_logic.find_warning_tooltip_at(dummy_pos)
+
+        if tooltip_text:
+            QToolTip.showText(event.globalPos(), tooltip_text, self.editor.lineNumberArea)
+        else:
+            QToolTip.hideText()
+
+    def _get_line_index_from_y(self, y: int) -> int:
+        """Get the block number for a given y coordinate."""
+        editor = self.editor
+        block = editor.firstVisibleBlock()
+        top = int(editor.blockBoundingGeometry(block).translated(editor.contentOffset()).top())
+        bottom = top + int(editor.blockBoundingRect(block).height())
+
+        while block.isValid() and top <= y:
+            if block.isVisible() and y >= top and y <= bottom:
+                return block.blockNumber()
+            block = block.next()
+            top = bottom
+            bottom = top + int(editor.blockBoundingRect(block).height())
+        return -1
+
     def mousePressEvent(self, event: QMouseEvent):
         if self.editor.objectName() == "preview_text_edit":
             cursor = self.editor.cursorForPosition(event.pos())

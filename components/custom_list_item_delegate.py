@@ -95,7 +95,9 @@ class CustomListItemDelegate(QStyledItemDelegate):
         if is_selected:
             painter.fillRect(option.rect, option.palette.highlight())
         else:
-            painter.fillRect(option.rect, option.palette.base())
+            is_alternate = option.features & QStyleOptionViewItem.Alternate
+            bg_brush = option.palette.alternateBase() if is_alternate else option.palette.base()
+            painter.fillRect(option.rect, bg_brush)
         
         main_window = self.list_widget.window() if self.list_widget else None
         theme = 'light'

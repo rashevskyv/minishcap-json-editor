@@ -28,6 +28,7 @@ def setup_main_window_ui(main_window):
     block_list_container_layout.setSpacing(0)
 
     main_window.block_list_widget = CustomTreeWidget(main_window)
+    main_window.block_list_widget.setAlternatingRowColors(True)
     block_list_container_layout.addWidget(main_window.block_list_widget)
 
     # Toolbar for block management (at bottom of list widget)
@@ -137,6 +138,10 @@ def setup_main_window_ui(main_window):
     main_window.navigate_down_button.setIcon(main_window.style().standardIcon(QStyle.SP_ArrowDown))
     main_window.navigate_down_button.setToolTip("Navigate to next problem string (Ctrl+Down)")
     editable_text_header_layout.addWidget(main_window.navigate_down_button)
+
+    main_window.help_button = QPushButton("?")
+    main_window.help_button.setToolTip("View Shortcuts & Help")
+    editable_text_header_layout.addWidget(main_window.help_button)
 
     main_window.ai_translate_button = QPushButton('AI Translate')
     editable_text_header_layout.addWidget(main_window.ai_translate_button)
@@ -361,6 +366,22 @@ def setup_main_window_ui(main_window):
     main_window.rescan_all_tags_action = QAction(QIcon.fromTheme("system-search"), 'Rescan All Issues', main_window)
     edit_menu.addAction(main_window.rescan_all_tags_action)
 
+    # Navigation Actions
+    main_window.next_block_nav_action = QAction('Next Block Nav', main_window)
+    main_window.next_block_nav_action.setShortcut('Ctrl+Shift+Down')
+    main_window.addAction(main_window.next_block_nav_action)
+
+    main_window.prev_block_nav_action = QAction('Previous Block Nav', main_window)
+    main_window.prev_block_nav_action.setShortcut('Ctrl+Shift+Up')
+    main_window.addAction(main_window.prev_block_nav_action)
+
+    main_window.next_folder_nav_action = QAction('Next Folder Nav', main_window)
+    main_window.next_folder_nav_action.setShortcut('Ctrl+Shift+Right')
+    main_window.addAction(main_window.next_folder_nav_action)
+
+    main_window.prev_folder_nav_action = QAction('Previous Folder Nav', main_window)
+    main_window.prev_folder_nav_action.setShortcut('Ctrl+Shift+Left')
+    main_window.addAction(main_window.prev_folder_nav_action)
 
     main_window.main_toolbar = QToolBar("Main Toolbar")
     main_window.addToolBar(main_window.main_toolbar)

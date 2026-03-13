@@ -167,16 +167,23 @@ class TextHighlightManager:
                     new_selections.append(selection)
                     
         # Manage origin line state
-        if previous_line_number is not None and previous_line_number not in line_numbers:
-            # We only adopt a new origin line if we are not currently holding/fading one OR
-            # if the previous line actually jumped from somewhere that isn't the origin.
-            # But the requirement states: "the line from which we started the movement".
-            # If `_origin_line_number` is already set and we just moved again, keep it.
+        if previous_line_number == -2:
+            # -2 means Preserve current origin state (usually from UI updates)
+            pass
+        elif previous_line_number is not None and previous_line_number != -1 and previous_line_number not in line_numbers:
+            # If we don't have an origin or the old one faded out, set a new one
             if self._origin_line_number is None or self._origin_line_alpha <= 0.0:
                 self._origin_line_number = previous_line_number
-                
-            self._origin_line_alpha = 1.0
-            self._origin_stay_timer.start(7000)
+                self._origin_line_alpha = 1.0
+                self._origin_stay_timer.start(7000)
+                self._origin_fade_timer.stop()
+        elif previous_line_number is None and not line_numbers == self._current_selected_lines:
+            # If this was a manual click (previous_line_number is None) and we are actually
+            # calling from list_selection_handler (not a timer tick), reset the origin
+            # so the NEXT movement starts from this new clicked line.
+            self._origin_line_number = None
+            self._origin_line_alpha = 0.0
+            self._origin_stay_timer.stop()
             self._origin_fade_timer.stop()
             
         # Clear origin if we moved back to it
@@ -191,7 +198,7 @@ class TextHighlightManager:
             base_color = getattr(self.editor, 'previously_selected_line_color', self.editor.preview_selected_line_color)
             
             fade_color = QColor(base_color)
-            max_alpha = 120 # About half of 255 base opacity
+            max_alpha = 40 # Half of previous 60, making it very transparent
             fade_color.setAlpha(int(max_alpha * self._origin_line_alpha))
             
             selection = self._create_block_background_selection(block, fade_color, use_full_width=True)

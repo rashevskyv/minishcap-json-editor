@@ -12,8 +12,11 @@ class LNETPaintEventLogic:
         self.helpers = helpers
 
     def execute_paint_event(self, event: QPaintEvent):
-        if self.editor.objectName() != "preview_text_edit":
-            painter_lines = QPainter(self.editor.viewport()) 
+        painter_lines = QPainter(self.editor.viewport())
+        
+        is_preview = self.editor.objectName() == "preview_text_edit"
+        
+        if not is_preview:
             pen_lines = QPen(PAIR_SEPARATOR_LINE_COLOR)
             pen_lines.setStyle(PAIR_SEPARATOR_LINE_STYLE)
             pen_lines.setWidth(PAIR_SEPARATOR_LINE_THICKNESS)
@@ -52,6 +55,23 @@ class LNETPaintEventLogic:
             while block.isValid() and block.layout():
                 layout = block.layout()
                 block_rect = self.editor.blockBoundingGeometry(block).translated(viewport_offset)
+                
+                # Draw visual line backgrounds (zebra stripes)
+                # We use DestinationOver to paint behind the already painted text
+                old_composition_mode = painter_lines.compositionMode()
+                painter_lines.setCompositionMode(QPainter.CompositionMode_DestinationOver)
+                
+                # Use block number to determine even/odd for blocks
+                # In this app, blocks usually map to strings/entries
+                is_odd = block.blockNumber() % 2 != 0
+                bg_color = getattr(self.editor, 'zebra_odd_color', QColor(Qt.transparent)) if is_odd else \
+                           getattr(self.editor, 'zebra_even_color', QColor(Qt.transparent))
+                
+                if bg_color != Qt.transparent:
+                    # Draw background for the whole block area in viewport
+                    painter_lines.fillRect(block_rect.toRect().intersected(self.editor.viewport().rect()), bg_color)
+                
+                painter_lines.setCompositionMode(old_composition_mode)
 
                 for i in range(layout.lineCount()):
                     line = layout.lineAt(i)
@@ -60,7 +80,7 @@ class LNETPaintEventLogic:
 
                     # Check if we should draw separator line
                     # Don't draw lines if custom line numbers are set (e.g., spellcheck dialog)
-                    if not (hasattr(self.editor, 'custom_line_numbers') and self.editor.custom_line_numbers):
+                    if not is_preview and not (hasattr(self.editor, 'custom_line_numbers') and self.editor.custom_line_numbers):
                         # Default behavior: draw line every page_size lines
                         if (doc_visual_line_index + 1) % page_size == 0:
                          line_bottom_y_in_viewport = block_rect.top() + line.rect().bottom()

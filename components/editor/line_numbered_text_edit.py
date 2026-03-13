@@ -2,10 +2,9 @@
 # --- START OF FILE components/line_numbered_text_edit.py ---
 # --- START OF FILE components/LineNumberedTextEdit.py ---
 from PyQt5.QtWidgets import (QPlainTextEdit, QMainWindow, QMenu, QApplication, QAction,
-                             QWidget, QHBoxLayout, QPushButton, QWidgetAction, QDialog,
-                             QVBoxLayout, QComboBox, QDialogButtonBox, QLabel, QSpinBox, QToolTip)
-from PyQt5.QtGui import (QPainter, QFont, QPaintEvent, QKeyEvent, QKeySequence, QMouseEvent, QIcon, QPixmap, QColor, QTextLine, QTextCursor, QDrag)
-from PyQt5.QtCore import Qt, QRect, QSize, QRectF, pyqtSignal, QPoint, QMimeData, QByteArray
+                             QWidget, QHBoxLayout, QWidgetAction, QToolTip)
+from PyQt5.QtGui import (QFont, QPaintEvent, QKeyEvent, QMouseEvent, QTextCursor, QDrag)
+from PyQt5.QtCore import Qt, QRect, QRectF, pyqtSignal, QPoint, QMimeData, QByteArray
 from typing import Optional, List, Tuple
 from pathlib import Path
 
@@ -14,7 +13,7 @@ from .text_highlight_manager import TextHighlightManager
 from utils.logging_utils import log_debug, log_error
 from utils.syntax_highlighter import JsonTagHighlighter
 from core.glossary_manager import GlossaryEntry
-from utils.utils import SPACE_DOT_SYMBOL
+
 from utils.constants import (
     EDITOR_PLAYER_TAG as EDITOR_PLAYER_TAG_CONST,
     ORIGINAL_PLAYER_TAG as ORIGINAL_PLAYER_TAG_CONST,
@@ -23,20 +22,22 @@ from utils.constants import (
     DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS
 )
 from .constants import (
-    LT_CURRENT_LINE_COLOR, LT_LINKED_CURSOR_BLOCK_COLOR, LT_PREVIEW_SELECTED_LINE_COLOR, LT_PREVIOUSLY_SELECTED_LINE_COLOR,
-    DT_CURRENT_LINE_COLOR, DT_LINKED_CURSOR_BLOCK_COLOR, DT_PREVIEW_SELECTED_LINE_COLOR, DT_PREVIOUSLY_SELECTED_LINE_COLOR,
-    LINKED_CURSOR_POS_COLOR, TAG_INTERACTION_HIGHLIGHT_COLOR,
-    SEARCH_MATCH_HIGHLIGHT_COLOR, WIDTH_EXCEEDED_LINE_COLOR, SHORT_LINE_COLOR,
-    EMPTY_ODD_SUBLINE_COLOR, NEW_BLUE_SUBLINE_COLOR,
     CHARACTER_LIMIT_LINE_POSITION, CHARACTER_LIMIT_LINE_COLOR, CHARACTER_LIMIT_LINE_STYLE, CHARACTER_LIMIT_LINE_WIDTH,
-    WIDTH_THRESHOLD_LINE_COLOR, WIDTH_THRESHOLD_LINE_STYLE, WIDTH_THRESHOLD_LINE_WIDTH,
-    CRITICAL_PROBLEM_LINE_COLOR, WARNING_PROBLEM_LINE_COLOR
+    WIDTH_THRESHOLD_LINE_COLOR, WIDTH_THRESHOLD_LINE_STYLE, WIDTH_THRESHOLD_LINE_WIDTH
 )
 from .mouse_handlers import LNETMouseHandlers
 from .highlight_interface import LNETHighlightInterface
 from .paint_helpers import LNETPaintHelpers
 from .paint_event_logic import LNETPaintEventLogic
 from .line_number_area_paint_logic import LNETLineNumberAreaPaintLogic
+from .lnet_context_menu_logic import LNETContextMenuLogic
+from .lnet_spellcheck_logic import LNETSpellcheckLogic
+from .lnet_tooltips import LNETTooltipLogic
+from .lnet_dialogs import MassFontDialog, MassWidthDialog
+from .lnet_tag_helpers import LNETTagHelpers
+from .lnet_highlight_wrappers import LNETHighlightWrappers
+from .lnet_keyboard_handler import LNETKeyboardHandler
+from . import lnet_editor_setup
 
 class LineNumberedTextEdit(QPlainTextEdit):
     lineClicked = pyqtSignal(int)
@@ -70,7 +71,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.lineNumberArea = LineNumberArea(self)
         
         main_window_ref = parent if isinstance(parent, QMainWindow) else (self.window() if isinstance(self.window(), QMainWindow) else None)
-        self._set_theme_colors(main_window_ref)
+        lnet_editor_setup.set_theme_colors(self, main_window_ref)
 
         self.highlightManager = TextHighlightManager(self)
         self.mouse_handler = LNETMouseHandlers(self) 
@@ -116,28 +117,18 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.width_threshold_line_style = WIDTH_THRESHOLD_LINE_STYLE
         self.width_threshold_line_width = WIDTH_THRESHOLD_LINE_WIDTH
 
-        self._update_auxiliary_widths()
+        # Logic delegates
+        self.context_menu_logic = LNETContextMenuLogic(self)
+        self.spellcheck_logic = LNETSpellcheckLogic(self)
+        self.tooltip_logic = LNETTooltipLogic(self)
+        self.tag_helpers = LNETTagHelpers(self)
+        self.hi_wrappers = LNETHighlightWrappers(self)
+        self.keyboard_handler = LNETKeyboardHandler(self)
+
+        lnet_editor_setup.update_auxiliary_widths(self)
 
     def handle_line_number_click(self, y_pos: int):
-        cursor = self.cursorForPosition(QPoint(5, y_pos))
-        if cursor.isNull():
-            return
-        
-        block = cursor.block()
-        if not block.isValid():
-            return
-            
-        if self.objectName() == "preview_text_edit":
-            self.lineClicked.emit(block.blockNumber())
-        else:
-            scroll_value = self.horizontalScrollBar().value()
-            
-            selection_cursor = QTextCursor(block)
-            selection_cursor.select(QTextCursor.BlockUnderCursor)
-            self.setTextCursor(selection_cursor)
-            
-            self.horizontalScrollBar().setValue(scroll_value)
-            self.setFocus()
+        self.mouse_handler.handle_line_number_click(y_pos)
 
     def set_glossary_manager(self, manager) -> None:
         self._glossary_manager = manager
@@ -150,106 +141,10 @@ class LineNumberedTextEdit(QPlainTextEdit):
             word_cursor.insertText(replacement)
 
     def _open_spellcheck_dialog_for_selection(self, position_in_widget_coords: QPoint) -> None:
-        """Open spellcheck dialog for selected lines from edited_text_edit."""
-        log_debug(f"LineNumberedTextEdit: _open_spellcheck_dialog_for_selection called")
-
-        try:
-            main_window = self.window()
-            if not isinstance(main_window, QMainWindow):
-                log_debug("LineNumberedTextEdit: main_window is not QMainWindow")
-                return
-
-            spellchecker_manager = getattr(main_window, 'spellchecker_manager', None)
-            log_debug(f"LineNumberedTextEdit: spellchecker_manager={spellchecker_manager}, enabled={spellchecker_manager.enabled if spellchecker_manager else 'N/A'}")
-
-            if not spellchecker_manager:
-                log_debug("LineNumberedTextEdit: No spellchecker_manager")
-                return
-
-            # Get edited_text_edit
-            if not hasattr(main_window, 'edited_text_edit') or not main_window.edited_text_edit:
-                log_debug("LineNumberedTextEdit: No edited_text_edit")
-                return
-
-            edited_text_edit = main_window.edited_text_edit
-
-            # Get text to spellcheck from edited_text_edit (translation), not preview (original)
-            selected_lines = self.get_selected_lines()
-            log_debug(f"LineNumberedTextEdit: selected_lines={selected_lines}")
-
-            line_numbers = []
-            if selected_lines:
-                # Get text from selected lines in edited_text_edit
-                text_parts = []
-                for line_num in selected_lines:
-                    block = edited_text_edit.document().findBlockByNumber(line_num)
-                    if block.isValid():
-                        text_parts.append(block.text())
-                        line_numbers.append(line_num)
-                text_to_check = '\n'.join(text_parts)
-            else:
-                # Get text from line at cursor in edited_text_edit
-                cursor = self.cursorForPosition(position_in_widget_coords)
-                line_num = cursor.blockNumber()
-                log_debug(f"LineNumberedTextEdit: line_num at cursor={line_num}")
-
-                block = edited_text_edit.document().findBlockByNumber(line_num)
-                if not block.isValid():
-                    log_debug("LineNumberedTextEdit: Block not valid")
-                    return
-                text_to_check = block.text()
-                line_numbers = [line_num]
-
-            log_debug(f"LineNumberedTextEdit: text_to_check length={len(text_to_check)}, line_numbers={line_numbers}")
-
-            if not text_to_check.strip():
-                log_debug("LineNumberedTextEdit: text_to_check is empty")
-                return
-
-            log_debug("LineNumberedTextEdit: Opening SpellcheckDialog")
-
-            # Import here to avoid circular dependency
-            from dialogs.spellcheck_dialog import SpellcheckDialog
-
-            # Open dialog with real line numbers
-            dialog = SpellcheckDialog(self, text_to_check, spellchecker_manager,
-                                     starting_line_number=0, line_numbers=line_numbers)
-            log_debug("LineNumberedTextEdit: SpellcheckDialog created, calling exec_()")
-
-            if dialog.exec_():
-                log_debug("LineNumberedTextEdit: Dialog accepted, applying corrections")
-                corrected_text = dialog.get_corrected_text()
-                # Update edited_text_edit with corrected text
-                self._apply_corrected_text_to_editor(corrected_text, line_numbers)
-                log_debug("LineNumberedTextEdit: Corrections applied")
-            else:
-                log_debug("LineNumberedTextEdit: Dialog cancelled")
-
-        except Exception as e:
-            log_error(f"LineNumberedTextEdit: Error in _open_spellcheck_dialog_for_selection: {e}", exc_info=True)
+        self.spellcheck_logic.open_dialog_for_selection(position_in_widget_coords)
 
     def _apply_corrected_text_to_editor(self, corrected_text: str, line_numbers: List[int]) -> None:
-        """Apply corrected text back to the edited_text_edit."""
-        main_window = self.window()
-        if not isinstance(main_window, QMainWindow):
-            return
-
-        if not hasattr(main_window, 'edited_text_edit') or not main_window.edited_text_edit:
-            return
-
-        edited_text_edit = main_window.edited_text_edit
-
-        # Split corrected text by lines
-        corrected_lines = corrected_text.split('\n')
-
-        # Update each line in edited_text_edit
-        for i, line_num in enumerate(line_numbers):
-            if i < len(corrected_lines):
-                block = edited_text_edit.document().findBlockByNumber(line_num)
-                if block.isValid():
-                    cursor = QTextCursor(block)
-                    cursor.select(QTextCursor.BlockUnderCursor)
-                    cursor.insertText(corrected_lines[i])
+        self.spellcheck_logic.apply_corrected_text(corrected_text, line_numbers)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         entry = self._find_glossary_entry_at(event.pos())
@@ -292,98 +187,8 @@ class LineNumberedTextEdit(QPlainTextEdit):
         super().mouseMoveEvent(event)
 
     def handle_line_number_area_mouse_move(self, event: QMouseEvent):
-        # Calculate which line is at this Y position
-        line_idx = self._get_line_index_from_y(event.pos().y())
-        if line_idx == -1:
-            QToolTip.hideText()
-            return
-            
-        tooltip_text = self._get_line_area_tooltip(line_idx)
-        
-        if tooltip_text:
-            QToolTip.showText(event.globalPos(), tooltip_text, self.lineNumberArea)
-        else:
-            QToolTip.hideText()
+        self.mouse_handler.handle_line_number_area_mouse_move(event)
 
-    def _get_line_index_from_y(self, y: int) -> int:
-        block = self.firstVisibleBlock()
-        top = int(self.blockBoundingGeometry(block).translated(self.contentOffset()).top())
-        bottom = top + int(self.blockBoundingRect(block).height())
-
-        while block.isValid() and top <= y:
-            if block.isVisible() and y >= top and y <= bottom:
-                return block.blockNumber()
-            block = block.next()
-            top = bottom
-            bottom = top + int(self.blockBoundingRect(block).height())
-        return -1
-
-    def _get_line_area_tooltip(self, line_idx: int) -> Optional[str]:
-        main_window = self.window()
-        if not hasattr(main_window, 'current_block_idx'):
-            return None
-            
-        block_idx = main_window.current_block_idx
-        problems = set()
-        
-        is_preview = self.objectName() == "preview_text_edit"
-        is_editor = self.objectName() in ["original_text_edit", "edited_text_edit"]
-        
-        if is_preview:
-            string_idx = line_idx
-            for key, probs in getattr(main_window, 'problems_per_subline', {}).items():
-                if key[0] == block_idx and key[1] == string_idx:
-                    problems.update(probs)
-        else:
-            if not hasattr(main_window, 'current_string_idx'):
-                return None
-            string_idx = main_window.current_string_idx
-            problems = getattr(main_window, 'problems_per_subline', {}).get((block_idx, string_idx, line_idx), set())
-            
-        tooltip_lines = []
-        
-        # Check for Unsaved Changes indicator (*)
-        is_unsaved = False
-        if is_preview:
-            is_unsaved = (block_idx, string_idx) in getattr(main_window, 'edited_data', {})
-        elif is_editor and string_idx != -1:
-            is_unsaved = (block_idx, string_idx) in getattr(main_window, 'edited_data', {})
-        
-        if is_unsaved:
-             tooltip_lines.append("<b>*</b>: Unsaved changes")
-
-        # Check for Metadata indicators in Preview
-        if is_preview:
-            string_meta = getattr(main_window, 'string_metadata', {}).get((block_idx, string_idx), {})
-            if "font_file" in string_meta or "width" in string_meta:
-                meta_info = []
-                if "font_file" in string_meta:
-                    from pathlib import Path
-                    font_name = Path(string_meta['font_file']).name
-                    meta_info.append(f"шрифт (<b>{font_name}</b>)")
-                if "width" in string_meta:
-                    meta_info.append(f"ширину (<b>{string_meta['width']}px</b>)")
-                
-                tooltip_lines.append(f"<span style='color: DarkViolet;'>■</span>: Рядок має індивідуальні налаштування: {', '.join(meta_info)}")
-
-
-        if problems:
-            problem_definitions = main_window.current_game_rules.get_problem_definitions() if main_window.current_game_rules else {}
-            for prob_id in sorted(list(problems)):
-                prob_def = problem_definitions.get(prob_id, {})
-                desc = prob_def.get("description", prob_id)
-                name = prob_def.get("name", "")
-                
-                detection_config = getattr(main_window, 'detection_enabled', {})
-                if not detection_config.get(prob_id, True):
-                    continue
-
-                if name:
-                    tooltip_lines.append(f"<b>{name}</b>: {desc}")
-                else:
-                    tooltip_lines.append(desc)
-                    
-        return "<br><br>".join(tooltip_lines) if tooltip_lines else None
 
     def get_selected_lines(self):
         return sorted(list(self._selected_lines))
@@ -429,399 +234,20 @@ class LineNumberedTextEdit(QPlainTextEdit):
         return self.glossary_manager.find_entry_at(block.blockNumber(), pos_in_block)
 
     def _find_warning_tooltip_at(self, pos: QPoint) -> Optional[str]:
-        # Get line under mouse
-        cursor = self.cursorForPosition(pos)
-        block = cursor.block()
-        if not block.isValid():
-            return None
-        
-        line_idx_in_widget = block.blockNumber() 
-        main_window = self.window()
-        if not hasattr(main_window, 'current_block_idx'):
-            return None
-            
-        block_idx = main_window.current_block_idx
-        problems = set()
-        
-        is_preview = self.objectName() == "preview_text_edit"
-        is_editor = self.objectName() in ["original_text_edit", "edited_text_edit"]
+        return self.tooltip_logic.find_warning_tooltip_at(pos)
 
-        if is_preview:
-            string_idx = line_idx_in_widget
-            for key, probs in getattr(main_window, 'problems_per_subline', {}).items():
-                if key[0] == block_idx and key[1] == string_idx:
-                    problems.update(probs)
-        else:
-            if not hasattr(main_window, 'current_string_idx'):
-                return None
-            string_idx = main_window.current_string_idx
-            problems = getattr(main_window, 'problems_per_subline', {}).get((block_idx, string_idx, line_idx_in_widget), set())
-        
-        tooltip_lines = []
-        
-        # Check for Unsaved Changes indicator (*)
-        is_unsaved = False
-        if is_preview:
-            is_unsaved = (block_idx, string_idx) in getattr(main_window, 'edited_data', {})
-        elif is_editor and string_idx != -1:
-            is_unsaved = (block_idx, string_idx) in getattr(main_window, 'edited_data', {})
-        
-        if is_unsaved:
-             tooltip_lines.append("<b>*</b>: Незбережені зміни")
-
-        # Check for Metadata indicators in Preview
-        if is_preview:
-            string_meta = getattr(main_window, 'string_metadata', {}).get((block_idx, string_idx), {})
-            if "font_file" in string_meta or "width" in string_meta:
-                meta_info = []
-                if "font_file" in string_meta:
-                    from pathlib import Path
-                    font_name = Path(string_meta['font_file']).name
-                    meta_info.append(f"шрифт (<b>{font_name}</b>)")
-                if "width" in string_meta:
-                    meta_info.append(f"ширину (<b>{string_meta['width']}px</b>)")
-                
-                tooltip_lines.append(f"<span style='color: DarkViolet;'>■</span>: Рядок має індивідуальні налаштування: {', '.join(meta_info)}")
-
-
-        if problems:
-            problem_definitions = main_window.current_game_rules.get_problem_definitions() if main_window.current_game_rules else {}
-            for prob_id in sorted(list(problems)):
-                prob_def = problem_definitions.get(prob_id, {})
-                desc = prob_def.get("description", prob_id)
-                name = prob_def.get("name", "")
-                
-                detection_config = getattr(main_window, 'detection_enabled', {})
-                if not detection_config.get(prob_id, True):
-                    continue
-
-                if name:
-                    tooltip_lines.append(f"<b>{name}</b>: {desc}")
-                else:
-                    tooltip_lines.append(desc)
-        
-        return "<br><br>".join(tooltip_lines) if tooltip_lines else None
 
     def _set_theme_colors(self, main_window_ref):
-        theme = 'light'
-        if main_window_ref and hasattr(main_window_ref, 'theme'):
-            theme = main_window_ref.theme
-
-        if theme == 'dark':
-            self.current_line_color = DT_CURRENT_LINE_COLOR
-            self.linked_cursor_block_color = DT_LINKED_CURSOR_BLOCK_COLOR
-            self.preview_selected_line_color = DT_PREVIEW_SELECTED_LINE_COLOR
-            self.previously_selected_line_color = DT_PREVIOUSLY_SELECTED_LINE_COLOR
-            self.lineNumberArea.odd_line_background = QColor("#303030") 
-            self.lineNumberArea.even_line_background = QColor("#383838")
-            self.lineNumberArea.number_color = QColor("#B0B0B0")
-        else:
-            self.current_line_color = LT_CURRENT_LINE_COLOR
-            self.linked_cursor_block_color = LT_LINKED_CURSOR_BLOCK_COLOR
-            self.preview_selected_line_color = LT_PREVIEW_SELECTED_LINE_COLOR
-            self.previously_selected_line_color = LT_PREVIOUSLY_SELECTED_LINE_COLOR
-            self.lineNumberArea.odd_line_background = QColor(Qt.lightGray).lighter(115) 
-            self.lineNumberArea.even_line_background = QColor(Qt.white) 
-            self.lineNumberArea.number_color = QColor(Qt.darkGray)
-
-        self.linked_cursor_pos_color = LINKED_CURSOR_POS_COLOR
-        self.tag_interaction_highlight_color = TAG_INTERACTION_HIGHLIGHT_COLOR
-        self.search_match_highlight_color = SEARCH_MATCH_HIGHLIGHT_COLOR
-        self.width_exceeded_line_color = WIDTH_EXCEEDED_LINE_COLOR 
-        self.short_line_color = SHORT_LINE_COLOR 
-        self.empty_odd_subline_color = EMPTY_ODD_SUBLINE_COLOR
-        self.new_blue_subline_color = NEW_BLUE_SUBLINE_COLOR 
-        self.critical_problem_line_color = CRITICAL_PROBLEM_LINE_COLOR
-        self.warning_problem_line_color = WARNING_PROBLEM_LINE_COLOR
+        lnet_editor_setup.set_theme_colors(self, main_window_ref)
 
     def _create_tag_button(self, parent_widget, display: str, open_tag: str, close_tag: str = None, menu: QMenu = None):
-        btn = QPushButton(parent_widget)
-        button_size = 24 
-        btn.setFixedSize(button_size, button_size)
-        
-        is_color = display.startswith('#')
-        if is_color:
-            style = f"background-color: {display}; border: 1px solid black; border-radius: 3px;"
-            btn.setStyleSheet(style)
-            btn.setToolTip(f"Обгорнути: {open_tag}{'...' + close_tag if close_tag else ''}")
-        else:
-            btn.setText(display)
-            btn.setToolTip(f"Вставити/Обгорнути: {open_tag}{'...' + close_tag if close_tag else ''}")
-            btn.setStyleSheet("padding: 0px; font-size: 14px;")
-
-        def on_click():
-            if close_tag:
-                self.mouse_handler.wrap_selection_with_custom_tags(open_tag, close_tag)
-            else:
-                self.mouse_handler.insert_single_tag(open_tag)
-            
-            if menu:
-                menu.close()
-
-        btn.clicked.connect(on_click)
-        
-        return btn
+        return lnet_editor_setup.create_tag_button(self, parent_widget, display, open_tag, close_tag, menu)
 
     def populateContextMenu(self, menu: QMenu, position_in_widget_coords):
-        log_debug(f"LNET ({self.objectName()}): populateContextMenu called.")
-        main_window = self.window()
-        if not isinstance(main_window, QMainWindow):
-            return
-
-        translator = getattr(main_window, 'translation_handler', None)
-        custom_actions_added = False
-
-        glossary_entry = None
-        if self.objectName() == "original_text_edit":
-            cursor = self.textCursor()
-            selection_text = cursor.selectedText().replace('\u2029', '\r\n').strip()
-            if selection_text:
-                add_term_candidate = selection_text
-                context_line = cursor.block().text().replace('\u2029', ' ').strip()
-            else:
-                cursor_at_pos = self.cursorForPosition(position_in_widget_coords)
-                cursor_at_pos.select(QTextCursor.WordUnderCursor)
-                add_term_candidate = cursor_at_pos.selectedText().replace('\u2029', '\r\n').strip()
-                context_line = cursor_at_pos.block().text().replace('\u2029', ' ').strip()
-
-            context_line = context_line or ''
-
-            glossary_entry = self._find_glossary_entry_at(position_in_widget_coords)
-            existing_entry = None
-            if glossary_entry and translator is not None:
-                existing_entry = glossary_entry
-            elif translator is not None and add_term_candidate:
-                existing_entry = translator.get_glossary_entry(add_term_candidate)
-
-            if existing_entry and translator is not None:
-                action = menu.addAction("Edit Glossary Entry…")
-                action.setEnabled(True)
-                action.triggered.connect(
-                    lambda checked=False, term=existing_entry.original: translator.edit_glossary_entry(term)
-                )
-            else:
-                action = menu.addAction("Add to Glossary…")
-                action_enabled = bool(add_term_candidate) and translator is not None
-                action.setEnabled(action_enabled)
-                if action_enabled:
-                    action.triggered.connect(
-                        lambda checked=False, term=add_term_candidate, ctx=context_line: translator.add_glossary_entry(term, ctx)
-                    )
-            custom_actions_added = True
-            if glossary_entry:
-                menu.addSeparator()
-                term_value = glossary_entry.original
-                show_action = menu.addAction(
-                    f"Show Glossary Entry for \"{term_value}\""
-                )
-                if translator:
-                    show_action.triggered.connect(
-                        lambda checked=False, term=term_value: translator.show_glossary_dialog(term)
-                    )
-                else:
-                    show_action.setEnabled(False)
-                menu.addSeparator()
-
-        if self.objectName() == "edited_text_edit" and not self.isReadOnly():
-            cursor = self.textCursor()
-            has_selection = cursor.hasSelection()
-
-            # Spellchecker: Show suggestions and add to dictionary
-            spellchecker_manager = getattr(main_window, 'spellchecker_manager', None)
-            if spellchecker_manager and spellchecker_manager.enabled:
-                # Get word under cursor and its position
-                if not has_selection:
-                    cursor_at_pos = self.cursorForPosition(position_in_widget_coords)
-                    click_position = cursor_at_pos.position()
-                    block = cursor_at_pos.block()
-                    block_text = block.text()
-                    position_in_block = click_position - block.position()
-
-                    # Replace middle dots with spaces for word detection
-                    text_with_spaces = block_text.replace('·', ' ')
-
-                    # Find word boundaries at click position using regex
-                    import re
-                    word_pattern = re.compile(r'[a-zA-Zа-яА-ЯіїІїЄєґҐ\']+')
-                    word_under_cursor = ""
-                    word_start = 0
-                    word_end = 0
-
-                    for match in word_pattern.finditer(text_with_spaces):
-                        if match.start() <= position_in_block < match.end():
-                            word_under_cursor = match.group(0).strip("'")
-                            word_start = match.start()
-                            word_end = match.end()
-                            break
-
-                    # Create cursor for the actual word (in original text with middle dots)
-                    word_cursor = QTextCursor(block)
-                    word_cursor.setPosition(block.position() + word_start)
-                    word_cursor.setPosition(block.position() + word_end, QTextCursor.KeepAnchor)
-                else:
-                    # Replace middle dots with spaces, then extract first word, strip apostrophes
-                    raw_text = cursor.selectedText().strip()
-                    text_with_spaces = raw_text.replace('·', ' ')
-                    word_under_cursor = text_with_spaces.split()[0].strip("'") if text_with_spaces.split() else ""
-                    word_cursor = cursor
-
-                if word_under_cursor and spellchecker_manager.is_misspelled(word_under_cursor):
-                    if not custom_actions_added:
-                        menu.addSeparator()
-                        custom_actions_added = True
-
-                    # Get spelling suggestions
-                    suggestions = spellchecker_manager.get_suggestions(word_under_cursor)
-
-                    if suggestions:
-                        # Limit to first 5 suggestions
-                        for suggestion in suggestions[:5]:
-                            suggestion_action = menu.addAction(f"→ {suggestion}")
-                            suggestion_action.triggered.connect(
-                                lambda checked=False, s=suggestion, c=word_cursor: self._replace_word_at_cursor(c, s)
-                            )
-                        menu.addSeparator()
-                    else:
-                        # No suggestions available
-                        no_suggestions_action = menu.addAction("(No suggestions)")
-                        no_suggestions_action.setEnabled(False)
-                        menu.addSeparator()
-
-                    add_to_dict_action = menu.addAction(f"Add \"{word_under_cursor}\" to Dictionary")
-                    add_to_dict_action.triggered.connect(
-                        lambda checked=False, word=word_under_cursor: spellchecker_manager.add_to_custom_dictionary(word)
-                    )
-                    log_debug(f"Added 'Add to Dictionary' context menu item for word: {word_under_cursor}")
-
-            if translator and has_selection:
-                if not custom_actions_added:
-                    menu.addSeparator()
-                    custom_actions_added = True
-
-                variation_action = menu.addAction("AI Variations for Selected")
-                variation_action.triggered.connect(translator.generate_variation_for_current_string)
-
-            # Dynamic Tags Section
-            if main_window.current_game_rules:
-                tags_data = main_window.current_game_rules.get_custom_context_tags()
-                tags_to_show = []
-                if has_selection:
-                    tags_to_show = tags_data.get("wrap_tags", [])
-                else:
-                    tags_to_show = tags_data.get("single_tags", [])
-                
-                if tags_to_show:
-                    if not custom_actions_added:
-                        menu.addSeparator()
-                        custom_actions_added = True
-                    
-                    tag_widget_action = QWidgetAction(menu)
-                    tag_palette_widget = QWidget(menu)
-                    
-                    from PyQt5.QtWidgets import QGridLayout
-                    palette_layout = QGridLayout(tag_palette_widget)
-                    palette_layout.setContentsMargins(5, 3, 5, 3)
-                    palette_layout.setSpacing(4)
-                    
-                    max_cols = 8
-                    for i, tag_info in enumerate(tags_to_show):
-                        disp = tag_info.get("display", "?")
-                        if has_selection:
-                            ot = tag_info.get("open", "")
-                            ct = tag_info.get("close", "")
-                            btn = self._create_tag_button(tag_palette_widget, disp, ot, ct, menu)
-                        else:
-                            t = tag_info.get("tag", "")
-                            btn = self._create_tag_button(tag_palette_widget, disp, t, None, menu)
-                            
-                        row = i // max_cols
-                        col = i % max_cols
-                        palette_layout.addWidget(btn, row, col)
-                    
-                    tag_palette_widget.setLayout(palette_layout)
-                    tag_widget_action.setDefaultWidget(tag_palette_widget)
-                    menu.addAction(tag_widget_action)
-        
-        if self.objectName() == "preview_text_edit":
-            if not custom_actions_added: menu.addSeparator(); custom_actions_added = True
-
-            translator = getattr(main_window, 'translation_handler', None)
-            selected_lines = self.get_selected_lines()
-
-            if translator:
-                if selected_lines:
-                    num_selected = len(selected_lines)
-                    if num_selected > 1:
-                        action_text = f"AI Translate {num_selected} Lines (UA)"
-                    else:
-                        action_text = f"AI Translate Line {selected_lines[0] + 1} (UA)"
-                else:
-                    cursor = self.cursorForPosition(position_in_widget_coords)
-                    line_num = cursor.blockNumber()
-                    action_text = f"AI Translate Line {line_num + 1} (UA)"
-
-                translate_action = menu.addAction(action_text)
-                translate_action.triggered.connect(lambda: translator.translate_preview_selection(position_in_widget_coords))
-
-                translate_block_action = menu.addAction("AI Translate Entire Block (UA)")
-                translate_block_action.triggered.connect(lambda: translator.translate_current_block())
-
-            # Spellcheck options
-            spellchecker_manager = getattr(main_window, 'spellchecker_manager', None)
-            if spellchecker_manager and spellchecker_manager.enabled:
-                menu.addSeparator()
-
-                if selected_lines:
-                    num_selected = len(selected_lines)
-                    if num_selected > 1:
-                        spellcheck_text = f"Spellcheck {num_selected} Lines"
-                    else:
-                        spellcheck_text = f"Spellcheck Line {selected_lines[0] + 1}"
-                else:
-                    cursor = self.cursorForPosition(position_in_widget_coords)
-                    line_num = cursor.blockNumber()
-                    spellcheck_text = f"Spellcheck Line {line_num + 1}"
-
-                spellcheck_action = menu.addAction(spellcheck_text)
-                spellcheck_action.triggered.connect(
-                    lambda: self._open_spellcheck_dialog_for_selection(position_in_widget_coords)
-                )
-
-            if len(selected_lines) > 1:
-                num_selected = len(selected_lines)
-                menu.addSeparator()
-                set_font_action = menu.addAction(f"Set Font for {num_selected} Lines...")
-                set_font_action.triggered.connect(self.handle_mass_set_font)
-                set_width_action = menu.addAction(f"Set Width for {num_selected} Lines...")
-                set_width_action.triggered.connect(self.handle_mass_set_width)
+        self.context_menu_logic.populate(menu, position_in_widget_coords)
 
     def _update_auxiliary_widths(self):
-        current_font_metrics = self.fontMetrics()
-        
-        max_width_for_calc = self.game_dialog_max_width_pixels
-        if max_width_for_calc < 1000: max_width_for_calc = 1000
-        
-        self.pixel_width_display_area_width = current_font_metrics.horizontalAdvance(str(max_width_for_calc)) + 6
-        
-        num_indicators_to_display = 0
-        main_window = self.window()
-        if isinstance(main_window, QMainWindow) and hasattr(main_window, 'current_game_rules') and main_window.current_game_rules:
-            problem_defs = main_window.current_game_rules.get_problem_definitions()
-            num_indicators_to_display = len(problem_defs) 
-        
-        max_preview_indicators = getattr(self.lineNumberArea, 'max_problem_indicators', 5) 
-        num_indicators_to_display = min(num_indicators_to_display, max_preview_indicators)
-
-        indicator_area_width = 0
-        indicator_area_width += self.lineNumberArea.preview_indicator_width + self.lineNumberArea.preview_indicator_spacing
-        if num_indicators_to_display > 0:
-            indicator_area_width += (self.lineNumberArea.preview_indicator_width * num_indicators_to_display) + \
-                                    (self.lineNumberArea.preview_indicator_spacing * num_indicators_to_display)
-        
-        self.preview_indicator_area_width = indicator_area_width + 2
-
-
-        self.updateLineNumberAreaWidth(0)
+        lnet_editor_setup.update_auxiliary_widths(self)
 
     def setFont(self, font: QFont):
         super().setFont(font)
@@ -833,67 +259,9 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.viewport().update()
 
     def keyPressEvent(self, event: QKeyEvent):
-        main_window = self.window()
-
-        is_undo = event.matches(QKeySequence.Undo) or (event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_Z)
-        if is_undo:
-            if hasattr(main_window, 'undo_typing_action'):
-                main_window.undo_typing_action.trigger()
+        if self.keyboard_handler.handle_key_press(event):
             event.accept()
             return
-
-        is_redo = event.matches(QKeySequence.Redo) or \
-                  (event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_Y) or \
-                  (event.modifiers() == (Qt.ControlModifier | Qt.ShiftModifier) and event.key() == Qt.Key_Z)
-        
-        if is_redo:
-            if hasattr(main_window, 'redo_typing_action'):
-                main_window.redo_typing_action.trigger()
-            event.accept()
-            return
-
-        is_arrow_key = event.key() in (Qt.Key_Left, Qt.Key_Right)
-        if is_arrow_key and event.modifiers() == Qt.NoModifier and not self.isReadOnly():
-            move_right = event.key() == Qt.Key_Right
-            if self._snap_cursor_out_of_icon_sequences(move_right):
-                event.accept()
-                return
-
-        if not self.isReadOnly() and event.key() == Qt.Key_Space and getattr(main_window, 'show_multiple_spaces_as_dots', False):
-            cursor = self.textCursor()
-            block_text = cursor.block().text()
-            pos = cursor.positionInBlock()
-
-            char_before = block_text[pos-1] if pos > 0 else '\n'
-            char_after = block_text[pos] if pos < len(block_text) else '\n'
-
-            if char_before in (' ', SPACE_DOT_SYMBOL) or char_after in (' ', SPACE_DOT_SYMBOL) or pos == 0 or pos == len(block_text):
-                self.textCursor().insertText(SPACE_DOT_SYMBOL)
-            else:
-                self.textCursor().insertText(' ')
-            event.accept()
-            return
-            
-        if not self.isReadOnly() and isinstance(main_window, QMainWindow) and main_window.current_game_rules:
-            game_rules = main_window.current_game_rules
-            is_enter_key = event.key() in (Qt.Key_Return, Qt.Key_Enter)
-
-            if is_enter_key:
-                char_to_insert = ''
-                modifiers = event.modifiers()
-                
-                if modifiers & Qt.ShiftModifier:
-                    char_to_insert = game_rules.get_shift_enter_char()
-                elif modifiers & Qt.ControlModifier:
-                    char_to_insert = game_rules.get_ctrl_enter_char()
-                elif modifiers == Qt.NoModifier:
-                    char_to_insert = game_rules.get_enter_char()
-                
-                if char_to_insert:
-                    self.textCursor().insertText(char_to_insert)
-                    event.accept()
-                    return
-
         super().keyPressEvent(event)
 
     def setReadOnly(self, ro):
@@ -972,65 +340,10 @@ class LineNumberedTextEdit(QPlainTextEdit):
         return []
 
     def _find_icon_sequence_in_block(self, block_text: str, sequences: List[str], position_in_block: int) -> Optional[Tuple[int, int, str]]:
-        if not block_text or not sequences:
-            return None
-        
-        for token in sequences:
-            start = -1
-            while True:
-                start = block_text.find(token, start + 1)
-                if start == -1:
-                    break
-                end = start + len(token)
-                if start <= position_in_block < end:
-                    return start, end, token
-        return None
+        return self.tag_helpers.find_icon_sequence_in_block(block_text, sequences, position_in_block)
 
     def _snap_cursor_out_of_icon_sequences(self, move_right: bool) -> bool:
-        cursor = self.textCursor()
-        if cursor.hasSelection(): return False
-        
-        block = cursor.block()
-        if not block.isValid(): return False
-
-        sequences = self._get_icon_sequences()
-        if not sequences: return False
-
-        pos_in_block = cursor.positionInBlock()
-        block_text = block.text()
-        
-        all_matches = []
-        for token in sequences:
-            start = -1
-            while True:
-                start = block_text.find(token, start + 1)
-                if start == -1: break
-                all_matches.append((start, start + len(token), token))
-        
-        if not all_matches: return False
-
-        for start, end, token in all_matches:
-            if start < pos_in_block < end:
-                new_pos = end if move_right else start
-                new_cursor = QTextCursor(block)
-                new_cursor.setPosition(block.position() + new_pos)
-                self.setTextCursor(new_cursor)
-                self._momentary_highlight_tag(block, start, len(token))
-                return True
-            elif move_right and pos_in_block == start:
-                new_cursor = QTextCursor(block)
-                new_cursor.setPosition(block.position() + end)
-                self.setTextCursor(new_cursor)
-                self._momentary_highlight_tag(block, start, len(token))
-                return True
-            elif not move_right and pos_in_block == end:
-                new_cursor = QTextCursor(block)
-                new_cursor.setPosition(block.position() + start)
-                self.setTextCursor(new_cursor)
-                self._momentary_highlight_tag(block, start, len(token))
-                return True
-                
-        return False
+        return self.tag_helpers.snap_cursor_out_of_icon_sequences(move_right)
 
     def _momentary_highlight_tag(self, block, start_in_block, length):
         self.highlight_interface._momentary_highlight_tag(block, start_in_block, length)
@@ -1039,71 +352,71 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.highlight_interface._apply_all_extra_selections()
 
     def addCriticalProblemHighlight(self, line_number: int):
-        self.highlight_interface.addCriticalProblemHighlight(line_number)
+        self.hi_wrappers.addCriticalProblemHighlight(line_number)
 
     def removeCriticalProblemHighlight(self, line_number: int) -> bool:
-        return self.highlight_interface.removeCriticalProblemHighlight(line_number)
+        return self.hi_wrappers.removeCriticalProblemHighlight(line_number)
 
     def clearCriticalProblemHighlights(self):
-        self.highlight_interface.clearCriticalProblemHighlights()
+        self.hi_wrappers.clearCriticalProblemHighlights()
 
     def hasCriticalProblemHighlight(self, line_number = None) -> bool:
-        return self.highlight_interface.hasCriticalProblemHighlight(line_number)
+        return self.hi_wrappers.hasCriticalProblemHighlight(line_number)
 
     def addWarningLineHighlight(self, line_number: int):
-        self.highlight_interface.addWarningLineHighlight(line_number)
+        self.hi_wrappers.addWarningLineHighlight(line_number)
 
     def removeWarningLineHighlight(self, line_number: int) -> bool:
-        return self.highlight_interface.removeWarningLineHighlight(line_number)
+        return self.hi_wrappers.removeWarningLineHighlight(line_number)
 
     def clearWarningLineHighlights(self):
-        self.highlight_interface.clearWarningLineHighlights()
+        self.hi_wrappers.clearWarningLineHighlights()
 
     def hasWarningLineHighlight(self, line_number = None) -> bool:
-        return self.highlight_interface.hasWarningLineHighlight(line_number)
+        return self.hi_wrappers.hasWarningLineHighlight(line_number)
 
     def addWidthExceededHighlight(self, line_number: int):
-        self.highlight_interface.addWidthExceededHighlight(line_number)
+        self.hi_wrappers.addWidthExceededHighlight(line_number)
 
     def removeWidthExceededHighlight(self, line_number: int) -> bool:
-        return self.highlight_interface.removeWidthExceededHighlight(line_number)
+        return self.hi_wrappers.removeWidthExceededHighlight(line_number)
 
     def clearWidthExceededHighlights(self):
-        self.highlight_interface.clearWidthExceededHighlights()
+        self.hi_wrappers.clearWidthExceededHighlights()
 
     def hasWidthExceededHighlight(self, line_number = None) -> bool:
-        return self.highlight_interface.hasWidthExceededHighlight(line_number)
+        return self.hi_wrappers.hasWidthExceededHighlight(line_number)
     
     def addShortLineHighlight(self, line_number: int):
-        self.highlight_interface.addShortLineHighlight(line_number)
+        self.hi_wrappers.addShortLineHighlight(line_number)
 
     def removeShortLineHighlight(self, line_number: int) -> bool:
-        return self.highlight_interface.removeShortLineHighlight(line_number)
+        return self.hi_wrappers.removeShortLineHighlight(line_number)
 
     def clearShortLineHighlights(self):
-        self.highlight_interface.clearShortLineHighlights()
+        self.hi_wrappers.clearShortLineHighlights()
 
     def hasShortLineHighlight(self, line_number = None) -> bool:
-        return self.highlight_interface.hasShortLineHighlight(line_number)
+        return self.hi_wrappers.hasShortLineHighlight(line_number)
 
     def addEmptyOddSublineHighlight(self, block_number: int):
-        self.highlight_interface.addEmptyOddSublineHighlight(block_number)
+        self.hi_wrappers.addEmptyOddSublineHighlight(block_number)
 
     def removeEmptyOddSublineHighlight(self, block_number: int) -> bool:
-        return self.highlight_interface.removeEmptyOddSublineHighlight(block_number)
+        return self.hi_wrappers.removeEmptyOddSublineHighlight(block_number)
 
     def clearEmptyOddSublineHighlights(self):
-        self.highlight_interface.clearEmptyOddSublineHighlights()
+        self.hi_wrappers.clearEmptyOddSublineHighlights()
 
     def hasEmptyOddSublineHighlight(self, block_number = None) -> bool:
-        return self.highlight_interface.hasEmptyOddSublineHighlight(block_number)
+        return self.hi_wrappers.hasEmptyOddSublineHighlight(block_number)
 
     def clearPreviewSelectedLineHighlight(self):
         self.highlightManager.set_background_for_lines(set(), self._previously_selected_lines)
         self.clear_selection()
 
     def setLinkedCursorPosition(self, line_number: int, column_number: int):
-        self.highlight_interface.setLinkedCursorPosition(line_number, column_number)
+        self.hi_wrappers.hi.setLinkedCursorPosition(line_number, column_number)
 
     def applyQueuedHighlights(self):
         self.highlightManager.applyHighlights()
@@ -1143,65 +456,3 @@ class LineNumberedTextEdit(QPlainTextEdit):
             width = dialog.get_width()
             main_window.string_settings_handler.apply_width_to_lines(selected_lines, width)
 
-class MassFontDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Set Font for Multiple Lines")
-        layout = QVBoxLayout(self)
-        
-        layout.addWidget(QLabel("Select a font to apply to the selected lines:"))
-        
-        self.font_combo = QComboBox(self)
-        self.populate_fonts(parent)
-        layout.addWidget(self.font_combo)
-        
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
-
-    def populate_fonts(self, main_window):
-        self.font_combo.addItem(f"Plugin Default ({main_window.default_font_file or 'None'})", "default")
-        
-        plugin_dir_name = main_window.active_game_plugin
-        if plugin_dir_name:
-            fonts_dir = Path("plugins") / plugin_dir_name / "fonts"
-            if fonts_dir.is_dir():
-                for font_file in sorted(fonts_dir.iterdir()):
-                    if font_file.suffix.lower() == ".json":
-                        self.font_combo.addItem(font_file.name, font_file.name)
-
-    def get_selected_font(self):
-        return self.font_combo.currentData()
-
-class MassWidthDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.main_window = parent
-        self.setWindowTitle("Set Width for Multiple Lines")
-        layout = QVBoxLayout(self)
-        
-        self.default_width = self.main_window.line_width_warning_threshold_pixels if self.main_window else 0
-        layout.addWidget(QLabel(f"Enter a new width for the selected lines.\nEnter 0 to reset to plugin default ({self.default_width})."))
-        
-        controls_layout = QHBoxLayout()
-        self.width_spinbox = QSpinBox(self)
-        self.width_spinbox.setRange(0, 10000)
-        self.width_spinbox.setValue(self.default_width)
-        controls_layout.addWidget(self.width_spinbox)
-
-        self.default_button = QPushButton("Default", self)
-        self.default_button.clicked.connect(self.set_default_width)
-        controls_layout.addWidget(self.default_button)
-        layout.addLayout(controls_layout)
-        
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel, self)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
-        
-    def get_width(self):
-        return self.width_spinbox.value()
-
-    def set_default_width(self):
-        self.width_spinbox.setValue(self.default_width)

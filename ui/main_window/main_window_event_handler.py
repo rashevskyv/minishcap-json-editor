@@ -23,7 +23,7 @@ class MainWindowEventHandler:
         
         if hasattr(self.mw, 'preview_text_edit'):
             if hasattr(self.mw.preview_text_edit, 'lineClicked'):
-                self.mw.preview_text_edit.lineClicked.connect(self.mw.list_selection_handler.string_selected_from_preview)
+                self.mw.preview_text_edit.lineClicked.connect(lambda idx: self.mw.list_selection_handler.string_selected_from_preview(idx, is_manual_click=True))
             self.mw.preview_text_edit.selectionChanged.connect(self.mw.list_selection_handler.handle_preview_selection_changed)
 
         if hasattr(self.mw, 'edited_text_edit'):
@@ -58,6 +58,20 @@ class MainWindowEventHandler:
         if hasattr(self.mw, 'move_block_up_button'):
             self.mw.move_block_up_button.clicked.connect(self.mw.project_action_handler.move_block_up_action)
         if hasattr(self.mw, 'move_block_down_button'):
+            self.mw.move_block_down_button.clicked.connect(self.mw.project_action_handler.move_block_down_action)
+        
+        # Navigation connections
+        if hasattr(self.mw, 'next_block_nav_action'):
+            self.mw.next_block_nav_action.triggered.connect(lambda: self.mw.list_selection_handler.navigate_between_blocks(True))
+        if hasattr(self.mw, 'prev_block_nav_action'):
+            self.mw.prev_block_nav_action.triggered.connect(lambda: self.mw.list_selection_handler.navigate_between_blocks(False))
+        if hasattr(self.mw, 'next_folder_nav_action'):
+            self.mw.next_folder_nav_action.triggered.connect(lambda: self.mw.list_selection_handler.navigate_between_folders(True))
+        if hasattr(self.mw, 'prev_folder_nav_action'):
+            self.mw.prev_folder_nav_action.triggered.connect(lambda: self.mw.list_selection_handler.navigate_between_folders(False))
+            
+        if hasattr(self.mw, 'help_button'):
+            self.mw.help_button.clicked.connect(self.mw.actions.show_shortcuts_help)
             self.mw.move_block_down_button.clicked.connect(self.mw.project_action_handler.move_block_down_action)
 
         # File actions

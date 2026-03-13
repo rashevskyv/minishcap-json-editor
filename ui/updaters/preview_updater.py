@@ -45,7 +45,8 @@ class PreviewUpdater(BaseUIUpdater):
         if self.mw.current_string_idx != -1 and \
            hasattr(preview_edit, 'highlightManager') and \
            0 <= self.mw.current_string_idx < preview_edit.document().blockCount(): 
-            preview_edit.highlightManager.setPreviewSelectedLineHighlight([self.mw.current_string_idx])
+            # Use -2 or something to indicate "preserve existing origin"
+            preview_edit.highlightManager.setPreviewSelectedLineHighlight([self.mw.current_string_idx], -2)
         elif hasattr(preview_edit, 'highlightManager'):
              preview_edit.highlightManager.clearPreviewSelectedLineHighlight()
 
