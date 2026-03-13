@@ -85,9 +85,9 @@ class TextOperationHandler(BaseHandler):
             self.ui_updater._apply_highlights_for_block(block_idx)
 
             if self.mw.current_string_idx != -1 and 0 <= self.mw.current_string_idx < preview_edit.document().blockCount():
-                preview_edit.highlightManager.setPreviewSelectedLineHighlight([self.mw.current_string_idx])
+                preview_edit.set_selected_lines([self.mw.current_string_idx])
             else:
-                preview_edit.highlightManager.clearPreviewSelectedLineHighlight()
+                preview_edit.clear_selection()
 
         preview_edit.verticalScrollBar().setValue(old_scrollbar_value)
         if hasattr(preview_edit, 'lineNumberArea'):

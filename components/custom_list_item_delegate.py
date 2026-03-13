@@ -228,7 +228,6 @@ class CustomListItemDelegate(QStyledItemDelegate):
                 # Reuse logic from helpEvent or centralize it
                 tooltip_text = self._get_problems_tooltip_text(main_window, block_idx)
                 if tooltip_text:
-                    print(f"DEBUG: Showing number tooltip for block {block_idx}")
                     QToolTip.showText(event.globalPos(), tooltip_text, view)
                     return
         

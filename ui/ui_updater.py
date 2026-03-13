@@ -425,9 +425,9 @@ class UIUpdater:
                 preview_edit.setPlainText(preview_full_text)
 
             if self.mw.current_string_idx != -1 and \
-               hasattr(preview_edit, 'highlightManager') and \
+               hasattr(preview_edit, 'set_selected_lines') and \
                0 <= self.mw.current_string_idx < preview_edit.document().blockCount(): 
-                preview_edit.highlightManager.setPreviewSelectedLineHighlight([self.mw.current_string_idx])
+                preview_edit.set_selected_lines([self.mw.current_string_idx])
 
             preview_edit.verticalScrollBar().setValue(old_preview_scrollbar_value)
         

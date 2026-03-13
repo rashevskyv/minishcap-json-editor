@@ -181,9 +181,8 @@ class ListSelectionHandler(BaseHandler):
 
         if preview_edit and self.mw.current_string_idx != -1 and \
            0 <= self.mw.current_string_idx < preview_edit.document().blockCount():
-            if hasattr(preview_edit, 'highlightManager'): 
-                origin_line = None if is_manual_click else previous_string_idx
-                preview_edit.highlightManager.setPreviewSelectedLineHighlight([self.mw.current_string_idx], origin_line)
+            if hasattr(preview_edit, 'set_selected_lines'): 
+                preview_edit.set_selected_lines([self.mw.current_string_idx])
             
             block_to_show = preview_edit.document().findBlockByNumber(self.mw.current_string_idx)
             if block_to_show.isValid():
@@ -295,8 +294,8 @@ class ListSelectionHandler(BaseHandler):
         cursor = preview_edit.textCursor()
         if not cursor.hasSelection():
             if self.mw.current_string_idx != -1:
-                if hasattr(preview_edit, 'highlightManager'):
-                    preview_edit.highlightManager.setPreviewSelectedLineHighlight([self.mw.current_string_idx])
+                if hasattr(preview_edit, 'set_selected_lines'):
+                    preview_edit.set_selected_lines([self.mw.current_string_idx])
             return
 
         start_pos = cursor.selectionStart()
@@ -316,8 +315,8 @@ class ListSelectionHandler(BaseHandler):
 
         selected_lines = list(range(start_line, end_line + 1))
         
-        if hasattr(preview_edit, 'highlightManager'):
-            preview_edit.highlightManager.setPreviewSelectedLineHighlight(selected_lines)
+        if preview_edit and hasattr(preview_edit, 'set_selected_lines'):
+            preview_edit.set_selected_lines(selected_lines)
 
     def navigate_between_blocks(self, direction_down: bool):
         if not hasattr(self.mw, 'block_list_widget'): return
