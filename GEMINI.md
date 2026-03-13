@@ -73,3 +73,9 @@ The project follows a well-organized, modular structure.
 -   **Delegation**: The `MainWindow` delegates most of its logic to the various handlers in the `handlers/` directory. This promotes a clean separation of concerns.
 -   **Logging**: All diagnostic output is managed by `utils/logging_utils.py` and is written to `app_debug.txt` in the project root. Use `log_info()`, `log_warning()`, and `log_error()` for logging.
 -   **Plugin Interface**: The `plugins/base_game_rules.py` file defines the abstract base class that all game plugins must inherit from.
+
+Розмовляй та пиши волксру та плани kbit українською
+
+Весь текст в програмі має бути англійською мовою
+
+Середовище виконання - powershell, то ж використовуй відповідні команди 

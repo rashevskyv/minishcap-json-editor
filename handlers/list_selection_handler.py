@@ -51,6 +51,8 @@ class ListSelectionHandler(BaseHandler):
             return
         
         if self.mw.current_block_idx != block_index:
+            old_block = self.mw.current_block_idx
+            old_string = self.mw.current_string_idx
             self.mw.current_block_idx = block_index
             
             # Restore selection if project
@@ -64,6 +66,9 @@ class ListSelectionHandler(BaseHandler):
 
             self.mw.current_string_idx = restored_s_idx
             
+            if hasattr(self.mw, 'undo_manager'):
+                self.mw.undo_manager.record_navigation(block_index, restored_s_idx, old_block, old_string)
+
             # Use QTimer to ensure populate_strings_for_block has finished before selecting string
             QTimer.singleShot(0, lambda idx=restored_s_idx: self.string_selected_from_preview(idx))
             
@@ -153,6 +158,10 @@ class ListSelectionHandler(BaseHandler):
                 preview_edit.highlightManager.clearPreviewSelectedLineHighlight()
         else:
             self.mw.current_string_idx = line_number
+            
+            if hasattr(self.mw, 'undo_manager') and not original_programmatic_state:
+                self.mw.undo_manager.record_navigation(self.mw.current_block_idx, line_number, self.mw.current_block_idx, previous_string_idx)
+
             if previous_string_idx != self.mw.current_string_idx and previous_string_idx != -1:
                 self.ui_updater.update_block_item_text_with_problem_count(self.mw.current_block_idx)
             
@@ -182,6 +191,12 @@ class ListSelectionHandler(BaseHandler):
                 preview_edit.ensureCursorVisible()
         elif preview_edit and hasattr(preview_edit, 'highlightManager'): 
             preview_edit.highlightManager.clearPreviewSelectedLineHighlight()
+            
+        if self.mw.current_string_idx != -1 and hasattr(self.mw, 'edited_text_edit') and self.mw.edited_text_edit:
+            self.mw.edited_text_edit.setFocus()
+            cursor = self.mw.edited_text_edit.textCursor()
+            cursor.movePosition(QTextCursor.End)
+            self.mw.edited_text_edit.setTextCursor(cursor)
         
         self.mw.is_programmatically_changing_text = original_programmatic_state
 

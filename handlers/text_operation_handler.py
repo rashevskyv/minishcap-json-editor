@@ -157,6 +157,9 @@ class TextOperationHandler(BaseHandler):
         if edited_edit and hasattr(edited_edit, 'highlightManager'):
             edited_edit.highlightManager.clearAllProblemHighlights()
         
+        if hasattr(self.mw, 'undo_manager'):
+            self.mw.undo_manager.begin_group()
+            
         self.ui_updater.update_block_item_text_with_problem_count(block_idx)
 
             
@@ -218,6 +221,9 @@ class TextOperationHandler(BaseHandler):
             self.mw.can_undo_paste = False;
             if hasattr(self.mw, 'undo_paste_action'): self.mw.undo_paste_action.setEnabled(False)
             
+        if hasattr(self.mw, 'undo_manager'):
+            self.mw.undo_manager.end_group("PASTE")
+            
         log_debug("<-- TextOperationHandler: paste_block_text finished.")
 
 
@@ -237,7 +243,7 @@ class TextOperationHandler(BaseHandler):
         if current_text == original_text:
              return
         
-        if self.data_processor.update_edited_data(block_idx, line_index, original_text):
+        if self.data_processor.update_edited_data(block_idx, line_index, original_text, action_type="REVERT"):
             if hasattr(self.mw, 'title_status_bar_updater'):
                 self.mw.title_status_bar_updater.update_title()
             elif hasattr(self.ui_updater, 'update_title'): 
@@ -402,7 +408,14 @@ class TextOperationHandler(BaseHandler):
             
             # Викликаємо text_edited вручну, щоб оновити дані
             self.mw.is_programmatically_changing_text = False
-            self.text_edited()
+            
+            if hasattr(self.mw, 'undo_manager'):
+                self.mw.undo_manager.begin_group()
+                
+            self.text_edited() # This will record the change via update_edited_data
+            
+            if hasattr(self.mw, 'undo_manager'):
+                self.mw.undo_manager.end_group("AUTOFIX")
             
             # Явно оновлюємо інші елементи UI
             self.mw.ui_updater.populate_strings_for_block(self.mw.current_block_idx)

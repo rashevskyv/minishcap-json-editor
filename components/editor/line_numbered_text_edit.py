@@ -89,8 +89,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
         if not self.isReadOnly():
             self.cursorPositionChanged.connect(self.highlightManager.updateCurrentLineHighlight)
-            if not self.isUndoRedoEnabled():
-                self.setUndoRedoEnabled(True)
+            self.setUndoRedoEnabled(False)
 
         self.updateLineNumberAreaWidth(0)
 
@@ -261,7 +260,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
             lines = [f"<b>{entry.original}</b> → {entry.translation}"]
             if entry.notes:
                 lines.append(f"<i>{entry.notes}</i>")
-            tooltip_text = "<br>".join(lines)
+            tooltip_text = "<br><br>".join(lines)
             
         # USER_REQUEST: Tooltips should be EXCLUSIVELY on the number area.
         # Warning tooltips from the main text area are now handled only by handle_line_number_area_mouse_move
@@ -351,7 +350,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
             is_unsaved = (block_idx, string_idx) in getattr(main_window, 'edited_data', {})
         
         if is_unsaved:
-             tooltip_lines.append("<b>*</b>: Рядок має незбережені зміни")
+             tooltip_lines.append("<b>*</b>: Unsaved changes")
 
         # Check for Metadata indicators in Preview
         if is_preview:
@@ -384,7 +383,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
                 else:
                     tooltip_lines.append(desc)
                     
-        return "<br>".join(tooltip_lines) if tooltip_lines else None
+        return "<br><br>".join(tooltip_lines) if tooltip_lines else None
 
     def get_selected_lines(self):
         return sorted(list(self._selected_lines))
@@ -468,7 +467,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
             is_unsaved = (block_idx, string_idx) in getattr(main_window, 'edited_data', {})
         
         if is_unsaved:
-             tooltip_lines.append("<b>*</b>: Рядок має незбережені зміни")
+             tooltip_lines.append("<b>*</b>: Незбережені зміни")
 
         # Check for Metadata indicators in Preview
         if is_preview:
@@ -501,7 +500,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
                 else:
                     tooltip_lines.append(desc)
         
-        return "<br>".join(tooltip_lines) if tooltip_lines else None
+        return "<br><br>".join(tooltip_lines) if tooltip_lines else None
 
     def _set_theme_colors(self, main_window_ref):
         theme = 'light'
@@ -834,6 +833,23 @@ class LineNumberedTextEdit(QPlainTextEdit):
     def keyPressEvent(self, event: QKeyEvent):
         main_window = self.window()
 
+        is_undo = event.matches(QKeySequence.Undo) or (event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_Z)
+        if is_undo:
+            if hasattr(main_window, 'undo_typing_action'):
+                main_window.undo_typing_action.trigger()
+            event.accept()
+            return
+
+        is_redo = event.matches(QKeySequence.Redo) or \
+                  (event.modifiers() == Qt.ControlModifier and event.key() == Qt.Key_Y) or \
+                  (event.modifiers() == (Qt.ControlModifier | Qt.ShiftModifier) and event.key() == Qt.Key_Z)
+        
+        if is_redo:
+            if hasattr(main_window, 'redo_typing_action'):
+                main_window.redo_typing_action.trigger()
+            event.accept()
+            return
+
         is_arrow_key = event.key() in (Qt.Key_Left, Qt.Key_Right)
         if is_arrow_key and event.modifiers() == Qt.NoModifier and not self.isReadOnly():
             move_right = event.key() == Qt.Key_Right
@@ -883,14 +899,16 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.highlightManager.clearAllHighlights()
         if not ro:
              self.highlightManager.updateCurrentLineHighlight()
-             if not self.isUndoRedoEnabled(): self.setUndoRedoEnabled(True)
+             self.setUndoRedoEnabled(False)
         self.viewport().update()
 
     def lineNumberAreaWidth(self):
         digits = 1; max_val = max(1, self.blockCount())
         while max_val >= 10: max_val //= 10; digits += 1
         current_font_metrics = self.fontMetrics()
-        base_width = current_font_metrics.horizontalAdvance('9') * (digits) + 10
+        # Account for potential "* " prefix for unsaved changes
+        asterisk_width = current_font_metrics.horizontalAdvance('* ')
+        base_width = asterisk_width + current_font_metrics.horizontalAdvance('9') * (digits) + 15
         additional_width = 0
         if self.objectName() in ["original_text_edit", "edited_text_edit"] and hasattr(self.window(), 'font_map') and self.window().font_map:
             additional_width = self.pixel_width_display_area_width

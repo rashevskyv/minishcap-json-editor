@@ -48,9 +48,12 @@ class DataStateProcessor:
         num_strings = len(self.mw.data[block_idx])
         return [self.get_current_string_text(block_idx, i)[0] for i in range(num_strings)]
 
-    def update_edited_data(self, block_idx, string_idx, new_text):
+    def update_edited_data(self, block_idx, string_idx, new_text, action_type="TEXT_EDIT"):
         edit_key = (block_idx, string_idx)
         
+        # Get old text for undo
+        old_text, _ = self.get_current_string_text(block_idx, string_idx)
+
         original_text = self._get_string_from_source(block_idx, string_idx, self.mw.data, "original_data_for_update_check")
         
         text_from_saved_file = self._get_string_from_source(block_idx, string_idx, self.mw.edited_file_data, "edited_file_data")
@@ -64,6 +67,10 @@ class DataStateProcessor:
                 del self.mw.edited_data[edit_key]
         else:
             self.mw.edited_data[edit_key] = new_text
+
+        # Record in undo manager if it exists and text actually changed
+        if hasattr(self.mw, 'undo_manager') and old_text != new_text:
+            self.mw.undo_manager.record_action(action_type, block_idx, string_idx, old_text, new_text)
 
         self.mw.unsaved_changes = bool(self.mw.edited_data)
         

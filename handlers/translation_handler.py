@@ -877,13 +877,16 @@ class TranslationHandler(BaseHandler):
             block_idx = context['block_idx']
             parsed_json = json.loads(chunk_text)
             translated_strings = parsed_json.get("translated_strings")
-            if not isinstance(translated_strings, list):
-                raise ValueError("Invalid response structure: 'translated_strings' is not a list.")
+            if hasattr(self.mw, 'undo_manager'):
+                self.mw.undo_manager.begin_group()
 
             for item in translated_strings:
                 string_idx, translated_text = item["id"], item["translation"]
                 final_text = self._trim_trailing_whitespace_from_lines(translated_text)
-                self.data_processor.update_edited_data(block_idx, string_idx, final_text)
+                self.data_processor.update_edited_data(block_idx, string_idx, final_text, action_type="TRANSLATE")
+            
+            if hasattr(self.mw, 'undo_manager'):
+                self.mw.undo_manager.end_group("TRANSLATE")
             
             if block_idx in self.translation_progress:
                 self.translation_progress[block_idx]['completed_chunks'].add(chunk_index)
@@ -919,11 +922,17 @@ class TranslationHandler(BaseHandler):
             if not isinstance(translated_strings, list) or len(translated_strings) != len(context['source_items']):
                 raise ValueError("Invalid response structure or item count mismatch.")
 
+            if hasattr(self.mw, 'undo_manager'):
+                self.mw.undo_manager.begin_group()
+                
             self.ui_handler.update_ai_operation_step(4, self.ui_handler.status_dialog.steps[4], self.ui_handler.status_dialog.STATUS_IN_PROGRESS)
             for item in translated_strings:
                 string_idx, translated_text = item["id"], item["translation"]
                 final_text = self._trim_trailing_whitespace_from_lines(translated_text)
-                self.data_processor.update_edited_data(context['block_idx'], string_idx, final_text)
+                self.data_processor.update_edited_data(context['block_idx'], string_idx, final_text, action_type="TRANSLATE")
+
+            if hasattr(self.mw, 'undo_manager'):
+                self.mw.undo_manager.end_group("TRANSLATE")
 
             self._record_session_exchange(context=context, assistant_content=cleaned_text, response=response)
             self.ui_handler.finish_ai_operation()
@@ -1038,7 +1047,14 @@ class TranslationHandler(BaseHandler):
             return
 
         self._record_session_exchange(context=context, assistant_content=cleaned, response=response)
+        
+        if hasattr(self.mw, 'undo_manager'):
+            self.mw.undo_manager.begin_group()
+            
         self.glossary_handler._handle_occurrence_batch_success(results=results, context=context)
+        
+        if hasattr(self.mw, 'undo_manager'):
+            self.mw.undo_manager.end_group("GLOSSARY_UPDATE")
 
 
     def _handle_glossary_notes_variation_success(self, response: ProviderResponse, context: dict) -> None:

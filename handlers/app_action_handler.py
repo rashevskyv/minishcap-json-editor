@@ -209,6 +209,7 @@ class AppActionHandler(BaseHandler):
         self.mw.current_block_idx = -1; self.mw.current_string_idx = -1
         
         if hasattr(self.mw, 'undo_paste_action'): self.mw.can_undo_paste = False; self.mw.undo_paste_action.setEnabled(False)
+        if hasattr(self.mw, 'undo_manager'): self.mw.undo_manager.clear()
         
         self.mw.block_list_widget.clear()
         if hasattr(self.mw, 'preview_text_edit'): self.mw.preview_text_edit.clear()

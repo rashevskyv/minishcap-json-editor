@@ -36,6 +36,7 @@ from handlers.ai_chat_handler import AIChatHandler
 
 from core.settings_manager import SettingsManager
 from core.data_state_processor import DataStateProcessor
+from core.undo_manager import UndoManager
 from core.state_manager import StateManager, AppState
 from core.data_store import AppDataStore
 from core.translation.config import build_default_translation_config
@@ -469,6 +470,9 @@ class MainWindow(QMainWindow):
         self.actions = MainWindowActions(self)
         self.data_processor = DataStateProcessor(self)
         self.ui_updater = UIUpdater(self, self.data_processor)
+        self.undo_manager = UndoManager(self)
+        
+        # --- Actions Handlers ---
         self.string_settings_updater = StringSettingsUpdater(self, self.data_processor)
         self.spellchecker_manager = SpellcheckerManager(self)
 

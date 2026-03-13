@@ -329,11 +329,11 @@ def setup_main_window_ui(main_window):
     find_icon = style.standardIcon(QStyle.SP_FileDialogContentsView)
 
     main_window.undo_typing_action = QAction(undo_icon, '&Undo Typing', main_window)
-    main_window.undo_typing_action.setShortcut('Ctrl+Z')
+    main_window.undo_typing_action.setShortcut(QKeySequence.Undo)
     edit_menu.addAction(main_window.undo_typing_action)
 
     main_window.redo_typing_action = QAction(redo_icon, '&Redo Typing', main_window)
-    main_window.redo_typing_action.setShortcuts([QKeySequence('Ctrl+Y'), QKeySequence('Ctrl+Shift+Z')])
+    main_window.redo_typing_action.setShortcuts([QKeySequence.Redo, QKeySequence('Ctrl+Shift+Z')])
     edit_menu.addAction(main_window.redo_typing_action)
     edit_menu.addSeparator()
 

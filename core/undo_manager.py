@@ -1,0 +1,289 @@
+# --- START OF FILE core/undo_manager.py ---
+import time
+from dataclasses import dataclass
+from typing import List, Optional, Any
+from utils.logging_utils import log_debug
+
+@dataclass
+class UndoAction:
+    action_type: str # 'TEXT_EDIT', 'PASTE', 'AUTOFIX', 'TRANSLATE', 'REVERT'
+    block_idx: int
+    string_idx: int
+    old_text: str
+    new_text: str
+    timestamp: float
+    cursor_pos: Optional[int] = None
+    metadata: Optional[dict] = None
+
+@dataclass
+class GroupAction:
+    actions: List[UndoAction]
+    action_type: str
+    timestamp: float
+
+class UndoManager:
+    def __init__(self, main_window):
+        self.mw = main_window
+        self.undo_stack: List[Any] = []
+        self.redo_stack: List[Any] = []
+        self.is_undoing_redoing = False
+        self.grouping_threshold = 3.5 # seconds to group character edits
+        self.current_group: Optional[List[UndoAction]] = None
+        
+    def begin_group(self):
+        self.current_group = []
+        
+    def end_group(self, action_type: str = "COMPOSITE"):
+        if self.current_group:
+            group = GroupAction(
+                actions=self.current_group,
+                action_type=action_type,
+                timestamp=time.time()
+            )
+            self.undo_stack.append(group)
+            self.redo_stack.clear()
+        self.current_group = None
+
+    def _is_word_char(self, c: str) -> bool:
+        return c.isalnum() or c == '_'
+
+    def record_action(self, action_type: str, block_idx: int, string_idx: int, old_text: str, new_text: str, metadata: dict = None):
+        if self.is_undoing_redoing:
+            return
+
+        if old_text == new_text:
+            return
+
+        now = time.time()
+        
+        cursor_pos = None
+        if self.mw.current_block_idx == block_idx and self.mw.current_string_idx == string_idx:
+            cursor_pos = self.mw.edited_text_edit.textCursor().position()
+
+        action = UndoAction(
+            action_type=action_type,
+            block_idx=block_idx,
+            string_idx=string_idx,
+            old_text=old_text,
+            new_text=new_text,
+            timestamp=now,
+            cursor_pos=cursor_pos,
+            metadata=metadata
+        )
+
+        if self.current_group is not None:
+            self.current_group.append(action)
+            return
+
+        # Try to group small text edits
+        if action_type == 'TEXT_EDIT' and self.undo_stack:
+            last = self.undo_stack[-1]
+            if isinstance(last, UndoAction) and \
+                last.action_type == 'TEXT_EDIT' and \
+                last.block_idx == block_idx and \
+                last.string_idx == string_idx and \
+                now - last.timestamp < self.grouping_threshold:
+                
+                is_simple_addition = False
+                is_simple_deletion = False
+                char = ""
+                prev_char = ""
+
+                diff_len = len(new_text) - len(last.new_text)
+                if abs(diff_len) == 1:
+                    min_len = min(len(new_text), len(last.new_text))
+                    diff_idx = 0
+                    while diff_idx < min_len and new_text[diff_idx] == last.new_text[diff_idx]:
+                        diff_idx += 1
+                        
+                    if diff_len == 1:
+                        is_simple_addition = True
+                        char = new_text[diff_idx]
+                        if diff_idx > 0:
+                            prev_char = new_text[diff_idx - 1]
+                    elif diff_len == -1:
+                        is_simple_deletion = True
+                        char = last.new_text[diff_idx]
+                        if diff_idx > 0:
+                            prev_char = last.new_text[diff_idx - 1]
+
+                if is_simple_addition or is_simple_deletion:
+                    # Don't group if char is newline
+                    # Don't group if we transitioned from word char to non-word char (or vice versa)
+                    if char == '\n' or (prev_char and char and self._is_word_char(char) != self._is_word_char(prev_char)):
+                        # Break grouping
+                        pass
+                    else:
+                        # Update the new_text of the last action
+                        last.new_text = new_text
+                        last.timestamp = now
+                        last.cursor_pos = cursor_pos
+                        self.redo_stack.clear()
+                        return
+
+        self.undo_stack.append(action)
+        self.redo_stack.clear()
+        
+        if len(self.undo_stack) > 500:
+            self.undo_stack.pop(0)
+            
+        log_debug(f"UndoManager: Recorded {action_type} for ({block_idx}, {string_idx})")
+
+    def record_navigation(self, block_idx: int, string_idx: int, prev_block_idx: int, prev_string_idx: int):
+        if self.is_undoing_redoing or self.current_group is not None:
+            return
+
+        if block_idx == prev_block_idx and string_idx == prev_string_idx:
+            return
+
+        # Check if last action was also a navigation to group them or avoid duplicates
+        if self.undo_stack:
+            last = self.undo_stack[-1]
+            if isinstance(last, UndoAction) and last.action_type == 'NAVIGATE':
+                # If we just navigated multiple times, we only care about where we ended up relative to where we started before the sequence
+                # But actually, the user might want to undo each step. Let's keep them separate for now but allow threshold grouping.
+                if time.time() - last.timestamp < 0.5:
+                     last.block_idx = block_idx
+                     last.string_idx = string_idx
+                     last.timestamp = time.time()
+                     return
+
+        action = UndoAction(
+            action_type='NAVIGATE',
+            block_idx=block_idx,
+            string_idx=string_idx,
+            old_text="",
+            new_text="",
+            timestamp=time.time(),
+            metadata={'prev_block': prev_block_idx, 'prev_string': prev_string_idx}
+        )
+        self.undo_stack.append(action)
+        self.redo_stack.clear()
+        if len(self.undo_stack) > 500:
+            self.undo_stack.pop(0)
+        log_debug(f"UndoManager: Recorded navigation to ({block_idx}, {string_idx})")
+
+    def undo(self):
+        if not self.undo_stack:
+            log_debug("UndoManager: Undo stack empty")
+            return
+
+        item = self.undo_stack.pop()
+        self.redo_stack.append(item)
+        
+        self.is_undoing_redoing = True
+        try:
+            if isinstance(item, UndoAction):
+                if item.action_type == 'NAVIGATE':
+                    prev_b = item.metadata.get('prev_block', -1)
+                    prev_s = item.metadata.get('prev_string', -1)
+                    self._navigate_to(prev_b, prev_s)
+                else:
+                    # For non-navigate actions, we might need to navigate to THEIR location first if not there
+                    # But the requirement was "movements are separate steps".
+                    # However, if we JUST popped a TEXT_EDIT, we should apply it at its location.
+                    self._apply_data(item.block_idx, item.string_idx, item.old_text, item.cursor_pos)
+            elif isinstance(item, GroupAction):
+                for action in reversed(item.actions):
+                    self._apply_data(action.block_idx, action.string_idx, action.old_text, action.cursor_pos)
+            log_debug(f"UndoManager: Undone item of type {item.action_type if isinstance(item, UndoAction) else 'Group'}")
+        finally:
+            self.is_undoing_redoing = False
+
+    def redo(self):
+        if not self.redo_stack:
+            log_debug("UndoManager: Redo stack empty")
+            return
+
+        item = self.redo_stack.pop()
+        self.undo_stack.append(item)
+        
+        self.is_undoing_redoing = True
+        try:
+            if isinstance(item, UndoAction):
+                if item.action_type == 'NAVIGATE':
+                    self._navigate_to(item.block_idx, item.string_idx)
+                else:
+                    self._apply_data(item.block_idx, item.string_idx, item.new_text, item.cursor_pos)
+            elif isinstance(item, GroupAction):
+                for action in item.actions:
+                    self._apply_data(action.block_idx, action.string_idx, action.new_text, action.cursor_pos)
+            log_debug(f"UndoManager: Redone item of type {item.action_type if isinstance(item, UndoAction) else 'Group'}")
+        finally:
+            self.is_undoing_redoing = False
+
+    def _get_item_location(self, item: Any, is_undo: bool) -> tuple[int, int]:
+        if isinstance(item, UndoAction):
+            return item.block_idx, item.string_idx
+        elif isinstance(item, GroupAction) and item.actions:
+            # For undo, we jump to the last action in group (newest focus)
+            # For redo, we jump to the first action (usually where it started)
+            idx = -1 if is_undo else 0
+            return item.actions[idx].block_idx, item.actions[idx].string_idx
+        return -1, -1
+
+    def _navigate_to(self, block_idx: int, string_idx: int):
+        if block_idx == -1: return
+
+        current_block = self.mw.current_block_idx
+        current_string = self.mw.current_string_idx
+        
+        needs_string_refresh = False
+        
+        if current_block != block_idx:
+            if hasattr(self.mw, 'block_list_widget'):
+                self.mw.block_list_widget.select_block_by_index(block_idx)
+            needs_string_refresh = True
+            
+        if current_string != string_idx or needs_string_refresh:
+            if hasattr(self.mw, 'list_selection_handler'):
+                self.mw.list_selection_handler.string_selected_from_preview(string_idx)
+                
+        if hasattr(self.mw, 'edited_text_edit') and self.mw.edited_text_edit:
+            self.mw.edited_text_edit.setFocus()
+            from PyQt5.QtGui import QTextCursor
+            cursor = self.mw.edited_text_edit.textCursor()
+            cursor.movePosition(QTextCursor.End)
+            self.mw.edited_text_edit.setTextCursor(cursor)
+
+    def _apply_data(self, block_idx: int, string_idx: int, text: str, cursor_pos: Optional[int] = None):
+        # We assume the navigation has already been performed or is not needed
+        # but we stay at the correct focus just in case (though we should already be there)
+        self._navigate_to(block_idx, string_idx)
+
+        # 2. Apply text to data and UI
+        was_programmatic = self.mw.is_programmatically_changing_text
+        self.mw.is_programmatically_changing_text = True
+        try:
+            # Update data processor
+            self.mw.data_processor.update_edited_data(block_idx, string_idx, text)
+            
+            # Update editor text if it's currently showing this string
+            if self.mw.current_block_idx == block_idx and self.mw.current_string_idx == string_idx:
+                editor_text = self.mw.current_game_rules.get_text_representation_for_editor(text)
+                self.mw.edited_text_edit.setPlainText(editor_text)
+                
+                if cursor_pos is not None:
+                    cursor = self.mw.edited_text_edit.textCursor()
+                    cursor.setPosition(min(cursor_pos, len(editor_text)))
+                    self.mw.edited_text_edit.setTextCursor(cursor)
+                else:
+                    cursor = self.mw.edited_text_edit.textCursor()
+                    cursor.movePosition(QTextCursor.End)
+                    self.mw.edited_text_edit.setTextCursor(cursor)
+                
+                # Perform necessary UI refreshes
+                self.mw.editor_operation_handler.preview_update_timer.start(50)
+                self.mw.ui_updater.update_title()
+                self.mw.ui_updater.update_status_bar()
+                self.mw.ui_updater.update_block_item_text_with_problem_count(block_idx)
+                
+                # Re-apply highlights
+                self.mw.ui_updater._apply_highlights_to_editor(self.mw.edited_text_edit, block_idx, string_idx)
+                
+        finally:
+            self.mw.is_programmatically_changing_text = was_programmatic
+
+    def clear(self):
+        self.undo_stack.clear()
+        self.redo_stack.clear()

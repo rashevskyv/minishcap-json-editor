@@ -31,11 +31,9 @@ class MainWindowEventHandler:
             self.mw.edited_text_edit.cursorPositionChanged.connect(self.handle_edited_cursor_position_changed)
             self.mw.edited_text_edit.selectionChanged.connect(self.handle_edited_selection_changed)
             if hasattr(self.mw, 'undo_typing_action'):
-                self.mw.edited_text_edit.undoAvailable.connect(self.mw.undo_typing_action.setEnabled)
-                self.mw.undo_typing_action.triggered.connect(self.mw.edited_text_edit.undo)
+                self.mw.undo_typing_action.triggered.connect(self.mw.undo_manager.undo)
             if hasattr(self.mw, 'redo_typing_action'):
-                self.mw.edited_text_edit.redoAvailable.connect(self.mw.redo_typing_action.setEnabled)
-                self.mw.redo_typing_action.triggered.connect(self.mw.edited_text_edit.redo)
+                self.mw.redo_typing_action.triggered.connect(self.mw.undo_manager.redo)
             if hasattr(self.mw.edited_text_edit, 'addTagMappingRequest'):
                 self.mw.edited_text_edit.addTagMappingRequest.connect(self.mw.actions.handle_add_tag_mapping_request)
         if hasattr(self.mw, 'paste_block_action'): self.mw.paste_block_action.triggered.connect(self.mw.editor_operation_handler.paste_block_text)
