@@ -61,7 +61,7 @@ class TagDisplayWidget(QWidget):
         
         self.color_btn = QPushButton(self)
         self.color_btn.setFixedSize(20, 20)
-        self.color_btn.setToolTip("Обрати колір")
+        self.color_btn.setToolTip("Pick color")
         layout.addWidget(self.color_btn)
         
         self.color_btn.clicked.connect(self._pick_color)
@@ -87,7 +87,7 @@ class TagDisplayWidget(QWidget):
         except Exception:
             options = 0
             
-        color = QColorDialog.getColor(initial_color, self.window(), "Обрати колір", options)
+        color = QColorDialog.getColor(initial_color, self.window(), "Pick color", options)
         if color.isValid():
             try:
                 self.line_edit.setText(color.name(QColor.HexArgb).upper())
