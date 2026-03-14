@@ -25,6 +25,7 @@ class HelpShortcutsDialog(QDialog):
         self.table.setHorizontalHeaderLabels(["Action", "Shortcut"])
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.table.horizontalHeader().setStretchLastSection(False) 
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
         self.table.setSelectionMode(QTableWidget.NoSelection)
         self.table.setAlternatingRowColors(True)

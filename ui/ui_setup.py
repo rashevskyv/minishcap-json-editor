@@ -304,16 +304,13 @@ def setup_main_window_ui(main_window):
     file_menu.addAction(main_window.reload_tag_mappings_action)
     file_menu.addSeparator()
 
+    main_window.help_shortcuts_action = QAction(QIcon.fromTheme("input-keyboard", style.standardIcon(QStyle.SP_DialogHelpButton)), '&Shortcuts Help', main_window)
+    main_window.help_shortcuts_action.setShortcut('F1')
+
     main_window.open_settings_action = QAction(settings_icon, '&Settings...', main_window)
     main_window.open_settings_action.setShortcut('Ctrl+P')
     file_menu.addAction(main_window.open_settings_action)
     file_menu.addSeparator()
-
-    main_window.help_shortcuts_action = QAction(QIcon.fromTheme("input-keyboard", style.standardIcon(QStyle.SP_DialogHelpButton)), '&Shortcuts Help', main_window)
-    main_window.help_shortcuts_action.setShortcut('F1')
-    
-    help_menu = menubar.addMenu('&Help')
-    help_menu.addAction(main_window.help_shortcuts_action)
 
     main_window.exit_action = QAction(exit_icon, 'E&xit', main_window)
     main_window.exit_action.triggered.connect(main_window.close)
@@ -325,6 +322,10 @@ def setup_main_window_ui(main_window):
     tools_menu = menubar.addMenu('&Tools')
     tools_menu.setObjectName('&Tools')
     main_window.tools_menu = tools_menu
+
+    # Help menu should be last
+    help_menu = menubar.addMenu('&Help')
+    help_menu.addAction(main_window.help_shortcuts_action)
 
 
     # Helper to load semicircular undo/redo icons reliably across platforms
