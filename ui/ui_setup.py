@@ -11,6 +11,7 @@ from components.editor.line_numbered_text_edit import LineNumberedTextEdit
 from components.custom_tree_widget import CustomTreeWidget
 
 def setup_main_window_ui(main_window):
+    style = main_window.style()
     central_widget = QWidget(); main_window.setCentralWidget(central_widget)
     main_window.main_vertical_layout = QVBoxLayout(central_widget)
 
