@@ -17,14 +17,14 @@ class CustomListItemDelegate(QStyledItemDelegate):
 
         self.color_marker_size = 8 
         self.color_marker_spacing = 3
-        self.max_color_markers = 2 
+        self.max_color_markers = 0 
         
         self.fixed_number_area_width_base_font_size = 10
         self.fixed_number_area_width_base_pixels = 24
         
         self.padding_after_number_area = 3 
         self.padding_after_color_marker_zone = 2
-        self.padding_after_problem_indicator_zone = 5 
+        self.padding_after_problem_indicator_zone = 3 
         self.indicator_v_offset = 2 
 
         self.marker_qcolors = {
@@ -149,10 +149,12 @@ class CustomListItemDelegate(QStyledItemDelegate):
         color_marker_zone_x_start = number_rect.right() + self.padding_after_number_area
         color_marker_zone_width = self._get_color_marker_zone_width()
         
-        problem_indicator_zone_x_start = color_marker_zone_x_start + color_marker_zone_width + self.padding_after_color_marker_zone
+        problem_indicator_zone_x_start = color_marker_zone_x_start + color_marker_zone_width + \
+                                         (self.padding_after_color_marker_zone if color_marker_zone_width > 0 else 0)
         problem_indicator_zone_width = self._get_problem_indicator_zone_width()
         
-        text_start_x = problem_indicator_zone_x_start + problem_indicator_zone_width + self.padding_after_problem_indicator_zone
+        text_start_x = problem_indicator_zone_x_start + problem_indicator_zone_width + \
+                       (self.padding_after_problem_indicator_zone if problem_indicator_zone_width > 0 else 0)
 
         # 1. Draw Color Markers
         current_color_marker_x = color_marker_zone_x_start
