@@ -139,10 +139,6 @@ def setup_main_window_ui(main_window):
     main_window.navigate_down_button.setToolTip("Navigate to next problem string (Ctrl+Down)")
     editable_text_header_layout.addWidget(main_window.navigate_down_button)
 
-    main_window.help_button = QPushButton("?")
-    main_window.help_button.setToolTip("View Shortcuts & Help")
-    editable_text_header_layout.addWidget(main_window.help_button)
-
     main_window.ai_translate_button = QPushButton('AI Translate')
     editable_text_header_layout.addWidget(main_window.ai_translate_button)
 
@@ -151,6 +147,11 @@ def setup_main_window_ui(main_window):
 
     main_window.auto_fix_button = QPushButton('Auto-fix')
     editable_text_header_layout.addWidget(main_window.auto_fix_button)
+
+    main_window.help_button = QPushButton()
+    main_window.help_button.setIcon(QIcon.fromTheme("input-keyboard", style.standardIcon(QStyle.SP_DialogHelpButton)))
+    main_window.help_button.setToolTip("View Shortcuts & Help (F1)")
+    editable_text_header_layout.addWidget(main_window.help_button)
     
     bottom_right_layout.addLayout(editable_text_header_layout)
 
@@ -308,7 +309,7 @@ def setup_main_window_ui(main_window):
     file_menu.addAction(main_window.open_settings_action)
     file_menu.addSeparator()
 
-    main_window.help_shortcuts_action = QAction(style.standardIcon(QStyle.SP_DialogHelpButton), '&Shortcuts Help', main_window)
+    main_window.help_shortcuts_action = QAction(QIcon.fromTheme("input-keyboard", style.standardIcon(QStyle.SP_DialogHelpButton)), '&Shortcuts Help', main_window)
     main_window.help_shortcuts_action.setShortcut('F1')
     
     help_menu = menubar.addMenu('&Help')
@@ -408,6 +409,11 @@ def setup_main_window_ui(main_window):
     main_window.main_toolbar.addAction(main_window.open_ai_chat_action)
     main_window.main_toolbar.addSeparator()
     main_window.main_toolbar.addAction(main_window.open_settings_action)
-    main_window.main_toolbar.addSeparator()
+    
+    # Push Help to the far right
+    toolbar_spacer = QWidget()
+    toolbar_spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+    main_window.main_toolbar.addWidget(toolbar_spacer)
+    
     main_window.main_toolbar.addAction(main_window.help_shortcuts_action)
 
