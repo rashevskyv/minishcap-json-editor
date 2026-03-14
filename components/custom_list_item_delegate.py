@@ -201,13 +201,12 @@ class CustomListItemDelegate(QStyledItemDelegate):
         # Draw Icon if exists (DecorationRole)
         decoration = index.data(Qt.DecorationRole)
         compaction_type = index.data(Qt.UserRole + 3) # 1: Folder/Folder, 2: Folder/Block
-        icon_width = 0
         
         icon_size = 16
         style = main_window.style()
         
         if compaction_type in [1, 2]:
-            # Draw composite icons
+            # Draw composite icons (variable width — compaction items are special)
             folder_icon = style.standardIcon(QStyle.SP_DirIcon)
             
             # First icon is always a folder
@@ -225,14 +224,19 @@ class CustomListItemDelegate(QStyledItemDelegate):
             second_icon.paint(painter, second_rect)
             
             icon_width = second_rect.right() - text_start_x + 4
-        elif decoration:
-            icon = QIcon(decoration)
-            if not icon.isNull():
-                icon_rect = QRect(text_start_x, item_rect.top() + (item_rect.height() - icon_size) // 2, icon_size, icon_size)
-                icon.paint(painter, icon_rect)
-                icon_width = icon_size + 4 
-        
-        text_start_x += icon_width
+            text_start_x += icon_width
+        else:
+            if decoration:
+                icon = QIcon(decoration)
+                if not icon.isNull():
+                    # Draw icon at the same column as problem indicator strips.
+                    # icon_size(16) == strip_zone(13) + padding(3) → text stays aligned.
+                    icon_rect = QRect(problem_indicator_zone_x_start,
+                                      item_rect.top() + (item_rect.height() - icon_size) // 2,
+                                      icon_size, icon_size)
+                    icon.paint(painter, icon_rect)
+            # text_start_x already = problem_indicator_zone_x_start + zone_width + padding
+            # = problem_indicator_zone_x_start + 16 = icon_end → no extra shift needed
 
         # Draw String Count on the right
         string_count_text = ""
