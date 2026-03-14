@@ -190,8 +190,24 @@ class CustomListItemDelegate(QStyledItemDelegate):
         
         text_start_x = current_problem_indicator_x + (self.padding_after_problem_indicator_zone if problem_indicator_colors_to_draw else 0)
         
+        # Draw String Count on the right
+        string_count_text = ""
+        count_width = 0
+        if main_window and block_idx_data is not None and hasattr(main_window, 'data'):
+            if 0 <= block_idx_data < len(main_window.data):
+                block_data = main_window.data[block_idx_data]
+                if isinstance(block_data, list):
+                    string_count_text = f"[{len(block_data)}]"
+                    metrics = QFontMetrics(current_font)
+                    count_width = metrics.horizontalAdvance(string_count_text) + 10 # 5px padding on each side
+
+        if string_count_text:
+            count_rect = QRect(item_rect.right() - count_width, item_rect.top(), count_width, item_rect.height())
+            painter.setPen(number_text_color) # Same subtle color as line numbers
+            painter.drawText(count_rect, Qt.AlignCenter, string_count_text)
+        
         text_rect = QRect(text_start_x, item_rect.top(),
-                          item_rect.width() - text_start_x - 2, 
+                          item_rect.width() - text_start_x - count_width - 4, # Deduct count width and extra padding
                           item_rect.height())
 
         painter.setPen(option.palette.color(QPalette.HighlightedText if is_selected else QPalette.Text))
