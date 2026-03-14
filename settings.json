@@ -50,7 +50,6 @@
     "enable_file_logging": false,
     "log_file_path": "",
     "enabled_log_categories": [
-        "general",
         "lifecycle",
         "file_ops",
         "settings",

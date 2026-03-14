@@ -3,7 +3,7 @@
 # --- START OF FILE components/TextHighlightManager.py ---
 from PyQt5.QtWidgets import QTextEdit
 from PyQt5.QtGui import QColor, QTextBlockFormat, QTextFormat, QTextCursor, QTextBlock, QTextCharFormat
-from PyQt5.QtCore import QTimer, QPoint
+from PyQt5.QtCore import QTimer, QPoint, Qt
 from typing import Optional, List, Tuple
 import re
 from utils.logging_utils import log_debug
@@ -21,6 +21,7 @@ class TextHighlightManager:
         self._search_match_selections = []
         self._width_exceed_char_selections = [] 
         self._empty_odd_subline_selections = []
+        self._zebra_selections = []
         
         self._tag_highlight_timer = QTimer()
         self._tag_highlight_timer.setSingleShot(True)
@@ -81,6 +82,12 @@ class TextHighlightManager:
             all_selections.extend([s for s in self._linked_cursor_selections if not s.format.property(QTextFormat.FullWidthSelection)]) 
         if self._tag_interaction_selections: all_selections.extend(list(self._tag_interaction_selections)) 
         
+        if self._tag_interaction_selections: all_selections.extend(list(self._tag_interaction_selections)) 
+        
+        # Add zebra stripes at the very beginning (bottom layer)
+        zebra_selections = list(self._zebra_selections)
+        all_selections = zebra_selections + all_selections
+
         self.editor.setExtraSelections(all_selections)
         self.editor.viewport().update()
         if hasattr(self.editor, 'lineNumberArea'): 
@@ -159,28 +166,24 @@ class TextHighlightManager:
         self.applyHighlights()
 
     def set_background_for_lines(self, lines_to_highlight: set, lines_to_clear: set):
+        # Using ExtraSelections instead of QTextBlockFormat to avoid RecursionError
+        # and keep the document content clean.
         doc = self.editor.document()
-        cursor = QTextCursor(doc)
-
-        # Clear highlights first
-        for line_number in lines_to_clear:
-            if 0 <= line_number < doc.blockCount():
-                block = doc.findBlockByNumber(line_number)
-                if block.isValid():
-                    cursor.setPosition(block.position())
-                    block_format = block.blockFormat()
-                    block_format.clearBackground()
-                    cursor.setBlockFormat(block_format)
+        new_selections = list(self._preview_selected_line_selections)
         
-        # Set new highlights
+        # Remove cleared lines
+        new_selections = [s for s in new_selections if s.cursor.blockNumber() not in lines_to_clear]
+        
+        # Add highlighted lines
         for line_number in lines_to_highlight:
             if 0 <= line_number < doc.blockCount():
                 block = doc.findBlockByNumber(line_number)
-                if block.isValid():
-                    cursor.setPosition(block.position())
-                    block_format = block.blockFormat()
-                    block_format.setBackground(self.editor.preview_selected_line_color)
-                    cursor.setBlockFormat(block_format)
+                selection = self._create_block_background_selection(block, self.editor.preview_selected_line_color, use_full_width=True)
+                if selection:
+                    new_selections.append(selection)
+
+        self._preview_selected_line_selections = new_selections
+        self.applyHighlights()
 
     def clearPreviewSelectedLineHighlight(self):
         if self._preview_selected_line_selections:
@@ -341,4 +344,31 @@ class TextHighlightManager:
         self._search_match_selections = []
         self._width_exceed_char_selections = [] 
         self._empty_odd_subline_selections = []
+        self._zebra_selections = [] # Added _zebra_selections
+        self.applyHighlights()
+
+    def update_zebra_stripes(self):
+        new_selections = []
+        doc = self.editor.document()
+        odd_color = getattr(self.editor, 'zebra_odd_color', None)
+        even_color = getattr(self.editor, 'zebra_even_color', None)
+        
+        if not odd_color or not even_color:
+            self._zebra_selections = [] # Clear if colors are not set
+            self.applyHighlights()
+            return
+
+        for i in range(doc.blockCount()):
+            block = doc.findBlockByNumber(i)
+            is_odd = i % 2 != 0
+            color = odd_color if is_odd else even_color
+            
+            # Only add if the line is not currently selected by preview_selected_line_highlight
+            # and if the color is valid (not transparent or fully opaque alpha 0)
+            if color and color != Qt.transparent and color.alpha() != 0 and i not in self._current_selected_lines:
+                selection = self._create_block_background_selection(block, color, use_full_width=True)
+                if selection:
+                    new_selections.append(selection)
+
+        self._zebra_selections = new_selections
         self.applyHighlights()

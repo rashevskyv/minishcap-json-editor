@@ -115,7 +115,7 @@ class CategoryAdapter(logging.LoggerAdapter):
         return msg, kwargs
 
 def _log_message(level, message: str, category: str, exc_info=False):
-    if not _should_log(category):
+    if level < logging.ERROR and not _should_log(category):
         return
     adapter = CategoryAdapter(logger, {"category": category})
     if level == logging.DEBUG:

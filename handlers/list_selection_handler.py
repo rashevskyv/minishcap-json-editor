@@ -288,7 +288,7 @@ class ListSelectionHandler(BaseHandler):
 
     def handle_preview_selection_changed(self):
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
-        if not preview_edit or not preview_edit.hasFocus():
+        if not preview_edit or not preview_edit.hasFocus() or self.mw.is_programmatically_changing_text:
             return
             
         cursor = preview_edit.textCursor()

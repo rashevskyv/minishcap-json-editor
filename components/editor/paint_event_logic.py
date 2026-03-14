@@ -16,62 +16,47 @@ class LNETPaintEventLogic:
         
         is_preview = self.editor.objectName() == "preview_text_edit"
         
-        if not is_preview:
-            pen_lines = QPen(PAIR_SEPARATOR_LINE_COLOR)
-            pen_lines.setStyle(PAIR_SEPARATOR_LINE_STYLE)
-            pen_lines.setWidth(PAIR_SEPARATOR_LINE_THICKNESS)
-            painter_lines.setPen(pen_lines)
+        # Draw visual line backgrounds (zebra stripes) - Now handled by ExtraSelections in highlightManager
+        # We keep the block loop if needed for separators, but backgrounds are removed here.
+        block = self.editor.firstVisibleBlock()
+        viewport_offset = self.editor.contentOffset()
+        
+        doc_visual_line_index = 0
+        temp_block = self.editor.document().firstBlock()
+        while temp_block.isValid() and temp_block != block:
+            if temp_block.layout():
+                doc_visual_line_index += temp_block.layout().lineCount()
+            temp_block = temp_block.next()
 
-            block = self.editor.firstVisibleBlock()
-            viewport_offset = self.editor.contentOffset()
-            
-            doc_visual_line_index = 0
-            temp_block = self.editor.document().firstBlock()
-            while temp_block.isValid() and temp_block != block:
-                if temp_block.layout():
-                    doc_visual_line_index += temp_block.layout().lineCount()
-                temp_block = temp_block.next()
-
-            main_window = self.editor.window()
-            page_size = 4  # Default
-            if isinstance(main_window, QMainWindow):
-                # Always use lines_per_page from settings if available
-                page_size = getattr(main_window, 'lines_per_page', None)
-                if page_size is None:
-                    # Fall back to game rules method only if lines_per_page is not set
-                    if hasattr(main_window, 'current_game_rules') and main_window.current_game_rules:
-                        if hasattr(main_window.current_game_rules, 'get_editor_page_size'):
-                            page_size = main_window.current_game_rules.get_editor_page_size()
-                        else:
-                            page_size = 4
+        main_window = self.editor.window()
+        page_size = 4  # Default
+        if isinstance(main_window, QMainWindow):
+            # Always use lines_per_page from settings if available
+            page_size = getattr(main_window, 'lines_per_page', None)
+            if page_size is None:
+                # Fall back to game rules method only if lines_per_page is not set
+                if hasattr(main_window, 'current_game_rules') and main_window.current_game_rules:
+                    if hasattr(main_window.current_game_rules, 'get_editor_page_size'):
+                        page_size = main_window.current_game_rules.get_editor_page_size()
                     else:
                         page_size = 4
-                # Debug: print once per paint to see what value is used
-                if not hasattr(self.editor, '_last_logged_page_size') or self.editor._last_logged_page_size != page_size:
-                    from utils.logging_utils import log_debug
-                    log_debug(f"Using page_size={page_size} for horizontal lines")
-                    self.editor._last_logged_page_size = page_size
+                else:
+                    page_size = 4
+            # Debug: print once per paint to see what value is used
+            if not hasattr(self.editor, '_last_logged_page_size') or self.editor._last_logged_page_size != page_size:
+                from utils.logging_utils import log_debug
+                log_debug(f"Using page_size={page_size} for horizontal lines")
+                self.editor._last_logged_page_size = page_size
 
-            while block.isValid() and block.layout():
-                layout = block.layout()
-                block_rect = self.editor.blockBoundingGeometry(block).translated(viewport_offset)
-                
-                # Draw visual line backgrounds (zebra stripes)
-                # We use DestinationOver to paint behind the already painted text
-                old_composition_mode = painter_lines.compositionMode()
-                painter_lines.setCompositionMode(QPainter.CompositionMode_DestinationOver)
-                
-                # Use block number to determine even/odd for blocks
-                # In this app, blocks usually map to strings/entries
-                is_odd = block.blockNumber() % 2 != 0
-                bg_color = getattr(self.editor, 'zebra_odd_color', QColor(Qt.transparent)) if is_odd else \
-                           getattr(self.editor, 'zebra_even_color', QColor(Qt.transparent))
-                
-                if bg_color != Qt.transparent:
-                    # Draw background for the whole block area in viewport
-                    painter_lines.fillRect(block_rect.toRect().intersected(self.editor.viewport().rect()), bg_color)
-                
-                painter_lines.setCompositionMode(old_composition_mode)
+        while block.isValid() and block.layout():
+            layout = block.layout()
+            block_rect = self.editor.blockBoundingGeometry(block).translated(viewport_offset)
+
+            if not is_preview:
+                pen_lines = QPen(PAIR_SEPARATOR_LINE_COLOR)
+                pen_lines.setStyle(PAIR_SEPARATOR_LINE_STYLE)
+                pen_lines.setWidth(PAIR_SEPARATOR_LINE_THICKNESS)
+                painter_lines.setPen(pen_lines)
 
                 for i in range(layout.lineCount()):
                     line = layout.lineAt(i)
@@ -97,11 +82,11 @@ class LNETPaintEventLogic:
                                     self.editor.viewport().width(),
                                     int(line_bottom_y_in_viewport) -1
                                 )
-                    doc_visual_line_index +=1 
+                    doc_visual_line_index += 1
 
-                if block_rect.bottom() > self.editor.viewport().height(): 
-                     break 
-                block = block.next()
+            if block_rect.bottom() > self.editor.viewport().height():
+                break
+            block = block.next()
         
         if self.editor.objectName() == "edited_text_edit" and hasattr(self.editor, 'highlightManager'):
             if self.editor.highlightManager:

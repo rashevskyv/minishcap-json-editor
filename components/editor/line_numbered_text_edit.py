@@ -82,6 +82,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.lineNumberArea.paint_logic = LNETLineNumberAreaPaintLogic(self, self.paint_helpers, main_window_ref)
 
         self.blockCountChanged.connect(self.updateLineNumberAreaWidth)
+        self.blockCountChanged.connect(lambda: self.highlightManager.update_zebra_stripes() if hasattr(self, 'highlightManager') and self.highlightManager else None)
         self.updateRequest.connect(self.updateLineNumberArea)
 
         self.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -126,6 +127,7 @@ class LineNumberedTextEdit(QPlainTextEdit):
         self.keyboard_handler = LNETKeyboardHandler(self)
 
         lnet_editor_setup.update_auxiliary_widths(self)
+        self.highlightManager.update_zebra_stripes()
 
     def handle_line_number_click(self, y_pos: int):
         self.mouse_handler.handle_line_number_click(y_pos)
@@ -186,6 +188,25 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
         super().mouseMoveEvent(event)
 
+    def setPlainText(self, text: str):
+        # When text is reset entirely, we MUST clear all document-specific highlights
+        # because the old cursors will be invalid.
+        self._selected_lines.clear()
+        self._previously_selected_lines.clear()
+        self._last_clicked_line = -1
+        if hasattr(self, 'highlightManager'):
+            self.highlightManager.clearAllHighlights()
+        super().setPlainText(text)
+
+    def reset_selection_state(self):
+        """Explicitly reset all selection tracking and visual highlights."""
+        self._selected_lines.clear()
+        self._previously_selected_lines.clear()
+        self._last_clicked_line = -1
+        if hasattr(self, 'highlightManager'):
+            self.highlightManager.clearAllHighlights()
+        self.viewport().update()
+
     def handle_line_number_area_mouse_move(self, event: QMouseEvent):
         self.mouse_handler.handle_line_number_area_mouse_move(event)
 
@@ -194,7 +215,10 @@ class LineNumberedTextEdit(QPlainTextEdit):
         return sorted(list(self._selected_lines))
 
     def set_selected_lines(self, lines: List[int]):
-        self._selected_lines = set(lines)
+        new_set = set(lines)
+        if self._selected_lines == new_set:
+            return
+        self._selected_lines = new_set
         self._update_selection_highlight()
         self._emit_selection_changed()
 
@@ -288,7 +312,8 @@ class LineNumberedTextEdit(QPlainTextEdit):
 
     def updateLineNumberAreaWidth(self, _):
         new_width = self.lineNumberAreaWidth()
-        self.setViewportMargins(new_width, 0, 0, 0)
+        if self.viewportMargins().left() != new_width:
+            self.setViewportMargins(new_width, 0, 0, 0)
         if hasattr(self, 'lineNumberArea'): 
             self.lineNumberArea.updateGeometry()
             self.lineNumberArea.update()

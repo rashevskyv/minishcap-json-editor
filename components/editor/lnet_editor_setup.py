@@ -52,6 +52,9 @@ def set_theme_colors(editor, main_window_ref):
     editor.critical_problem_line_color = CRITICAL_PROBLEM_LINE_COLOR
     editor.warning_problem_line_color = WARNING_PROBLEM_LINE_COLOR
 
+    if hasattr(editor, 'highlightManager') and editor.highlightManager:
+        editor.highlightManager.update_zebra_stripes()
+
 
 def create_tag_button(editor, parent_widget, display: str, open_tag: str,
                       close_tag: str = None, menu: QMenu = None):

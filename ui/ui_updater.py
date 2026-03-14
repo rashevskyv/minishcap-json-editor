@@ -397,9 +397,9 @@ class UIUpdater:
 
         self.mw.is_programmatically_changing_text = True 
         
-        if preview_edit: preview_edit.highlightManager.clearAllProblemHighlights()
-        if original_edit: original_edit.highlightManager.clearAllProblemHighlights()
-        if edited_edit: edited_edit.highlightManager.clearAllProblemHighlights()
+        if preview_edit: preview_edit.reset_selection_state()
+        if original_edit: original_edit.reset_selection_state()
+        if edited_edit: edited_edit.reset_selection_state()
 
         if block_idx < 0 or not self.mw.data or block_idx >= len(self.mw.data) or not isinstance(self.mw.data[block_idx], list):
             if preview_edit: preview_edit.setPlainText("")

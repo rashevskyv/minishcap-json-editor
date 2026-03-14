@@ -641,8 +641,12 @@ if __name__ == '__main__':
     theme_to_apply = temp_settings.get("theme", "auto")
     MainWindowUIHandler.apply_theme(app, theme_to_apply)
 
-    window = MainWindow()
-    window.show()
+    try:
+        window = MainWindow()
+        window.show()
+    except Exception as e:
+        log_error(f"CRITICAL ERROR during MainWindow initialization: {e}", exc_info=True)
+        sys.exit(1)
     log_info("Starting Qt event loop...", category="lifecycle")
     exit_code = app.exec_()
     log_info(f"Qt event loop finished with exit code: {exit_code}", category="lifecycle")
