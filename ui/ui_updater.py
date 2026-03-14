@@ -394,12 +394,18 @@ class UIUpdater:
         edited_edit = getattr(self.mw, 'edited_text_edit', None)
 
         old_preview_scrollbar_value = preview_edit.verticalScrollBar().value() if preview_edit else 0
-
-        self.mw.is_programmatically_changing_text = True 
         
-        if preview_edit: preview_edit.reset_selection_state()
-        if original_edit: original_edit.reset_selection_state()
-        if edited_edit: edited_edit.reset_selection_state()
+        self.mw.is_programmatically_changing_text = True
+
+        # Use a local cache of the last populated block to avoid redundant full resets
+        last_block_idx = getattr(self, '_last_populated_block_idx', -999)
+        block_changed = (block_idx != last_block_idx)
+        
+        if block_changed:
+            if preview_edit: preview_edit.reset_selection_state()
+            if original_edit: original_edit.reset_selection_state()
+            if edited_edit: edited_edit.reset_selection_state()
+            self._last_populated_block_idx = block_idx
 
         if block_idx < 0 or not self.mw.data or block_idx >= len(self.mw.data) or not isinstance(self.mw.data[block_idx], list):
             if preview_edit: preview_edit.setPlainText("")
@@ -410,26 +416,31 @@ class UIUpdater:
             self.mw.is_programmatically_changing_text = False 
             return
         
-        self._apply_highlights_for_block(block_idx)
+        if block_changed:
+            self._apply_highlights_for_block(block_idx)
         
         if preview_edit and self.mw.current_game_rules:
-            preview_lines = []
-            for i in range(len(self.mw.data[block_idx])):
-                text_for_preview_raw, _ = self.data_processor.get_current_string_text(block_idx, i)
-                preview_line_text = self.mw.current_game_rules.get_text_representation_for_preview(str(text_for_preview_raw))
-                preview_lines.append(preview_line_text)
+            # We only generate full text if block changed
+            if block_changed:
+                preview_lines = []
+                for i in range(len(self.mw.data[block_idx])):
+                    text_for_preview_raw, _ = self.data_processor.get_current_string_text(block_idx, i)
+                    preview_line_text = self.mw.current_game_rules.get_text_representation_for_preview(str(text_for_preview_raw))
+                    preview_lines.append(preview_line_text)
 
-            preview_full_text = "\n".join(preview_lines)
-            
-            if preview_edit.toPlainText() != preview_full_text:
-                preview_edit.setPlainText(preview_full_text)
+                preview_full_text = "\n".join(preview_lines)
+                if preview_edit.toPlainText() != preview_full_text:
+                    preview_edit.setPlainText(preview_full_text)
 
             if self.mw.current_string_idx != -1 and \
                hasattr(preview_edit, 'set_selected_lines') and \
                0 <= self.mw.current_string_idx < preview_edit.document().blockCount(): 
                 preview_edit.set_selected_lines([self.mw.current_string_idx])
 
-            preview_edit.verticalScrollBar().setValue(old_preview_scrollbar_value)
+            # Only restore scroll value if block changed AND we are NOT intentionally selecting a string
+            # (If we are selecting a string, ensureCursorVisible will be called later in string_selected_from_preview)
+            if block_changed and self.mw.current_string_idx == -1:
+                preview_edit.verticalScrollBar().setValue(old_preview_scrollbar_value)
         
         self.update_text_views() 
         self.synchronize_original_cursor() 

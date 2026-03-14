@@ -179,6 +179,8 @@ class ListSelectionHandler(BaseHandler):
         if hasattr(self.mw, 'string_settings_updater'):
             self.mw.string_settings_updater.update_string_settings_panel()
 
+        self.mw.is_programmatically_changing_text = original_programmatic_state
+
         if preview_edit and self.mw.current_string_idx != -1 and \
            0 <= self.mw.current_string_idx < preview_edit.document().blockCount():
             if hasattr(preview_edit, 'set_selected_lines'): 
@@ -188,7 +190,9 @@ class ListSelectionHandler(BaseHandler):
             if block_to_show.isValid():
                 cursor = QTextCursor(block_to_show)
                 preview_edit.setTextCursor(cursor)
-                preview_edit.ensureCursorVisible()
+                # Use a small timer to ensure the widget has finished layout after potential text updates
+                from PyQt5.QtCore import QTimer
+                QTimer.singleShot(10, lambda: preview_edit.ensureCursorVisible())
         elif preview_edit and hasattr(preview_edit, 'highlightManager'): 
             preview_edit.highlightManager.clearPreviewSelectedLineHighlight()
             
@@ -197,8 +201,6 @@ class ListSelectionHandler(BaseHandler):
             cursor = self.mw.edited_text_edit.textCursor()
             cursor.movePosition(QTextCursor.End)
             self.mw.edited_text_edit.setTextCursor(cursor)
-        
-        self.mw.is_programmatically_changing_text = original_programmatic_state
 
 
     def rename_block(self, item):
@@ -245,6 +247,7 @@ class ListSelectionHandler(BaseHandler):
 
         num_strings_in_block = len(current_block_data)
         start_scan_idx = self.mw.current_string_idx
+        log_debug(f"[NAV] Start navigation. Direction down: {direction_down}, current_string_idx: {start_scan_idx}")
         
         current_check_idx = -1
         if start_scan_idx == -1: 
@@ -279,8 +282,10 @@ class ListSelectionHandler(BaseHandler):
                         break
         
         if found_target_s_idx != -1:
+            log_debug(f"[NAV] Found target string at index: {found_target_s_idx}")
             self.string_selected_from_preview(found_target_s_idx)
         else:
+            log_debug("[NAV] No problem string found in current search.")
             if start_scan_idx != -1 and self._data_string_has_any_problem(self.mw.current_block_idx, start_scan_idx):
                  self.string_selected_from_preview(start_scan_idx)
 
