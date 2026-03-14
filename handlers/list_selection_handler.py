@@ -67,7 +67,13 @@ class ListSelectionHandler(BaseHandler):
                     self.mw.undo_manager.record_navigation(block_index, restored_s_idx, old_block, old_string)
 
                 # Use QTimer to ensure populate_strings_for_block has finished before selecting string
-                QTimer.singleShot(0, lambda idx=restored_s_idx: self.string_selected_from_preview(idx))
+                # Only schedule timer-based string selection if not currently undoing/redoing.
+                # During undo, _navigate_to will call string_selected_from_preview directly;
+                # the timer would fire after is_undoing_redoing=False and corrupt the selection.
+                undo_mgr = getattr(self.mw, 'undo_manager', None)
+                if not (undo_mgr and undo_mgr.is_undoing_redoing):
+                    QTimer.singleShot(0, lambda idx=restored_s_idx: self.string_selected_from_preview(idx))
+
                 
             self.ui_updater.populate_strings_for_block(block_index)
             if hasattr(self.mw, 'string_settings_updater'):
