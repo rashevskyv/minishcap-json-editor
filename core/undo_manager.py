@@ -21,6 +21,15 @@ class GroupAction:
     action_type: str
     timestamp: float
 
+@dataclass
+class StructuralAction:
+    """Snapshot-based undo for block structure operations (rename, move, folder ops)."""
+    action_type: str  # 'RENAME_BLOCK', 'RENAME_FOLDER', 'MOVE_BLOCK', 'ADD_FOLDER', 'DELETE_FOLDER', 'DRAG_DROP'
+    before_snapshot: dict
+    after_snapshot: dict
+    label: str
+    timestamp: float
+
 class UndoManager:
     def __init__(self, main_window):
         self.mw = main_window
@@ -129,6 +138,61 @@ class UndoManager:
             
         log_debug(f"UndoManager: Recorded {action_type} for ({block_idx}, {string_idx})")
 
+    # ------------------------------------------------------------------
+    # Structural snapshot-based operations (rename, move, folder ops)
+    # ------------------------------------------------------------------
+
+    def get_project_snapshot(self) -> dict:
+        """Capture current project + block_names structure for undo purposes."""
+        import copy
+        snapshot = {'block_names': copy.deepcopy(self.mw.block_names)}
+        if hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project:
+            project = self.mw.project_manager.project
+            snapshot['virtual_folders'] = [vf.to_dict() for vf in project.virtual_folders]
+            snapshot['root_block_ids'] = list(project.metadata.get('root_block_ids', []))
+        return snapshot
+
+    def record_structural_action(self, before_snapshot: dict, action_type: str = 'STRUCTURE', label: str = ''):
+        """Record a structural change (rename, move, folder) for undo/redo."""
+        if self.is_undoing_redoing:
+            return
+        after_snapshot = self.get_project_snapshot()
+        if before_snapshot == after_snapshot:
+            return  # No change — nothing to record
+        action = StructuralAction(
+            action_type=action_type,
+            before_snapshot=before_snapshot,
+            after_snapshot=after_snapshot,
+            label=label,
+            timestamp=time.time()
+        )
+        self.undo_stack.append(action)
+        self.redo_stack.clear()
+        if len(self.undo_stack) > 500:
+            self.undo_stack.pop(0)
+        log_debug(f"UndoManager: Recorded structural '{action_type}': {label}")
+
+    def _apply_project_snapshot(self, snapshot: dict):
+        """Restore project structure from a snapshot and refresh UI."""
+        from core.project_models import VirtualFolder
+        import copy
+        if 'block_names' in snapshot:
+            self.mw.block_names = copy.deepcopy(snapshot['block_names'])
+            if hasattr(self.mw, 'settings_manager'):
+                self.mw.settings_manager.save_block_names()
+        if hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project:
+            project = self.mw.project_manager.project
+            if 'virtual_folders' in snapshot:
+                project.virtual_folders = [VirtualFolder.from_dict(vf) for vf in snapshot['virtual_folders']]
+            if 'root_block_ids' in snapshot:
+                project.metadata['root_block_ids'] = list(snapshot['root_block_ids'])
+            self.mw.project_manager.save()
+        if hasattr(self.mw, 'ui_updater'):
+            self.mw.ui_updater.populate_blocks()
+            self.mw.ui_updater.update_title()
+        log_debug("UndoManager: Applied project snapshot.")
+
+
     def record_navigation(self, block_idx: int, string_idx: int, prev_block_idx: int, prev_string_idx: int):
         if self.is_undoing_redoing or self.current_group is not None:
             return
@@ -186,7 +250,9 @@ class UndoManager:
             elif isinstance(item, GroupAction):
                 for action in reversed(item.actions):
                     self._apply_data(action.block_idx, action.string_idx, action.old_text, action.cursor_pos)
-            log_debug(f"UndoManager: Undone item of type {item.action_type if isinstance(item, UndoAction) else 'Group'}")
+            elif isinstance(item, StructuralAction):
+                self._apply_project_snapshot(item.before_snapshot)
+            log_debug(f"UndoManager: Undone item of type {item.action_type if isinstance(item, (UndoAction, StructuralAction)) else 'Group'}")
         finally:
             self.is_undoing_redoing = False
 
@@ -208,9 +274,12 @@ class UndoManager:
             elif isinstance(item, GroupAction):
                 for action in item.actions:
                     self._apply_data(action.block_idx, action.string_idx, action.new_text, action.cursor_pos)
-            log_debug(f"UndoManager: Redone item of type {item.action_type if isinstance(item, UndoAction) else 'Group'}")
+            elif isinstance(item, StructuralAction):
+                self._apply_project_snapshot(item.after_snapshot)
+            log_debug(f"UndoManager: Redone item of type {item.action_type if isinstance(item, (UndoAction, StructuralAction)) else 'Group'}")
         finally:
             self.is_undoing_redoing = False
+
 
     def _get_item_location(self, item: Any, is_undo: bool) -> tuple[int, int]:
         if isinstance(item, UndoAction):

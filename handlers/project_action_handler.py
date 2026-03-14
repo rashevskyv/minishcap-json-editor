@@ -330,6 +330,9 @@ class ProjectActionHandler(BaseHandler):
         from PyQt5.QtWidgets import QInputDialog
         name, ok = QInputDialog.getText(self.mw, "Add Folder", "Enter folder name:")
         if ok and name:
+            undo_mgr = getattr(self.mw, 'undo_manager', None)
+            before = undo_mgr.get_project_snapshot() if undo_mgr else None
+
             current_item = self.mw.block_list_widget.currentItem()
             parent_id = None
             if current_item:
@@ -341,6 +344,10 @@ class ProjectActionHandler(BaseHandler):
 
             self.mw.project_manager.create_virtual_folder(name, parent_id=parent_id)
             self.ui_updater.populate_blocks()
+
+            if undo_mgr and before is not None:
+                undo_mgr.record_structural_action(before, 'ADD_FOLDER', f"Add folder '{name}'")
+
 
     def _populate_blocks_from_project(self):
         """Populate block list from current project and load data."""

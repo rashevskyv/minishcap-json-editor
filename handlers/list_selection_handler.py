@@ -229,6 +229,9 @@ class ListSelectionHandler(BaseHandler):
         block_index_from_data = item.data(0, Qt.UserRole)
         merged_ids = item.data(0, Qt.UserRole + 2)
 
+        undo_mgr = getattr(self.mw, 'undo_manager', None)
+        before = undo_mgr.get_project_snapshot() if undo_mgr else None
+
         self.mw.is_programmatically_changing_text = True
         try:
             if block_index_from_data is not None:
@@ -239,8 +242,6 @@ class ListSelectionHandler(BaseHandler):
                 if merged_ids and " / " in new_text:
                     parts = new_text.split(" / ")
                     actual_name = parts[-1].strip()
-                    # We only rename the block itself here for simplicity.
-                    # Renaming merged folders via one text edit is complex.
                     self.mw.block_names[block_index_str] = actual_name
                 else:
                     self.mw.block_names[block_index_str] = new_text
@@ -249,7 +250,6 @@ class ListSelectionHandler(BaseHandler):
                 log_debug(f"Block {block_index_from_data} renamed to '{new_text}'")
             elif folder_id:
                 # Rename Folder
-                # If merged, we only rename the deepest one for simplicity
                 folder = self.mw.project_manager.find_virtual_folder(folder_id)
                 if folder:
                     if " / " in new_text:
@@ -260,10 +260,15 @@ class ListSelectionHandler(BaseHandler):
                     self.mw.project_manager.save()
                     log_debug(f"Folder {folder_id} renamed to '{folder.name}'")
             
-            # Repopulate to fix any visual issues (like adding issue counts back if they were part of the name)
+            # Repopulate to fix any visual issues
             self.ui_updater.populate_blocks()
         finally:
             self.mw.is_programmatically_changing_text = False
+
+        if undo_mgr and before is not None:
+            action_label = f"Rename block to '{new_text}'" if block_index_from_data is not None else f"Rename folder to '{new_text}'"
+            action_type = 'RENAME_BLOCK' if block_index_from_data is not None else 'RENAME_FOLDER'
+            undo_mgr.record_structural_action(before, action_type, action_label)
 
     def _data_string_has_any_problem(self, block_idx: int, string_idx: int) -> bool:
         if not self.mw.current_game_rules:
