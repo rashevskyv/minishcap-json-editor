@@ -20,7 +20,37 @@ def setup_main_window_ui(main_window):
     left_panel = QWidget()
     left_layout = QVBoxLayout(left_panel)
     left_layout.setContentsMargins(0, 0, 0, 0)
-    left_layout.addWidget(QLabel("Blocks (double-click to rename):"))
+    
+    # Top header for Blocks label and folder actions
+    block_header_layout = QHBoxLayout()
+    block_header_layout.addWidget(QLabel("Blocks (double-click to rename):"))
+    block_header_layout.addStretch()
+
+    # Create buttons for the header
+    main_window.add_folder_button = QPushButton()
+    main_window.add_folder_button.setIcon(style.standardIcon(QStyle.SP_FileDialogNewFolder))
+    main_window.add_folder_button.setToolTip('Create new virtual folder')
+    main_window.add_folder_button.setFixedSize(28, 28)
+    main_window.add_folder_button.setEnabled(False)
+    block_header_layout.addWidget(main_window.add_folder_button)
+
+    main_window.expand_all_button = QPushButton()
+    main_window.expand_all_button.setIcon(style.standardIcon(QStyle.SP_TitleBarUnshadeButton))
+    if main_window.expand_all_button.icon().isNull():
+        main_window.expand_all_button.setText('⇊')
+    main_window.expand_all_button.setToolTip('Expand all folders')
+    main_window.expand_all_button.setFixedSize(28, 28)
+    block_header_layout.addWidget(main_window.expand_all_button)
+
+    main_window.collapse_all_button = QPushButton()
+    main_window.collapse_all_button.setIcon(style.standardIcon(QStyle.SP_TitleBarShadeButton))
+    if main_window.collapse_all_button.icon().isNull():
+        main_window.collapse_all_button.setText('⇈')
+    main_window.collapse_all_button.setToolTip('Collapse all folders')
+    main_window.collapse_all_button.setFixedSize(28, 28)
+    block_header_layout.addWidget(main_window.collapse_all_button)
+
+    left_layout.addLayout(block_header_layout)
 
     # Create container for list widget + toolbar
     block_list_container = QWidget()
@@ -324,9 +354,18 @@ def setup_main_window_ui(main_window):
     tools_menu.setObjectName('&Tools')
     main_window.tools_menu = tools_menu
 
-    # Help menu should be last
-    help_menu = menubar.addMenu('&Help')
+    # Help menu on the far right
+    from PyQt5.QtWidgets import QToolButton
+    help_menu = QMenu('&Help', menubar)
     help_menu.addAction(main_window.help_shortcuts_action)
+    
+    help_button = QToolButton()
+    help_button.setText("Help")
+    help_button.setMenu(help_menu)
+    help_button.setPopupMode(QToolButton.InstantPopup)
+    # Style to match menubar look roughly
+    help_button.setStyleSheet("QToolButton { border: none; padding: 5px 10px; background: transparent; } QToolButton::menu-indicator { image: none; } QToolButton:hover { background-color: rgba(0,0,0,0.1); }")
+    menubar.setCornerWidget(help_button, Qt.TopRightCorner)
 
 
     # Helper to load semicircular undo/redo icons reliably across platforms

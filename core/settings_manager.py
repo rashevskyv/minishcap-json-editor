@@ -125,6 +125,7 @@ class SettingsManager:
             "prompt_editor_enabled": True,
             "spellchecker_enabled": False,
             "spellchecker_language": "uk",
+            "last_browse_dir": str(Path.home()),
             "recent_projects": [],
             "translation_ai": {
                 "provider": "OpenAI", "api_key": "", "model": "gpt-4o"
@@ -349,6 +350,7 @@ class SettingsManager:
             "glossary_ai": getattr(self.mw, 'glossary_ai', {}),
             "spellchecker_enabled": getattr(self.mw, 'spellchecker_enabled', False),
             "spellchecker_language": getattr(self.mw, 'spellchecker_language', 'uk'),
+            "last_browse_dir": getattr(self.mw, 'last_browse_dir', str(Path.home())),
             "enable_console_logging": getattr(self.mw, 'enable_console_logging', True),
             "enable_file_logging": getattr(self.mw, 'enable_file_logging', True),
             "settings_window_width": getattr(self.mw, 'settings_window_width', 800),

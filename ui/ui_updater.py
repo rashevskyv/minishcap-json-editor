@@ -2,7 +2,7 @@
 from pathlib import Path
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QBrush, QTextCursor, QIcon
-from PyQt5.QtWidgets import QApplication, QTreeWidgetItem, QTreeWidgetItemIterator
+from PyQt5.QtWidgets import QApplication, QTreeWidgetItem, QTreeWidgetItemIterator, QStyle
 from utils.logging_utils import log_debug
 from utils.utils import convert_spaces_to_dots_for_display, convert_dots_to_spaces_from_editor, remove_curly_tags, calculate_string_width, calculate_strict_string_width, remove_all_tags
 from core.glossary_manager import GlossaryOccurrence
@@ -48,6 +48,107 @@ class UIUpdater:
         return problem_counts
 
 
+    def _create_block_tree_item(self, block_idx: int, problem_definitions: dict) -> QTreeWidgetItem:
+        """Helper to create a single block tree item with issue counts and tooltips."""
+        base_display_name = self.mw.block_names.get(str(block_idx), f"Block {block_idx}")
+        block_problem_counts = self._get_aggregated_problems_for_block(block_idx)
+        
+        display_name_with_issues = base_display_name
+        issue_texts = []
+        
+        sorted_problem_ids_for_display = sorted(
+            block_problem_counts.keys(),
+            key=lambda pid: problem_definitions.get(pid, {}).get("priority", 99)
+        )
+
+        for problem_id in sorted_problem_ids_for_display:
+            count_sublines = block_problem_counts[problem_id]
+            if count_sublines > 0:
+                short_name = self.mw.current_game_rules.get_short_problem_name(problem_id)
+                issue_texts.append(f"{count_sublines} {short_name}")
+        
+        if issue_texts:
+            display_name_with_issues = f"{base_display_name} ({', '.join(issue_texts)})"
+        
+        item = self.mw.block_list_widget.create_item(display_name_with_issues, block_idx, Qt.UserRole)
+        
+        # Tooltip logic
+        tooltip_lines = []
+        for problem_id in sorted_problem_ids_for_display:
+            count_sublines = block_problem_counts[problem_id]
+            if count_sublines > 0:
+                prob_def = problem_definitions.get(problem_id, {})
+                full_name = prob_def.get("name", problem_id)
+                desc = prob_def.get("description", "")
+                tooltip_lines.append(f"<b>{full_name}</b>: {count_sublines} sublines<br><i>{desc}</i>")
+        
+        if tooltip_lines:
+            item.setToolTip(0, "<br><br>".join(tooltip_lines))
+            
+        return item
+
+    def _add_virtual_folder_to_tree(self, parent_item, folder, problem_definitions, current_selection_block_idx):
+        """Recursively add virtual folders and their blocks to the tree with folder compaction (GitHub style)."""
+        project = self.mw.project_manager.project
+        if not project: return
+
+        display_name = folder.name
+        curr = folder
+        merged_folder_ids = [folder.id]
+        
+        is_compacted_folder = False
+        # 1. Compact consecutive single-child folders that have NO blocks
+        while len(curr.children) == 1 and len(curr.block_ids) == 0:
+            curr = curr.children[0]
+            display_name += f" / {curr.name}"
+            merged_folder_ids.append(curr.id)
+            is_compacted_folder = True
+            
+        # 2. Check for folder containing ONLY one block and no subfolders
+        if len(curr.children) == 0 and len(curr.block_ids) == 1:
+            id_to_idx = {b.id: idx for idx, b in enumerate(project.blocks)}
+            idx = id_to_idx.get(curr.block_ids[0])
+            if idx is not None:
+                block_item = self._create_block_tree_item(idx, problem_definitions)
+                base_name = self.mw.block_names.get(str(idx), f"Block {idx}")
+                original_text = block_item.text(0)
+                block_item.setText(0, f"{display_name} / {original_text}")
+                
+                # Store the folder IDs that was merged into this block
+                block_item.setData(0, Qt.UserRole + 2, merged_folder_ids)
+                block_item.setData(0, Qt.UserRole + 3, 2) # Compacted Folder / Block
+
+                parent_item.addChild(block_item)
+                if idx == current_selection_block_idx:
+                    self.mw.block_list_widget.setCurrentItem(block_item)
+                    block_item.setSelected(True)
+                return
+
+        # 3. Create regular folder item
+        folder_item = QTreeWidgetItem([display_name])
+        folder_item.setFlags(folder_item.flags() | Qt.ItemIsEditable)
+        folder_item.setIcon(0, self.mw.style().standardIcon(QStyle.SP_DirIcon))
+        folder_item.setData(0, Qt.UserRole + 1, curr.id) # Key ID is the deepest one
+        folder_item.setData(0, Qt.UserRole + 2, merged_folder_ids) # All IDs in chain
+        if is_compacted_folder:
+            folder_item.setData(0, Qt.UserRole + 3, 1) # Compacted Folder / Folder
+        
+        parent_item.addChild(folder_item)
+        folder_item.setExpanded(folder.is_expanded)
+        
+        for child in curr.children:
+            self._add_virtual_folder_to_tree(folder_item, child, problem_definitions, current_selection_block_idx)
+            
+        id_to_idx = {b.id: idx for idx, b in enumerate(project.blocks)}
+        for b_id in curr.block_ids:
+            idx = id_to_idx.get(b_id)
+            if idx is not None:
+                block_item = self._create_block_tree_item(idx, problem_definitions)
+                folder_item.addChild(block_item)
+                if idx == current_selection_block_idx:
+                    self.mw.block_list_widget.setCurrentItem(block_item)
+                    block_item.setSelected(True)
+
     def populate_blocks(self):
         current_selection_block_idx = None
         current_item = self.mw.block_list_widget.currentItem()
@@ -66,70 +167,69 @@ class UIUpdater:
         if self.mw.current_game_rules:
             problem_definitions = self.mw.current_game_rules.get_problem_definitions()
 
-        dir_nodes = {"": self.mw.block_list_widget.invisibleRootItem()}
+        # Use virtual folders if project is active and folders exist (or root_block_ids explicitly set)
+        has_virtual_structure = False
+        if hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project:
+            project = self.mw.project_manager.project
+            if project.virtual_folders or 'root_block_ids' in project.metadata:
+                has_virtual_structure = True
 
-        for i in range(len(self.mw.data)):
-            base_display_name = self.mw.block_names.get(str(i), f"Block {i}")
-            block_problem_counts = self._get_aggregated_problems_for_block(i)
+        if has_virtual_structure:
+            project = self.mw.project_manager.project
+            root_item = self.mw.block_list_widget.invisibleRootItem()
             
-            display_name_with_issues = base_display_name
-            issue_texts = []
-            
-            sorted_problem_ids_for_display = sorted(
-                block_problem_counts.keys(),
-                key=lambda pid: problem_definitions.get(pid, {}).get("priority", 99)
-            )
-
-            for problem_id in sorted_problem_ids_for_display:
-                count_sublines = block_problem_counts[problem_id]
-                if count_sublines > 0:
-                    short_name = self.mw.current_game_rules.get_short_problem_name(problem_id)
-                    issue_texts.append(f"{count_sublines} {short_name}")
-            
-            if issue_texts:
-                display_name_with_issues = f"{base_display_name} ({', '.join(issue_texts)})"
-            
-            tooltip_lines = []
-            for problem_id in sorted_problem_ids_for_display:
-                count_sublines = block_problem_counts[problem_id]
-                if count_sublines > 0:
-                    prob_def = problem_definitions.get(problem_id, {})
-                    full_name = prob_def.get("name", problem_id)
-                    desc = prob_def.get("description", "")
-                    tooltip_lines.append(f"<b>{full_name}</b>: {count_sublines} sublines<br><i>{desc}</i>")
-            
-            block_tooltip = "<br><br>".join(tooltip_lines) if tooltip_lines else "No issues found"
+            # 1. Add virtual folders recursively
+            for folder in project.virtual_folders:
+                self._add_virtual_folder_to_tree(root_item, folder, problem_definitions, current_selection_block_idx)
                 
-            if hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project and i < len(self.mw.project_manager.project.blocks):
-                block = self.mw.project_manager.project.blocks[i]
-                rel_path = block.source_file
-                if rel_path.startswith(self.mw.project_manager.SOURCES_DIR + '/'):
-                    rel_path = rel_path[len(self.mw.project_manager.SOURCES_DIR) + 1:]
-                dir_path = Path(rel_path).parent.as_posix()
-            else:
-                dir_path = ""
+            # 2. Add root blocks
+            root_block_ids = project.metadata.get('root_block_ids', [])
+            id_to_idx = {b.id: idx for idx, b in enumerate(project.blocks)}
+            
+            for b_id in root_block_ids:
+                idx = id_to_idx.get(b_id)
+                if idx is not None:
+                    block_item = self._create_block_tree_item(idx, problem_definitions)
+                    root_item.addChild(block_item)
+                    if idx == current_selection_block_idx:
+                        self.mw.block_list_widget.setCurrentItem(block_item)
+                        block_item.setSelected(True)
+        else:
+            # Legacy / Physical structure fallback
+            dir_nodes = {"": self.mw.block_list_widget.invisibleRootItem()}
 
-            parts = dir_path.split('/') if dir_path else []
-            current_path = ""
-            for part in parts:
-                if not part: continue
-                parent_path = current_path
-                current_path = current_path + "/" + part if current_path else part
+            for i in range(len(self.mw.data)):
+                block_item = self._create_block_tree_item(i, problem_definitions)
                 
-                if current_path not in dir_nodes:
-                    dir_item = QTreeWidgetItem([part])
-                    dir_item.setIcon(0, QIcon.fromTheme('folder'))
-                    dir_nodes[parent_path].addChild(dir_item)
-                    dir_item.setExpanded(True)
-                    dir_nodes[current_path] = dir_item
+                if hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project and i < len(self.mw.project_manager.project.blocks):
+                    block = self.mw.project_manager.project.blocks[i]
+                    rel_path = block.source_file
+                    if rel_path.startswith(self.mw.project_manager.SOURCES_DIR + '/'):
+                        rel_path = rel_path[len(self.mw.project_manager.SOURCES_DIR) + 1:]
+                    dir_path = Path(rel_path).parent.as_posix()
+                else:
+                    dir_path = ""
 
-            item = self.mw.block_list_widget.create_item(display_name_with_issues, i, Qt.UserRole)
-            parent_item = dir_nodes.get(dir_path, dir_nodes[""])
-            parent_item.addChild(item)
+                parts = dir_path.split('/') if dir_path else []
+                current_path = ""
+                for part in parts:
+                    if not part: continue
+                    parent_path = current_path
+                    current_path = current_path + "/" + part if current_path else part
+                    
+                    if current_path not in dir_nodes:
+                        dir_item = QTreeWidgetItem([part])
+                        dir_item.setIcon(0, QIcon.fromTheme('folder'))
+                        dir_nodes[parent_path].addChild(dir_item)
+                        dir_item.setExpanded(True)
+                        dir_nodes[current_path] = dir_item
 
-            if i == current_selection_block_idx:
-                self.mw.block_list_widget.setCurrentItem(item)
-                item.setSelected(True)
+                parent_item = dir_nodes.get(dir_path, dir_nodes[""])
+                parent_item.addChild(block_item)
+
+                if i == current_selection_block_idx:
+                    self.mw.block_list_widget.setCurrentItem(block_item)
+                    block_item.setSelected(True)
 
         self.mw.block_list_widget.viewport().update()
 
@@ -181,7 +281,11 @@ class UIUpdater:
         block_tooltip = "<br><br>".join(tooltip_lines) if tooltip_lines else "No issues found"
         
         if item.text(0) != display_name_with_issues:
-            item.setText(0, display_name_with_issues)
+            self.mw.block_list_widget.blockSignals(True)
+            try:
+                item.setText(0, display_name_with_issues)
+            finally:
+                self.mw.block_list_widget.blockSignals(False)
 
     def update_status_bar(self):
         if not hasattr(self.mw, 'edited_text_edit') or not self.mw.edited_text_edit or \

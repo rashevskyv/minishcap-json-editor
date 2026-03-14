@@ -74,6 +74,41 @@ class Category:
                 return found
         return None
 
+@dataclass
+class VirtualFolder:
+    """
+    Virtual folder for organizing blocks in the project.
+    Exists only as metadata in .uiproj and does not affect physical layout.
+    """
+    id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    name: str = ""
+    parent_id: Optional[str] = None
+    children: List['VirtualFolder'] = field(default_factory=list)
+    block_ids: List[str] = field(default_factory=list) # IDs of blocks in this folder
+    is_expanded: bool = True
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            'id': self.id,
+            'name': self.name,
+            'parent_id': self.parent_id,
+            'children': [child.to_dict() for child in self.children],
+            'block_ids': self.block_ids,
+            'is_expanded': self.is_expanded
+        }
+
+    @staticmethod
+    def from_dict(data: Dict[str, Any]) -> 'VirtualFolder':
+        children = [VirtualFolder.from_dict(child) for child in data.get('children', [])]
+        return VirtualFolder(
+            id=data.get('id', str(uuid.uuid4())),
+            name=data.get('name', ''),
+            parent_id=data.get('parent_id'),
+            children=children,
+            block_ids=data.get('block_ids', []),
+            is_expanded=data.get('is_expanded', True)
+        )
+
 
 @dataclass
 class Block:
@@ -85,6 +120,7 @@ class Block:
     name: str = ""  # Display name (can be customized)
     source_file: str = ""  # Relative path within project
     translation_file: str = ""  # Relative path within project
+    internal_key: Optional[str] = None  # Key within JSON for sub-blocks
     description: str = ""
     categories: List[Category] = field(default_factory=list)  # Root categories
     metadata: Dict[str, Any] = field(default_factory=dict)  # Additional block-specific data
@@ -97,6 +133,7 @@ class Block:
             'name': self.name,
             'source_file': self.source_file,
             'translation_file': self.translation_file,
+            'internal_key': self.internal_key,
             'description': self.description,
             'categories': [cat.to_dict() for cat in self.categories],
             'metadata': self.metadata,
@@ -112,6 +149,7 @@ class Block:
             name=data.get('name', ''),
             source_file=data.get('source_file', ''),
             translation_file=data.get('translation_file', ''),
+            internal_key=data.get('internal_key'),
             description=data.get('description', ''),
             categories=categories,
             metadata=data.get('metadata', {}),
@@ -176,9 +214,11 @@ class Project:
     description: str = ""
     plugin_name: str = ""  # Active game plugin (e.g., "zelda_mc")
     blocks: List[Block] = field(default_factory=list)
+    virtual_folders: List[VirtualFolder] = field(default_factory=list) # Root-level folders/blocks
     metadata: Dict[str, Any] = field(default_factory=dict)  # Project-level metadata
     created_at: str = ""  # ISO timestamp
     modified_at: str = ""  # ISO timestamp
+    version: str = "1.0"
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert project to dictionary for JSON serialization."""
@@ -188,25 +228,29 @@ class Project:
             'description': self.description,
             'plugin_name': self.plugin_name,
             'blocks': [block.to_dict() for block in self.blocks],
+            'virtual_folders': [vf.to_dict() for vf in self.virtual_folders],
             'metadata': self.metadata,
             'created_at': self.created_at,
             'modified_at': self.modified_at,
-            'version': '1.0'  # Schema version for future compatibility
+            'version': self.version
         }
 
     @staticmethod
     def from_dict(data: Dict[str, Any]) -> 'Project':
         """Create project from dictionary."""
         blocks = [Block.from_dict(block) for block in data.get('blocks', [])]
+        virtual_folders = [VirtualFolder.from_dict(vf) for vf in data.get('virtual_folders', [])]
         return Project(
             id=data.get('id', str(uuid.uuid4())),
             name=data.get('name', ''),
             description=data.get('description', ''),
             plugin_name=data.get('plugin_name', ''),
             blocks=blocks,
+            virtual_folders=virtual_folders,
             metadata=data.get('metadata', {}),
             created_at=data.get('created_at', ''),
-            modified_at=data.get('modified_at', '')
+            modified_at=data.get('modified_at', ''),
+            version=data.get('version', '1.0')
         )
 
     def add_block(self, block: Block):

@@ -21,6 +21,7 @@ class MainWindowEventHandler:
         if hasattr(self.mw, 'block_list_widget'):
             self.mw.block_list_widget.currentItemChanged.connect(self.mw.list_selection_handler.block_selected)
             self.mw.block_list_widget.itemDoubleClicked.connect(self.mw.list_selection_handler.rename_block)
+            self.mw.block_list_widget.itemChanged.connect(self.mw.list_selection_handler.handle_block_item_text_changed)
         
         if hasattr(self.mw, 'preview_text_edit'):
             if hasattr(self.mw.preview_text_edit, 'lineClicked'):
@@ -60,6 +61,13 @@ class MainWindowEventHandler:
             self.mw.move_block_up_button.clicked.connect(self.mw.project_action_handler.move_block_up_action)
         if hasattr(self.mw, 'move_block_down_button'):
             self.mw.move_block_down_button.clicked.connect(self.mw.project_action_handler.move_block_down_action)
+        if hasattr(self.mw, 'add_folder_button'):
+            self.mw.add_folder_button.clicked.connect(self.mw.project_action_handler.add_folder_action)
+        
+        if hasattr(self.mw, 'expand_all_button'):
+            self.mw.expand_all_button.clicked.connect(self.mw.project_action_handler.expand_all_action)
+        if hasattr(self.mw, 'collapse_all_button'):
+            self.mw.collapse_all_button.clicked.connect(self.mw.project_action_handler.collapse_all_action)
         
         # Navigation connections
         if hasattr(self.mw, 'next_block_nav_action'):

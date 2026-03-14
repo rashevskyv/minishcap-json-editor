@@ -58,7 +58,6 @@ class ProjectActionHandler(BaseHandler):
         )
 
         if success:
-            self.mw.project_manager.sync_project_files()
             project = self.mw.project_manager.project
             log_info(f"Project '{project.name}' created successfully at {info['directory']}.")
 
@@ -75,6 +74,10 @@ class ProjectActionHandler(BaseHandler):
                 self.mw.active_game_plugin = info['plugin']
                 self.mw.load_game_plugin()
                 self.ui_updater.update_plugin_status_label()
+
+            # Now sync with plugin awareness
+            if self.mw.project_manager:
+                self.mw.project_manager.sync_project_files(plugin=self.mw.current_game_rules)
 
             # Enable project-specific actions
             if hasattr(self.mw, 'close_project_action'):
@@ -140,7 +143,7 @@ class ProjectActionHandler(BaseHandler):
             # Load project-specific settings from metadata
             if self.mw.project_manager:
                 self.mw.project_manager.load_settings_from_project(self.mw)
-                self.mw.project_manager.sync_project_files()
+                self.mw.project_manager.sync_project_files(plugin=self.mw.current_game_rules)
 
             # Enable project-specific actions
             if hasattr(self.mw, 'close_project_action'):
@@ -202,6 +205,8 @@ class ProjectActionHandler(BaseHandler):
             self.mw.import_directory_action.setEnabled(False)
         if hasattr(self.mw, 'add_block_button'):
             self.mw.add_block_button.setEnabled(False)
+        if hasattr(self.mw, 'add_folder_button'):
+            self.mw.add_folder_button.setEnabled(False)
 
         # Update UI
         self.mw.block_list_widget.clear()
@@ -312,49 +317,30 @@ class ProjectActionHandler(BaseHandler):
 
     def move_block_up_action(self):
         log_info("Move Block Up action triggered.")
-        if not self.mw.project_manager or not self.mw.project_manager.project:
-            return
-
-        current_item = self.mw.block_list_widget.currentItem()
-        if not current_item:
-            return
-
-        block_idx = current_item.data(Qt.UserRole)
-        if block_idx <= 0:
-            return
-
-        # Swap blocks
-        blocks = self.mw.project_manager.project.blocks
-        blocks[block_idx], blocks[block_idx - 1] = blocks[block_idx - 1], blocks[block_idx]
-        self.mw.project_manager.save()
-        self._populate_blocks_from_project()
-        if block_idx > 0:
-            self.mw.block_list_widget.select_block_by_index(block_idx - 1)
-        elif len(self.mw.project_manager.project.blocks) > 0:
-            self.mw.block_list_widget.select_block_by_index(0)
+        if hasattr(self.mw, 'block_list_widget'):
+            self.mw.block_list_widget.move_current_item_up()
 
     def move_block_down_action(self):
         log_info("Move Block Down action triggered.")
-        if not self.mw.project_manager or not self.mw.project_manager.project:
-            return
+        if hasattr(self.mw, 'block_list_widget'):
+            self.mw.block_list_widget.move_current_item_down()
 
-        current_item = self.mw.block_list_widget.currentItem()
-        if not current_item:
-            return
+    def add_folder_action(self):
+        log_info("Add Folder action triggered.")
+        from PyQt5.QtWidgets import QInputDialog
+        name, ok = QInputDialog.getText(self.mw, "Add Folder", "Enter folder name:")
+        if ok and name:
+            current_item = self.mw.block_list_widget.currentItem()
+            parent_id = None
+            if current_item:
+                parent_id = current_item.data(0, Qt.UserRole + 1) # If folder
+                if parent_id is None: # If block, get parent's folder id
+                    parent = current_item.parent()
+                    if parent:
+                        parent_id = parent.data(0, Qt.UserRole + 1)
 
-        block_idx = current_item.data(Qt.UserRole)
-        if block_idx >= len(self.mw.project_manager.project.blocks) - 1:
-            return
-
-        # Swap blocks
-        blocks = self.mw.project_manager.project.blocks
-        blocks[block_idx], blocks[block_idx + 1] = blocks[block_idx + 1], blocks[block_idx]
-        self.mw.project_manager.save()
-        self._populate_blocks_from_project()
-        if block_idx + 1 < len(self.mw.project_manager.project.blocks):
-            self.mw.block_list_widget.select_block_by_index(block_idx + 1)
-        else:
-            self.mw.block_list_widget.select_block_by_index(block_idx)
+            self.mw.project_manager.create_virtual_folder(name, parent_id=parent_id)
+            self.ui_updater.populate_blocks()
 
     def _populate_blocks_from_project(self):
         """Populate block list from current project and load data."""
@@ -390,20 +376,44 @@ class ProjectActionHandler(BaseHandler):
 
                 if not error and self.mw.current_game_rules:
                     parsed_data, names = self.mw.current_game_rules.load_data_from_json_obj(file_content)
-                    count = len(parsed_data) if parsed_data else 1
-                    source_parsed_counts.append(count)
                     
-                    for sub_block_idx, block_content in enumerate(parsed_data):
-                        data_block_idx = len(self.mw.data)
-                        self.mw.data.append(block_content)
-                        self.mw.block_to_project_file_map[data_block_idx] = project_block_idx
+                    if block.internal_key:
+                        # Find the specific sub-block
+                        sub_idx = -1
+                        for i, name in names.items():
+                            if name == block.internal_key:
+                                sub_idx = int(i)
+                                break
                         
-                        # Handle block names
-                        if count > 1:
-                            p_name = names.get(str(sub_block_idx), f"{block.name} (Part {sub_block_idx+1})")
-                            self.mw.block_names[str(data_block_idx)] = p_name
-                        else:
+                        if sub_idx != -1 and sub_idx < len(parsed_data):
+                            data_block_idx = len(self.mw.data)
+                            self.mw.data.append(parsed_data[sub_idx])
+                            self.mw.block_to_project_file_map[data_block_idx] = project_block_idx
                             self.mw.block_names[str(data_block_idx)] = block.name
+                            source_parsed_counts.append(1)
+                        else:
+                            # Not found or error loading sub-block
+                            source_parsed_counts.append(1)
+                            data_block_idx = len(self.mw.data)
+                            self.mw.data.append([])
+                            self.mw.block_to_project_file_map[data_block_idx] = project_block_idx
+                            self.mw.block_names[str(data_block_idx)] = f"{block.name} (Missing)"
+                    else:
+                        # Fallback for old projects or non-exploded files: load everything
+                        count = len(parsed_data) if parsed_data else 1
+                        source_parsed_counts.append(count)
+                        
+                        for sub_block_idx, block_content in enumerate(parsed_data):
+                            data_block_idx = len(self.mw.data)
+                            self.mw.data.append(block_content)
+                            self.mw.block_to_project_file_map[data_block_idx] = project_block_idx
+                            
+                            # Handle block names
+                            if count > 1:
+                                p_name = names.get(str(sub_block_idx), f"{block.name} (Part {sub_block_idx+1})")
+                                self.mw.block_names[str(data_block_idx)] = p_name
+                            else:
+                                self.mw.block_names[str(data_block_idx)] = block.name
                 else:
                     source_parsed_counts.append(1)
                     data_block_idx = len(self.mw.data)
@@ -567,6 +577,8 @@ class ProjectActionHandler(BaseHandler):
                 self.mw.import_directory_action.setEnabled(True)
             if hasattr(self.mw, 'add_block_button'):
                 self.mw.add_block_button.setEnabled(True)
+            if hasattr(self.mw, 'add_folder_button'):
+                self.mw.add_folder_button.setEnabled(True)
 
             # Update UI
             self.ui_updater.update_title()
@@ -596,3 +608,32 @@ class ProjectActionHandler(BaseHandler):
                 self.mw.settings_manager.save_settings()
                 self._update_recent_projects_menu()
             log_info("Recent projects cleared.")
+
+    def expand_all_action(self):
+        """Expand all nodes in the tree."""
+        if hasattr(self.mw, 'block_list_widget'):
+            self.mw.block_list_widget.expandAll()
+            # Update folder state in project manager if needed
+            self._update_all_folder_expansion_state(True)
+            log_debug("Tree expanded all.")
+
+    def collapse_all_action(self):
+        """Collapse all nodes in the tree."""
+        if hasattr(self.mw, 'block_list_widget'):
+            self.mw.block_list_widget.collapseAll()
+            self._update_all_folder_expansion_state(False)
+            log_debug("Tree collapsed all.")
+
+    def _update_all_folder_expansion_state(self, expanded: bool):
+        """Recursively update the is_expanded state for all virtual folders."""
+        if not self.mw.project_manager or not self.mw.project_manager.project:
+            return
+            
+        def update_folder(f):
+            f.is_expanded = expanded
+            for child in f.children:
+                update_folder(child)
+                
+        for folder in self.mw.project_manager.project.virtual_folders:
+            update_folder(folder)
+        self.mw.project_manager.save()

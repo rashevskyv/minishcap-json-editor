@@ -1,7 +1,7 @@
 # --- START OF FILE components/custom_list_item_delegate.py ---
 # --- START OF FILE components/CustomListItemDelegate.py ---
 from PyQt5.QtWidgets import QStyledItemDelegate, QStyle, QStyleOptionViewItem, QToolTip
-from PyQt5.QtGui import QPainter, QColor, QPalette, QBrush, QPen, QFontMetrics, QFont
+from PyQt5.QtGui import QPainter, QColor, QPalette, QBrush, QPen, QFontMetrics, QFont, QIcon
 from PyQt5.QtCore import QRect, Qt, QPoint, QSize, QModelIndex, QEvent
 from utils.logging_utils import log_debug
 from utils.constants import LT_PREVIEW_SELECTED_LINE_COLOR, DT_PREVIEW_SELECTED_LINE_COLOR
@@ -13,14 +13,14 @@ class CustomListItemDelegate(QStyledItemDelegate):
         
         self.problem_indicator_strip_width = 3 
         self.problem_indicator_strip_spacing = 2 
-        self.max_problem_indicators = 5 
+        self.max_problem_indicators = 3 
 
         self.color_marker_size = 8 
         self.color_marker_spacing = 3
-        self.max_color_markers = 3 
+        self.max_color_markers = 2 
         
         self.fixed_number_area_width_base_font_size = 10
-        self.fixed_number_area_width_base_pixels = 30
+        self.fixed_number_area_width_base_pixels = 24
         
         self.padding_after_number_area = 3 
         self.padding_after_color_marker_zone = 2
@@ -106,16 +106,8 @@ class CustomListItemDelegate(QStyledItemDelegate):
 
         item_rect = option.rect
         current_number_area_width = self._get_current_number_area_width(option)
-
-        if theme == 'dark':
-            number_area_bg = QColor("#383838") if not is_selected else option.palette.highlight().color().darker(110)
-            number_text_color = QColor("#B0B0B0") if not is_selected else option.palette.color(QPalette.HighlightedText)
-        else:
-            number_area_bg = QColor("#F0F0F0") if not is_selected else option.palette.highlight().color().darker(105)
-            number_text_color = QColor(Qt.darkGray) if not is_selected else QColor(Qt.black)
         
         active_color_markers_for_block = set()
-        
         block_idx_data = index.data(Qt.UserRole)
         problem_definitions = {}
         block_problem_counts = {}
@@ -134,8 +126,40 @@ class CustomListItemDelegate(QStyledItemDelegate):
             if hasattr(main_window, 'ui_updater') and hasattr(main_window.ui_updater, '_get_aggregated_problems_for_block'):
                 block_problem_counts = main_window.ui_updater._get_aggregated_problems_for_block(block_idx_data)
 
+        # Define colors for the number area
+        if theme == 'dark':
+            number_area_bg = QColor("#383838") if not is_selected else option.palette.highlight().color().darker(110)
+            number_text_color = QColor("#B0B0B0") if not is_selected else option.palette.color(QPalette.HighlightedText)
+        else:
+            number_area_bg = QColor("#F0F0F0") if not is_selected else option.palette.highlight().color().darker(105)
+            number_text_color = QColor(Qt.darkGray) if not is_selected else QColor(Qt.black)
 
-        number_rect = QRect(item_rect.left(), item_rect.top(), current_number_area_width, item_rect.height())
+        # Calculate indentation to pin the gutter to the absolute left
+        indentation = 0
+        if self.list_widget:
+            # Calculate depth
+            depth = 0
+            curr_item = self.list_widget.itemFromIndex(index)
+            if curr_item:
+                parent = curr_item.parent()
+                while parent:
+                    depth += 1
+                    parent = parent.parent()
+            indentation = depth * self.list_widget.indentation()
+
+        # -------------------------------------------------------
+        # GUTTER (pinned to absolute left, ignoring indentation)
+        # Layout: [Number][Color Markers][Problem Indicators]
+        # -------------------------------------------------------
+        
+        # Calculate zone widths
+        color_marker_zone_width = self._get_color_marker_zone_width()
+        problem_indicator_zone_width = self._get_problem_indicator_zone_width()
+        
+        gutter_x = item_rect.left() - indentation  # Absolute left of the widget
+
+        # Draw Number Area
+        number_rect = QRect(gutter_x, item_rect.top(), current_number_area_width, item_rect.height())
         painter.fillRect(number_rect, number_area_bg)
         painter.setPen(number_text_color)
         current_font = option.font
@@ -145,21 +169,22 @@ class CustomListItemDelegate(QStyledItemDelegate):
         number_text = f"* {index.row() + 1}" if has_unsaved_changes_in_block else str(index.row() + 1)
         painter.drawText(number_rect, Qt.AlignCenter | Qt.TextShowMnemonic, number_text)
 
-        color_marker_zone_x_start = number_rect.right() + self.padding_after_number_area
-        current_color_marker_x = color_marker_zone_x_start
-        sorted_active_markers = sorted(list(active_color_markers_for_block)) 
-
+        # Draw Color Markers (immediately after number area)
+        color_marker_x = number_rect.right() + self.padding_after_number_area
+        sorted_active_markers = sorted(list(active_color_markers_for_block))
         for i, color_name in enumerate(sorted_active_markers):
             if i >= self.max_color_markers: break
             q_color = self.marker_qcolors.get(color_name)
             if q_color:
                 marker_y = item_rect.top() + (item_rect.height() - self.color_marker_size) // 2
                 painter.setBrush(q_color)
-                painter.setPen(Qt.NoPen) 
-                painter.drawEllipse(current_color_marker_x, marker_y, self.color_marker_size, self.color_marker_size)
-                current_color_marker_x += self.color_marker_size + self.color_marker_spacing
+                painter.setPen(Qt.NoPen)
+                painter.drawEllipse(color_marker_x, marker_y, self.color_marker_size, self.color_marker_size)
+                color_marker_x += self.color_marker_size + self.color_marker_spacing
         
-        problem_indicator_zone_x_start = current_color_marker_x + (self.padding_after_color_marker_zone if active_color_markers_for_block else 0)
+        # Draw Problem Indicators (immediately after color markers)
+        problem_indicator_x = number_rect.right() + self.padding_after_number_area + \
+                              color_marker_zone_width + self.padding_after_color_marker_zone
         
         problem_indicator_colors_to_draw = []
         if problem_definitions and block_problem_counts:
@@ -178,18 +203,57 @@ class CustomListItemDelegate(QStyledItemDelegate):
                         if indicator_color not in problem_indicator_colors_to_draw:
                             problem_indicator_colors_to_draw.append(indicator_color)
         
-        current_problem_indicator_x = problem_indicator_zone_x_start
+        current_indicator_x = problem_indicator_x
         for i, color in enumerate(problem_indicator_colors_to_draw):
-            if i >= self.max_problem_indicators: break 
-            indicator_rect = QRect(current_problem_indicator_x,
-                                   item_rect.top() + self.indicator_v_offset,
-                                   self.problem_indicator_strip_width,
-                                   item_rect.height() - 2 * self.indicator_v_offset)
-            painter.fillRect(indicator_rect, color)
-            current_problem_indicator_x += self.problem_indicator_strip_width + self.problem_indicator_strip_spacing
+            if i >= self.max_problem_indicators: break
+            ind_rect = QRect(current_indicator_x,
+                             item_rect.top() + self.indicator_v_offset,
+                             self.problem_indicator_strip_width,
+                             item_rect.height() - 2 * self.indicator_v_offset)
+            painter.fillRect(ind_rect, color)
+            current_indicator_x += self.problem_indicator_strip_width + self.problem_indicator_strip_spacing
         
-        text_start_x = current_problem_indicator_x + (self.padding_after_problem_indicator_zone if problem_indicator_colors_to_draw else 0)
+        # Total gutter width = number + color markers + problem indicators
+        gutter_total_width = (current_number_area_width + self.padding_after_number_area +
+                              color_marker_zone_width + self.padding_after_color_marker_zone +
+                              problem_indicator_zone_width + self.padding_after_problem_indicator_zone)
         
+        # Content starts AFTER the gutter at minimum, or at the tree's indented position
+        content_x_start = max(item_rect.left(), gutter_x + gutter_total_width)
+
+        # -------------------------------------------------------
+        # CONTENT (icon directly before text)
+        # -------------------------------------------------------
+        icon_size = 16
+        icon_width = 0
+        if main_window:
+            style = main_window.style()
+            decoration = index.data(Qt.DecorationRole)
+            compaction_type = index.data(Qt.UserRole + 3)  # 1: Folder/Folder, 2: Folder/Block
+
+            if compaction_type in [1, 2]:
+                # Composite icon zone width = icon + sep + icon = 16 + 8 + 16 = 40
+                folder_icon = style.standardIcon(QStyle.SP_DirIcon)
+                folder_rect = QRect(content_x_start, item_rect.top() + (item_rect.height() - icon_size) // 2, icon_size, icon_size)
+                folder_icon.paint(painter, folder_rect)
+                
+                painter.setPen(number_text_color)
+                sep_rect = QRect(folder_rect.right() + 1, item_rect.top(), 8, item_rect.height())
+                painter.drawText(sep_rect, Qt.AlignCenter, "/")
+                
+                second_icon = style.standardIcon(QStyle.SP_DirIcon if compaction_type == 1 else QStyle.SP_FileIcon)
+                second_rect = QRect(sep_rect.right() + 1, item_rect.top() + (item_rect.height() - icon_size) // 2, icon_size, icon_size)
+                second_icon.paint(painter, second_rect)
+                icon_width = second_rect.right() - content_x_start + 4
+            elif decoration:
+                icon = QIcon(decoration)
+                if not icon.isNull():
+                    icon_rect = QRect(content_x_start, item_rect.top() + (item_rect.height() - icon_size) // 2, icon_size, icon_size)
+                    icon.paint(painter, icon_rect)
+                    icon_width = icon_size + 4
+        
+        text_start_x = content_x_start + icon_width
+
         # Draw String Count on the right
         string_count_text = ""
         count_width = 0
@@ -207,19 +271,31 @@ class CustomListItemDelegate(QStyledItemDelegate):
             painter.drawText(count_rect, Qt.AlignCenter, string_count_text)
         
         text_rect = QRect(text_start_x, item_rect.top(),
-                          item_rect.width() - text_start_x - count_width - 4, # Deduct count width and extra padding
+                          item_rect.right() - text_start_x - count_width - 4,
                           item_rect.height())
 
         painter.setPen(option.palette.color(QPalette.HighlightedText if is_selected else QPalette.Text))
 
-        text_to_display = index.data(Qt.DisplayRole)
-        if text_to_display is None: text_to_display = ""
-
+        text_to_display = str(index.data(Qt.DisplayRole) or "")
         metrics = QFontMetrics(current_font)
-        elided_text = metrics.elidedText(str(text_to_display), Qt.ElideRight, text_rect.width())
+        elided_text = metrics.elidedText(text_to_display, Qt.ElideRight, text_rect.width())
 
         if elided_text:
-            painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, elided_text)
+            if " (" in elided_text and not is_selected:
+                main_p, detail_p = elided_text.split(" (", 1)
+                detail_p = " (" + detail_p
+                
+                # Draw main part
+                painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, main_p)
+                
+                # Draw detail part in grey
+                main_w = metrics.horizontalAdvance(main_p)
+                detail_drawing_rect = text_rect.adjusted(main_w, 0, 0, 0)
+                
+                painter.setPen(number_text_color)
+                painter.drawText(detail_drawing_rect, Qt.AlignLeft | Qt.AlignVCenter, detail_p)
+            else:
+                painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, elided_text)
 
         painter.restore()
 
@@ -304,8 +380,6 @@ class CustomListItemDelegate(QStyledItemDelegate):
         return ""
 
     def helpEvent(self, event, view, option, index) -> bool:
-        log_debug(f"Delegate: helpEvent called for event type {event.type()} on item {index.row()}")
-        print(f"DEBUG: Delegate helpEvent type={event.type()} row={index.row()}")
         if event.type() == QEvent.ToolTip:
             # We already have manual handling but let's keep this as fallback/bridge
             self.handle_tooltip(event, view, option, index)

@@ -1,5 +1,5 @@
 # --- START OF FILE components/custom_tree_widget.py ---
-from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QAction, QMessageBox, QTreeWidgetItemIterator, QApplication
+from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QAction, QMessageBox, QTreeWidgetItemIterator, QApplication, QInputDialog, QToolTip
 from PyQt5.QtCore import Qt, QPoint, QEvent
 from PyQt5.QtGui import QColor, QIcon, QPixmap, QPainter
 from pathlib import Path
@@ -20,9 +20,15 @@ class CustomTreeWidget(QTreeWidget):
         
         from .custom_list_item_delegate import CustomListItemDelegate
         self.setItemDelegate(CustomListItemDelegate(self))
+        self.setIndentation(15)
         
         self.setHeaderHidden(True)
         self.setSelectionMode(QTreeWidget.SingleSelection)
+        
+        # Drag and Drop support
+        self.setDragEnabled(True)
+        self.setAcceptDrops(True)
+        self.setDragDropMode(QTreeWidget.InternalMove)
         
         # Ensure the selected item retains a prominent highlight even when the widget loses focus (e.g. to the text editor)
         self.setStyleSheet("""
@@ -58,6 +64,7 @@ class CustomTreeWidget(QTreeWidget):
 
     def create_item(self, text, block_idx=None, role=Qt.UserRole):
         item = QTreeWidgetItem([text])
+        item.setFlags(item.flags() | Qt.ItemIsEditable)
         if block_idx is not None:
             item.setData(0, role, block_idx)
         return item
@@ -102,9 +109,25 @@ class CustomTreeWidget(QTreeWidget):
         
         # Check if it's a file block (has UserRole data)
         block_idx = item.data(0, Qt.UserRole)
+        folder_id = item.data(0, Qt.UserRole + 1)
+        
+        if block_idx is None and folder_id:
+            # It's a directory node (virtual folder)
+            rename_folder_action = menu.addAction("Rename Folder...")
+            rename_folder_action.triggered.connect(lambda: self._rename_folder(item))
+            
+            delete_folder_action = menu.addAction("Delete Folder")
+            delete_folder_action.triggered.connect(lambda: self._delete_folder(item))
+            
+            menu.addSeparator()
+            create_subfolder_action = menu.addAction("Create Subfolder...")
+            create_subfolder_action.triggered.connect(lambda: self._create_subfolder(item))
+            
+            menu.exec_(self.mapToGlobal(pos))
+            return
         
         if block_idx is None:
-            # It's a directory node
+            # It's a directory node (legacy/physical fallback)
             menu.exec_(self.mapToGlobal(pos))
             return
 
@@ -173,6 +196,221 @@ class CustomTreeWidget(QTreeWidget):
             generate_glossary = menu.addAction(f"AI Build Glossary for '{block_name}'")
             generate_glossary.triggered.connect(lambda checked=False, idx=block_idx: main_window.build_glossary_with_ai(idx))
         menu.exec_(self.mapToGlobal(pos))
+
+    def _rename_folder(self, item):
+        new_name, ok = QInputDialog.getText(self, "Rename Folder", "Enter new folder name:", text=item.text(0))
+        if ok and new_name:
+            folder_id = item.data(0, Qt.UserRole + 1)
+            main_window = self.window()
+            if main_window.project_manager.find_virtual_folder(folder_id):
+                folder = main_window.project_manager.find_virtual_folder(folder_id)
+                folder.name = new_name
+                main_window.project_manager.save()
+                item.setText(0, new_name)
+
+    def _delete_folder(self, item):
+        folder_id = item.data(0, Qt.UserRole + 1)
+        main_window = self.window()
+        project = main_window.project_manager.project
+        
+        # Move blocks to parent or root
+        folder = main_window.project_manager.find_virtual_folder(folder_id)
+        if not folder: return
+        
+        # Find parent folder list
+        parent_children_list = project.virtual_folders
+        if folder.parent_id:
+            parent = main_window.project_manager.find_virtual_folder(folder.parent_id)
+            if parent: parent_children_list = parent.children
+
+        # Remove folder and relocate its blocks/children
+        for i, f in enumerate(parent_children_list):
+            if f.id == folder_id:
+                # Add children blocks to root metadata or parent
+                for b_id in folder.block_ids:
+                    main_window.project_manager.move_block_to_folder(b_id, folder.parent_id)
+                # Move subfolders up
+                for child in folder.children:
+                    child.parent_id = folder.parent_id
+                    parent_children_list.append(child)
+                
+                parent_children_list.pop(i)
+                break
+        
+        main_window.project_manager.save()
+        main_window.ui_updater.populate_blocks()
+
+    def _create_subfolder(self, item):
+        folder_id = item.data(0, Qt.UserRole + 1)
+        new_name, ok = QInputDialog.getText(self, "New Subfolder", "Enter subfolder name:")
+        if ok and new_name:
+            main_window = self.window()
+            main_window.project_manager.create_virtual_folder(new_name, parent_id=folder_id)
+            main_window.ui_updater.populate_blocks()
+
+    def dragMoveEvent(self, event):
+        """Allow dropping ON items (including blocks) to trigger special logic."""
+        item = self.itemAt(event.pos())
+        if item:
+            event.acceptProposedAction()
+        else:
+            super().dragMoveEvent(event)
+
+    def dropEvent(self, event):
+        target_item = self.itemAt(event.pos())
+        selected_items = self.selectedItems()
+        
+        # 1. Special case: Dropping file(s) ON another file -> Create folder
+        if target_item and selected_items and target_item not in selected_items:
+            indicator = self.dropIndicatorPosition()
+            target_b_idx = target_item.data(0, Qt.UserRole)
+            
+            if indicator == QTreeWidget.OnItem and target_b_idx is not None:
+                # Target is a block. Check if source is also blocks or folders.
+                main_window = self.window()
+                pm = main_window.project_manager
+                if not pm or not pm.project:
+                    super().dropEvent(event)
+                    return
+
+                # Determine parent of target to place the new folder
+                target_block_id = pm.project.blocks[target_b_idx].id
+                target_parent_id = None
+                parent_item = target_item.parent()
+                if parent_item:
+                    target_parent_id = parent_item.data(0, Qt.UserRole + 1)
+
+                # Create "(Unnamed)" folder
+                new_folder = pm.create_virtual_folder("(Unnamed)", parent_id=target_parent_id)
+                
+                # Move target block to new folder
+                pm.move_block_to_folder(target_block_id, new_folder.id)
+                
+                # Move all dragged items to new folder
+                for item in selected_items:
+                    b_idx = item.data(0, Qt.UserRole)
+                    f_id = item.data(0, Qt.UserRole + 1)
+                    
+                    if b_idx is not None:
+                        pm.move_block_to_folder(pm.project.blocks[b_idx].id, new_folder.id)
+                    elif f_id:
+                        # Move folder to new folder
+                        folder = pm.find_virtual_folder(f_id)
+                        if folder:
+                            # Remove from current parent
+                            pm._remove_folder_from_anywhere(f_id)
+                            # Add to new folder
+                            folder.parent_id = new_folder.id
+                            new_folder.children.append(folder)
+                
+                pm.save()
+                main_window.ui_updater.populate_blocks()
+                event.accept()
+                log_debug("Grouped items into new (Unnamed) folder via drag-drop.")
+                return
+
+        # 2. Default behavior
+        super().dropEvent(event)
+        self.sync_tree_to_project_manager()
+
+    def sync_tree_to_project_manager(self):
+        """Update virtual structure in project manager based on current tree layout."""
+        main_window = self.window()
+        if not hasattr(main_window, 'project_manager') or not main_window.project_manager or not main_window.project_manager.project:
+            return
+            
+        project = main_window.project_manager.project
+        
+        def rebuild_from_item(tree_item, parent_id=None):
+            folders = []
+            block_ids = []
+            for i in range(tree_item.childCount()):
+                child = tree_item.child(i)
+                f_id = child.data(0, Qt.UserRole + 1)
+                b_idx = child.data(0, Qt.UserRole)
+                merged_ids = child.data(0, Qt.UserRole + 2)
+                text = child.text(0)
+                
+                if merged_ids and isinstance(merged_ids, list) and len(merged_ids) > 0:
+                    # Reconstruct compacted chain
+                    parts = text.split(" / ")
+                    is_block_item = b_idx is not None
+                    folder_names = parts[:-1] if is_block_item else parts
+                    
+                    curr_p_id = parent_id
+                    chain_top = None
+                    chain_bottom = None
+                    
+                    for f_idx, folder_id in enumerate(merged_ids):
+                        f_name = folder_names[f_idx] if f_idx < len(folder_names) else "Unknown"
+                        folder_obj = main_window.project_manager.find_virtual_folder(folder_id)
+                        if not folder_obj:
+                            from core.project_models import VirtualFolder
+                            folder_obj = VirtualFolder(id=folder_id, name=f_name, parent_id=curr_p_id)
+                        else:
+                            folder_obj.name = f_name
+                            folder_obj.parent_id = curr_p_id
+                        
+                        folder_obj.children = []
+                        folder_obj.block_ids = []
+
+                        if not chain_top: chain_top = folder_obj
+                        if chain_bottom: chain_bottom.children = [folder_obj]
+                        chain_bottom = folder_obj
+                        curr_p_id = folder_id
+
+                    if is_block_item:
+                        if b_idx < len(project.blocks):
+                            chain_bottom.block_ids = [project.blocks[b_idx].id]
+                    else:
+                        sub_f, sub_b = rebuild_from_item(child, f_id)
+                        chain_bottom.children = sub_f
+                        chain_bottom.block_ids = sub_b
+                    
+                    folders.append(chain_top)
+
+                elif f_id:
+                    # Standard folder
+                    folder_obj = main_window.project_manager.find_virtual_folder(f_id)
+                    if folder_obj:
+                        folder_obj.name = text
+                        folder_obj.parent_id = parent_id
+                        folder_obj.children, folder_obj.block_ids = rebuild_from_item(child, f_id)
+                        folders.append(folder_obj)
+                elif b_idx is not None:
+                    # Standard block
+                    if b_idx < len(project.blocks):
+                        block_ids.append(project.blocks[b_idx].id)
+            return folders, block_ids
+
+        root_item = self.invisibleRootItem()
+        project.virtual_folders, root_block_ids = rebuild_from_item(root_item)
+        project.metadata['root_block_ids'] = root_block_ids
+        
+        main_window.project_manager.save()
+        log_debug("Virtual folders structure updated.")
+
+    def move_current_item_up(self):
+        item = self.currentItem()
+        if not item: return
+        parent = item.parent() or self.invisibleRootItem()
+        index = parent.indexOfChild(item)
+        if index > 0:
+            parent.takeChild(index)
+            parent.insertChild(index - 1, item)
+            self.setCurrentItem(item)
+            self.sync_tree_to_project_manager()
+
+    def move_current_item_down(self):
+        item = self.currentItem()
+        if not item: return
+        parent = item.parent() or self.invisibleRootItem()
+        index = parent.indexOfChild(item)
+        if index < parent.childCount() - 1:
+            parent.takeChild(index)
+            parent.insertChild(index + 1, item)
+            self.setCurrentItem(item)
+            self.sync_tree_to_project_manager()
 
     def event(self, event):
         if event.type() == QEvent.ToolTip:

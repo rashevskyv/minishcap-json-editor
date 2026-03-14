@@ -11,76 +11,73 @@ class ListSelectionHandler(BaseHandler):
         super().__init__(main_window, data_processor, ui_updater)
         self._restoring_selection = False
     def block_selected(self, current_item, previous_item):
-        preview_edit = getattr(self.mw, 'preview_text_edit', None)
-        
-        if previous_item:
-            previous_block_idx = previous_item.data(0, Qt.UserRole)
-            if previous_block_idx is not None:
-                self.ui_updater.update_block_item_text_with_problem_count(previous_block_idx)
-
-        if not current_item and not self.mw.is_loading_data:
-            if not self._restoring_selection and self.mw.current_block_idx != -1:
-                self._restoring_selection = True
-                QTimer.singleShot(0, self._restore_block_selection)
+        if self.mw.is_loading_data or self.mw.is_programmatically_changing_text:
             return
-
+            
         self.mw.is_programmatically_changing_text = True
+        try:
+            preview_edit = getattr(self.mw, 'preview_text_edit', None)
+            
+            if previous_item:
+                previous_block_idx = previous_item.data(0, Qt.UserRole)
+                if previous_block_idx is not None:
+                    self.ui_updater.update_block_item_text_with_problem_count(previous_block_idx)
 
-        if not current_item:
-            self.mw.current_block_idx = -1
-            self.mw.current_string_idx = -1
-            self.ui_updater.populate_strings_for_block(-1)
+            if not current_item:
+                if not self.mw.is_loading_data:
+                    if not self._restoring_selection and self.mw.current_block_idx != -1:
+                        self._restoring_selection = True
+                        QTimer.singleShot(0, self._restore_block_selection)
+                
+                self.mw.current_block_idx = -1
+                self.mw.current_string_idx = -1
+                self.ui_updater.populate_strings_for_block(-1)
+                if hasattr(self.mw, 'string_settings_updater'):
+                    self.mw.string_settings_updater.update_string_settings_panel()
+                self._update_block_toolbar_button_states(-1)
+                return
+
+            block_index = current_item.data(0, Qt.UserRole)
+            if block_index is None:
+                self.mw.current_block_idx = -1
+                self.mw.current_string_idx = -1
+                self.ui_updater.populate_strings_for_block(-1)
+                if hasattr(self.mw, 'string_settings_updater'):
+                    self.mw.string_settings_updater.update_string_settings_panel()
+                self._update_block_toolbar_button_states(-1)
+                return
+            
+            if self.mw.current_block_idx != block_index:
+                old_block = self.mw.current_block_idx
+                old_string = self.mw.current_string_idx
+                self.mw.current_block_idx = block_index
+                
+                # Restore selection if project
+                restored_s_idx = 0
+                if hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project:
+                    project = self.mw.project_manager.project
+                    if hasattr(self.mw, 'block_to_project_file_map'):
+                        project_block_idx = self.mw.block_to_project_file_map.get(block_index)
+                        if project_block_idx is not None and project_block_idx < len(project.blocks):
+                            restored_s_idx = project.blocks[project_block_idx].last_selected_string_idx
+
+                self.mw.current_string_idx = restored_s_idx
+                
+                if hasattr(self.mw, 'undo_manager'):
+                    self.mw.undo_manager.record_navigation(block_index, restored_s_idx, old_block, old_string)
+
+                # Use QTimer to ensure populate_strings_for_block has finished before selecting string
+                QTimer.singleShot(0, lambda idx=restored_s_idx: self.string_selected_from_preview(idx))
+                
+            self.ui_updater.populate_strings_for_block(block_index)
             if hasattr(self.mw, 'string_settings_updater'):
+                self.mw.string_settings_updater.update_font_combobox()
                 self.mw.string_settings_updater.update_string_settings_panel()
 
-            # Disable toolbar buttons when no selection
-            self._update_block_toolbar_button_states(-1)
-
+            # Update toolbar button states
+            self._update_block_toolbar_button_states(block_index)
+        finally:
             self.mw.is_programmatically_changing_text = False
-            return
-
-        block_index = current_item.data(0, Qt.UserRole)
-        if block_index is None:
-            self.mw.current_block_idx = -1
-            self.mw.current_string_idx = -1
-            self.ui_updater.populate_strings_for_block(-1)
-            if hasattr(self.mw, 'string_settings_updater'):
-                self.mw.string_settings_updater.update_string_settings_panel()
-            self._update_block_toolbar_button_states(-1)
-            self.mw.is_programmatically_changing_text = False
-            return
-        
-        if self.mw.current_block_idx != block_index:
-            old_block = self.mw.current_block_idx
-            old_string = self.mw.current_string_idx
-            self.mw.current_block_idx = block_index
-            
-            # Restore selection if project
-            restored_s_idx = 0
-            if hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project:
-                project = self.mw.project_manager.project
-                if hasattr(self.mw, 'block_to_project_file_map'):
-                    project_block_idx = self.mw.block_to_project_file_map.get(block_index)
-                    if project_block_idx is not None and project_block_idx < len(project.blocks):
-                        restored_s_idx = project.blocks[project_block_idx].last_selected_string_idx
-
-            self.mw.current_string_idx = restored_s_idx
-            
-            if hasattr(self.mw, 'undo_manager'):
-                self.mw.undo_manager.record_navigation(block_index, restored_s_idx, old_block, old_string)
-
-            # Use QTimer to ensure populate_strings_for_block has finished before selecting string
-            QTimer.singleShot(0, lambda idx=restored_s_idx: self.string_selected_from_preview(idx))
-            
-        self.ui_updater.populate_strings_for_block(block_index)
-        if hasattr(self.mw, 'string_settings_updater'):
-            self.mw.string_settings_updater.update_font_combobox()
-            self.mw.string_settings_updater.update_string_settings_panel()
-
-        # Update toolbar button states
-        self._update_block_toolbar_button_states(block_index)
-
-        self.mw.is_programmatically_changing_text = False
 
     def _restore_block_selection(self):
         if self.mw.current_block_idx != -1:
@@ -95,29 +92,32 @@ class ListSelectionHandler(BaseHandler):
 
     def _update_block_toolbar_button_states(self, block_idx: int):
         """Update the enabled/disabled state of toolbar buttons based on selection and position."""
-        has_project = hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project
-        has_selection = block_idx >= 0
+        has_project = bool(hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project)
+        
+        # Enable Add Folder if project exists
+        if hasattr(self.mw, 'add_folder_button'):
+            self.mw.add_folder_button.setEnabled(has_project)
 
-        if has_project and has_selection:
-            total_blocks = len(self.mw.project_manager.project.blocks)
-            is_first = block_idx == 0
-            is_last = block_idx >= total_blocks - 1
+        current_item = self.mw.block_list_widget.currentItem()
+        if has_project and current_item:
+            parent = current_item.parent() or self.mw.block_list_widget.invisibleRootItem()
+            index = parent.indexOfChild(current_item)
+            is_first = index == 0
+            is_last = index == parent.childCount() - 1
 
-            # Enable delete and rename for any selected block
+            # Enable delete and rename for any selected block or folder
             if hasattr(self.mw, 'delete_block_button'):
                 self.mw.delete_block_button.setEnabled(True)
             if hasattr(self.mw, 'rename_block_button'):
                 self.mw.rename_block_button.setEnabled(True)
 
-            # Enable move up only if not first
+            # Enable move up/down based on siblings in the tree
             if hasattr(self.mw, 'move_block_up_button'):
                 self.mw.move_block_up_button.setEnabled(not is_first)
-
-            # Enable move down only if not last
             if hasattr(self.mw, 'move_block_down_button'):
                 self.mw.move_block_down_button.setEnabled(not is_last)
         else:
-            # Disable all buttons when no selection or no project
+            # Disable selection-dependent buttons
             if hasattr(self.mw, 'delete_block_button'):
                 self.mw.delete_block_button.setEnabled(False)
             if hasattr(self.mw, 'rename_block_button'):
@@ -204,16 +204,60 @@ class ListSelectionHandler(BaseHandler):
 
 
     def rename_block(self, item):
-        block_index_from_data = item.data(0, Qt.UserRole);
-        if block_index_from_data is None: return
-        block_index_str = str(block_index_from_data)
-        current_name = self.mw.block_names.get(block_index_str, f"Block {block_index_from_data}")
-        new_name, ok = QInputDialog.getText(self.mw, "Rename Block", f"New name for '{current_name}':", text=current_name)
-        if ok and new_name and new_name.strip() and new_name.strip() != current_name:
-            actual_new_name = new_name.strip()
-            self.mw.block_names[block_index_str] = actual_new_name
+        if not item: return
+        self.mw.block_list_widget.editItem(item, 0)
+
+    def handle_block_item_text_changed(self, item, column):
+        """Handle inline renaming of block or folder."""
+        if self.mw.is_loading_data or self.mw.is_programmatically_changing_text:
+            return
+            
+        new_text = item.text(column).strip()
+        if not new_text:
+            # Revert if empty
             self.ui_updater.populate_blocks()
-            self.mw.settings_manager.save_block_names()
+            return
+
+        # Check if it's a virtual folder or a block
+        folder_id = item.data(0, Qt.UserRole + 1)
+        block_index_from_data = item.data(0, Qt.UserRole)
+        merged_ids = item.data(0, Qt.UserRole + 2)
+
+        self.mw.is_programmatically_changing_text = True
+        try:
+            if block_index_from_data is not None:
+                # Rename Block
+                block_index_str = str(block_index_from_data)
+                
+                # If there are merged IDs (compact folders), we might need to handle the path
+                if merged_ids and " / " in new_text:
+                    parts = new_text.split(" / ")
+                    actual_name = parts[-1].strip()
+                    # We only rename the block itself here for simplicity.
+                    # Renaming merged folders via one text edit is complex.
+                    self.mw.block_names[block_index_str] = actual_name
+                else:
+                    self.mw.block_names[block_index_str] = new_text
+                
+                self.mw.settings_manager.save_block_names()
+                log_debug(f"Block {block_index_from_data} renamed to '{new_text}'")
+            elif folder_id:
+                # Rename Folder
+                # If merged, we only rename the deepest one for simplicity
+                folder = self.mw.project_manager.find_virtual_folder(folder_id)
+                if folder:
+                    if " / " in new_text:
+                        parts = new_text.split(" / ")
+                        folder.name = parts[-1].strip()
+                    else:
+                        folder.name = new_text
+                    self.mw.project_manager.save()
+                    log_debug(f"Folder {folder_id} renamed to '{folder.name}'")
+            
+            # Repopulate to fix any visual issues (like adding issue counts back if they were part of the name)
+            self.ui_updater.populate_blocks()
+        finally:
+            self.mw.is_programmatically_changing_text = False
 
     def _data_string_has_any_problem(self, block_idx: int, string_idx: int) -> bool:
         if not self.mw.current_game_rules:

@@ -14,7 +14,7 @@ from typing import List, Dict, Optional, Set, Any
 from pathlib import Path
 from utils.logging_utils import log_info, log_warning, log_error, log_debug
 
-from .project_models import Category, Block, Project
+from .project_models import Category, Block, Project, VirtualFolder
 
 
 class ProjectManager:
@@ -165,6 +165,11 @@ class ProjectManager:
                 data = json.load(f)
 
             self.project = Project.from_dict(data)
+            
+            # Migration: if no virtual folders exist (or version < 1.1), create them from file structure
+            if self.project.version < "1.1" and self.project.blocks:
+                self._migrate_file_structure_to_virtual_folders()
+
             log_info(f"Loaded project '{self.project.name}' from {self.project_dir}")
             return True
 
@@ -199,7 +204,8 @@ class ProjectManager:
             log_error(f"Failed to save project: {e}", exc_info=True)
             return False
 
-    def add_block(self, name: str, source_file_path: str, translation_file_path: Optional[str] = None, description: str = "", target_relative_path: str = "") -> Optional[Block]:
+    def add_block(self, name: str, source_file_path: str, translation_file_path: Optional[str] = None, 
+                  internal_key: Optional[str] = None, description: str = "", target_relative_path: str = "") -> Optional[Block]:
         """
         Register a new block (file pair) in the project. Does NOT copy files.
 
@@ -228,12 +234,23 @@ class ProjectManager:
                 name=name or source_path.stem,
                 source_file=source_rel_path,
                 translation_file=trans_rel_path,
+                internal_key=internal_key,
                 description=description
             )
 
             self.project.add_block(block)
-            self.save()
+            
+            # Ensure it's tracked in virtual structure
+            if 'root_block_ids' in self.project.metadata:
+                if block.id not in self.project.metadata['root_block_ids']:
+                    self.project.metadata['root_block_ids'].append(block.id)
+            elif self.project.virtual_folders:
+                 # If folders exist but not in root, we might want to put it in root anyway
+                 root_ids = self.project.metadata.get('root_block_ids', [])
+                 root_ids.append(block.id)
+                 self.project.metadata['root_block_ids'] = root_ids
 
+            self.save()
             log_info(f"Registered block '{block.name}' loosely linked at {source_rel_path}")
             return block
 
@@ -241,7 +258,7 @@ class ProjectManager:
             log_error(f"Failed to register block: {e}", exc_info=True)
             return None
 
-    def sync_project_files(self):
+    def sync_project_files(self, plugin=None):
         """
         Synchronize files from external directories with project blocks.
         """
@@ -269,12 +286,33 @@ class ProjectManager:
                     found_sources.add(rel_path)
                     
                     if rel_path not in existing_blocks:
-                        # Auto-create translation logic could go here or when saving
-                        self.add_block(
-                            name=filepath.stem,
-                            source_file_path=rel_path,
-                            translation_file_path=rel_path
-                        )
+                        added_sub_blocks = False
+                        if plugin and filepath.suffix.lower() == '.json':
+                            try:
+                                with open(filepath, 'r', encoding='utf-8') as f:
+                                    content = json.load(f)
+                                parsed, names = plugin.load_data_from_json_obj(content)
+                                if parsed and len(parsed) > 1:
+                                    for i in range(len(parsed)):
+                                        full_sub_name = names.get(str(i), f"Block {i}")
+                                        # Use only the last part of the path as the display name
+                                        display_name = full_sub_name.replace('\\', '/').split('/')[-1]
+                                        self.add_block(
+                                            name=display_name,
+                                            source_file_path=rel_path,
+                                            translation_file_path=rel_path,
+                                            internal_key=full_sub_name # The full key name from JSON
+                                        )
+                                    added_sub_blocks = True
+                            except Exception as e:
+                                log_debug(f"Sync: Failed to explode {rel_path}: {e}")
+
+                        if not added_sub_blocks:
+                            self.add_block(
+                                name=filepath.stem,
+                                source_file_path=rel_path,
+                                translation_file_path=rel_path
+                            )
         else:
             # File mode
             filepath = Path(source_path)
@@ -282,13 +320,34 @@ class ProjectManager:
                 rel_path = filepath.name
                 found_sources.add(rel_path)
                 if rel_path not in existing_blocks:
-                    # In file mode, if translation isn't auto-created, translation_path is likely a file
                     trans_rel_path = Path(translation_path).name if translation_path else rel_path
-                    self.add_block(
-                        name=filepath.stem,
-                        source_file_path=rel_path,
-                        translation_file_path=trans_rel_path
-                    )
+                    
+                    added_sub_blocks = False
+                    if plugin and filepath.suffix.lower() == '.json':
+                         try:
+                            with open(filepath, 'r', encoding='utf-8') as f:
+                                content = json.load(f)
+                            parsed, names = plugin.load_data_from_json_obj(content)
+                            if parsed and len(parsed) > 1:
+                                for i in range(len(parsed)):
+                                    full_sub_name = names.get(str(i), f"Block {i}")
+                                    display_name = full_sub_name.replace('\\', '/').split('/')[-1]
+                                    self.add_block(
+                                        name=display_name,
+                                        source_file_path=rel_path,
+                                        translation_file_path=trans_rel_path,
+                                        internal_key=full_sub_name
+                                    )
+                                added_sub_blocks = True
+                         except Exception as e:
+                            log_debug(f"Sync: Failed to explode {rel_path}: {e}")
+
+                    if not added_sub_blocks:
+                        self.add_block(
+                            name=filepath.stem,
+                            source_file_path=rel_path,
+                            translation_file_path=trans_rel_path
+                        )
                     
         # Remove blocks that no longer exist
         blocks_to_remove = [b.id for b in self.project.blocks if b.source_file not in found_sources]
@@ -296,7 +355,10 @@ class ProjectManager:
             self.project.remove_block(bid)
             
         if blocks_to_remove or len(found_sources) > len(existing_blocks):
-            self.save()
+            if self.project.version < "1.1":
+                self._migrate_file_structure_to_virtual_folders()
+            else:
+                self.save()
 
     def import_directory(self, root_dir_path: str) -> List[Block]:
         """
@@ -445,3 +507,157 @@ class ProjectManager:
     def current_project(self) -> Optional[Project]:
         """Get the currently loaded project."""
         return self.project
+
+    def _migrate_file_structure_to_virtual_folders(self):
+        """Build virtual folder structure from physical file paths of blocks."""
+        if not self.project: return
+
+        folder_map = {} # path -> VirtualFolder
+        root_folders = []
+
+        # Sort blocks by name for consistent initial order
+        sorted_blocks = sorted(self.project.blocks, key=lambda b: b.source_file)
+
+        for block in sorted_blocks:
+            rel_path = block.source_file
+            if rel_path.startswith(self.SOURCES_DIR + '/'):
+                rel_path = rel_path[len(self.SOURCES_DIR) + 1:]
+                
+            path_parts = Path(rel_path).parent.as_posix().split('/')
+            if path_parts == ['.'] or path_parts == ['']:
+                path_parts = []
+            
+            # If it's a sub-block within a file, add the filename as a folder part
+            if block.internal_key:
+                path_parts.append(Path(rel_path).name)
+                # If the internal key itself looks like a path, split it into folders
+                internal_parts = block.internal_key.replace('\\', '/').split('/')
+                if len(internal_parts) > 1:
+                    # Everything except the last part is a folder
+                    path_parts.extend(internal_parts[:-1])
+
+            current_parent_id = None
+            current_path = ""
+            
+            last_folder = None
+            for part in path_parts:
+                if not part: continue
+                parent_path = current_path
+                current_path = (current_path + "/" + part) if current_path else part
+                
+                if current_path not in folder_map:
+                    new_folder = VirtualFolder(name=part, parent_id=current_parent_id)
+                    folder_map[current_path] = new_folder
+                    
+                    if current_parent_id is None:
+                        root_folders.append(new_folder)
+                    else:
+                        parent_folder = folder_map[parent_path]
+                        parent_folder.children.append(new_folder)
+                
+                last_folder = folder_map[current_path]
+                current_parent_id = last_folder.id
+            
+            if last_folder:
+                last_folder.block_ids.append(block.id)
+            else:
+                # Root level block
+                # We'll put root blocks into virtual_folders later or handle separately
+                # For now let's just ensure every block is accounted for.
+                # If no folder, we can attach to a virtual root or just keep in project.blocks
+                pass
+
+        # Handle blocks at the root level (no folders)
+        root_block_ids = []
+        for b in sorted_blocks:
+            rel_p = b.source_file
+            if rel_p.startswith(self.SOURCES_DIR + '/'):
+                rel_p = rel_p[len(self.SOURCES_DIR) + 1:]
+            parent_p = Path(rel_p).parent.as_posix()
+            if parent_p == '.' or not parent_p:
+                root_block_ids.append(b.id)
+        
+        self.project.virtual_folders = root_folders
+        self.project.metadata['root_block_ids'] = root_block_ids # Blocks not in any folder
+        self.project.version = "1.1"
+        self.save()
+        log_info(f"Migrated {len(self.project.blocks)} blocks to virtual folder structure.")
+
+    def create_virtual_folder(self, name: str, parent_id: Optional[str] = None) -> VirtualFolder:
+        """Create a new virtual folder."""
+        new_folder = VirtualFolder(name=name, parent_id=parent_id)
+        if parent_id:
+            parent = self.find_virtual_folder(parent_id)
+            if parent:
+                parent.children.append(new_folder)
+        else:
+            self.project.virtual_folders.append(new_folder)
+        self.save()
+        return new_folder
+
+    def find_virtual_folder(self, folder_id: str, search_list: Optional[List[VirtualFolder]] = None) -> Optional[VirtualFolder]:
+        """Recursively find a virtual folder by ID."""
+        if not self.project: return None
+        if search_list is None:
+            search_list = self.project.virtual_folders
+            
+        for folder in search_list:
+            if folder.id == folder_id:
+                return folder
+            found = self.find_virtual_folder(folder_id, folder.children)
+            if found:
+                return found
+        return None
+
+    def move_block_to_folder(self, block_id: str, target_folder_id: Optional[str]):
+        """Move a block from its current location to a new virtual folder."""
+        # 1. Remove from current location
+        self._remove_block_id_from_any_folder(block_id)
+        
+        # 2. Add to target
+        if target_folder_id:
+            target = self.find_virtual_folder(target_folder_id)
+            if target:
+                target.block_ids.append(block_id)
+        else:
+            root_blocks = self.project.metadata.get('root_block_ids', [])
+            if block_id not in root_blocks:
+                root_blocks.append(block_id)
+                self.project.metadata['root_block_ids'] = root_blocks
+        self.save()
+
+    def _remove_block_id_from_any_folder(self, block_id: str, search_list: Optional[List[VirtualFolder]] = None):
+        if search_list is None:
+            if not self.project: return
+            search_list = self.project.virtual_folders
+            root_blocks = self.project.metadata.get('root_block_ids', [])
+            if block_id in root_blocks:
+                root_blocks.remove(block_id)
+                self.project.metadata['root_block_ids'] = root_blocks
+
+        for folder in search_list:
+            if block_id in folder.block_ids:
+                folder.block_ids.remove(block_id)
+            self._remove_block_id_from_any_folder(block_id, folder.children)
+
+    def _remove_folder_from_anywhere(self, folder_id: str):
+        """Remove a folder from its current parent or root."""
+        if not self.project: return
+        
+        # Check root
+        for i, f in enumerate(self.project.virtual_folders):
+            if f.id == folder_id:
+                self.project.virtual_folders.pop(i)
+                return True
+                
+        # Check nested
+        def remove_from_list(folders):
+            for i, f in enumerate(folders):
+                if f.id == folder_id:
+                    folders.pop(i)
+                    return True
+                if remove_from_list(f.children):
+                    return True
+            return False
+            
+        return remove_from_list(self.project.virtual_folders)

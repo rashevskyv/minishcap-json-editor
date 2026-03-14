@@ -186,45 +186,73 @@ class NewProjectDialog(QDialog):
         if checked:
             self.trans_edit.clear()
 
+    def _get_start_dir(self, current_path_text=None):
+        if current_path_text and Path(current_path_text).exists():
+            return Path(current_path_text).as_posix() if Path(current_path_text).is_dir() else Path(current_path_text).parent.as_posix()
+        
+        if hasattr(self.parent(), 'last_browse_dir') and self.parent().last_browse_dir:
+            return self.parent().last_browse_dir
+        return Path.home().as_posix()
+
+    def _update_last_dir(self, path):
+        if not path: return
+        p = Path(path)
+        last_dir = p.as_posix() if p.is_dir() else p.parent.as_posix()
+        if hasattr(self.parent(), 'last_browse_dir'):
+            self.parent().last_browse_dir = last_dir
+            if hasattr(self.parent(), 'settings_manager'):
+                self.parent().settings_manager.save_settings()
+
     def _browse_directory(self):
         """Open directory picker for project location."""
         directory = QFileDialog.getExistingDirectory(
             self,
             "Select Project Location",
-            Path.home().as_posix(),
+            self._get_start_dir(self.dir_edit.text()),
             QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks
         )
 
         if directory:
             self.dir_edit.setText(directory)
+            self._update_last_dir(directory)
 
     def _browse_source(self):
+        start_dir = self._get_start_dir(self.source_edit.text())
         if self.radio_folders.isChecked():
             directory = QFileDialog.getExistingDirectory(
-                self, "Select Source Directory", Path.home().as_posix(),
+                self, "Select Source Directory", start_dir,
                 QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks
             )
-            if directory: self.source_edit.setText(directory)
+            if directory: 
+                self.source_edit.setText(directory)
+                self._update_last_dir(directory)
         else:
             file_path, _ = QFileDialog.getOpenFileName(
-                self, "Select Source File", Path.home().as_posix(),
+                self, "Select Source File", start_dir,
                 "Supported Files (*.txt *.json);;All Files (*)"
             )
-            if file_path: self.source_edit.setText(file_path)
+            if file_path: 
+                self.source_edit.setText(file_path)
+                self._update_last_dir(file_path)
 
     def _browse_translation(self):
+        start_dir = self._get_start_dir(self.trans_edit.text())
         if self.radio_folders.isChecked():
             directory = QFileDialog.getExistingDirectory(
-                self, "Select Translation Directory", Path.home().as_posix(),
+                self, "Select Translation Directory", start_dir,
                 QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks
             )
-            if directory: self.trans_edit.setText(directory)
+            if directory: 
+                self.trans_edit.setText(directory)
+                self._update_last_dir(directory)
         else:
             file_path, _ = QFileDialog.getOpenFileName(
-                self, "Select Translation File", Path.home().as_posix(),
+                self, "Select Translation File", start_dir,
                 "Supported Files (*.txt *.json);;All Files (*)"
             )
-            if file_path: self.trans_edit.setText(file_path)
+            if file_path: 
+                self.trans_edit.setText(file_path)
+                self._update_last_dir(file_path)
 
     def _validate_and_accept(self):
         """Validate inputs before accepting."""
@@ -373,7 +401,10 @@ class OpenProjectDialog(QDialog):
     def _browse_file(self):
         """Browse for .uiproj file."""
         # Try to start in a sensible location (user's home or recent projects directory)
-        start_dir = Path.home().as_posix()
+        if hasattr(self.parent(), 'last_browse_dir') and self.parent().last_browse_dir:
+            start_dir = self.parent().last_browse_dir
+        else:
+            start_dir = Path.home().as_posix()
 
         file_path, _ = QFileDialog.getOpenFileName(
             self,
@@ -384,6 +415,11 @@ class OpenProjectDialog(QDialog):
 
         if file_path:
             self.path_edit.setText(file_path)
+            # Update last_dir
+            if hasattr(self.parent(), 'last_browse_dir'):
+                 self.parent().last_browse_dir = Path(file_path).parent.as_posix()
+                 if hasattr(self.parent(), 'settings_manager'):
+                     self.parent().settings_manager.save_settings()
 
     def _validate_and_accept(self):
         """Validate selected path before accepting."""
@@ -538,19 +574,34 @@ class ImportBlockDialog(QDialog):
 
     def _browse_source_file(self):
         """Browse for source file."""
+        if hasattr(self.parent(), 'last_browse_dir') and self.parent().last_browse_dir:
+            start_dir = self.parent().last_browse_dir
+        else:
+            start_dir = Path.home().as_posix()
+
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Select Source File",
-            Path.home().as_posix(),
+            start_dir,
             "Supported Files (*.txt *.json);;Text Files (*.txt);;JSON Files (*.json);;All Files (*)"
         )
 
         if file_path:
             self.file_edit.setText(file_path)
+            if hasattr(self.parent(), 'last_browse_dir'):
+                 self.parent().last_browse_dir = Path(file_path).parent.as_posix()
+                 if hasattr(self.parent(), 'settings_manager'):
+                     self.parent().settings_manager.save_settings()
 
     def _browse_translation_file(self):
         """Browse for translation file."""
-        start_dir = Path(self.file_edit.text()).parent.as_posix() if self.file_edit.text() else Path.home().as_posix()
+        if self.file_edit.text():
+            start_dir = Path(self.file_edit.text()).parent.as_posix()
+        elif hasattr(self.parent(), 'last_browse_dir') and self.parent().last_browse_dir:
+            start_dir = self.parent().last_browse_dir
+        else:
+            start_dir = Path.home().as_posix()
+
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Select Translation File (Optional)",
@@ -560,6 +611,10 @@ class ImportBlockDialog(QDialog):
 
         if file_path:
             self.translation_edit.setText(file_path)
+            if hasattr(self.parent(), 'last_browse_dir'):
+                 self.parent().last_browse_dir = Path(file_path).parent.as_posix()
+                 if hasattr(self.parent(), 'settings_manager'):
+                     self.parent().settings_manager.save_settings()
 
     def _on_source_file_selected(self, file_path):
         """Auto-fill block name from filename if not already set."""

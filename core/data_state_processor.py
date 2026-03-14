@@ -126,21 +126,26 @@ class DataStateProcessor:
                 blocks = self.mw.project_manager.project.blocks
                 success_all = True
                 
-                # Group data_block indices by project_block index
-                project_block_to_data_blocks = {}
+                # Group data_block indices by translation file path
+                file_to_data_indices = {}
+                # Map translation file path back to one representative block for metadata
+                file_to_block_info = {}
+
                 for data_b_idx, p_b_idx in self.mw.block_to_project_file_map.items():
-                    if p_b_idx not in project_block_to_data_blocks:
-                        project_block_to_data_blocks[p_b_idx] = []
-                    project_block_to_data_blocks[p_b_idx].append(data_b_idx)
+                    if p_b_idx >= len(blocks): continue
+                    block = blocks[p_b_idx]
+                    path = block.translation_file
+                    if path not in file_to_data_indices:
+                        file_to_data_indices[path] = []
+                        file_to_block_info[path] = block
+                    file_to_data_indices[path].append(data_b_idx)
                 
-                # Backup original keys for pokemon plugin logic, as parsing might rely on the internal state
+                # Backup original keys for pokemon plugin logic
                 global_keys_backup = None
                 if hasattr(self.mw.current_game_rules, 'original_keys'):
                     global_keys_backup = list(self.mw.current_game_rules.original_keys)
 
-                for p_b_idx, data_indices in project_block_to_data_blocks.items():
-                    if p_b_idx >= len(blocks): continue
-                    
+                for trans_file_rel, data_indices in file_to_data_indices.items():
                     # Check if this specific file has any unsaved edits
                     has_edits = False
                     for d_idx in data_indices:
@@ -152,11 +157,11 @@ class DataStateProcessor:
                         if has_edits: break
                     
                     if not has_edits:
-                        log_debug(f"Skipping save for project block '{blocks[p_b_idx].name}' as it has no pending edits.")
+                        log_debug(f"Skipping save for project file '{trans_file_rel}' as it has no pending edits.")
                         continue
 
-                    block = blocks[p_b_idx]
-                    trans_path = self.mw.project_manager.get_absolute_path(block.translation_file, is_translation=True)
+                    block = file_to_block_info[trans_file_rel]
+                    trans_path = self.mw.project_manager.get_absolute_path(trans_file_rel, is_translation=True)
                     
                     # Extract sublists and names for this specific file
                     file_data_list = [output_data_list[d_idx] for d_idx in data_indices]

@@ -8,9 +8,9 @@
         "width": 2066,
         "height": 1277
     },
-    "main_splitter_state": "AAAA/wAAAAEAAAACAAAAyAAAAyAB/////wEAAAABAA==",
+    "main_splitter_state": "AAAA/wAAAAEAAAACAAAA/QAAAyAB/////wEAAAABAA==",
     "right_splitter_state": "AAAA/wAAAAEAAAACAAAAlgAAAcIB/////wEAAAACAA==",
-    "bottom_right_splitter_state": "AAAA/wAAAAEAAAACAAABkAAAAd0B/////wEAAAABAA==",
+    "bottom_right_splitter_state": "AAAA/wAAAAEAAAACAAABkAAAAa4B/////wEAAAABAA==",
     "show_multiple_spaces_as_dots": true,
     "space_dot_color_hex": "#808080",
     "theme": "auto",
@@ -41,6 +41,7 @@
     "spellchecker_enabled": true,
     "spellchecker_language": "uk",
     "recent_projects": [
+        "C:\\Users\\Administrator\\Desktop\\PokemonRS\\Pokemon\\Pokemon\\project.uiproj",
         "C:\\Users\\Administrator\\Desktop\\PokemonRS\\Pokemon\\project.uiproj",
         "D:\\git\\WW\\WindWaker\\project.uiproj",
         "C:\\Users\\Administrator\\Desktop\\pokemon\\Pokemon\\project.uiproj",
@@ -58,5 +59,6 @@
         "scanner",
         "plugins"
     ],
-    "settings_window_width": 800
+    "settings_window_width": 800,
+    "last_browse_dir": "C:/Users/Administrator/Desktop/PokemonRS/translation"
 }
