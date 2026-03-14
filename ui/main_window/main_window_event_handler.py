@@ -17,6 +17,7 @@ class MainWindowEventHandler:
 
     def connect_signals(self):
         if hasattr(self.mw, 'open_settings_action'): self.mw.open_settings_action.triggered.connect(self.mw.actions.open_settings_dialog)
+        if hasattr(self.mw, 'help_shortcuts_action'): self.mw.help_shortcuts_action.triggered.connect(self.mw.actions.show_shortcuts_help)
         if hasattr(self.mw, 'block_list_widget'):
             self.mw.block_list_widget.currentItemChanged.connect(self.mw.list_selection_handler.block_selected)
             self.mw.block_list_widget.itemDoubleClicked.connect(self.mw.list_selection_handler.rename_block)

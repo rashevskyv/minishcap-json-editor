@@ -308,6 +308,12 @@ def setup_main_window_ui(main_window):
     file_menu.addAction(main_window.open_settings_action)
     file_menu.addSeparator()
 
+    main_window.help_shortcuts_action = QAction(style.standardIcon(QStyle.SP_DialogHelpButton), '&Shortcuts Help', main_window)
+    main_window.help_shortcuts_action.setShortcut('F1')
+    
+    help_menu = menubar.addMenu('&Help')
+    help_menu.addAction(main_window.help_shortcuts_action)
+
     main_window.exit_action = QAction(exit_icon, 'E&xit', main_window)
     main_window.exit_action.triggered.connect(main_window.close)
     file_menu.addAction(main_window.exit_action)
@@ -402,4 +408,6 @@ def setup_main_window_ui(main_window):
     main_window.main_toolbar.addAction(main_window.open_ai_chat_action)
     main_window.main_toolbar.addSeparator()
     main_window.main_toolbar.addAction(main_window.open_settings_action)
+    main_window.main_toolbar.addSeparator()
+    main_window.main_toolbar.addAction(main_window.help_shortcuts_action)
 

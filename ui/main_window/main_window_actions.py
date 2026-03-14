@@ -248,22 +248,5 @@ class MainWindowActions:
         else: log_info("User cancelled overwrite or no action taken.")
 
     def show_shortcuts_help(self):
-        help_text = """
-<h2>Keyboard Shortcuts</h2>
-<ul>
-    <li><b>Ctrl+S</b>: Save changes</li>
-    <li><b>Ctrl+Z</b>: Undo typing or navigation</li>
-    <li><b>Ctrl+Y / Ctrl+Shift+Z</b>: Redo typing or navigation</li>
-    <li><b>Ctrl+Up</b>: Move to previous string with an issue</li>
-    <li><b>Ctrl+Down</b>: Move to next string with an issue</li>
-    <li><b>Alt+Up</b>: Move to previous string</li>
-    <li><b>Alt+Down</b>: Move to next string</li>
-    <li><b>Ctrl+Shift+Up/Down</b>: Move between blocks</li>
-    <li><b>Ctrl+Shift+Left/Right</b>: Move between folders</li>
-    <li><b>F3</b>: Find Next</li>
-    <li><b>Shift+F3</b>: Find Previous</li>
-    <li><b>Esc</b>: Close search panel</li>
-</ul>
-<p><i>Note: Shortcuts apply when working in the translation editor.</i></p>
-        """
-        QMessageBox.information(self.mw, "Shortcuts Help", help_text)
+        from components.help_dialog import show_shortcuts_dialog
+        show_shortcuts_dialog(self.mw)
