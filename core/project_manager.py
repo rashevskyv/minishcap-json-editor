@@ -649,6 +649,52 @@ class ProjectManager:
                 return found
         return None
 
+    def is_descendant_of(self, potential_child_id: str, potential_parent_id: str) -> bool:
+        """Check if folder A is a descendant of folder B."""
+        if potential_child_id == potential_parent_id:
+            return True
+        
+        parent = self.find_virtual_folder(potential_parent_id)
+        if not parent:
+            return False
+            
+        def search_recursive(folders):
+            for f in folders:
+                if f.id == potential_child_id:
+                    return True
+                if search_recursive(f.children):
+                    return True
+            return False
+            
+        return search_recursive(parent.children)
+
+    def move_folder_to_folder(self, folder_id: str, target_folder_id: Optional[str]) -> bool:
+        """
+        Move a virtual folder to a new location with safety checks.
+        Returns True if moved, False if skipped (e.g. circular reference).
+        """
+        if target_folder_id and self.is_descendant_of(target_folder_id, folder_id):
+            log_warning(f"Circular reference detected: Cannot move folder '{folder_id}' into its descendant '{target_folder_id}'. Action ignored.")
+            return False
+
+        folder = self.find_virtual_folder(folder_id)
+        if not folder:
+            return False
+            
+        # 1. Remove from current parent
+        self._remove_folder_from_anywhere(folder_id)
+        
+        # 2. Assign new parent
+        folder.parent_id = target_folder_id
+        if target_folder_id:
+            dest = self.find_virtual_folder(target_folder_id)
+            if dest:
+                dest.children.append(folder)
+        else:
+            self.project.virtual_folders.append(folder)
+            
+        return True
+
     def move_block_to_folder(self, block_id: str, target_folder_id: Optional[str]):
         """Move a block from its current location to a new virtual folder."""
         # 1. Remove from current location

@@ -620,6 +620,58 @@ class MainWindow(QMainWindow):
     @line_width_warning_threshold_pixels.setter
     def line_width_warning_threshold_pixels(self, val): self.settings_manager.set('line_width_warning_threshold_pixels', val)
 
+    @property
+    def tree_font_size(self): return self.settings_manager.get('tree_font_size', self.current_font_size)
+    @tree_font_size.setter
+    def tree_font_size(self, val): self.settings_manager.set('tree_font_size', val)
+
+    @property
+    def preview_font_size(self): return self.settings_manager.get('preview_font_size', self.current_font_size)
+    @preview_font_size.setter
+    def preview_font_size(self, val): self.settings_manager.set('preview_font_size', val)
+
+    @property
+    def editors_font_size(self): return self.settings_manager.get('editors_font_size', self.current_font_size)
+    @editors_font_size.setter
+    def editors_font_size(self, val): self.settings_manager.set('editors_font_size', val)
+
+
+    def handle_zoom(self, delta: int, target: str = 'all'):
+        """Handle zooming in/out by adjusting font size and updating UI."""
+        # delta usually comes from wheel event as 120 (one notch)
+        step = 1 if delta > 0 else -1
+        
+        updated = False
+        if target == 'tree':
+            old = self.tree_font_size
+            new = max(5, min(72, old + step))
+            if new != old:
+                self.tree_font_size = new
+                updated = True
+        elif target == 'preview':
+            old = self.preview_font_size
+            new = max(5, min(72, old + step))
+            if new != old:
+                self.preview_font_size = new
+                updated = True
+        elif target == 'editors':
+            old = self.editors_font_size
+            new = max(5, min(72, old + step))
+            if new != old:
+                self.editors_font_size = new
+                updated = True
+        else: # 'all' - for backward compatibility or global zoom if needed
+            old = self.current_font_size
+            new = max(5, min(72, old + step))
+            if new != old:
+                self.current_font_size = new
+                # Also update independents to match? 
+                # For now let's just update the target specifically.
+                updated = True
+        
+        if updated:
+            self.ui_handler.apply_font_size(fast=True, target=target)
+
 
     def closeEvent(self, event):
         self.event_handler.closeEvent(event)

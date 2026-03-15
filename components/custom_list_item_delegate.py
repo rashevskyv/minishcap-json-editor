@@ -260,32 +260,56 @@ class CustomListItemDelegate(QStyledItemDelegate):
         available_text_w = header_end - text_start_x
         text_rect = QRect(text_start_x, item_rect.top(), max(30, available_text_w), item_rect.height())
         
-        painter.setPen(option.palette.color(QPalette.HighlightedText if (is_selected or is_drag_hover) else QPalette.Text))
         full_text = str(index.data(Qt.DisplayRole) or "")
         metrics = QFontMetrics(current_font)
-        elided_text = metrics.elidedText(full_text, Qt.ElideRight, text_rect.width())
+        
+        # 1. Split text into "Name" and "Metadata"
+        import re
+        # Find LAST occurrence of metadata in brackets or parentheses
+        # Using [\[({\] to satisfy nested set check
+        metadata_match = re.search(r'(\s*[\[({].*[\]})]\s*)$', full_text)
+        
+        painter.save()
+        if metadata_match:
+            meta_str = metadata_match.group(1)
+            name_str = full_text[:metadata_match.start()]
+            
+            meta_w = metrics.horizontalAdvance(meta_str)
+            name_w = metrics.horizontalAdvance(name_str)
+            total_w = text_rect.width()
 
-        if elided_text:
-            painter.save()
-            if not (is_selected or is_drag_hover):
-                import re
-                count_match = re.search(r'(\s*\[\d+\s*/\s*\d+\])$', elided_text)
-                detail_match = re.search(r'(\s*\(.*\))$', elided_text)
-                
-                target_match = count_match or detail_match
-                if target_match:
-                    meta_str = target_match.group(1)
-                    main_str = elided_text[:target_match.start()]
-                    painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, main_str)
-                    main_w = metrics.horizontalAdvance(main_str)
-                    meta_rect = text_rect.adjusted(main_w, 0, 0, 0)
+            # Priority: NAME is black, METADATA is gray
+            # If we have space for both, draw both
+            if total_w > name_w + meta_w:
+                painter.setPen(option.palette.color(QPalette.HighlightedText if (is_selected or is_drag_hover) else QPalette.Text))
+                painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, name_str)
+                name_actual_w = metrics.horizontalAdvance(name_str)
+                meta_rect = text_rect.adjusted(name_actual_w, 0, 0, 0)
+                if not (is_selected or is_drag_hover):
                     painter.setPen(QColor(140, 140, 140) if theme == 'light' else QColor(160, 160, 160))
-                    painter.drawText(meta_rect, Qt.AlignLeft | Qt.AlignVCenter, meta_str)
-                else:
-                    painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, elided_text)
+                painter.drawText(meta_rect, Qt.AlignLeft | Qt.AlignVCenter, meta_str)
             else:
-                painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, elided_text)
-            painter.restore()
+                # We are in a narrow space. SHOW FULL NAME as priority.
+                # If we have horizontal scroll, total_w might be smaller than name_w if the widget is narrow.
+                # BUT the delegate should draw what it can.
+                painter.setPen(option.palette.color(QPalette.HighlightedText if (is_selected or is_drag_hover) else QPalette.Text))
+                elided_name = metrics.elidedText(name_str, Qt.ElideRight, total_w - 20) # reserve some space for dots
+                painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, elided_name)
+                
+                # If there's any space left on the right, show elided meta
+                name_disp_w = metrics.horizontalAdvance(elided_name)
+                if total_w - name_disp_w > 15:
+                    meta_rect = text_rect.adjusted(name_disp_w, 0, 0, 0)
+                    elided_meta = metrics.elidedText(meta_str, Qt.ElideRight, total_w - name_disp_w)
+                    if not (is_selected or is_drag_hover):
+                        painter.setPen(QColor(140, 140, 140) if theme == 'light' else QColor(160, 160, 160))
+                    painter.drawText(meta_rect, Qt.AlignLeft | Qt.AlignVCenter, elided_meta)
+        else:
+            # No metadata, just normal elision
+            painter.setPen(option.palette.color(QPalette.HighlightedText if (is_selected or is_drag_hover) else QPalette.Text))
+            elided_all = metrics.elidedText(full_text, Qt.ElideRight, text_rect.width())
+            painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, elided_all)
+        painter.restore()
 
         painter.restore()
 

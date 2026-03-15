@@ -60,5 +60,8 @@
         "plugins"
     ],
     "settings_window_width": 800,
-    "last_browse_dir": "C:/Users/Administrator/Desktop/PokemonRS/translation"
+    "last_browse_dir": "C:/Users/Administrator/Desktop/PokemonRS/translation",
+    "tree_font_size": 13,
+    "preview_font_size": 13,
+    "editors_font_size": 12
 }

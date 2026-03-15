@@ -30,6 +30,12 @@ class CustomTreeWidget(QTreeWidget):
         self.setDragEnabled(True)
         self.setAcceptDrops(True)
         self.setDragDropMode(QTreeWidget.InternalMove)
+        
+        from PyQt5.QtWidgets import QHeaderView
+        self.header().setStretchLastSection(True)
+        self.header().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
         # Snapshot of dragged items captured at startDrag() before Qt can change selection.
         self._pending_drag_items = []
@@ -128,6 +134,15 @@ class CustomTreeWidget(QTreeWidget):
                 return
 
         super().keyPressEvent(event)
+
+    def wheelEvent(self, event):
+        if event.modifiers() & Qt.ControlModifier:
+            main_window = self.window()
+            if hasattr(main_window, 'handle_zoom'):
+                main_window.handle_zoom(event.angleDelta().y(), target='tree')
+                event.accept()
+                return
+        super().wheelEvent(event)
 
     def navigate_blocks(self, direction):
         log_debug(f"CustomTreeWidget: navigate_blocks direction={direction}")
@@ -647,6 +662,11 @@ class CustomTreeWidget(QTreeWidget):
                 self._pending_drag_items = []
                 return
 
+            # Capture IDs for selecting them after refresh
+            first_drag_item = valid_source_items[0]
+            sel_b_idx = first_drag_item.data(0, Qt.UserRole)
+            sel_f_id = first_drag_item.data(0, Qt.UserRole + 1)
+
             if drop_pos == "On":
                 target_b_idx = target_item.data(0, Qt.UserRole)
                 target_f_id = target_item.data(0, Qt.UserRole + 1)
@@ -670,11 +690,7 @@ class CustomTreeWidget(QTreeWidget):
                             if proj_idx < len(pm.project.blocks):
                                 pm.move_block_to_folder(pm.project.blocks[proj_idx].id, new_folder.id)
                         elif f_id:
-                            folder = pm.find_virtual_folder(f_id)
-                            if folder:
-                                pm._remove_folder_from_anywhere(f_id)
-                                folder.parent_id = new_folder.id
-                                new_folder.children.append(folder)
+                            pm.move_folder_to_folder(f_id, new_folder.id)
                     
                     undo_mgr_label = f"Group into '{folder_name}'"
                 
@@ -689,11 +705,7 @@ class CustomTreeWidget(QTreeWidget):
                             if proj_idx < len(pm.project.blocks):
                                 pm.move_block_to_folder(pm.project.blocks[proj_idx].id, target_f_id)
                         elif f_id:
-                            folder = pm.find_virtual_folder(f_id)
-                            if folder:
-                                pm._remove_folder_from_anywhere(f_id)
-                                folder.parent_id = target_f_id
-                                pm.find_virtual_folder(target_f_id).children.append(folder)
+                            pm.move_folder_to_folder(f_id, target_f_id)
                                 
                     undo_mgr_label = f"Move into '{target_item.text(0)}'"
 
@@ -721,7 +733,7 @@ class CustomTreeWidget(QTreeWidget):
                     self.setCurrentItem(source_parent)
                 
                 self.sync_tree_to_project_manager()
-                QTimer.singleShot(0, main_window.ui_updater.populate_blocks)
+                QTimer.singleShot(0, lambda: main_window.ui_updater.populate_blocks(override_folder_id=sel_f_id, override_block_idx=sel_b_idx))
                 event.accept()
                 if undo_mgr and before is not None:
                     undo_mgr.record_structural_action(before, 'DRAG_DROP', 'Drag-drop reorder')
@@ -736,7 +748,7 @@ class CustomTreeWidget(QTreeWidget):
             if source_parent and target_item != source_parent:
                 self.setCurrentItem(source_parent)
 
-            QTimer.singleShot(0, main_window.ui_updater.populate_blocks)
+            QTimer.singleShot(0, lambda: main_window.ui_updater.populate_blocks(override_folder_id=sel_f_id, override_block_idx=sel_b_idx))
             event.accept()
             if undo_mgr and before is not None:
                 undo_mgr.record_structural_action(before, 'DRAG_DROP', undo_mgr_label)

@@ -106,6 +106,9 @@ class SettingsManager:
     def _load_global_settings(self):
         default_font_size = QFont().pointSize() if QFont().pointSize() > 0 else 10
         defaults = {
+            "tree_font_size": default_font_size,
+            "preview_font_size": default_font_size,
+            "editors_font_size": default_font_size,
             "font_size": default_font_size,
             "active_game_plugin": "zelda_mc",
             "show_multiple_spaces_as_dots": True,
@@ -176,6 +179,9 @@ class SettingsManager:
                     if not isinstance(attr, property):
                         setattr(self.mw, key, loaded_value)
 
+            self.mw.editors_font_size = settings_data.get('editors_font_size', settings_data.get('font_size', default_font_size))
+            self.mw.tree_font_size = settings_data.get('tree_font_size', settings_data.get('font_size', default_font_size))
+            self.mw.preview_font_size = settings_data.get('preview_font_size', settings_data.get('font_size', default_font_size))
             self.mw.current_font_size = settings_data.get('font_size', default_font_size)
             self.mw.window_geometry_to_restore = settings_data.get("window_normal_geometry")
             self.mw.window_was_maximized_at_save = settings_data.get("window_was_maximized", False)
@@ -337,6 +343,9 @@ class SettingsManager:
              log_error(f"Could not read existing global settings, will create a new one. Error: {e}", exc_info=True)
 
         global_data.update({
+            "tree_font_size": getattr(self.mw, 'tree_font_size', self.mw.current_font_size),
+            "preview_font_size": getattr(self.mw, 'preview_font_size', self.mw.current_font_size),
+            "editors_font_size": getattr(self.mw, 'editors_font_size', self.mw.current_font_size),
             "font_size": self.mw.current_font_size,
             "active_game_plugin": self.mw.active_game_plugin,
             "show_multiple_spaces_as_dots": self.mw.show_multiple_spaces_as_dots,

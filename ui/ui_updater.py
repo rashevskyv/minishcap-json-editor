@@ -183,13 +183,15 @@ class UIUpdater:
                 self.mw.block_list_widget.setCurrentItem(folder_item)
                 folder_item.setSelected(True)
 
-    def populate_blocks(self):
-        current_selection_block_idx = None
-        current_selection_folder_id = None
-        current_item = self.mw.block_list_widget.currentItem()
-        if current_item:
-            current_selection_block_idx = current_item.data(0, Qt.UserRole)
-            current_selection_folder_id = current_item.data(0, Qt.UserRole + 1)
+    def populate_blocks(self, override_folder_id=None, override_block_idx=None):
+        current_selection_block_idx = override_block_idx
+        current_selection_folder_id = override_folder_id
+        
+        if current_selection_block_idx is None and current_selection_folder_id is None:
+            current_item = self.mw.block_list_widget.currentItem()
+            if current_item:
+                current_selection_block_idx = current_item.data(0, Qt.UserRole)
+                current_selection_folder_id = current_item.data(0, Qt.UserRole + 1)
         
         # Save scroll position
         v_scroll = self.mw.block_list_widget.verticalScrollBar().value()

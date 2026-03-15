@@ -282,6 +282,16 @@ class LineNumberedTextEdit(QPlainTextEdit):
              self.lineNumberArea.update()
         self.viewport().update()
 
+    def wheelEvent(self, event):
+        if event.modifiers() & Qt.ControlModifier:
+            main_window = self.window()
+            if hasattr(main_window, 'handle_zoom'):
+                target = 'preview' if self.objectName() == "preview_text_edit" else 'editors'
+                main_window.handle_zoom(event.angleDelta().y(), target=target)
+                event.accept()
+                return
+        super().wheelEvent(event)
+
     def keyPressEvent(self, event: QKeyEvent):
         if self.keyboard_handler.handle_key_press(event):
             event.accept()

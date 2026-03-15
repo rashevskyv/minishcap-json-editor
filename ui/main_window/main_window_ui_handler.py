@@ -28,18 +28,21 @@ class MainWindowUIHandler:
                     editor._update_auxiliary_widths()
                 editor.viewport().update()
 
-    def apply_font_size(self):
+    def apply_font_size(self, fast=False, target='all'):
         if self.mw.current_font_size <= 0:
             return
 
         general_font = QFont(self.mw.general_font_family, self.mw.current_font_size)
-        editor_font = QFont(self.mw.editor_font_family, self.mw.current_font_size)
+        tree_font = QFont(self.mw.general_font_family, self.mw.tree_font_size)
+        preview_font = QFont(self.mw.editor_font_family, self.mw.preview_font_size)
+        editors_font = QFont(self.mw.editor_font_family, self.mw.editors_font_size)
 
-        QApplication.setFont(general_font)
+        if target in ['all', 'general']:
+            QApplication.setFont(general_font)
 
         editor_widgets = [self.mw.preview_text_edit, self.mw.original_text_edit, self.mw.edited_text_edit]
         general_ui_widgets = [
-            self.mw.block_list_widget, self.mw.search_panel_widget, self.mw.statusBar, self.mw.auto_fix_button
+            self.mw.search_panel_widget, self.mw.statusBar, self.mw.auto_fix_button
         ]
 
         labels_in_status_bar = [self.mw.original_path_label, self.mw.edited_path_label, 
@@ -68,18 +71,33 @@ class MainWindowUIHandler:
                              general_ui_widgets.append(child_widget)
 
 
-        for widget in editor_widgets:
-            if widget:
+        for editor, font in zip([self.mw.preview_text_edit, self.mw.original_text_edit, self.mw.edited_text_edit], 
+                                [preview_font, editors_font, editors_font]):
+            if editor:
                 try:
-                    widget.setFont(editor_font)
-                    if hasattr(widget, 'updateGeometry'): widget.updateGeometry()
-                    if hasattr(widget, 'adjustSize'): widget.adjustSize()
-                    if hasattr(widget, 'updateLineNumberAreaWidth'):
-                        widget.updateLineNumberAreaWidth(0)
-                    widget.viewport().update()
+                    editor.setFont(font)
+                    if hasattr(editor, 'updateGeometry'): editor.updateGeometry()
+                    if hasattr(editor, 'adjustSize'): editor.adjustSize()
+                    if hasattr(editor, 'updateLineNumberAreaWidth'):
+                        editor.updateLineNumberAreaWidth(0)
+                    editor.viewport().update()
                 except Exception:
                     pass
 
+        if self.mw.block_list_widget:
+            try:
+                self.mw.block_list_widget.setFont(tree_font)
+                self.mw.block_list_widget.viewport().update()
+            except Exception:
+                pass
+
+        if fast:
+            if target == 'tree' and self.mw.block_list_widget:
+                # Force refresh of sizes in the tree
+                self.mw.block_list_widget.doItemsLayout()
+                self.mw.block_list_widget.viewport().update()
+            return
+    
         for widget in general_ui_widgets:
             if widget and widget not in editor_widgets:
                 try:
@@ -90,7 +108,6 @@ class MainWindowUIHandler:
                         widget.viewport().update()
                 except Exception:
                     pass
-
 
         if self.mw.block_list_widget and self.mw.block_list_widget.itemDelegate():
             self.mw.block_list_widget.itemDelegate().deleteLater()

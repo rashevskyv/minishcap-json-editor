@@ -515,18 +515,7 @@ class ProjectActionHandler(BaseHandler):
                     pm.move_block_to_folder(pm.project.blocks[proj_idx].id, target_folder_id)
                     moved_count += 1
             elif f_id:
-                # Don't move a folder into itself or its child
-                if f_id == target_folder_id: continue
-                
-                folder = pm.find_virtual_folder(f_id)
-                if folder:
-                    pm._remove_folder_from_anywhere(f_id)
-                    folder.parent_id = target_folder_id
-                    if target_folder_id:
-                        dest = pm.find_virtual_folder(target_folder_id)
-                        if dest: dest.children.append(folder)
-                    else:
-                        pm.project.virtual_folders.append(folder)
+                if pm.move_folder_to_folder(f_id, target_folder_id):
                     moved_count += 1
 
         if moved_count > 0:
@@ -539,7 +528,7 @@ class ProjectActionHandler(BaseHandler):
             if source_parent_item:
                 self.mw.block_list_widget.setCurrentItem(source_parent_item)
                 
-            self.ui_updater.populate_blocks()
+            self.ui_updater.populate_blocks(override_folder_id=target_folder_id)
             log_info(f"Batch move completed: {moved_count} items moved.")
 
 
