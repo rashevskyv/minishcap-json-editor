@@ -91,7 +91,12 @@ class CustomListItemDelegate(QStyledItemDelegate):
         painter.setRenderHint(QPainter.Antialiasing)
 
         is_selected = option.state & QStyle.State_Selected
-        is_drag_hover = option.state & getattr(QStyle, 'State_DragDropHover', 0x4000)
+        
+        is_drag_hover = False
+        if hasattr(self.list_widget, '_custom_drop_target') and self.list_widget._custom_drop_target:
+            target_item, drop_pos = self.list_widget._custom_drop_target
+            if drop_pos == "On" and target_item is self.list_widget.itemFromIndex(index):
+                is_drag_hover = True
         
         if is_selected or is_drag_hover:
             highlight_color = option.palette.highlight().color() if is_selected else QColor("#0078D7")
