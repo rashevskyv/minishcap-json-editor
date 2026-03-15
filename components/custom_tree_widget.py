@@ -63,6 +63,30 @@ class CustomTreeWidget(QTreeWidget):
             "blue": QColor(Qt.blue),
         }
         
+    def mousePressEvent(self, event):
+        # If right-clicking on an item that is ALREADY selected,
+        # we don't want the default QTreeWidget handler to clear the rest
+        # of the selection before popping up the context menu.
+        if event.button() == Qt.RightButton:
+            item = self.itemAt(event.pos())
+            if item and item in self.selectedItems():
+                # We just accept the event so the default implementation doesn't run,
+                # but we'll still get customContextMenuRequested signal via Qt's own logic
+                # or we can let Qt handle the context menu signal and just bypass the selection change.
+                # Actually, bypassing it entirely might stop the context menu signal in some Qt versions.
+                # A safer way is to save the selection, call super, and restore if needed,
+                # BUT QTreeWidget selection mechanism is internal.
+                # By not calling super().mousePressEvent(event), we avoid selection reset.
+                # However, CustomContextMenu is triggered by QWidget::mouseReleaseEvent or QWidget::contextMenuEvent depending on OS.
+                # Let's emit the custom context menu signal directly or wait for contextMenuEvent.
+                # Usually returning/accepting here is enough if contextMenuPolicy is Qt.CustomContextMenu.
+                # Wait, Qt.CustomContextMenu is triggered by contextMenuEvent which happens after mousePress/Release.
+                # If we just accept and return, the right click is consumed and selection isn't cleared.
+                event.accept()
+                return
+
+        super().mousePressEvent(event)
+
     def keyPressEvent(self, event):
         log_debug(f"CustomTreeWidget: keyPressEvent key={event.key()}, mods={int(event.modifiers())}")
         is_ctrl = bool(event.modifiers() & Qt.ControlModifier)
@@ -227,7 +251,10 @@ class CustomTreeWidget(QTreeWidget):
             menu.exec_(self.mapToGlobal(pos))
             return
 
-        self.setCurrentItem(item)
+        # Set the current index without altering the selection state
+        from PyQt5.QtCore import QItemSelectionModel
+        self.selectionModel().setCurrentIndex(self.indexFromItem(item), QItemSelectionModel.Current)
+
         
         # Check if it's a file block (has UserRole data)
         block_idx = item.data(0, Qt.UserRole)
