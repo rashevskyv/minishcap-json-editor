@@ -14,6 +14,9 @@ Usage:
 MainWindow must override nativeEvent() and delegate to manager.handle_native_event().
 """
 
+import sys
+import ctypes
+from ctypes import wintypes
 from PyQt5.QtCore import QTimer
 from utils.logging_utils import log_debug, log_error
 
