@@ -259,6 +259,7 @@ class CustomTreeWidget(QTreeWidget):
     def startDrag(self, supportedActions):
         """Capture selected items BEFORE Qt can change hover/current state."""
         self._pending_drag_items = list(self.selectedItems())
+        log_debug(f"[DD startDrag] captured {len(self._pending_drag_items)} items: {[i.text(0) for i in self._pending_drag_items]}")
         super().startDrag(supportedActions)
 
     def dragMoveEvent(self, event):
@@ -282,8 +283,12 @@ class CustomTreeWidget(QTreeWidget):
         # 1. Special case: Dropping a block ON another block -> Group into new folder
         # Use _pending_drag_items (captured at startDrag) to reliably know what was dragged.
         drag_source_items = self._pending_drag_items or selected_items
+        log_debug(f"[DD dropEvent] target={target_item.text(0) if target_item else None} "
+                  f"pending={[i.text(0) for i in self._pending_drag_items]} "
+                  f"selected={[i.text(0) for i in selected_items]}")
         if target_item and drag_source_items and target_item not in drag_source_items:
             target_b_idx = target_item.data(0, Qt.UserRole)
+            log_debug(f"[DD dropEvent] target_b_idx={target_b_idx}")
 
             if target_b_idx is not None:
                 # Check if cursor is in the MIDDLE portion of the target item (not at edges)
@@ -310,17 +315,21 @@ class CustomTreeWidget(QTreeWidget):
 
                     # Move the target block into the new folder
                     proj_b_idx = block_map.get(target_b_idx, target_b_idx)
+                    log_debug(f"[DD dropEvent] TARGET proj_b_idx={proj_b_idx} blocks={len(pm.project.blocks)}")
                     if proj_b_idx < len(pm.project.blocks):
                         pm.move_block_to_folder(pm.project.blocks[proj_b_idx].id, new_folder.id)
+                        log_debug(f"[DD dropEvent] TARGET moved. folder.block_ids={new_folder.block_ids}")
 
                     # Move all dragged items into the new folder
                     for drag_item in drag_source_items:
                         b_idx = drag_item.data(0, Qt.UserRole)
                         f_id = drag_item.data(0, Qt.UserRole + 1)
+                        log_debug(f"[DD dropEvent] DRAGGED item '{drag_item.text(0)}' b_idx={b_idx} f_id={f_id}")
                         if b_idx is not None:
                             proj_idx = block_map.get(b_idx, b_idx)
                             if proj_idx < len(pm.project.blocks):
                                 pm.move_block_to_folder(pm.project.blocks[proj_idx].id, new_folder.id)
+                                log_debug(f"[DD dropEvent] DRAGGED moved. folder.block_ids={new_folder.block_ids}")
                         elif f_id:
                             folder = pm.find_virtual_folder(f_id)
                             if folder:
