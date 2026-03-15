@@ -115,36 +115,44 @@ QSplitter::handle:hover {
     background-color: #505050;
 }
 QScrollBar:vertical {
-    border: 1px solid #5A5A5A;
-    background: #2E2E2E;
-    width: 12px;
-    margin: 12px 0 12px 0;
+    border: none;
+    background: transparent;
+    width: 10px;
+    margin: 0px;
 }
 QScrollBar::handle:vertical {
-    background: #4A4A4A;
-    min-height: 20px;
+    background: #555555;
+    min-height: 25px;
     border-radius: 5px;
+    margin: 2px;
+}
+QScrollBar::handle:vertical:hover {
+    background: #777777;
 }
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
-    height: 12px;
-    background: #383838;
-    subcontrol-origin: margin;
+    border: none;
+    background: none;
+    height: 0px;
 }
 QScrollBar:horizontal {
-    border: 1px solid #5A5A5A;
-    background: #2E2E2E;
-    height: 12px;
-    margin: 0 12px 0 12px;
+    border: none;
+    background: transparent;
+    height: 10px;
+    margin: 0px;
 }
 QScrollBar::handle:horizontal {
-    background: #4A4A4A;
-    min-width: 20px;
+    background: #555555;
+    min-width: 25px;
     border-radius: 5px;
+    margin: 2px;
+}
+QScrollBar::handle:horizontal:hover {
+    background: #777777;
 }
 QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
-    width: 12px;
-    background: #383838;
-    subcontrol-origin: margin;
+    border: none;
+    background: none;
+    width: 0px;
 }
 QTabWidget::pane {
     border: 1px solid #505050;
@@ -169,4 +177,45 @@ QTabBar::tab:!selected:hover {
 }
 """
 
-LIGHT_THEME_STYLESHEET = ""
+LIGHT_THEME_STYLESHEET = """
+QScrollBar:vertical {
+    border: none;
+    background: transparent;
+    width: 10px;
+    margin: 0px;
+}
+QScrollBar::handle:vertical {
+    background: #BBBBBB;
+    min-height: 25px;
+    border-radius: 5px;
+    margin: 2px;
+}
+QScrollBar::handle:vertical:hover {
+    background: #999999;
+}
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    border: none;
+    background: none;
+    height: 0px;
+}
+QScrollBar:horizontal {
+    border: none;
+    background: transparent;
+    height: 10px;
+    margin: 0px;
+}
+QScrollBar::handle:horizontal {
+    background: #BBBBBB;
+    min-width: 25px;
+    border-radius: 5px;
+    margin: 2px;
+}
+QScrollBar::handle:horizontal:hover {
+    background: #999999;
+}
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    border: none;
+    background: none;
+    width: 0px;
+}
+"""

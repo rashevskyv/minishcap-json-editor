@@ -41,29 +41,14 @@ class CustomTreeWidget(QTreeWidget):
         self._pending_drag_items = []
         self._custom_drop_target = None
         self.setDropIndicatorShown(False)
-        
-        # Ensure the selected item retains a prominent highlight even when the widget loses focus (e.g. to the text editor)
-        self.setStyleSheet("""
-            QTreeWidget::item:selected {
-                background-color: #0078D7 !important;
-                color: white !important;
-            }
-            QTreeWidget::item:selected:!active {
-                background-color: #0078D7 !important;
-                color: white !important;
-            }
-            QTreeWidget::item:hover {
-                background-color: #37373d;
-            }
-            QTreeWidget::item:drop-on {
-                background-color: #0078D7 !important;
-                color: white !important;
-            }
-            QTreeView::drop-indicator {
-                color: #0078D7;
-            }
-        """)
 
+        # Ensure the selected item retains a prominent highlight
+        self.setStyleSheet("""
+            QTreeWidget::item:selected { background-color: #0078D7; color: white; }
+            QTreeWidget::item:selected:!active { background-color: #0078D7; color: white; }
+            QTreeView::drop-indicator { color: #0078D7; }
+        """)
+        
         self.color_marker_definitions = {
             "red": QColor(Qt.red),
             "green": QColor(Qt.green),

@@ -279,7 +279,7 @@ class CustomListItemDelegate(QStyledItemDelegate):
             total_w = text_rect.width()
 
             # Priority: NAME is black, METADATA is gray
-            # If we have space for both, draw both
+            # Since we have horizontal scrolling, we should be less aggressive with elision.
             if total_w > name_w + meta_w:
                 painter.setPen(option.palette.color(QPalette.HighlightedText if (is_selected or is_drag_hover) else QPalette.Text))
                 painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, name_str)
@@ -289,25 +289,25 @@ class CustomListItemDelegate(QStyledItemDelegate):
                     painter.setPen(QColor(140, 140, 140) if theme == 'light' else QColor(160, 160, 160))
                 painter.drawText(meta_rect, Qt.AlignLeft | Qt.AlignVCenter, meta_str)
             else:
-                # We are in a narrow space. SHOW FULL NAME as priority.
-                # If we have horizontal scroll, total_w might be smaller than name_w if the widget is narrow.
-                # BUT the delegate should draw what it can.
+                # Still prioritize name. 
                 painter.setPen(option.palette.color(QPalette.HighlightedText if (is_selected or is_drag_hover) else QPalette.Text))
-                elided_name = metrics.elidedText(name_str, Qt.ElideRight, total_w - 20) # reserve some space for dots
+                # If we have some space, show more of the name
+                elided_name = metrics.elidedText(name_str, Qt.ElideRight, max(total_w - 5, 20))
                 painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, elided_name)
                 
-                # If there's any space left on the right, show elided meta
+                # Metadata only if we have extra space (rare if total_w < name_w + meta_w)
                 name_disp_w = metrics.horizontalAdvance(elided_name)
-                if total_w - name_disp_w > 15:
+                if total_w - name_disp_w > 20:
                     meta_rect = text_rect.adjusted(name_disp_w, 0, 0, 0)
                     elided_meta = metrics.elidedText(meta_str, Qt.ElideRight, total_w - name_disp_w)
                     if not (is_selected or is_drag_hover):
                         painter.setPen(QColor(140, 140, 140) if theme == 'light' else QColor(160, 160, 160))
                     painter.drawText(meta_rect, Qt.AlignLeft | Qt.AlignVCenter, elided_meta)
         else:
-            # No metadata, just normal elision
+            # No metadata
             painter.setPen(option.palette.color(QPalette.HighlightedText if (is_selected or is_drag_hover) else QPalette.Text))
-            elided_all = metrics.elidedText(full_text, Qt.ElideRight, text_rect.width())
+            # Less aggressive elision
+            elided_all = metrics.elidedText(full_text, Qt.ElideRight, max(text_rect.width(), 20))
             painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, elided_all)
         painter.restore()
 
