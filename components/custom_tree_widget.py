@@ -225,30 +225,10 @@ class CustomTreeWidget(QTreeWidget):
                     undo_mgr.record_structural_action(before, 'RENAME_FOLDER', f"Rename folder to '{new_name}'")
 
     def _delete_folder(self, item):
-        folder_id = item.data(0, Qt.UserRole + 1)
+        self.setCurrentItem(item)
         main_window = self.window()
-        project = main_window.project_manager.project
-        folder = main_window.project_manager.find_virtual_folder(folder_id)
-        if not folder: return
-        undo_mgr = getattr(main_window, 'undo_manager', None)
-        before = undo_mgr.get_project_snapshot() if undo_mgr else None
-        parent_children_list = project.virtual_folders
-        if folder.parent_id:
-            parent = main_window.project_manager.find_virtual_folder(folder.parent_id)
-            if parent: parent_children_list = parent.children
-        for i, f in enumerate(parent_children_list):
-            if f.id == folder_id:
-                for b_id in folder.block_ids:
-                    main_window.project_manager.move_block_to_folder(b_id, folder.parent_id)
-                for child in folder.children:
-                    child.parent_id = folder.parent_id
-                    parent_children_list.append(child)
-                parent_children_list.pop(i)
-                break
-        main_window.project_manager.save()
-        main_window.ui_updater.populate_blocks()
-        if undo_mgr and before is not None:
-            undo_mgr.record_structural_action(before, 'DELETE_FOLDER', f"Delete folder '{folder.name}'")
+        if hasattr(main_window, 'project_action_handler'):
+            main_window.project_action_handler.delete_block_action()
 
     def _create_subfolder(self, item):
         folder_id = item.data(0, Qt.UserRole + 1)
