@@ -584,9 +584,21 @@ class ProjectManager:
         log_info(f"Migrated {len(self.project.blocks)} blocks to virtual folder structure.")
 
     def create_virtual_folder(self, name: str, parent_id: Optional[str] = None) -> VirtualFolder:
-        """Create a new virtual folder. Identical names are allowed as requested by user."""
+        """Create a new virtual folder or return existing if name collision at same level."""
         if not name.strip():
             name = "New Folder"
+            
+        # Check for existing folder with same name at this level
+        siblings = self.project.virtual_folders if parent_id is None else []
+        if parent_id:
+            parent = self.find_virtual_folder(parent_id)
+            if parent: siblings = parent.children
+            
+        for folder in siblings:
+            if folder.name == name:
+                log_debug(f"Folder '{name}' already exists at this level. Using existing folder {folder.id}")
+                return folder
+
         new_folder = VirtualFolder(name=name, parent_id=parent_id)
         if parent_id:
             parent = self.find_virtual_folder(parent_id)
@@ -596,6 +608,32 @@ class ProjectManager:
             self.project.virtual_folders.append(new_folder)
         self.save()
         return new_folder
+
+    def merge_folders(self, source_id: str, target_id: str):
+        """Move all contents from source folder to target folder and delete source."""
+        if source_id == target_id: return
+        
+        source = self.find_virtual_folder(source_id)
+        target = self.find_virtual_folder(target_id)
+        
+        if not source or not target: return
+        
+        log_info(f"Merging folder {source_id} ('{source.name}') into {target_id} ('{target.name}')")
+        
+        # Move subfolders
+        for child in list(source.children):
+            child.parent_id = target_id
+            target.children.append(child)
+        source.children = []
+        
+        # Move blocks
+        for b_id in source.block_ids:
+            target.block_ids.append(b_id)
+        source.block_ids = []
+        
+        # Delete source
+        self._remove_folder_from_anywhere(source_id)
+        self.save()
 
     def find_virtual_folder(self, folder_id: str, search_list: Optional[List[VirtualFolder]] = None) -> Optional[VirtualFolder]:
         """Recursively find a virtual folder by ID."""

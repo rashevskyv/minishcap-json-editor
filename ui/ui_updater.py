@@ -100,58 +100,63 @@ class UIUpdater:
         project = self.mw.project_manager.project
         if not project: return
 
+        is_expanded = folder.is_expanded
         display_name = folder.name or "Unnamed Folder"
-        curr = folder
         merged_folder_ids = [folder.id]
+        compaction_type = 0 # 0: None, 1: Folder/Folder, 2: Folder/Block
+        block_idx_for_icon = None
         
-        is_compacted_folder = False
-        # 1. Compact consecutive single-child folders that have NO blocks
-        while len(curr.children) == 1 and len(curr.block_ids) == 0:
-            curr = curr.children[0]
-            display_name += f" / {curr.name}"
-            merged_folder_ids.append(curr.id)
-            is_compacted_folder = True
+        curr_for_children = folder
+        
+        # 1. Compact consecutive single-child folders (Type 1)
+        if not is_expanded:
+            temp_curr = folder
+            while len(temp_curr.children) == 1 and len(temp_curr.block_ids) == 0:
+                temp_curr = temp_curr.children[0]
+                display_name += f" / {temp_curr.name}"
+                merged_folder_ids.append(temp_curr.id)
+                compaction_type = 1
+                curr_for_children = temp_curr
             
-        # 2. Check for folder containing ONLY one block and no subfolders
-        if len(curr.children) == 0 and len(curr.block_ids) == 1:
-            id_to_idx = {b.id: idx for idx, b in enumerate(project.blocks)}
-            idx = id_to_idx.get(curr.block_ids[0])
-            if idx is not None:
-                block_item = self._create_block_tree_item(idx, problem_definitions, pre_aggregated_counts)
-                base_name = self.mw.block_names.get(str(idx), f"Block {idx}")
-                original_text = block_item.text(0)
-                full_compacted_text = f"{display_name} / {original_text}"
-                block_item.setText(0, full_compacted_text)
-                
-                # Store structural info
-                block_item.setData(0, Qt.UserRole + 2, merged_folder_ids)
-                block_item.setData(0, Qt.UserRole + 3, 2) # Compacted Folder / Block
-                block_item.setData(0, Qt.UserRole + 4, full_compacted_text) # Store base name with path
+            # 2. Compact with a single block (Type 2)
+            if len(curr_for_children.children) == 0 and len(curr_for_children.block_ids) == 1:
+                id_to_idx = {b.id: idx for idx, b in enumerate(project.blocks)}
+                b_id = curr_for_children.block_ids[0]
+                idx = id_to_idx.get(b_id)
+                if idx is not None:
+                    block_name = self.mw.block_names.get(str(idx), f"Block {idx}")
+                    display_name += f" / {block_name}"
+                    compaction_type = 2
+                    block_idx_for_icon = idx
 
-                parent_item.addChild(block_item)
-                if idx == current_selection_block_idx:
-                    self.mw.block_list_widget.setCurrentItem(block_item)
-                    block_item.setSelected(True)
-                return
+        # 3. Add [f / b] counter only for non-compacted folders
+        # Rule: Hide counter if the folder contains exactly ONE single child (folder or block)
+        child_count = len(curr_for_children.children) + len(curr_for_children.block_ids)
+        if compaction_type == 0 and child_count > 1:
+            display_name += f" [{len(curr_for_children.children)} / {len(curr_for_children.block_ids)}]"
 
-        # 3. Create regular folder item
+        # Create folder item
         folder_item = QTreeWidgetItem([display_name])
         folder_item.setFlags(folder_item.flags() | Qt.ItemIsEditable)
         folder_item.setIcon(0, self.mw.style().standardIcon(QStyle.SP_DirIcon))
-        folder_item.setData(0, Qt.UserRole + 1, curr.id) # Key ID is the deepest one
-        folder_item.setData(0, Qt.UserRole + 2, merged_folder_ids) # All IDs in chain
-        folder_item.setData(0, Qt.UserRole + 4, display_name) # Store base name with path
-        if is_compacted_folder:
-            folder_item.setData(0, Qt.UserRole + 3, 1) # Compacted Folder / Folder
         
+        folder_item.setData(0, Qt.UserRole + 1, curr_for_children.id)
+        folder_item.setData(0, Qt.UserRole + 2, merged_folder_ids)
+        folder_item.setData(0, Qt.UserRole + 3, compaction_type)
+        folder_item.setData(0, Qt.UserRole + 4, display_name)
+        
+        if block_idx_for_icon is not None:
+            folder_item.setData(0, Qt.UserRole, block_idx_for_icon) # For indicator strips
+            
         parent_item.addChild(folder_item)
-        folder_item.setExpanded(folder.is_expanded)
+        folder_item.setExpanded(is_expanded)
         
-        for child in curr.children:
+        # Standard recursive children population
+        for child in curr_for_children.children:
             self._add_virtual_folder_to_tree(folder_item, child, problem_definitions, current_selection_block_idx, pre_aggregated_counts, folder_id_to_select=folder_id_to_select)
             
         id_to_idx = {b.id: idx for idx, b in enumerate(project.blocks)}
-        for b_id in curr.block_ids:
+        for b_id in curr_for_children.block_ids:
             idx = id_to_idx.get(b_id)
             if idx is not None:
                 block_item = self._create_block_tree_item(idx, problem_definitions, pre_aggregated_counts)
@@ -162,7 +167,7 @@ class UIUpdater:
 
         # Restore folder selection
         if folder_id_to_select:
-            if folder_id_to_select == curr.id or folder_id_to_select in merged_folder_ids:
+            if folder_id_to_select in merged_folder_ids:
                 self.mw.block_list_widget.setCurrentItem(folder_item)
                 folder_item.setSelected(True)
 

@@ -221,25 +221,21 @@ class CustomListItemDelegate(QStyledItemDelegate):
         style = main_window.style()
         
         if compaction_type in [1, 2]:
-            # Draw composite icons (variable width — compaction items are special)
+            # Draw composite icons
             folder_icon = style.standardIcon(QStyle.SP_DirIcon)
             
-            # First icon is always a folder
-            folder_rect = QRect(text_start_x, item_rect.top() + (item_rect.height() - icon_size) // 2, icon_size, icon_size)
+            # Start first icon at the same column as regular icons
+            comp_icon_x = problem_indicator_zone_x_start
+            folder_rect = QRect(comp_icon_x, item_rect.top() + (item_rect.height() - icon_size) // 2, icon_size, icon_size)
             folder_icon.paint(painter, folder_rect)
             
-            # Separator /
-            painter.setPen(number_text_color)
-            sep_rect = QRect(folder_rect.right() + 1, item_rect.top(), 8, item_rect.height())
-            painter.drawText(sep_rect, Qt.AlignCenter, "/")
-            
-            # Second icon
+            # Second icon (very close to first, partial overlap is okay for 'compact' feel)
             second_icon = style.standardIcon(QStyle.SP_DirIcon if compaction_type == 1 else QStyle.SP_FileIcon)
-            second_rect = QRect(sep_rect.right() + 1, item_rect.top() + (item_rect.height() - icon_size) // 2, icon_size, icon_size)
+            second_rect = QRect(folder_rect.right() - 4, item_rect.top() + (item_rect.height() - icon_size) // 2, icon_size, icon_size)
             second_icon.paint(painter, second_rect)
             
-            icon_width = second_rect.right() - text_start_x + 4
-            text_start_x += icon_width
+            # text_start_x for combined items starts after second icon
+            text_start_x = second_rect.right() + 4
         else:
             if decoration:
                 icon = QIcon(decoration)
@@ -283,26 +279,45 @@ class CustomListItemDelegate(QStyledItemDelegate):
             
         painter.setPen(option.palette.color(QPalette.HighlightedText if (is_selected or is_drag_hover) else QPalette.Text))
 
-        text_to_display = str(index.data(Qt.DisplayRole) or "")
+        full_text = str(index.data(Qt.DisplayRole) or "")
         metrics = QFontMetrics(current_font)
-        elided_text = metrics.elidedText(text_to_display, Qt.ElideRight, text_rect.width())
+        elided_text = metrics.elidedText(full_text, Qt.ElideRight, text_rect.width())
 
         if elided_text:
-            if " (" in elided_text and not (is_selected or is_drag_hover):
-                main_p, detail_p = elided_text.split(" (", 1)
-                detail_p = " (" + detail_p
+            painter.save()
+            
+            # Default color
+            painter.setPen(option.palette.color(QPalette.HighlightedText if (is_selected or is_drag_hover) else QPalette.Text))
+            
+            # Special coloring for metadata parts (only if not selected)
+            if not (is_selected or is_drag_hover):
+                import re
+                # 1. Folder counts: [f / b]
+                count_match = re.search(r'(\s*\[\d+\s*/\s*\d+\])$', elided_text)
+                # 2. Block details: (extra info)
+                detail_match = re.search(r'(\s*\(.*\))$', elided_text)
                 
-                # Draw main part
-                painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, main_p)
-                
-                # Draw detail part in grey
-                main_w = metrics.horizontalAdvance(main_p)
-                detail_drawing_rect = text_rect.adjusted(main_w, 0, 0, 0)
-                
-                painter.setPen(number_text_color)
-                painter.drawText(detail_drawing_rect, Qt.AlignLeft | Qt.AlignVCenter, detail_p)
+                target_match = count_match or detail_match
+                if target_match:
+                    meta_str = target_match.group(1)
+                    main_str = elided_text[:target_match.start()]
+                    
+                    # Draw main part
+                    painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, main_str)
+                    
+                    # Draw meta part in grey
+                    main_w = metrics.horizontalAdvance(main_str)
+                    meta_rect = text_rect.adjusted(main_w, 0, 0, 0)
+                    painter.setPen(QColor(140, 140, 140) if theme == 'light' else QColor(160, 160, 160))
+                    painter.drawText(meta_rect, Qt.AlignLeft | Qt.AlignVCenter, meta_str)
+                else:
+                    # Regular text or compacted path (no special grey for path as requested)
+                    painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, elided_text)
             else:
+                # Selected: draw everything in highlighted color
                 painter.drawText(text_rect, Qt.AlignLeft | Qt.AlignVCenter, elided_text)
+                
+            painter.restore()
 
         painter.restore()
 

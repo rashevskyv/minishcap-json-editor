@@ -259,12 +259,33 @@ class ListSelectionHandler(BaseHandler):
                     
                     # Rename parent folders in the chain
                     folder_names = parts[:-1]
-                    for f_idx, folder_id in enumerate(merged_ids):
-                        folder_obj = self.mw.project_manager.find_virtual_folder(folder_id)
+                    for f_idx, f_id in enumerate(merged_ids):
+                        folder_obj = self.mw.project_manager.find_virtual_folder(f_id)
                         if folder_obj and folder_names:
                             name_idx = len(folder_names) - 1 - (len(merged_ids) - 1 - f_idx)
                             if name_idx >= 0:
-                                folder_obj.name = folder_names[name_idx].strip()
+                                import re
+                                raw_name = folder_names[name_idx].strip()
+                                # Strip the display count [f / b]
+                                new_name = re.sub(r'\s*\[\d+\s*/\s*\d+\]$', '', raw_name)
+                                # Check for collision with siblings of this folder in the chain
+                                siblings = []
+                                if folder_obj.parent_id:
+                                    p = self.mw.project_manager.find_virtual_folder(folder_obj.parent_id)
+                                    if p: siblings = p.children
+                                else:
+                                    siblings = self.mw.project_manager.project.virtual_folders
+                                
+                                collision = None
+                                for s in siblings:
+                                    if s.id != folder_obj.id and s.name == new_name:
+                                        collision = s
+                                        break
+                                
+                                if collision:
+                                    self.mw.project_manager.merge_folders(folder_obj.id, collision.id)
+                                else:
+                                    folder_obj.name = new_name
                 else:
                     self.mw.block_names[block_index_str] = new_text
                 
@@ -281,11 +302,54 @@ class ListSelectionHandler(BaseHandler):
                             if f_obj:
                                 name_idx = len(parts) - 1 - (len(merged_ids) - 1 - f_idx)
                                 if name_idx >= 0:
-                                    f_obj.name = parts[name_idx].strip()
+                                    import re
+                                    raw_name = parts[name_idx].strip()
+                                    # Strip the display count [f / b]
+                                    new_name = re.sub(r'\s*\[\d+\s*/\s*\d+\]$', '', raw_name)
+                                    # Merge if collision
+                                    siblings = []
+                                    if f_obj.parent_id:
+                                        p = self.mw.project_manager.find_virtual_folder(f_obj.parent_id)
+                                        if p: siblings = p.children
+                                    else:
+                                        siblings = self.mw.project_manager.project.virtual_folders
+                                    
+                                    collision = None
+                                    for s in siblings:
+                                        if s.id != f_obj.id and s.name == new_name:
+                                            collision = s
+                                            break
+                                    if collision:
+                                        self.mw.project_manager.merge_folders(f_obj.id, collision.id)
+                                    else:
+                                        f_obj.name = new_name
                     else:
-                        folder.name = new_text
+                        import re
+                        raw_input = new_text.strip()
+                        new_name = re.sub(r'\s*\[\d+\s*/\s*\d+\]$', '', raw_input)
+                        # Check for collision at same level
+                        siblings = []
+                        if folder.parent_id:
+                            p_obj = self.mw.project_manager.find_virtual_folder(folder.parent_id)
+                            if p_obj: siblings = p_obj.children
+                        else:
+                            siblings = self.mw.project_manager.project.virtual_folders
+                        
+                        target_collision = None
+                        for s in siblings:
+                            if s.id != folder.id and s.name == new_name:
+                                target_collision = s
+                                break
+                        
+                        if target_collision:
+                            # MERGE CASE: Rename to existing folder name
+                            log_info(f"Renaming '{folder.name}' to existing '{new_name}' -> merging {folder.id} into {target_collision.id}")
+                            self.mw.project_manager.merge_folders(folder.id, target_collision.id)
+                        else:
+                            folder.name = new_name
+                            
                     self.mw.project_manager.save()
-                    log_debug(f"Folder {folder_id} renamed to '{folder.name}'")
+                    log_debug(f"Folder {folder_id} rename/merge handled.")
             
             # Repopulate to fix any visual issues
             self.ui_updater.populate_blocks()

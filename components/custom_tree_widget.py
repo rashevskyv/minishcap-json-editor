@@ -63,6 +63,9 @@ class CustomTreeWidget(QTreeWidget):
             "blue": QColor(Qt.blue),
         }
         
+        self.itemExpanded.connect(self._handle_item_state_changed)
+        self.itemCollapsed.connect(self._handle_item_state_changed)
+        
     def mousePressEvent(self, event):
         # If right-clicking on an item that is ALREADY selected,
         # we don't want the default QTreeWidget handler to clear the rest
@@ -632,14 +635,17 @@ class CustomTreeWidget(QTreeWidget):
         project = main_window.project_manager.project
         
         def rebuild_from_item(tree_item, parent_id=None):
-            folders = []
+            folder_map = {} # Name -> Folder object for deduplication
             block_ids = []
+            
             for i in range(tree_item.childCount()):
                 child = tree_item.child(i)
                 f_id = child.data(0, Qt.UserRole + 1)
                 b_idx = child.data(0, Qt.UserRole)
                 merged_ids = child.data(0, Qt.UserRole + 2)
                 text = child.text(0)
+                
+                target_folder = None
                 
                 if merged_ids and isinstance(merged_ids, list) and len(merged_ids) > 0:
                     # Reconstruct compacted chain
@@ -653,19 +659,20 @@ class CustomTreeWidget(QTreeWidget):
                     
                     for f_idx, folder_id in enumerate(merged_ids):
                         folder_obj = main_window.project_manager.find_virtual_folder(folder_id)
-                        
-                        # Determine current name from split parts mapping from the leaf backwards
                         new_f_name = None
                         if folder_names:
                             name_idx = len(folder_names) - 1 - (len(merged_ids) - 1 - f_idx)
                             if name_idx >= 0:
-                                new_f_name = folder_names[name_idx].strip()
+                                import re
+                                raw_name = folder_names[name_idx].strip()
+                                # Strip the display count [f / b]
+                                new_f_name = re.sub(r'\s*\[\d+\s*/\s*\d+\]$', '', raw_name)
                         
                         if not folder_obj:
                             from core.project_models import VirtualFolder
                             folder_obj = VirtualFolder(id=folder_id, name=new_f_name or "Unnamed Folder", parent_id=curr_p_id)
                         else:
-                            if new_f_name: # Only update name if user provided one in the path
+                            if new_f_name:
                                 folder_obj.name = new_f_name
                             folder_obj.parent_id = curr_p_id
                         
@@ -685,21 +692,34 @@ class CustomTreeWidget(QTreeWidget):
                         chain_bottom.children = sub_f
                         chain_bottom.block_ids = sub_b
                     
-                    folders.append(chain_top)
+                    target_folder = chain_top
 
                 elif f_id:
                     # Standard folder
                     folder_obj = main_window.project_manager.find_virtual_folder(f_id)
                     if folder_obj:
-                        folder_obj.name = text
+                        import re
+                        # Strip the display count [f / b]
+                        folder_obj.name = re.sub(r'\s*\[\d+\s*/\s*\d+\]$', '', text)
                         folder_obj.parent_id = parent_id
                         folder_obj.children, folder_obj.block_ids = rebuild_from_item(child, f_id)
-                        folders.append(folder_obj)
+                        target_folder = folder_obj
                 elif b_idx is not None:
                     # Standard block
                     if b_idx < len(project.blocks):
                         block_ids.append(project.blocks[b_idx].id)
-            return folders, block_ids
+                
+                # Deduplicate/Merge by name at this level
+                if target_folder:
+                    if target_folder.name in folder_map:
+                        existing = folder_map[target_folder.name]
+                        # Merge content
+                        existing.children.extend(target_folder.children)
+                        existing.block_ids.extend(target_folder.block_ids)
+                    else:
+                        folder_map[target_folder.name] = target_folder
+            
+            return list(folder_map.values()), block_ids
 
         root_item = self.invisibleRootItem()
         project.virtual_folders, root_block_ids = rebuild_from_item(root_item)
@@ -707,6 +727,30 @@ class CustomTreeWidget(QTreeWidget):
         
         main_window.project_manager.save()
         log_debug("Virtual folders structure updated.")
+
+    def _handle_item_state_changed(self, item):
+        """Toggle expansion state in project manager and refresh UI to update compaction."""
+        main_window = self.window()
+        if not hasattr(main_window, 'project_manager') or not main_window.project_manager.project:
+            return
+            
+        f_id = item.data(0, Qt.UserRole + 1)
+        if not f_id: return
+        
+        folder = main_window.project_manager.find_virtual_folder(f_id)
+        if folder:
+            is_expanded = item.isExpanded()
+            if folder.is_expanded == is_expanded: return # No change
+            
+            log_debug(f"Folder {f_id} expansion state changed to {is_expanded}. Syncing...")
+            folder.is_expanded = is_expanded
+            
+            # Use immediate refresh to avoid "expanding then renaming" flicker
+            self.setUpdatesEnabled(False)
+            try:
+                main_window.ui_updater.populate_blocks()
+            finally:
+                self.setUpdatesEnabled(True)
 
     def _get_next_unnamed_name(self, pm) -> str:
         """Generate the next available 'Unnamed N' folder name."""
