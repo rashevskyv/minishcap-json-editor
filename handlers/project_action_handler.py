@@ -328,7 +328,10 @@ class ProjectActionHandler(BaseHandler):
     def add_folder_action(self):
         log_info("Add Folder action triggered.")
         from PyQt5.QtWidgets import QInputDialog
-        name, ok = QInputDialog.getText(self.mw, "Add Folder", "Enter folder name:")
+        # Generate the next "Unnamed N" default name
+        pm = getattr(self.mw, 'project_manager', None)
+        default_name = self.mw.block_list_widget._get_next_unnamed_name(pm) if hasattr(self.mw, 'block_list_widget') else "Unnamed 1"
+        name, ok = QInputDialog.getText(self.mw, "Add Folder", "Enter folder name:", text=default_name)
         if ok and name:
             undo_mgr = getattr(self.mw, 'undo_manager', None)
             before = undo_mgr.get_project_snapshot() if undo_mgr else None

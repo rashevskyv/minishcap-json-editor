@@ -240,9 +240,11 @@ class CustomTreeWidget(QTreeWidget):
 
     def _create_subfolder(self, item):
         folder_id = item.data(0, Qt.UserRole + 1)
-        new_name, ok = QInputDialog.getText(self, "New Subfolder", "Enter subfolder name:")
+        main_window = self.window()
+        pm = main_window.project_manager
+        default_name = self._get_next_unnamed_name(pm)
+        new_name, ok = QInputDialog.getText(self, "New Subfolder", "Enter subfolder name:", text=default_name)
         if ok and new_name:
-            main_window = self.window()
             undo_mgr = getattr(main_window, 'undo_manager', None)
             before = undo_mgr.get_project_snapshot() if undo_mgr else None
             main_window.project_manager.create_virtual_folder(new_name, parent_id=folder_id)
@@ -250,13 +252,17 @@ class CustomTreeWidget(QTreeWidget):
             if undo_mgr and before is not None:
                 undo_mgr.record_structural_action(before, 'ADD_FOLDER', f"Create subfolder '{new_name}'")
 
+
     def dragMoveEvent(self, event):
-        """Allow dropping ON items (including blocks) to trigger special logic."""
+        """Show 'drop on item' indicator only when cursor is in the middle of a block item."""
         item = self.itemAt(event.pos())
-        if item:
-            event.acceptProposedAction()
-        else:
-            super().dragMoveEvent(event)
+        if item and item.data(0, Qt.UserRole) is not None:
+            rect = self.visualItemRect(item)
+            relative_y = (event.pos().y() - rect.top()) / max(rect.height(), 1)
+            if 0.15 <= relative_y <= 0.85:
+                event.acceptProposedAction()
+                return
+        super().dragMoveEvent(event)
 
     def dropEvent(self, event):
         target_item = self.itemAt(event.pos())
@@ -265,47 +271,62 @@ class CustomTreeWidget(QTreeWidget):
         undo_mgr = getattr(main_window, 'undo_manager', None)
         before = undo_mgr.get_project_snapshot() if undo_mgr else None
 
-        # 1. Special case: Dropping file(s) ON another file -> Create folder
+        # 1. Special case: Dropping a block ON another block -> Group into new folder
         if target_item and selected_items and target_item not in selected_items:
-            indicator = self.dropIndicatorPosition()
             target_b_idx = target_item.data(0, Qt.UserRole)
-            
-            if indicator == QTreeWidget.OnItem and target_b_idx is not None:
-                pm = main_window.project_manager
-                if not pm or not pm.project:
-                    super().dropEvent(event)
+
+            if target_b_idx is not None:
+                # Check if cursor is in the MIDDLE portion of the target item (not at edges)
+                rect = self.visualItemRect(target_item)
+                relative_y = (event.pos().y() - rect.top()) / max(rect.height(), 1)
+                is_drop_on_item = 0.15 <= relative_y <= 0.85
+
+                if is_drop_on_item:
+                    pm = main_window.project_manager
+                    if not pm or not pm.project:
+                        super().dropEvent(event)
+                        return
+
+                    folder_name = self._get_next_unnamed_name(pm)
+                    target_parent_id = None
+                    parent_item = target_item.parent()
+                    if parent_item:
+                        target_parent_id = parent_item.data(0, Qt.UserRole + 1)
+
+                    new_folder = pm.create_virtual_folder(folder_name, parent_id=target_parent_id)
+
+                    # Map data_block_idx -> project block id via block_to_project_file_map
+                    block_map = getattr(main_window, 'block_to_project_file_map', {})
+
+                    # Move the target block into the new folder
+                    proj_b_idx = block_map.get(target_b_idx, target_b_idx)
+                    if proj_b_idx < len(pm.project.blocks):
+                        pm.move_block_to_folder(pm.project.blocks[proj_b_idx].id, new_folder.id)
+
+                    # Move all dragged items into the new folder
+                    for drag_item in selected_items:
+                        b_idx = drag_item.data(0, Qt.UserRole)
+                        f_id = drag_item.data(0, Qt.UserRole + 1)
+                        if b_idx is not None:
+                            proj_idx = block_map.get(b_idx, b_idx)
+                            if proj_idx < len(pm.project.blocks):
+                                pm.move_block_to_folder(pm.project.blocks[proj_idx].id, new_folder.id)
+                        elif f_id:
+                            folder = pm.find_virtual_folder(f_id)
+                            if folder:
+                                pm._remove_folder_from_anywhere(f_id)
+                                folder.parent_id = new_folder.id
+                                new_folder.children.append(folder)
+
+                    pm.save()
+                    main_window.ui_updater.populate_blocks()
+                    event.accept()
+                    if undo_mgr and before is not None:
+                        undo_mgr.record_structural_action(before, 'DRAG_DROP', f"Group into '{folder_name}'")
+                    log_debug(f"Grouped items into new '{folder_name}' folder via drag-drop.")
                     return
 
-                target_block_id = pm.project.blocks[target_b_idx].id
-                target_parent_id = None
-                parent_item = target_item.parent()
-                if parent_item:
-                    target_parent_id = parent_item.data(0, Qt.UserRole + 1)
-
-                new_folder = pm.create_virtual_folder("(Unnamed)", parent_id=target_parent_id)
-                pm.move_block_to_folder(target_block_id, new_folder.id)
-                
-                for item in selected_items:
-                    b_idx = item.data(0, Qt.UserRole)
-                    f_id = item.data(0, Qt.UserRole + 1)
-                    if b_idx is not None:
-                        pm.move_block_to_folder(pm.project.blocks[b_idx].id, new_folder.id)
-                    elif f_id:
-                        folder = pm.find_virtual_folder(f_id)
-                        if folder:
-                            pm._remove_folder_from_anywhere(f_id)
-                            folder.parent_id = new_folder.id
-                            new_folder.children.append(folder)
-                
-                pm.save()
-                main_window.ui_updater.populate_blocks()
-                event.accept()
-                if undo_mgr and before is not None:
-                    undo_mgr.record_structural_action(before, 'DRAG_DROP', 'Group into new folder')
-                log_debug("Grouped items into new (Unnamed) folder via drag-drop.")
-                return
-
-        # 2. Default behavior
+        # 2. Default behavior (reorder within QTreeWidget)
         super().dropEvent(event)
         self.sync_tree_to_project_manager()
         if undo_mgr and before is not None:
@@ -387,6 +408,21 @@ class CustomTreeWidget(QTreeWidget):
         
         main_window.project_manager.save()
         log_debug("Virtual folders structure updated.")
+
+    def _get_next_unnamed_name(self, pm) -> str:
+        """Generate the next available 'Unnamed N' folder name."""
+        if not pm or not pm.project:
+            return "Unnamed 1"
+        existing = set()
+        def collect(folders):
+            for f in folders:
+                existing.add(f.name)
+                collect(f.children)
+        collect(pm.project.virtual_folders)
+        n = 1
+        while f"Unnamed {n}" in existing:
+            n += 1
+        return f"Unnamed {n}"
 
     def move_current_item_up(self):
         item = self.currentItem()
