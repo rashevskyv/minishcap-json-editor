@@ -746,8 +746,13 @@ class CustomTreeWidget(QTreeWidget):
             is_expanded = item.isExpanded()
             if folder.is_expanded == is_expanded: return # No change
             
-            log_debug(f"Folder {f_id} expansion state changed to {is_expanded}. Syncing...")
-            folder.is_expanded = is_expanded
+            merged_ids = item.data(0, Qt.UserRole + 2) or [f_id]
+            log_debug(f"Compacted chain {merged_ids} expansion state changed to {is_expanded}. Syncing...")
+            
+            for folder_id in merged_ids:
+                f_obj = main_window.project_manager.find_virtual_folder(folder_id)
+                if f_obj:
+                    f_obj.is_expanded = is_expanded
             
             # Use immediate refresh to avoid "expanding then renaming" flicker
             self.setUpdatesEnabled(False)

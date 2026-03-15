@@ -179,91 +179,99 @@ class UIUpdater:
             current_selection_block_idx = current_item.data(0, Qt.UserRole)
             current_selection_folder_id = current_item.data(0, Qt.UserRole + 1)
         
-        # Default to first block if nothing is selected and we have data
-        if current_selection_block_idx is None and current_selection_folder_id is None and self.mw.data:
-            current_selection_block_idx = 0
-
-        self.mw.block_list_widget.clear()
-        if not self.mw.data: 
-            return
+        # Save scroll position
+        v_scroll = self.mw.block_list_widget.verticalScrollBar().value()
         
-        problem_definitions = {}
-        if self.mw.current_game_rules:
-            problem_definitions = self.mw.current_game_rules.get_problem_definitions()
-
-        # Use virtual folders if project is active and folders exist (or root_block_ids explicitly set)
-        has_virtual_structure = False
-        if hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project:
-            project = self.mw.project_manager.project
-            if project.virtual_folders or 'root_block_ids' in project.metadata:
-                has_virtual_structure = True
-
-        # Compute aggregated problems for ALL blocks once (O(M) complexity instead of O(N*M))
-        pre_aggregated_counts = {}
-        detection_config = getattr(self.mw, 'detection_enabled', {})
-        for (b_idx, _, _), problems in self.mw.problems_per_subline.items():
-            if b_idx not in pre_aggregated_counts:
-                pre_aggregated_counts[b_idx] = {}
-            filtered_problems = {p_id for p_id in problems if detection_config.get(p_id, True)}
-            for p_id in filtered_problems:
-                pre_aggregated_counts[b_idx][p_id] = pre_aggregated_counts[b_idx].get(p_id, 0) + 1
-
-        if has_virtual_structure:
-            project = self.mw.project_manager.project
-            root_item = self.mw.block_list_widget.invisibleRootItem()
+        # Don't let signals trigger more refreshes while we are rebuilding
+        self.mw.block_list_widget._is_programmatic_expansion = True
+        self.mw.block_list_widget.setUpdatesEnabled(False)
+        
+        try:
+            self.mw.block_list_widget.clear()
+            if not self.mw.data: 
+                return
             
-            # 1. Add virtual folders recursively
-            for folder in project.virtual_folders:
-                self._add_virtual_folder_to_tree(root_item, folder, problem_definitions, current_selection_block_idx, pre_aggregated_counts, folder_id_to_select=current_selection_folder_id)
+            problem_definitions = {}
+            if self.mw.current_game_rules:
+                problem_definitions = self.mw.current_game_rules.get_problem_definitions()
+
+            # Use virtual folders if project is active and folders exist (or root_block_ids explicitly set)
+            has_virtual_structure = False
+            if hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project:
+                project = self.mw.project_manager.project
+                if project.virtual_folders or 'root_block_ids' in project.metadata:
+                    has_virtual_structure = True
+
+            # Compute aggregated problems for ALL blocks once (O(M) complexity instead of O(N*M))
+            pre_aggregated_counts = {}
+            detection_config = getattr(self.mw, 'detection_enabled', {})
+            for (b_idx, _, _), problems in self.mw.problems_per_subline.items():
+                if b_idx not in pre_aggregated_counts:
+                    pre_aggregated_counts[b_idx] = {}
+                filtered_problems = {p_id for p_id in problems if detection_config.get(p_id, True)}
+                for p_id in filtered_problems:
+                    pre_aggregated_counts[b_idx][p_id] = pre_aggregated_counts[b_idx].get(p_id, 0) + 1
+
+            if has_virtual_structure:
+                project = self.mw.project_manager.project
+                root_item = self.mw.block_list_widget.invisibleRootItem()
                 
-            # 2. Add root blocks
-            root_block_ids = project.metadata.get('root_block_ids', [])
-            id_to_idx = {b.id: idx for idx, b in enumerate(project.blocks)}
-            
-            for b_id in root_block_ids:
-                idx = id_to_idx.get(b_id)
-                if idx is not None:
-                    block_item = self._create_block_tree_item(idx, problem_definitions, pre_aggregated_counts)
-                    root_item.addChild(block_item)
-                    if idx == current_selection_block_idx:
+                # 1. Add virtual folders recursively
+                for folder in project.virtual_folders:
+                    self._add_virtual_folder_to_tree(root_item, folder, problem_definitions, current_selection_block_idx, pre_aggregated_counts, folder_id_to_select=current_selection_folder_id)
+                    
+                # 2. Add root blocks
+                root_block_ids = project.metadata.get('root_block_ids', [])
+                id_to_idx = {b.id: idx for idx, b in enumerate(project.blocks)}
+                
+                for b_id in root_block_ids:
+                    idx = id_to_idx.get(b_id)
+                    if idx is not None:
+                        block_item = self._create_block_tree_item(idx, problem_definitions, pre_aggregated_counts)
+                        root_item.addChild(block_item)
+                        if idx == current_selection_block_idx:
+                            self.mw.block_list_widget.setCurrentItem(block_item)
+                            block_item.setSelected(True)
+            else:
+                # Legacy / Physical structure fallback
+                dir_nodes = {"": self.mw.block_list_widget.invisibleRootItem()}
+
+                for i in range(len(self.mw.data)):
+                    block_item = self._create_block_tree_item(i, problem_definitions, pre_aggregated_counts)
+                    
+                    if hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project and i < len(self.mw.project_manager.project.blocks):
+                        block = self.mw.project_manager.project.blocks[i]
+                        rel_path = block.source_file
+                        if rel_path.startswith(self.mw.project_manager.SOURCES_DIR + '/'):
+                            rel_path = rel_path[len(self.mw.project_manager.SOURCES_DIR) + 1:]
+                        dir_path = Path(rel_path).parent.as_posix()
+                    else:
+                        dir_path = ""
+
+                    parts = dir_path.split('/') if dir_path else []
+                    current_path = ""
+                    for part in parts:
+                        if not part: continue
+                        parent_path = current_path
+                        current_path = current_path + "/" + part if current_path else part
+                        
+                        if current_path not in dir_nodes:
+                            dir_item = QTreeWidgetItem([part])
+                            dir_item.setIcon(0, QIcon.fromTheme('folder'))
+                            dir_nodes[parent_path].addChild(dir_item)
+                            dir_item.setExpanded(True)
+                            dir_nodes[current_path] = dir_item
+
+                    parent_item = dir_nodes.get(dir_path, dir_nodes[""])
+                    parent_item.addChild(block_item)
+
+                    if i == current_selection_block_idx:
                         self.mw.block_list_widget.setCurrentItem(block_item)
                         block_item.setSelected(True)
-        else:
-            # Legacy / Physical structure fallback
-            dir_nodes = {"": self.mw.block_list_widget.invisibleRootItem()}
-
-            for i in range(len(self.mw.data)):
-                block_item = self._create_block_tree_item(i, problem_definitions, pre_aggregated_counts)
-                
-                if hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project and i < len(self.mw.project_manager.project.blocks):
-                    block = self.mw.project_manager.project.blocks[i]
-                    rel_path = block.source_file
-                    if rel_path.startswith(self.mw.project_manager.SOURCES_DIR + '/'):
-                        rel_path = rel_path[len(self.mw.project_manager.SOURCES_DIR) + 1:]
-                    dir_path = Path(rel_path).parent.as_posix()
-                else:
-                    dir_path = ""
-
-                parts = dir_path.split('/') if dir_path else []
-                current_path = ""
-                for part in parts:
-                    if not part: continue
-                    parent_path = current_path
-                    current_path = current_path + "/" + part if current_path else part
-                    
-                    if current_path not in dir_nodes:
-                        dir_item = QTreeWidgetItem([part])
-                        dir_item.setIcon(0, QIcon.fromTheme('folder'))
-                        dir_nodes[parent_path].addChild(dir_item)
-                        dir_item.setExpanded(True)
-                        dir_nodes[current_path] = dir_item
-
-                parent_item = dir_nodes.get(dir_path, dir_nodes[""])
-                parent_item.addChild(block_item)
-
-                if i == current_selection_block_idx:
-                    self.mw.block_list_widget.setCurrentItem(block_item)
-                    block_item.setSelected(True)
+        finally:
+            self.mw.block_list_widget._is_programmatic_expansion = False
+            self.mw.block_list_widget.setUpdatesEnabled(True)
+            self.mw.block_list_widget.verticalScrollBar().setValue(v_scroll)
 
         self.mw.block_list_widget.viewport().update()
 
