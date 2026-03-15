@@ -461,7 +461,7 @@ class UIUpdater:
 
             
     def update_title(self):
-        title = "JSON Text Editor"
+        title = "Picoripi"
         if hasattr(self.mw, 'project_manager') and self.mw.project_manager and hasattr(self.mw.project_manager, 'project') and self.mw.project_manager.project:
             title += f" - [{self.mw.project_manager.project.name}]"
         elif self.mw.json_path: 

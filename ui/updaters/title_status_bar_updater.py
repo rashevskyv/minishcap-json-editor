@@ -8,7 +8,7 @@ class TitleStatusBarUpdater(BaseUIUpdater):
         super().__init__(main_window, data_processor)
 
     def update_title(self):
-        title = "JSON Text Editor"
+        title = "Picoripi"
 
         # Check if a project is open
         if hasattr(self.mw, 'project_manager') and self.mw.project_manager and hasattr(self.mw.project_manager, 'project') and self.mw.project_manager.project:

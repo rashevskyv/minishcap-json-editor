@@ -18,7 +18,7 @@ class CustomListItemDelegate(QStyledItemDelegate):
         self.max_color_markers = 0 
         
         self.fixed_number_area_width_base_font_size = 10
-        self.fixed_number_area_width_base_pixels = 54
+        self.fixed_number_area_width_base_pixels = 58
         
         self.padding_after_number_area = 2 
         self.padding_after_color_marker_zone = 2
@@ -164,7 +164,8 @@ class CustomListItemDelegate(QStyledItemDelegate):
         painter.fillRect(number_rect, number_area_bg)
 
         # Status Zone (Right side of gutter)
-        indicator_zone_w = 28
+        # Increased to 32px for wider 5px shift stack
+        indicator_zone_w = 32
         number_label_rect = number_rect.adjusted(0, 0, -indicator_zone_w, 0)
         status_rect_in_gutter = number_rect.adjusted(number_rect.width() - indicator_zone_w, 0, 0, 0)
 
@@ -184,37 +185,45 @@ class CustomListItemDelegate(QStyledItemDelegate):
         style = main_window.style()
         icon_y = status_rect_in_gutter.top() + (status_rect_in_gutter.height() - icon_size) // 2
         
-        def draw_stroked_icon(icon_obj, target_rect):
-            painter.save()
-            # 1px thin black outline
-            painter.setPen(QColor(0, 0, 0, 160))
-            # Background fill so transparency doesn't show layers below
-            painter.setBrush(QColor(245, 245, 245) if theme == 'light' else QColor(50, 50, 50))
-            painter.drawRect(target_rect)
-            icon_obj.paint(painter, target_rect)
-            painter.restore()
+        def draw_stacked_icon(icon_obj, target_rect, p):
+            # No stroke, just draw the icon
+            icon_obj.paint(p, target_rect)
 
         if compaction_type in [1, 2] and merged_ids:
             icons_to_draw = []
             max_icons = 3 
             subset = merged_ids[:max_icons]
-            for i, f_id in enumerate(subset):
-                is_last_item = (i == len(merged_ids) - 1)
-                icon_to_use = style.standardIcon(QStyle.SP_FileIcon if (is_last_item and compaction_type == 2) else QStyle.SP_DirIcon)
-                icons_to_draw.append(icon_to_use)
             
-            base_x = status_rect_in_gutter.left() + 1
-            # Draw in REVERSE order: deepest layer (index 2) FIRST at rightmost pos
-            for i in range(len(icons_to_draw) - 1, -1, -1):
-                shift = i * (icon_size // 2) # 50% shift
-                rect = QRect(base_x + shift, icon_y, icon_size, icon_size)
-                draw_stroked_icon(icons_to_draw[i], rect)
+            # 1. Add folder icons for the merged chain
+            for f_id in subset:
+                icons_to_draw.append(style.standardIcon(QStyle.SP_DirIcon))
+            
+            # 2. If it's a folder-block compaction, add the file icon as the top layer
+            if compaction_type == 2 and len(icons_to_draw) < max_icons:
+                icons_to_draw.append(style.standardIcon(QStyle.SP_FileIcon))
+            elif compaction_type == 2 and len(icons_to_draw) == max_icons:
+                # Replace the last folder icon with a file icon if we reached the limit
+                icons_to_draw[-1] = style.standardIcon(QStyle.SP_FileIcon)
+            
+            base_x = status_rect_in_gutter.left() + 2
+            # Total shift is (num_icons - 1) * 3
+            # We compensate icon_y to keep the stack centered
+            total_v_shift = (len(icons_to_draw) - 1) * 3
+            start_y_offset = - (total_v_shift // 2)
+            
+            # Draw in FORWARD order: root item first (index 0), then nested ones on top
+            for i, icon_to_use in enumerate(icons_to_draw):
+                shift_x = i * 5 # 5px right shift
+                shift_y = i * 3 # 3px down shift
+                rect = QRect(base_x + shift_x, icon_y + start_y_offset + shift_y, icon_size, icon_size)
+                draw_stacked_icon(icon_to_use, rect, painter)
                 
         elif decoration:
+            # Regular item icon
             icon = QIcon(decoration)
             if not icon.isNull():
-                icon_rect = QRect(status_rect_in_gutter.left() + 1, icon_y, icon_size, icon_size)
-                draw_stroked_icon(icon, icon_rect)
+                icon_rect = QRect(status_rect_in_gutter.left() + 2, icon_y, icon_size, icon_size)
+                draw_stacked_icon(icon, icon_rect, painter)
 
         # Draw Warning Strips (at the far right of the status zone)
         if problem_indicator_colors_to_draw:

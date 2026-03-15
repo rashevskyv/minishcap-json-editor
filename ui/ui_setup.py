@@ -14,6 +14,10 @@ def setup_main_window_ui(main_window):
     style = main_window.style()
     central_widget = QWidget(); main_window.setCentralWidget(central_widget)
     main_window.main_vertical_layout = QVBoxLayout(central_widget)
+    main_window.setWindowTitle("Picoripi")
+    icon_path = Path("assets/icon.ico")
+    if icon_path.exists():
+        main_window.setWindowIcon(QIcon(str(icon_path)))
 
     main_window.main_splitter = QSplitter(Qt.Horizontal)
 

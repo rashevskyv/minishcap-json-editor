@@ -374,7 +374,7 @@ class MainWindow(QMainWindow):
         
         self.general_font_family = GENERAL_APP_FONT_FAMILY
         self.editor_font_family = MONOSPACE_EDITOR_FONT_FAMILY
-        self.display_name = ""
+        self.display_name = "Picoripi"
 
         self.state = StateManager()
         self.data_store = AppDataStore()
@@ -500,6 +500,14 @@ class MainWindow(QMainWindow):
 
         setup_main_window_ui(self)
 
+        # Set window icon
+        icon_path = Path(__file__).parent / "assets" / "icon.ico"
+        if icon_path.exists():
+            log_info(f"Setting window icon from {icon_path}")
+            self.setWindowIcon(QIcon(str(icon_path)))
+        else:
+            log_debug(f"Icon file not found at {icon_path}")
+
         self.open_glossary_button.clicked.connect(self.translation_handler.show_glossary_dialog)
         self.translation_handler.initialize_glossary_highlighting()
 
@@ -563,6 +571,7 @@ class MainWindow(QMainWindow):
 
         QTimer.singleShot(100, self.ui_handler.force_focus)
 
+        self.ui_updater.update_title()
         log_info("Main window initialization complete.")
     
     def keyPressEvent(self, event: QKeyEvent):
@@ -636,9 +645,18 @@ def global_exception_handler(exc_type, exc_value, exc_traceback):
     log_error(f"Uncaught exception: {exc_type.__name__}: {exc_value}", exc_info=(exc_type, exc_value, exc_traceback), category="general")
 
 if __name__ == '__main__':
+    if sys.platform == 'win32':
+        import ctypes
+        # Set AppUserModelID to ensure the taskbar icon is displayed correctly on Windows
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("rashevskyv.picoripi.v1")
+    
     sys.excepthook = global_exception_handler
     log_info("================= Application Start =================")
     app = QApplication(sys.argv)
+    
+    app_icon_path = Path("assets/icon.ico")
+    if app_icon_path.exists():
+        app.setWindowIcon(QIcon(str(app_icon_path)))
     
     temp_settings = {}
     try:

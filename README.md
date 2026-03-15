@@ -1,5 +1,5 @@
 # --- START OF FILE README.md ---
-# Game Translation Workbench
+# Picoripi
 
 A PyQt5-based translation workbench for video game localization, specifically designed for retro Nintendo games (The Legend of Zelda series, Pokemon FireRed).
 

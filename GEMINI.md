@@ -1,11 +1,11 @@
 # --- START OF FILE GEMINI.md ---
 # GEMINI.md - Project Context for Gemini
 
-This document provides a comprehensive overview of the "Game Translation Workbench" project to be used as a working context for Gemini.
+This document provides a comprehensive overview of the "Picoripi" project to be used as a working context for Gemini.
 
 ## Project Overview
 
-The "Game Translation Workbench" is a desktop application built with **Python** and **PyQt5**. Its primary purpose is to facilitate the localization (translation) of in-game text for retro video games.
+The "Picoripi" is a desktop application built with **Python** and **PyQt5**. Its primary purpose is to facilitate the localization (translation) of in-game text for retro video games.
 
 The application is designed to be highly specialized, with features tailored to the constraints of older games, such as limited text box widths and custom control codes.
 
