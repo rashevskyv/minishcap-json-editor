@@ -13,6 +13,7 @@ class CustomTreeWidget(QTreeWidget):
         self.customContextMenuRequested.connect(self.show_context_menu)
         self.viewport().setMouseTracking(True)
         self.setMouseTracking(True)
+        self._is_programmatic_expansion = False
         
         # Enable tooltips
         self.setAttribute(Qt.WA_AlwaysShowToolTips)
@@ -730,6 +731,9 @@ class CustomTreeWidget(QTreeWidget):
 
     def _handle_item_state_changed(self, item):
         """Toggle expansion state in project manager and refresh UI to update compaction."""
+        if getattr(self, '_is_programmatic_expansion', False):
+            return
+            
         main_window = self.window()
         if not hasattr(main_window, 'project_manager') or not main_window.project_manager.project:
             return
