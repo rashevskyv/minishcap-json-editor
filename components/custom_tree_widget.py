@@ -232,9 +232,9 @@ class CustomTreeWidget(QTreeWidget):
         from PyQt5.QtWidgets import QMenu, QAction, QStyle
         menu = QMenu(self)
 
-        # 1. "Add to Folder" for batch selection (at least 2 items)
+        # 1. "Move to Folder" for batch selection (at least 2 items)
         if len(selected_items) > 1:
-            add_to_folder_action = menu.addAction(self.style().standardIcon(QStyle.SP_FileDialogNewFolder), f"Add {len(selected_items)} item(s) to Folder...")
+            add_to_folder_action = menu.addAction(self.style().standardIcon(QStyle.SP_FileDialogNewFolder), f"Move {len(selected_items)} item(s) to folder...")
             if hasattr(main_window, 'project_action_handler') and hasattr(main_window.project_action_handler, 'add_items_to_folder_action'):
                 add_to_folder_action.triggered.connect(main_window.project_action_handler.add_items_to_folder_action)
             menu.addSeparator()

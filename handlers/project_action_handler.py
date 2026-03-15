@@ -483,42 +483,20 @@ class ProjectActionHandler(BaseHandler):
 
         pm = self.mw.project_manager
         
-        # 1. Get List of existing folders for the choice dialog
-        folder_choices = ["(Root Directory)", "+ Create New Folder..."]
-        folder_id_map = {} # Display Name -> Folder ID
+        # 1. Use new MoveToFolderDialog
+        from components.project_dialogs import MoveToFolderDialog
         
-        def collect_folders(folders, indent=0):
-            for f in folders:
-                display_name = "  " * indent + f"📁 {f.name}"
-                folder_choices.append(display_name)
-                folder_id_map[display_name] = f.id
-                collect_folders(f.children, indent + 1)
-        
-        collect_folders(pm.project.virtual_folders)
-        
-        target_display, ok = QInputDialog.getItem(
-            self.mw, "Add to Folder", 
-            f"Move {len(selected_items)} item(s) to:", 
-            folder_choices, 0, False
-        )
-        
-        if not ok: return
-        
-        target_folder_id = None
-        if target_display == "+ Create New Folder...":
-            default_name = self.mw.block_list_widget._get_next_unnamed_name(pm)
-            new_name, ok = QInputDialog.getText(self.mw, "New Folder", "Enter folder name:", text=default_name)
-            if not ok or not new_name: return
+        # Try to find current parent folder ID if items are in a folder
+        current_parent_id = None
+        if selected_items[0].parent():
+            current_parent_id = selected_items[0].parent().data(0, Qt.UserRole + 1)
+
+        from PyQt5.QtWidgets import QDialog
+        dialog = MoveToFolderDialog(self.mw, pm, current_folder_id=current_parent_id)
+        if dialog.exec_() != QDialog.Accepted:
+            return
             
-            # Find a reasonable parent for the new folder (e.g. parent of first selected item)
-            first_parent_id = None
-            if selected_items[0].parent():
-                first_parent_id = selected_items[0].parent().data(0, Qt.UserRole + 1)
-            
-            new_folder = pm.create_virtual_folder(new_name, parent_id=first_parent_id)
-            target_folder_id = new_folder.id
-        elif target_display != "(Root Directory)":
-            target_folder_id = folder_id_map.get(target_display)
+        target_folder_id = dialog.get_selected_folder_id()
 
         # 2. Perform the Move
         undo_mgr = getattr(self.mw, 'undo_manager', None)

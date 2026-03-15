@@ -12,7 +12,8 @@ from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QFormLayout,
     QLabel, QLineEdit, QPushButton, QTextEdit,
     QComboBox, QFileDialog, QDialogButtonBox,
-    QMessageBox, QGroupBox, QRadioButton, QButtonGroup, QCheckBox
+    QMessageBox, QGroupBox, QRadioButton, QButtonGroup, QCheckBox,
+    QTreeWidget, QTreeWidgetItem, QAbstractItemView, QStyle, QTreeWidgetItemIterator
 )
 from PyQt5.QtCore import Qt
 from utils.logging_utils import log_debug, log_info
@@ -677,3 +678,104 @@ class ImportBlockDialog(QDialog):
                 'description': self.description
             }
         return None
+
+
+class MoveToFolderDialog(QDialog):
+    """Dialog for moving items to a specific virtual folder using a tree view."""
+    def __init__(self, parent=None, project_manager=None, current_folder_id=None):
+        super().__init__(parent)
+        self.pm = project_manager
+        self.current_folder_id = current_folder_id
+        self.selected_folder_id = None
+        self.new_folder_created = False
+        
+        self.setWindowTitle("Move Files to folder")
+        self.setMinimumSize(400, 500)
+        self._setup_ui()
+        self._populate_tree()
+
+    def _setup_ui(self):
+        layout = QVBoxLayout(self)
+        
+        label = QLabel("Select destination folder:")
+        layout.addWidget(label)
+        
+        self.tree = QTreeWidget()
+        self.tree.setHeaderHidden(True)
+        self.tree.setSelectionMode(QAbstractItemView.SingleSelection)
+        layout.addWidget(self.tree)
+        
+        # New Folder Button
+        self.btn_new_folder = QPushButton("New Folder")
+        self.btn_new_folder.setIcon(self.style().standardIcon(QStyle.SP_FileDialogNewFolder))
+        self.btn_new_folder.clicked.connect(self._create_new_folder)
+        layout.addWidget(self.btn_new_folder)
+        
+        # Standard Buttons
+        self.button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        self.button_box.accepted.connect(self._validate_and_accept)
+        self.button_box.rejected.connect(self.reject)
+        layout.addWidget(self.button_box)
+        
+        self.tree.itemDoubleClicked.connect(self._validate_and_accept)
+
+    def _populate_tree(self):
+        self.tree.clear()
+        
+        # Root Item
+        root_item = QTreeWidgetItem(self.tree, ["(Root Directory)"])
+        root_item.setData(0, Qt.UserRole, None)
+        root_item.setIcon(0, self.style().standardIcon(QStyle.SP_DirIcon))
+        
+        if self.pm and self.pm.project:
+            self._add_folders_recursive(root_item, self.pm.project.virtual_folders)
+            
+        root_item.setExpanded(True)
+        self.tree.setCurrentItem(root_item)
+
+    def _add_folders_recursive(self, parent_item, folders):
+        for folder in folders:
+            item = QTreeWidgetItem(parent_item, [folder.name])
+            item.setData(0, Qt.UserRole, folder.id)
+            item.setIcon(0, self.style().standardIcon(QStyle.SP_DirIcon))
+            
+            # Highlight current folder if we are moving from somewhere
+            if folder.id == self.current_folder_id:
+                font = item.font(0)
+                font.setBold(True)
+                item.setFont(0, font)
+
+            self._add_folders_recursive(item, folder.children)
+
+    def _create_new_folder(self):
+        curr = self.tree.currentItem()
+        parent_id = curr.data(0, Qt.UserRole) if curr else None
+        
+        from PyQt5.QtWidgets import QInputDialog
+        new_name, ok = QInputDialog.getText(self, "New Folder", "Enter folder name:")
+        if ok and new_name:
+            new_f = self.pm.create_virtual_folder(new_name, parent_id=parent_id)
+            if new_f:
+                # Refresh tree and select new folder
+                self._populate_tree()
+                self._select_by_id(new_f.id)
+                self.new_folder_created = True
+
+    def _select_by_id(self, folder_id):
+        iterator = QTreeWidgetItemIterator(self.tree)
+        while iterator.value():
+            item = iterator.value()
+            if item.data(0, Qt.UserRole) == folder_id:
+                self.tree.setCurrentItem(item)
+                item.setExpanded(True)
+                break
+            iterator += 1
+
+    def _validate_and_accept(self):
+        curr = self.tree.currentItem()
+        if curr:
+            self.selected_folder_id = curr.data(0, Qt.UserRole)
+            self.accept()
+
+    def get_selected_folder_id(self):
+        return self.selected_folder_id
