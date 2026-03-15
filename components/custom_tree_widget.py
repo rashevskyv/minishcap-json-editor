@@ -29,6 +29,9 @@ class CustomTreeWidget(QTreeWidget):
         self.setDragEnabled(True)
         self.setAcceptDrops(True)
         self.setDragDropMode(QTreeWidget.InternalMove)
+
+        # Snapshot of dragged items captured at startDrag() before Qt can change selection.
+        self._pending_drag_items = []
         
         # Ensure the selected item retains a prominent highlight even when the widget loses focus (e.g. to the text editor)
         self.setStyleSheet("""
@@ -253,6 +256,11 @@ class CustomTreeWidget(QTreeWidget):
                 undo_mgr.record_structural_action(before, 'ADD_FOLDER', f"Create subfolder '{new_name}'")
 
 
+    def startDrag(self, supportedActions):
+        """Capture selected items BEFORE Qt can change hover/current state."""
+        self._pending_drag_items = list(self.selectedItems())
+        super().startDrag(supportedActions)
+
     def dragMoveEvent(self, event):
         """Show 'drop on item' indicator only when cursor is in the middle of a block item."""
         item = self.itemAt(event.pos())
@@ -272,7 +280,9 @@ class CustomTreeWidget(QTreeWidget):
         before = undo_mgr.get_project_snapshot() if undo_mgr else None
 
         # 1. Special case: Dropping a block ON another block -> Group into new folder
-        if target_item and selected_items and target_item not in selected_items:
+        # Use _pending_drag_items (captured at startDrag) to reliably know what was dragged.
+        drag_source_items = self._pending_drag_items or selected_items
+        if target_item and drag_source_items and target_item not in drag_source_items:
             target_b_idx = target_item.data(0, Qt.UserRole)
 
             if target_b_idx is not None:
@@ -304,7 +314,7 @@ class CustomTreeWidget(QTreeWidget):
                         pm.move_block_to_folder(pm.project.blocks[proj_b_idx].id, new_folder.id)
 
                     # Move all dragged items into the new folder
-                    for drag_item in selected_items:
+                    for drag_item in drag_source_items:
                         b_idx = drag_item.data(0, Qt.UserRole)
                         f_id = drag_item.data(0, Qt.UserRole + 1)
                         if b_idx is not None:
@@ -324,6 +334,7 @@ class CustomTreeWidget(QTreeWidget):
                     if undo_mgr and before is not None:
                         undo_mgr.record_structural_action(before, 'DRAG_DROP', f"Group into '{folder_name}'")
                     log_debug(f"Grouped items into new '{folder_name}' folder via drag-drop.")
+                    self._pending_drag_items = []
                     return
 
         # 2. Default behavior (reorder within QTreeWidget)
@@ -331,6 +342,7 @@ class CustomTreeWidget(QTreeWidget):
         self.sync_tree_to_project_manager()
         if undo_mgr and before is not None:
             undo_mgr.record_structural_action(before, 'DRAG_DROP', 'Drag-drop reorder')
+        self._pending_drag_items = []
 
     def sync_tree_to_project_manager(self):
         """Update virtual structure in project manager based on current tree layout."""
