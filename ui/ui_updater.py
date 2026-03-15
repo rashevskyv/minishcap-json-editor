@@ -133,7 +133,7 @@ class UIUpdater:
         # Rule: Hide counter if the folder contains exactly ONE single child (folder or block)
         child_count = len(curr_for_children.children) + len(curr_for_children.block_ids)
         if compaction_type == 0 and child_count > 1:
-            display_name += f" [{len(curr_for_children.children)} / {len(curr_for_children.block_ids)}]"
+            display_name += f" [{len(curr_for_children.children)} | {len(curr_for_children.block_ids)}]"
 
         # Create folder item
         folder_item = QTreeWidgetItem([display_name])
@@ -144,6 +144,16 @@ class UIUpdater:
         folder_item.setData(0, Qt.UserRole + 2, merged_folder_ids)
         folder_item.setData(0, Qt.UserRole + 3, compaction_type)
         folder_item.setData(0, Qt.UserRole + 4, display_name)
+        
+        # Store RAW folder names for robust synchronization (avoids parsing display_name with counters)
+        raw_names = []
+        temp_f = folder
+        raw_names.append(temp_f.name)
+        if compaction_type == 1:
+             while len(temp_f.children) == 1 and len(temp_f.block_ids) == 0:
+                 temp_f = temp_f.children[0]
+                 raw_names.append(temp_f.name)
+        folder_item.setData(0, Qt.UserRole + 5, raw_names)
         
         if block_idx_for_icon is not None:
             folder_item.setData(0, Qt.UserRole, block_idx_for_icon) # For indicator strips

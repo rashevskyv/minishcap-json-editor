@@ -783,16 +783,21 @@ class CustomTreeWidget(QTreeWidget):
                     chain_top = None
                     chain_bottom = None
                     
+                    raw_names = child.data(0, Qt.UserRole + 5)
+                    
                     for f_idx, folder_id in enumerate(merged_ids):
                         folder_obj = main_window.project_manager.find_virtual_folder(folder_id)
                         new_f_name = None
-                        if folder_names:
+                        
+                        if raw_names and f_idx < len(raw_names):
+                            new_f_name = raw_names[f_idx]
+                        elif folder_names: # Fallback
                             name_idx = len(folder_names) - 1 - (len(merged_ids) - 1 - f_idx)
                             if name_idx >= 0:
                                 import re
                                 raw_name = folder_names[name_idx].strip()
-                                # Strip the display count [f / b]
-                                new_f_name = re.sub(r'\s*\[\d+\s*/\s*\d+\]$', '', raw_name)
+                                # Strip the display count [f | b]
+                                new_f_name = re.sub(r'\s*\[\d+\s*\|\s*\d+\]$', '', raw_name)
                         
                         if not folder_obj:
                             from core.project_models import VirtualFolder
@@ -801,6 +806,9 @@ class CustomTreeWidget(QTreeWidget):
                             if new_f_name:
                                 folder_obj.name = new_f_name
                             folder_obj.parent_id = curr_p_id
+                        
+                        # Sync expansion state from tree
+                        folder_obj.is_expanded = child.isExpanded()
                         
                         folder_obj.children = []
                         folder_obj.block_ids = []
@@ -824,10 +832,16 @@ class CustomTreeWidget(QTreeWidget):
                     # Standard folder
                     folder_obj = main_window.project_manager.find_virtual_folder(f_id)
                     if folder_obj:
-                        import re
-                        # Strip the display count [f / b]
-                        folder_obj.name = re.sub(r'\s*\[\d+\s*/\s*\d+\]$', '', text)
+                        raw_names = child.data(0, Qt.UserRole + 5)
+                        if raw_names and len(raw_names) > 0:
+                            folder_obj.name = raw_names[0]
+                        else:
+                            import re
+                            # Strip the display count [f | b]
+                            folder_obj.name = re.sub(r'\s*\[\d+\s*\|\s*\d+\]$', '', text)
+                        
                         folder_obj.parent_id = parent_id
+                        folder_obj.is_expanded = child.isExpanded()
                         folder_obj.children, folder_obj.block_ids = rebuild_from_item(child, f_id)
                         target_folder = folder_obj
                 elif b_idx is not None:
