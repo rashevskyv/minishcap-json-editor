@@ -27,6 +27,14 @@ class BlockListUpdater(BaseUIUpdater):
 
         dir_nodes = {"": self.mw.block_list_widget.invisibleRootItem()}
 
+        # Compute aggregated problems for ALL blocks once (O(M) complexity)
+        pre_aggregated_counts = {}
+        for (b_idx, _, _), problems in self.mw.problems_per_subline.items():
+            if b_idx not in pre_aggregated_counts:
+                pre_aggregated_counts[b_idx] = {}
+            for p_id in problems:
+                pre_aggregated_counts[b_idx][p_id] = pre_aggregated_counts[b_idx].get(p_id, 0) + 1
+
         for i in range(len(self.mw.data)):
             base_display_name = self.mw.block_names.get(str(i), f"Block {i}")
             
@@ -35,16 +43,9 @@ class BlockListUpdater(BaseUIUpdater):
             string_count = 0
             if isinstance(self.mw.data[i], list):
                 string_count = len(self.mw.data[i])
-                for data_string_idx in range(len(self.mw.data[i])):
-                    data_string_text, _ = self.data_processor.get_current_string_text(i, data_string_idx) 
-                    if data_string_text is not None:
-                        logical_sublines = str(data_string_text).split('\n')
-                        for subline_local_idx in range(len(logical_sublines)):
-                            problem_key = (i, data_string_idx, subline_local_idx)
-                            subline_problems = self.mw.problems_per_subline.get(problem_key, set())
-                            for problem_id in subline_problems:
-                                if problem_id in block_problem_counts:
-                                    block_problem_counts[problem_id] += 1
+                block_counts = pre_aggregated_counts.get(i, {})
+                for pid in problem_definitions.keys():
+                    block_problem_counts[pid] = block_counts.get(pid, 0)
             
             base_display_name_with_count = f"{base_display_name} [{string_count}]"
             display_name_with_issues = base_display_name_with_count

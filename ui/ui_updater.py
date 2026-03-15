@@ -29,12 +29,20 @@ class UIUpdater:
         
         editor.highlightManager.add_search_match_highlight(block_number, start_char, length)
 
-    def _get_aggregated_problems_for_block(self, block_idx: int) -> dict:
+    def _get_aggregated_problems_for_block(self, block_idx: int, pre_aggregated_counts: dict = None) -> dict:
         problem_counts = {}
         if not self.mw.current_game_rules or not (0 <= block_idx < len(self.mw.data)):
             return problem_counts
         
         problem_definitions = self.mw.current_game_rules.get_problem_definitions()
+        
+        if pre_aggregated_counts is not None:
+            # Fast path: use the pre-calculated problem counts for this block
+            # Fill missing problem IDs with 0
+            block_counts = pre_aggregated_counts.get(block_idx, {})
+            return {pid: block_counts.get(pid, 0) for pid in problem_definitions.keys()}
+        
+        # Slow path (fallback for single-item updates)
         problem_counts = {pid: 0 for pid in problem_definitions.keys()}
         detection_config = getattr(self.mw, 'detection_enabled', {})
         
@@ -48,10 +56,10 @@ class UIUpdater:
         return problem_counts
 
 
-    def _create_block_tree_item(self, block_idx: int, problem_definitions: dict) -> QTreeWidgetItem:
+    def _create_block_tree_item(self, block_idx: int, problem_definitions: dict, pre_aggregated_counts: dict = None) -> QTreeWidgetItem:
         """Helper to create a single block tree item with issue counts and tooltips."""
         base_display_name = self.mw.block_names.get(str(block_idx), f"Block {block_idx}")
-        block_problem_counts = self._get_aggregated_problems_for_block(block_idx)
+        block_problem_counts = self._get_aggregated_problems_for_block(block_idx, pre_aggregated_counts)
         
         display_name_with_issues = base_display_name
         issue_texts = []
@@ -87,7 +95,7 @@ class UIUpdater:
             
         return item
 
-    def _add_virtual_folder_to_tree(self, parent_item, folder, problem_definitions, current_selection_block_idx):
+    def _add_virtual_folder_to_tree(self, parent_item, folder, problem_definitions, current_selection_block_idx, pre_aggregated_counts: dict = None):
         """Recursively add virtual folders and their blocks to the tree with folder compaction (GitHub style)."""
         project = self.mw.project_manager.project
         if not project: return
@@ -109,7 +117,7 @@ class UIUpdater:
             id_to_idx = {b.id: idx for idx, b in enumerate(project.blocks)}
             idx = id_to_idx.get(curr.block_ids[0])
             if idx is not None:
-                block_item = self._create_block_tree_item(idx, problem_definitions)
+                block_item = self._create_block_tree_item(idx, problem_definitions, pre_aggregated_counts)
                 base_name = self.mw.block_names.get(str(idx), f"Block {idx}")
                 original_text = block_item.text(0)
                 block_item.setText(0, f"{display_name} / {original_text}")
@@ -137,13 +145,13 @@ class UIUpdater:
         folder_item.setExpanded(folder.is_expanded)
         
         for child in curr.children:
-            self._add_virtual_folder_to_tree(folder_item, child, problem_definitions, current_selection_block_idx)
+            self._add_virtual_folder_to_tree(folder_item, child, problem_definitions, current_selection_block_idx, pre_aggregated_counts)
             
         id_to_idx = {b.id: idx for idx, b in enumerate(project.blocks)}
         for b_id in curr.block_ids:
             idx = id_to_idx.get(b_id)
             if idx is not None:
-                block_item = self._create_block_tree_item(idx, problem_definitions)
+                block_item = self._create_block_tree_item(idx, problem_definitions, pre_aggregated_counts)
                 folder_item.addChild(block_item)
                 if idx == current_selection_block_idx:
                     self.mw.block_list_widget.setCurrentItem(block_item)
@@ -174,13 +182,23 @@ class UIUpdater:
             if project.virtual_folders or 'root_block_ids' in project.metadata:
                 has_virtual_structure = True
 
+        # Compute aggregated problems for ALL blocks once (O(M) complexity instead of O(N*M))
+        pre_aggregated_counts = {}
+        detection_config = getattr(self.mw, 'detection_enabled', {})
+        for (b_idx, _, _), problems in self.mw.problems_per_subline.items():
+            if b_idx not in pre_aggregated_counts:
+                pre_aggregated_counts[b_idx] = {}
+            filtered_problems = {p_id for p_id in problems if detection_config.get(p_id, True)}
+            for p_id in filtered_problems:
+                pre_aggregated_counts[b_idx][p_id] = pre_aggregated_counts[b_idx].get(p_id, 0) + 1
+
         if has_virtual_structure:
             project = self.mw.project_manager.project
             root_item = self.mw.block_list_widget.invisibleRootItem()
             
             # 1. Add virtual folders recursively
             for folder in project.virtual_folders:
-                self._add_virtual_folder_to_tree(root_item, folder, problem_definitions, current_selection_block_idx)
+                self._add_virtual_folder_to_tree(root_item, folder, problem_definitions, current_selection_block_idx, pre_aggregated_counts)
                 
             # 2. Add root blocks
             root_block_ids = project.metadata.get('root_block_ids', [])
@@ -189,7 +207,7 @@ class UIUpdater:
             for b_id in root_block_ids:
                 idx = id_to_idx.get(b_id)
                 if idx is not None:
-                    block_item = self._create_block_tree_item(idx, problem_definitions)
+                    block_item = self._create_block_tree_item(idx, problem_definitions, pre_aggregated_counts)
                     root_item.addChild(block_item)
                     if idx == current_selection_block_idx:
                         self.mw.block_list_widget.setCurrentItem(block_item)
@@ -199,7 +217,7 @@ class UIUpdater:
             dir_nodes = {"": self.mw.block_list_widget.invisibleRootItem()}
 
             for i in range(len(self.mw.data)):
-                block_item = self._create_block_tree_item(i, problem_definitions)
+                block_item = self._create_block_tree_item(i, problem_definitions, pre_aggregated_counts)
                 
                 if hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project and i < len(self.mw.project_manager.project.blocks):
                     block = self.mw.project_manager.project.blocks[i]

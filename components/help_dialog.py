@@ -1,7 +1,7 @@
 # --- START OF FILE components/help_dialog.py ---
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QLabel, QTableWidget, QTableWidgetItem, QHeaderView, QPushButton, QHBoxLayout
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QColor
 
 class HelpShortcutsDialog(QDialog):
     def __init__(self, parent=None):
@@ -31,7 +31,15 @@ class HelpShortcutsDialog(QDialog):
         self.table.setAlternatingRowColors(True)
         
         self.shortcuts = [
+            # Category: General
+            ("--- GENERAL ---", ""),
             ("Save Project/File", "Ctrl + S"),
+            ("AI Chat Window", "Ctrl + Shift + C"),
+            ("Shortcuts Help", "F1"),
+            ("Settings", "Ctrl + P"),
+            
+            # Category: Editor
+            ("--- EDITOR ---", ""),
             ("Undo", "Ctrl + Z"),
             ("Redo", "Ctrl + Y / Ctrl + Shift + Z"),
             ("Find Text", "Ctrl + F"),
@@ -39,21 +47,34 @@ class HelpShortcutsDialog(QDialog):
             ("Find Previous", "Shift + F3"),
             ("Paste Block Text", "Ctrl + Shift + V"),
             ("Auto-fix Current String", "Ctrl + Shift + A"),
-            ("AI Chat Window", "Ctrl + Shift + C"),
+            
+            # Category: Navigation
+            ("--- NAVIGATION ---", ""),
             ("Navigate to Next Problem", "Ctrl + Down"),
             ("Navigate to Previous Problem", "Ctrl + Up"),
             ("Select Next String", "Alt + Down / Down (in Preview)"),
             ("Select Previous String", "Alt + Up / Up (in Preview)"),
-            ("Next Block", "Ctrl + Shift + Down"),
-            ("Previous Block", "Ctrl + Shift + Up"),
-            ("Next Folder/Category", "Ctrl + Shift + Right"),
-            ("Previous Folder/Category", "Ctrl + Shift + Left"),
+            ("Next Block", "Alt + Shift + Down"),
+            ("Previous Block", "Alt + Shift + Up"),
+            ("Next Folder/Category", "Alt + Shift + Right"),
+            ("Previous Folder/Category", "Alt + Shift + Left"),
         ]
         
         self.table.setRowCount(len(self.shortcuts))
         for i, (action, shortcut) in enumerate(self.shortcuts):
-            self.table.setItem(i, 0, QTableWidgetItem(action))
-            self.table.setItem(i, 1, QTableWidgetItem(shortcut))
+            item_action = QTableWidgetItem(action)
+            item_shortcut = QTableWidgetItem(shortcut)
+            
+            if action.startswith("---"):
+                # Style as section header
+                item_action.setBackground(QColor("#333333"))
+                item_action.setForeground(QColor("white"))
+                item_action.setFont(QFont("Segoe UI", 9, QFont.Bold))
+                item_shortcut.setBackground(QColor("#333333"))
+                # Merge or Span column would be better but let's just make it look like a header
+                
+            self.table.setItem(i, 0, item_action)
+            self.table.setItem(i, 1, item_shortcut)
             self.table.item(i, 1).setTextAlignment(Qt.AlignCenter)
             
         layout.addWidget(self.table)

@@ -23,7 +23,7 @@ class CustomTreeWidget(QTreeWidget):
         self.setIndentation(15)
         
         self.setHeaderHidden(True)
-        self.setSelectionMode(QTreeWidget.SingleSelection)
+        self.setSelectionMode(QTreeWidget.ExtendedSelection)
         
         # Drag and Drop support
         self.setDragEnabled(True)
@@ -62,6 +62,101 @@ class CustomTreeWidget(QTreeWidget):
             "green": QColor(Qt.green),
             "blue": QColor(Qt.blue),
         }
+        
+    def keyPressEvent(self, event):
+        log_debug(f"CustomTreeWidget: keyPressEvent key={event.key()}, mods={int(event.modifiers())}")
+        is_ctrl = bool(event.modifiers() & Qt.ControlModifier)
+        is_alt = bool(event.modifiers() & Qt.AltModifier)
+        is_shift = bool(event.modifiers() & Qt.ShiftModifier)
+
+        # Ctrl+PageDown/Up OR Alt+Shift+Up/Down: navigate blocks
+        if is_ctrl and not is_alt and not is_shift:
+            if event.key() == Qt.Key_PageDown:
+                self.navigate_blocks(direction=1)
+                event.accept()
+                return
+            elif event.key() == Qt.Key_PageUp:
+                self.navigate_blocks(direction=-1)
+                event.accept()
+                return
+
+        if is_alt and is_shift and not is_ctrl:
+            if event.key() == Qt.Key_Up:
+                self.navigate_blocks(direction=-1)
+                event.accept()
+                return
+            elif event.key() == Qt.Key_Down:
+                self.navigate_blocks(direction=1)
+                event.accept()
+                return
+            elif event.key() == Qt.Key_Left:
+                self.navigate_folders(direction=-1)
+                event.accept()
+                return
+            elif event.key() == Qt.Key_Right:
+                self.navigate_folders(direction=1)
+                event.accept()
+                return
+
+        super().keyPressEvent(event)
+
+    def navigate_blocks(self, direction):
+        log_debug(f"CustomTreeWidget: navigate_blocks direction={direction}")
+        current_item = self.currentItem()
+        from PyQt5.QtWidgets import QTreeWidgetItemIterator
+        iterator = QTreeWidgetItemIterator(self)
+        items = []
+        current_idx = -1
+        
+        while iterator.value():
+            item = iterator.value()
+            if item.data(0, Qt.UserRole) is not None:  # It's a block
+                items.append(item)
+                if current_item and item == current_item:
+                    current_idx = len(items) - 1
+            iterator += 1
+
+        if not items: return
+
+        if current_idx == -1:
+            # Current item is a folder, find the nearest block
+            target_idx = 0 if direction > 0 else len(items) - 1
+        else:
+            target_idx = (current_idx + direction) % len(items)
+
+        target_item = items[target_idx]
+        self.setCurrentItem(target_item)
+        target_item.setSelected(True)
+        self.scrollToItem(target_item)
+
+    def navigate_folders(self, direction):
+        log_debug(f"CustomTreeWidget: navigate_folders direction={direction}")
+        current_item = self.currentItem()
+        from PyQt5.QtWidgets import QTreeWidgetItemIterator
+        iterator = QTreeWidgetItemIterator(self)
+        items = []
+        current_idx = -1
+        
+        while iterator.value():
+            item = iterator.value()
+            if item.data(0, Qt.UserRole) is None and item.data(0, Qt.UserRole + 1) is not None:  # It's a virtual folder
+                items.append(item)
+                if current_item and item == current_item:
+                    current_idx = len(items) - 1
+            iterator += 1
+
+        if not items: return
+
+        if current_idx == -1:
+            # Current item is a block, find nearest folder
+            target_idx = 0 if direction > 0 else len(items) - 1
+        else:
+            target_idx = (current_idx + direction) % len(items)
+
+        target_item = items[target_idx]
+        self.setCurrentItem(target_item)
+        target_item.setSelected(True)
+        self.scrollToItem(target_item)
 
     def _create_color_icon(self, color: QColor, size: int = 12) -> QIcon:
         pixmap = QPixmap(size, size)
@@ -96,8 +191,23 @@ class CustomTreeWidget(QTreeWidget):
     
     def show_context_menu(self, pos: QPoint):
         item = self.itemAt(pos)
+        selected_items = self.selectedItems()
+        
+        # Ensure the clicked item is part of the selection if possible
+        if item and item not in selected_items:
+            self.setCurrentItem(item)
+            item.setSelected(True)
+            selected_items = [item]
+            
         main_window = self.window()
         menu = QMenu(self)
+
+        # "Add to Folder" for current selection
+        if selected_items:
+            add_to_folder_action = menu.addAction(f"Add {len(selected_items)} item(s) to Folder...")
+            if hasattr(main_window, 'project_action_handler') and hasattr(main_window.project_action_handler, 'add_items_to_folder_action'):
+                add_to_folder_action.triggered.connect(main_window.project_action_handler.add_items_to_folder_action)
+            menu.addSeparator()
 
         # "Add Block" and "Add Directory" options
         if hasattr(main_window, 'project_manager') and main_window.project_manager:
@@ -566,36 +676,75 @@ class CustomTreeWidget(QTreeWidget):
         return f"Unnamed {n}"
 
     def move_current_item_up(self):
-        item = self.currentItem()
-        if not item: return
-        parent = item.parent() or self.invisibleRootItem()
-        index = parent.indexOfChild(item)
-        if index > 0:
+        selected_items = self.selectedItems()
+        if not selected_items: return
+        
+        # Sort items by their current index to move them in order
+        items_with_indices = []
+        for item in selected_items:
+            parent = item.parent() or self.invisibleRootItem()
+            items_with_indices.append((parent, parent.indexOfChild(item), item))
+        
+        # Group by parent and sort by index ascending
+        items_with_indices.sort(key=lambda x: x[1])
+        
+        # Check if the first item can move up
+        if items_with_indices[0][1] > 0:
             main_window = self.window()
             undo_mgr = getattr(main_window, 'undo_manager', None)
             before = undo_mgr.get_project_snapshot() if undo_mgr else None
-            parent.takeChild(index)
-            parent.insertChild(index - 1, item)
-            self.setCurrentItem(item)
+            
+            # Move each item up
+            for parent, index, item in items_with_indices:
+                parent.takeChild(index)
+                parent.insertChild(index - 1, item)
+            
+            # Restore selection (Qt might clear it on takeChild)
+            for _, _, item in items_with_indices:
+                item.setSelected(True)
+            
+            if items_with_indices:
+                self.setCurrentItem(items_with_indices[0][2])
+
             self.sync_tree_to_project_manager()
             if undo_mgr and before is not None:
-                undo_mgr.record_structural_action(before, 'MOVE_BLOCK', 'Move block up')
+                undo_mgr.record_structural_action(before, 'MOVE_BLOCK_BATCH', f"Move {len(selected_items)} item(s) up")
 
     def move_current_item_down(self):
-        item = self.currentItem()
-        if not item: return
-        parent = item.parent() or self.invisibleRootItem()
-        index = parent.indexOfChild(item)
-        if index < parent.childCount() - 1:
+        selected_items = self.selectedItems()
+        if not selected_items: return
+        
+        # Sort items by their current index to move them in order
+        items_with_indices = []
+        for item in selected_items:
+            parent = item.parent() or self.invisibleRootItem()
+            items_with_indices.append((parent, parent.indexOfChild(item), item))
+        
+        # Group by parent and sort by index descending (to avoid index shift issues when moving down)
+        items_with_indices.sort(key=lambda x: x[1], reverse=True)
+        
+        # Check if the last item can move down
+        last_parent, last_idx, _ = items_with_indices[0]
+        if last_idx < last_parent.childCount() - 1:
             main_window = self.window()
             undo_mgr = getattr(main_window, 'undo_manager', None)
             before = undo_mgr.get_project_snapshot() if undo_mgr else None
-            parent.takeChild(index)
-            parent.insertChild(index + 1, item)
-            self.setCurrentItem(item)
+            
+            # Move each item down
+            for parent, index, item in items_with_indices:
+                parent.takeChild(index)
+                parent.insertChild(index + 1, item)
+            
+            # Restore selection
+            for _, _, item in items_with_indices:
+                item.setSelected(True)
+                
+            if items_with_indices:
+                self.setCurrentItem(items_with_indices[0][2])
+
             self.sync_tree_to_project_manager()
             if undo_mgr and before is not None:
-                undo_mgr.record_structural_action(before, 'MOVE_BLOCK', 'Move block down')
+                undo_mgr.record_structural_action(before, 'MOVE_BLOCK_BATCH', f"Move {len(selected_items)} item(s) down")
 
     def event(self, event):
         if event.type() == QEvent.ToolTip:

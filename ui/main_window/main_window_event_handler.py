@@ -71,9 +71,9 @@ class MainWindowEventHandler:
         
         # Navigation connections
         if hasattr(self.mw, 'next_block_nav_action'):
-            self.mw.next_block_nav_action.triggered.connect(lambda: self.mw.list_selection_handler.navigate_between_blocks(True))
+            self.mw.next_block_nav_action.triggered.connect(lambda: (log_debug("TRIGGER: next_block_nav_action"), self.mw.list_selection_handler.navigate_between_blocks(True)))
         if hasattr(self.mw, 'prev_block_nav_action'):
-            self.mw.prev_block_nav_action.triggered.connect(lambda: self.mw.list_selection_handler.navigate_between_blocks(False))
+            self.mw.prev_block_nav_action.triggered.connect(lambda: (log_debug("TRIGGER: prev_block_nav_action"), self.mw.list_selection_handler.navigate_between_blocks(False)))
         if hasattr(self.mw, 'next_folder_nav_action'):
             self.mw.next_folder_nav_action.triggered.connect(lambda: self.mw.list_selection_handler.navigate_between_folders(True))
         if hasattr(self.mw, 'prev_folder_nav_action'):
@@ -81,7 +81,6 @@ class MainWindowEventHandler:
             
         if hasattr(self.mw, 'help_button'):
             self.mw.help_button.clicked.connect(self.mw.actions.show_shortcuts_help)
-            self.mw.move_block_down_button.clicked.connect(self.mw.project_action_handler.move_block_down_action)
 
         # File actions
         if hasattr(self.mw, 'save_action'): self.mw.save_action.triggered.connect(self.mw.actions.trigger_save_action)
@@ -127,6 +126,8 @@ class MainWindowEventHandler:
         
     def closeEvent(self, event):
         log_info("Close event received.")
+        if hasattr(self.mw, 'hotkey_manager'):
+            self.mw.hotkey_manager.unregister()
         self.mw.helper.prepare_to_close()
         self.mw.app_action_handler.handle_close_event(event)
         

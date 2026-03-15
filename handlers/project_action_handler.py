@@ -428,6 +428,93 @@ class ProjectActionHandler(BaseHandler):
                 undo_mgr.record_structural_action(before, 'ADD_FOLDER', f"Add folder '{name}'")
 
 
+    def add_items_to_folder_action(self):
+        """Move multiple selected items into a folder."""
+        if not self.mw.project_manager or not self.mw.project_manager.project:
+            return
+
+        selected_items = self.mw.block_list_widget.selectedItems()
+        if not selected_items:
+            return
+
+        pm = self.mw.project_manager
+        
+        # 1. Get List of existing folders for the choice dialog
+        folder_choices = ["(Root Directory)", "+ Create New Folder..."]
+        folder_id_map = {} # Display Name -> Folder ID
+        
+        def collect_folders(folders, indent=0):
+            for f in folders:
+                display_name = "  " * indent + f"📁 {f.name}"
+                folder_choices.append(display_name)
+                folder_id_map[display_name] = f.id
+                collect_folders(f.children, indent + 1)
+        
+        collect_folders(pm.project.virtual_folders)
+        
+        target_display, ok = QInputDialog.getItem(
+            self.mw, "Add to Folder", 
+            f"Move {len(selected_items)} item(s) to:", 
+            folder_choices, 0, False
+        )
+        
+        if not ok: return
+        
+        target_folder_id = None
+        if target_display == "+ Create New Folder...":
+            default_name = self.mw.block_list_widget._get_next_unnamed_name(pm)
+            new_name, ok = QInputDialog.getText(self.mw, "New Folder", "Enter folder name:", text=default_name)
+            if not ok or not new_name: return
+            
+            # Find a reasonable parent for the new folder (e.g. parent of first selected item)
+            first_parent_id = None
+            if selected_items[0].parent():
+                first_parent_id = selected_items[0].parent().data(0, Qt.UserRole + 1)
+            
+            new_folder = pm.create_virtual_folder(new_name, parent_id=first_parent_id)
+            target_folder_id = new_folder.id
+        elif target_display != "(Root Directory)":
+            target_folder_id = folder_id_map.get(target_display)
+
+        # 2. Perform the Move
+        undo_mgr = getattr(self.mw, 'undo_manager', None)
+        before = undo_mgr.get_project_snapshot() if undo_mgr else None
+        
+        block_map = getattr(self.mw, 'block_to_project_file_map', {})
+        moved_count = 0
+        
+        for item in selected_items:
+            b_idx = item.data(0, Qt.UserRole)
+            f_id = item.data(0, Qt.UserRole + 1)
+            
+            if b_idx is not None:
+                proj_idx = block_map.get(b_idx, b_idx)
+                if proj_idx < len(pm.project.blocks):
+                    pm.move_block_to_folder(pm.project.blocks[proj_idx].id, target_folder_id)
+                    moved_count += 1
+            elif f_id:
+                # Don't move a folder into itself or its child
+                if f_id == target_folder_id: continue
+                
+                folder = pm.find_virtual_folder(f_id)
+                if folder:
+                    pm._remove_folder_from_anywhere(f_id)
+                    folder.parent_id = target_folder_id
+                    if target_folder_id:
+                        dest = pm.find_virtual_folder(target_folder_id)
+                        if dest: dest.children.append(folder)
+                    else:
+                        pm.project.virtual_folders.append(folder)
+                    moved_count += 1
+
+        if moved_count > 0:
+            pm.save()
+            if undo_mgr and before is not None:
+                undo_mgr.record_structural_action(before, 'MOVE_BATCH', f"Move {moved_count} items to folder")
+            self.ui_updater.populate_blocks()
+            log_info(f"Batch move completed: {moved_count} items moved.")
+
+
     def _populate_blocks_from_project(self):
         """Populate block list from current project and load data."""
         if not self.mw.project_manager or not self.mw.project_manager.project:

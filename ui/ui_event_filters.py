@@ -10,13 +10,45 @@ class TextEditEventFilter(QObject):
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.KeyPress:
-            is_ctrl_pressed = event.modifiers() & Qt.ControlModifier
-            is_alt_pressed = event.modifiers() & Qt.AltModifier
+            is_ctrl_pressed = bool(event.modifiers() & Qt.ControlModifier)
+            is_alt_pressed = bool(event.modifiers() & Qt.AltModifier)
+            is_shift_pressed = bool(event.modifiers() & Qt.ShiftModifier)
+
+            # --- Ctrl+PageDown/PageUp OR Alt+Shift+Up/Down: Navigate between blocks ---
+            if is_ctrl_pressed and not is_alt_pressed and not is_shift_pressed:
+                if event.key() == Qt.Key_PageDown:
+                    log_debug("TextEditEventFilter: Ctrl+PageDown -> navigate_between_blocks(True)")
+                    self.mw.list_selection_handler.navigate_between_blocks(True)
+                    return True
+                elif event.key() == Qt.Key_PageUp:
+                    log_debug("TextEditEventFilter: Ctrl+PageUp -> navigate_between_blocks(False)")
+                    self.mw.list_selection_handler.navigate_between_blocks(False)
+                    return True
+
+            # --- Alt+Shift+Left/Right: Navigate between folders;
+            #     Alt+Shift+Up/Down: Navigate between blocks (fallback, WM_HOTKEY is primary) ---
+            if is_alt_pressed and is_shift_pressed and not is_ctrl_pressed:
+                if event.key() == Qt.Key_Up:
+                    log_debug("TextEditEventFilter: Alt+Shift+Up -> navigate_between_blocks(False)")
+                    self.mw.list_selection_handler.navigate_between_blocks(False)
+                    return True
+                elif event.key() == Qt.Key_Down:
+                    log_debug("TextEditEventFilter: Alt+Shift+Down -> navigate_between_blocks(True)")
+                    self.mw.list_selection_handler.navigate_between_blocks(True)
+                    return True
+                elif event.key() == Qt.Key_Left:
+                    log_debug("TextEditEventFilter: Alt+Shift+Left -> navigate_between_folders(False)")
+                    self.mw.list_selection_handler.navigate_between_folders(False)
+                    return True
+                elif event.key() == Qt.Key_Right:
+                    log_debug("TextEditEventFilter: Alt+Shift+Right -> navigate_between_folders(True)")
+                    self.mw.list_selection_handler.navigate_between_folders(True)
+                    return True
             
             if obj is self.mw.preview_text_edit:
                 is_multi_selection_active = len(self.mw.preview_text_edit.get_selected_lines()) > 1
                 
-                if not is_ctrl_pressed and not is_alt_pressed and not is_multi_selection_active:
+                if not is_ctrl_pressed and not is_alt_pressed and not is_shift_pressed and not is_multi_selection_active:
                     if event.key() == Qt.Key_Up:
                         current_row = self.mw.current_string_idx
                         if current_row > 0:
@@ -28,7 +60,7 @@ class TextEditEventFilter(QObject):
                             self.mw.list_selection_handler.string_selected_from_preview(current_row + 1)
                         return True
 
-            if is_alt_pressed and not is_ctrl_pressed:
+            if is_alt_pressed and not is_ctrl_pressed and not is_shift_pressed:
                 if event.key() == Qt.Key_Up:
                     current_row = self.mw.current_string_idx
                     if current_row > 0:
@@ -42,12 +74,12 @@ class TextEditEventFilter(QObject):
 
             if is_ctrl_pressed and not is_alt_pressed:
                 if event.key() == Qt.Key_Up:
-                    log_debug(f"TextEditEventFilter: Ctrl+Up captured on {obj.objectName()}. Calling navigation.")
+                    log_debug(f"TextEditEventFilter: Ctrl+Up on {obj.objectName()}. Calling navigation.")
                     if hasattr(self.mw, 'list_selection_handler'):
                         self.mw.list_selection_handler.navigate_to_problem_string(direction_down=False)
                     return True
                 elif event.key() == Qt.Key_Down:
-                    log_debug(f"TextEditEventFilter: Ctrl+Down captured on {obj.objectName()}. Calling navigation.")
+                    log_debug(f"TextEditEventFilter: Ctrl+Down on {obj.objectName()}. Calling navigation.")
                     if hasattr(self.mw, 'list_selection_handler'):
                         self.mw.list_selection_handler.navigate_to_problem_string(direction_down=True)
                     return True
@@ -58,6 +90,7 @@ class TextEditEventFilter(QObject):
             
         return super().eventFilter(obj, event)
 
+
 class MainWindowEventFilter(QObject):
     def __init__(self, main_window):
         super().__init__(main_window)
@@ -65,14 +98,34 @@ class MainWindowEventFilter(QObject):
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.KeyPress:
-            if event.key() == Qt.Key_F3:
-                if event.modifiers() & Qt.ShiftModifier:
-                    log_debug("EventFilter: Shift+F3 pressed - Find Previous")
-                    self.mw.helper.execute_find_previous_shortcut()
-                    return True 
-                else:
-                    log_debug("EventFilter: F3 pressed - Find Next")
-                    self.mw.helper.execute_find_next_shortcut()
+            if event.modifiers() & Qt.AltModifier and event.modifiers() & Qt.ShiftModifier:
+                if event.key() == Qt.Key_Up:
+                    log_debug("AppFilter: Alt+Shift+Up -> navigate_between_blocks(False)")
+                    self.mw.list_selection_handler.navigate_between_blocks(False)
                     return True
-            
+                elif event.key() == Qt.Key_Down:
+                    log_debug("AppFilter: Alt+Shift+Down -> navigate_between_blocks(True)")
+                    self.mw.list_selection_handler.navigate_between_blocks(True)
+                    return True
+                elif event.key() == Qt.Key_Left:
+                    log_debug("AppFilter: Alt+Shift+Left -> navigate_between_folders(False)")
+                    self.mw.list_selection_handler.navigate_between_folders(False)
+                    return True
+                elif event.key() == Qt.Key_Right:
+                    log_debug("AppFilter: Alt+Shift+Right -> navigate_between_folders(True)")
+                    self.mw.list_selection_handler.navigate_between_folders(True)
+                    return True
+
+            # F3 shortcuts - only handle when main window is active
+            if isinstance(obj, QWidget) and obj.window() is self.mw:
+                if event.key() == Qt.Key_F3:
+                    if event.modifiers() & Qt.ShiftModifier:
+                        log_debug("AppFilter: Shift+F3 pressed - Find Previous")
+                        self.mw.helper.execute_find_previous_shortcut()
+                        return True
+                    else:
+                        log_debug("AppFilter: F3 pressed - Find Next")
+                        self.mw.helper.execute_find_next_shortcut()
+                        return True
+
         return super().eventFilter(obj, event)

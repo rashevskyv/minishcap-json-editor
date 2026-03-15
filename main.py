@@ -45,7 +45,8 @@ from core.project_manager import ProjectManager
 
 from plugins.base_game_rules import BaseGameRules
 
-from utils.logging_utils import log_info, log_warning, log_error
+from utils.logging_utils import log_info, log_warning, log_error, log_debug
+from utils.hotkey_manager import HotkeyManager
 from utils.constants import (
     EDITOR_PLAYER_TAG, ORIGINAL_PLAYER_TAG,
     DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS,
@@ -518,7 +519,7 @@ class MainWindow(QMainWindow):
         self.event_handler.connect_signals()
 
         self.event_filter = MainWindowEventFilter(self)
-        self.installEventFilter(self.event_filter)
+        QApplication.instance().installEventFilter(self.event_filter)
         
         self.text_edit_filter = TextEditEventFilter(self)
         self.preview_text_edit.installEventFilter(self.text_edit_filter)
@@ -557,12 +558,22 @@ class MainWindow(QMainWindow):
         # Update recent projects menu
         self.project_action_handler._update_recent_projects_menu()
 
+        self.hotkey_manager = HotkeyManager(self)
+        self.hotkey_manager.register()
+
         QTimer.singleShot(100, self.ui_handler.force_focus)
 
         log_info("Main window initialization complete.")
     
     def keyPressEvent(self, event: QKeyEvent):
         super().keyPressEvent(event)
+
+    def nativeEvent(self, eventType, message):
+        if hasattr(self, 'hotkey_manager'):
+            handled, result = self.hotkey_manager.handle_native_event(eventType, message)
+            if handled:
+                return True, result
+        return super().nativeEvent(eventType, message)
 
     # --- Settings Properties ---
     @property
