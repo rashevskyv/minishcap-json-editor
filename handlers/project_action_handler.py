@@ -1,14 +1,17 @@
 # --- START OF FILE handlers/project_action_handler.py ---
 # handlers/project_action_handler.py
-from pathlib import Path
+import os
 import json
-from PyQt5.QtWidgets import QMessageBox, QFileDialog
+import uuid
+import shutil
+from pathlib import Path
+from PyQt5.QtWidgets import QMessageBox, QFileDialog, QInputDialog, QTreeWidgetItem
 from PyQt5.QtCore import Qt
 from core.project_manager import ProjectManager
 from core.data_manager import load_json_file, load_text_file
 from .base_handler import BaseHandler
 from utils.logging_utils import log_info, log_warning, log_error, log_debug
-# from core.data_manager import load_json_file, load_text_file
+from components.folder_delete_dialog import FolderDeleteDialog
 
 class ProjectActionHandler(BaseHandler):
     def __init__(self, main_window, data_processor, ui_updater):
@@ -280,7 +283,7 @@ class ProjectActionHandler(BaseHandler):
             QMessageBox.information(self.mw, "Import Result", "No supported files found or failed to import.")
 
     def delete_block_action(self):
-        log_info("Delete Block action triggered.")
+        log_info("Delete Item action triggered.")
 
         if not self.mw.project_manager or not self.mw.project_manager.project:
             return
@@ -290,30 +293,103 @@ class ProjectActionHandler(BaseHandler):
             return
 
         block_idx = current_item.data(0, Qt.UserRole)
-        block = self.mw.project_manager.project.blocks[block_idx]
-        block_name = block.name
+        folder_id = current_item.data(0, Qt.UserRole + 1)
+        pm = self.mw.project_manager
+        
+        # Determine what we are deleting
+        if block_idx is not None:
+            # IT IS A BLOCK
+            block = pm.project.blocks[block_idx]
+            block_name = block.name
 
-        reply = QMessageBox.question(
-            self.mw,
-            'Delete Block',
-            f"Are you sure you want to remove block '{block_name}' from the project?\n\n"
-            "This will NOT delete the physical files, only the reference in the project.",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.No
-        )
+            reply = QMessageBox.question(
+                self.mw,
+                'Delete Block',
+                f"Are you sure you want to remove block '{block_name}' from the project?\n\n"
+                "This will NOT delete the physical files, only the reference in the project.",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.No
+            )
 
-        if reply != QMessageBox.Yes:
-            return
+            if reply != QMessageBox.Yes:
+                return
 
-        # Remove block from project
-        success = self.mw.project_manager.project.remove_block(block.id)
-        if success:
-            self.mw.project_manager.save()
-            log_info(f"Block '{block_name}' removed from project.")
-            self._populate_blocks_from_project()
-            QMessageBox.information(self.mw, "Block Deleted", f"Block '{block_name}' has been removed.")
-        else:
-            QMessageBox.critical(self.mw, "Delete Error", "Failed to remove block.")
+            undo_mgr = getattr(self.mw, 'undo_manager', None)
+            before = undo_mgr.get_project_snapshot() if undo_mgr else None
+
+            success = pm.project.remove_block(block.id)
+            if success:
+                pm.save()
+                if undo_mgr and before is not None:
+                    undo_mgr.record_structural_action(before, 'DELETE_BLOCK', f"Delete block '{block_name}'")
+                log_info(f"Block '{block_name}' removed from project.")
+                self._populate_blocks_from_project()
+            else:
+                QMessageBox.critical(self.mw, "Delete Error", "Failed to remove block.")
+                
+        elif folder_id is not None:
+            # IT IS A VIRTUAL FOLDER
+            folder = pm.find_virtual_folder(folder_id)
+            if not folder: return
+            
+            dialog = FolderDeleteDialog(folder.name, self.mw)
+            dialog.exec_()
+            
+            action = dialog.result_action
+            if action == 0: return # Cancel
+            
+            undo_mgr = getattr(self.mw, 'undo_manager', None)
+            before = undo_mgr.get_project_snapshot() if undo_mgr else None
+            
+            if action == 1:
+                # 1. DELETE FOLDER ONLY (Keep contents)
+                children_folders = list(folder.children)
+                children_blocks = list(folder.block_ids)
+                parent_id = folder.parent_id
+                
+                pm._remove_folder_from_anywhere(folder_id)
+                
+                # Move everything up
+                if parent_id:
+                    parent_folder = pm.find_virtual_folder(parent_id)
+                    if parent_folder:
+                        for child_f in children_folders:
+                            child_f.parent_id = parent_id
+                            parent_folder.children.append(child_f)
+                        parent_folder.block_ids.extend(children_blocks)
+                else: # Move to root
+                    for child_f in children_folders:
+                        child_f.parent_id = None
+                        pm.project.virtual_folders.append(child_f)
+                    
+                    if 'root_block_ids' not in pm.project.metadata:
+                        pm.project.metadata['root_block_ids'] = []
+                    pm.project.metadata['root_block_ids'].extend(children_blocks)
+                
+                pm.save()
+                if undo_mgr and before is not None:
+                    undo_mgr.record_structural_action(before, 'DELETE_FOLDER_ONLY', f"Delete folder '{folder.name}' (keep contents)")
+                self._populate_blocks_from_project()
+
+            elif action == 2:
+                # 2. DELETE FOLDER AND CONTENTS
+                # Recursively delete all items in folder
+                all_block_ids = []
+                def collect_blocks(f):
+                    all_block_ids.extend(f.block_ids)
+                    for child in f.children:
+                        collect_blocks(child)
+                        
+                collect_blocks(folder)
+                
+                pm._remove_folder_from_anywhere(folder_id)
+                for bid in all_block_ids:
+                    pm.project.remove_block(bid)
+                    
+                pm.save()
+                if undo_mgr and before is not None:
+                    undo_mgr.record_structural_action(before, 'DELETE_FOLDER_ALL', f"Delete folder '{folder.name}' AND its contents")
+                self._populate_blocks_from_project()
 
     def move_block_up_action(self):
         log_info("Move Block Up action triggered.")
