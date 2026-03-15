@@ -251,11 +251,20 @@ class ListSelectionHandler(BaseHandler):
                 # Rename Block
                 block_index_str = str(block_index_from_data)
                 
-                # If there are merged IDs (compact folders), we might need to handle the path
+                # If there are merged IDs (compact folders), handle multi-part rename
                 if merged_ids and " / " in new_text:
                     parts = new_text.split(" / ")
-                    actual_name = parts[-1].strip()
-                    self.mw.block_names[block_index_str] = actual_name
+                    actual_block_name = parts[-1].strip()
+                    self.mw.block_names[block_index_str] = actual_block_name
+                    
+                    # Rename parent folders in the chain
+                    folder_names = parts[:-1]
+                    for f_idx, folder_id in enumerate(merged_ids):
+                        folder_obj = self.mw.project_manager.find_virtual_folder(folder_id)
+                        if folder_obj and folder_names:
+                            name_idx = len(folder_names) - 1 - (len(merged_ids) - 1 - f_idx)
+                            if name_idx >= 0:
+                                folder_obj.name = folder_names[name_idx].strip()
                 else:
                     self.mw.block_names[block_index_str] = new_text
                 
@@ -265,9 +274,14 @@ class ListSelectionHandler(BaseHandler):
                 # Rename Folder
                 folder = self.mw.project_manager.find_virtual_folder(folder_id)
                 if folder:
-                    if " / " in new_text:
+                    if merged_ids and " / " in new_text:
                         parts = new_text.split(" / ")
-                        folder.name = parts[-1].strip()
+                        for f_idx, f_id in enumerate(merged_ids):
+                            f_obj = self.mw.project_manager.find_virtual_folder(f_id)
+                            if f_obj:
+                                name_idx = len(parts) - 1 - (len(merged_ids) - 1 - f_idx)
+                                if name_idx >= 0:
+                                    f_obj.name = parts[name_idx].strip()
                     else:
                         folder.name = new_text
                     self.mw.project_manager.save()

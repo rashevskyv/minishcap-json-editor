@@ -584,7 +584,9 @@ class ProjectManager:
         log_info(f"Migrated {len(self.project.blocks)} blocks to virtual folder structure.")
 
     def create_virtual_folder(self, name: str, parent_id: Optional[str] = None) -> VirtualFolder:
-        """Create a new virtual folder."""
+        """Create a new virtual folder. Identical names are allowed as requested by user."""
+        if not name.strip():
+            name = "New Folder"
         new_folder = VirtualFolder(name=name, parent_id=parent_id)
         if parent_id:
             parent = self.find_virtual_folder(parent_id)

@@ -567,6 +567,12 @@ class CustomTreeWidget(QTreeWidget):
                 for node in nodes:
                     parent_item.insertChild(insert_index, node)
                 
+                # If we moved items to a DIFFERENT folder/parent, 
+                # keep focus at the SOURCE parent so the user doesn't "jump" away.
+                source_parent = drag_source_items[0].parent() if drag_source_items else None
+                if source_parent and parent_item != source_parent:
+                    self.setCurrentItem(source_parent)
+                
                 self.sync_tree_to_project_manager()
                 QTimer.singleShot(0, main_window.ui_updater.populate_blocks)
                 event.accept()
@@ -576,6 +582,13 @@ class CustomTreeWidget(QTreeWidget):
                 return
             
             pm.save()
+            
+            # For "On" drop: also keep focus at source if it was a folder
+            source_parent = drag_source_items[0].parent() if drag_source_items else None
+            # (Note: target_item here IS the folder we dropped ON)
+            if source_parent and target_item != source_parent:
+                self.setCurrentItem(source_parent)
+
             QTimer.singleShot(0, main_window.ui_updater.populate_blocks)
             event.accept()
             if undo_mgr and before is not None:
@@ -639,13 +652,21 @@ class CustomTreeWidget(QTreeWidget):
                     chain_bottom = None
                     
                     for f_idx, folder_id in enumerate(merged_ids):
-                        f_name = folder_names[f_idx] if f_idx < len(folder_names) else "Unknown"
                         folder_obj = main_window.project_manager.find_virtual_folder(folder_id)
+                        
+                        # Determine current name from split parts mapping from the leaf backwards
+                        new_f_name = None
+                        if folder_names:
+                            name_idx = len(folder_names) - 1 - (len(merged_ids) - 1 - f_idx)
+                            if name_idx >= 0:
+                                new_f_name = folder_names[name_idx].strip()
+                        
                         if not folder_obj:
                             from core.project_models import VirtualFolder
-                            folder_obj = VirtualFolder(id=folder_id, name=f_name, parent_id=curr_p_id)
+                            folder_obj = VirtualFolder(id=folder_id, name=new_f_name or "Unnamed Folder", parent_id=curr_p_id)
                         else:
-                            folder_obj.name = f_name
+                            if new_f_name: # Only update name if user provided one in the path
+                                folder_obj.name = new_f_name
                             folder_obj.parent_id = curr_p_id
                         
                         folder_obj.children = []

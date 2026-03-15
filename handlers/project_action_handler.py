@@ -451,7 +451,10 @@ class ProjectActionHandler(BaseHandler):
                 if neighbor:
                     self.mw.block_list_widget.setCurrentItem(neighbor)
                 
-                self._populate_blocks_from_project()
+                if all_block_ids:
+                    self._populate_blocks_from_project()
+                else:
+                    self.ui_updater.populate_blocks()
 
     def move_block_up_action(self):
         log_info("Move Block Up action triggered.")
@@ -573,6 +576,12 @@ class ProjectActionHandler(BaseHandler):
             pm.save()
             if undo_mgr and before is not None:
                 undo_mgr.record_structural_action(before, 'MOVE_BATCH', f"Move {moved_count} items to folder")
+            
+            # Keep focus at the source parent so the view doesn't jump
+            source_parent_item = selected_items[0].parent() if selected_items else None
+            if source_parent_item:
+                self.mw.block_list_widget.setCurrentItem(source_parent_item)
+                
             self.ui_updater.populate_blocks()
             log_info(f"Batch move completed: {moved_count} items moved.")
 

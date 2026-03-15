@@ -100,7 +100,7 @@ class UIUpdater:
         project = self.mw.project_manager.project
         if not project: return
 
-        display_name = folder.name
+        display_name = folder.name or "Unnamed Folder"
         curr = folder
         merged_folder_ids = [folder.id]
         
@@ -120,11 +120,13 @@ class UIUpdater:
                 block_item = self._create_block_tree_item(idx, problem_definitions, pre_aggregated_counts)
                 base_name = self.mw.block_names.get(str(idx), f"Block {idx}")
                 original_text = block_item.text(0)
-                block_item.setText(0, f"{display_name} / {original_text}")
+                full_compacted_text = f"{display_name} / {original_text}"
+                block_item.setText(0, full_compacted_text)
                 
-                # Store the folder IDs that was merged into this block
+                # Store structural info
                 block_item.setData(0, Qt.UserRole + 2, merged_folder_ids)
                 block_item.setData(0, Qt.UserRole + 3, 2) # Compacted Folder / Block
+                block_item.setData(0, Qt.UserRole + 4, full_compacted_text) # Store base name with path
 
                 parent_item.addChild(block_item)
                 if idx == current_selection_block_idx:
@@ -138,6 +140,7 @@ class UIUpdater:
         folder_item.setIcon(0, self.mw.style().standardIcon(QStyle.SP_DirIcon))
         folder_item.setData(0, Qt.UserRole + 1, curr.id) # Key ID is the deepest one
         folder_item.setData(0, Qt.UserRole + 2, merged_folder_ids) # All IDs in chain
+        folder_item.setData(0, Qt.UserRole + 4, display_name) # Store base name with path
         if is_compacted_folder:
             folder_item.setData(0, Qt.UserRole + 3, 1) # Compacted Folder / Folder
         
@@ -158,9 +161,10 @@ class UIUpdater:
                     block_item.setSelected(True)
 
         # Restore folder selection
-        if folder_id_to_select and folder_id_to_select == curr.id:
-            self.mw.block_list_widget.setCurrentItem(folder_item)
-            folder_item.setSelected(True)
+        if folder_id_to_select:
+            if folder_id_to_select == curr.id or folder_id_to_select in merged_folder_ids:
+                self.mw.block_list_widget.setCurrentItem(folder_item)
+                folder_item.setSelected(True)
 
     def populate_blocks(self):
         current_selection_block_idx = None
@@ -273,7 +277,11 @@ class UIUpdater:
 
         if not item: return
 
-        base_display_name = self.mw.block_names.get(str(block_idx), f"Block {block_idx}")
+        # Try to use stored base name to preserve folder path in compacted view
+        base_display_name = item.data(0, Qt.UserRole + 4)
+        if base_display_name is None:
+            base_display_name = self.mw.block_names.get(str(block_idx), f"Block {block_idx}")
+            
         problem_definitions = self.mw.current_game_rules.get_problem_definitions() if self.mw.current_game_rules else {}
         block_problem_counts = self._get_aggregated_problems_for_block(block_idx)
         
@@ -427,7 +435,10 @@ class UIUpdater:
             item = iterator.value()
             block_idx = item.data(0, Qt.UserRole)
             if block_idx is not None:
-                base_display_name = self.mw.block_names.get(str(block_idx), f"Block {block_idx}")
+                base_display_name = item.data(0, Qt.UserRole + 4)
+                if base_display_name is None:
+                    base_display_name = self.mw.block_names.get(str(block_idx), f"Block {block_idx}")
+                
                 if item.text(0) != base_display_name: 
                     item.setText(0, base_display_name) 
             iterator += 1

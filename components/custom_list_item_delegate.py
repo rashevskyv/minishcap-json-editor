@@ -269,10 +269,18 @@ class CustomListItemDelegate(QStyledItemDelegate):
             painter.setPen(number_text_color) # Same subtle color as line numbers
             painter.drawText(count_rect, Qt.AlignCenter, string_count_text)
         
-        text_rect = QRect(text_start_x, item_rect.top(),
-                          item_rect.right() - text_start_x - count_width - 4,
-                          item_rect.height())
+        # Calculate text area
+        header_end = item_rect.right() - count_width - 4
+        available_text_w = header_end - text_start_x
+        
+        # If icons push text too far right, squeeze them a bit or allow overlap 
+        # but NEVER draw off-screen to the right.
+        if available_text_w < 30:
+            text_start_x = max(text_start_x - 20, number_rect.right() + 5)
+            available_text_w = header_end - text_start_x
 
+        text_rect = QRect(text_start_x, item_rect.top(), max(30, available_text_w), item_rect.height())
+            
         painter.setPen(option.palette.color(QPalette.HighlightedText if (is_selected or is_drag_hover) else QPalette.Text))
 
         text_to_display = str(index.data(Qt.DisplayRole) or "")
