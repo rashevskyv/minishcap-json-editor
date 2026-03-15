@@ -229,22 +229,23 @@ class CustomTreeWidget(QTreeWidget):
             selected_items = [item]
             
         main_window = self.window()
+        from PyQt5.QtWidgets import QMenu, QAction, QStyle
         menu = QMenu(self)
 
         # 1. "Add to Folder" for batch selection (at least 2 items)
         if len(selected_items) > 1:
-            add_to_folder_action = menu.addAction(f"Add {len(selected_items)} item(s) to Folder...")
+            add_to_folder_action = menu.addAction(self.style().standardIcon(QStyle.SP_FileDialogNewFolder), f"Add {len(selected_items)} item(s) to Folder...")
             if hasattr(main_window, 'project_action_handler') and hasattr(main_window.project_action_handler, 'add_items_to_folder_action'):
                 add_to_folder_action.triggered.connect(main_window.project_action_handler.add_items_to_folder_action)
             menu.addSeparator()
 
         # 2. Global "Import" actions
         if hasattr(main_window, 'project_manager') and main_window.project_manager:
-            add_block_action = menu.addAction("Import Block...")
+            add_block_action = menu.addAction(self.style().standardIcon(QStyle.SP_FileIcon), "Import Block...")
             if hasattr(main_window, 'app_action_handler') and hasattr(main_window.app_action_handler, 'import_block_action'):
                 add_block_action.triggered.connect(main_window.app_action_handler.import_block_action)
 
-            add_dir_action = menu.addAction("Import Directory...")
+            add_dir_action = menu.addAction(self.style().standardIcon(QStyle.SP_DirIcon), "Import Directory...")
             if hasattr(main_window, 'app_action_handler') and hasattr(main_window.app_action_handler, 'import_directory_action'):
                 add_dir_action.triggered.connect(main_window.app_action_handler.import_directory_action)
             elif hasattr(main_window, 'project_action_handler') and hasattr(main_window.project_action_handler, 'import_directory_action'):
@@ -252,7 +253,10 @@ class CustomTreeWidget(QTreeWidget):
 
             menu.addSeparator()
 
+        # Global "Create Folder" if clicking on empty space
         if not item:
+            create_folder_action = menu.addAction(self.style().standardIcon(QStyle.SP_FileDialogNewFolder), "Create Folder")
+            create_folder_action.triggered.connect(self._create_folder_at_cursor)
             menu.exec_(self.mapToGlobal(pos))
             return
 
@@ -270,38 +274,46 @@ class CustomTreeWidget(QTreeWidget):
         
         # 4. Folder Actions (for single or compacted folders)
         if folder_id or merged_ids:
-            # If compacted, we show actions for EACH folder in the chain
-            if merged_ids:
-                for f_id in merged_ids:
+            # If compacted, we show actions for EACH folder in the chain (FLATTENED)
+            if merged_ids and len(merged_ids) > 1:
+                for f_idx, f_id in enumerate(merged_ids):
                     folder = pm.find_virtual_folder(f_id) if pm else None
                     if folder:
-                        f_menu = menu.addMenu(f"Folder: {folder.name}")
+                        if f_idx > 0: menu.addSeparator()
                         
-                        rename_folder_action = f_menu.addAction("Rename Folder...")
-                        # We need to capture f_id in a closure, but simpler to use lambda with default arg
-                        # Actually we need the tree item too for _rename_folder, but let's make it smarter
-                        # instead of lambda calling self._rename_folder(item), let's call it with f_id
+                        # Show header ONLY if there are multiple folders
+                        header = menu.addAction(self.style().standardIcon(QStyle.SP_DirIcon), f"FOLDER: {folder.name}")
+                        header.setEnabled(False)
+                        
+                        rename_folder_action = menu.addAction(self.style().standardIcon(QStyle.SP_FileDialogDetailedView), "Rename Folder...")
                         rename_folder_action.triggered.connect(lambda checked=False, fid=f_id, name=folder.name: self._rename_folder_by_id(fid, name))
                         
-                        delete_folder_action = f_menu.addAction("Delete Folder")
+                        delete_folder_action = menu.addAction(self.style().standardIcon(QStyle.SP_TrashIcon), "Delete Folder")
                         delete_folder_action.triggered.connect(lambda checked=False, itm=item, fid=f_id: self._delete_folder_by_id(itm, fid))
                         
-                        create_subfolder_action = f_menu.addAction("Create Subfolder...")
-                        create_subfolder_action.triggered.connect(lambda checked=False, fid=f_id: self._create_subfolder_by_id(fid))
+                        create_folder_action = menu.addAction(self.style().standardIcon(QStyle.SP_FileDialogNewFolder), "Create Subfolder...")
+                        create_folder_action.triggered.connect(lambda checked=False, fid=f_id: self._create_subfolder_by_id(fid))
+                menu.addSeparator()
             else:
-                # Single folder fallback
-                folder = pm.find_virtual_folder(folder_id) if pm else None
+                # Single folder or Type 2 (Folder/Block) - treat folder part simply
+                f_id_to_use = folder_id or (merged_ids[0] if merged_ids else None)
+                folder = pm.find_virtual_folder(f_id_to_use) if (pm and f_id_to_use) else None
                 if folder:
-                    rename_folder_action = menu.addAction(f"Rename Folder '{folder.name}'...")
-                    rename_folder_action.triggered.connect(lambda: self._rename_folder(item))
-                    
-                    delete_folder_action = menu.addAction("Delete Folder")
-                    delete_folder_action.triggered.connect(lambda: self._delete_folder(item))
-                    
-                    create_subfolder_action = menu.addAction("Create Subfolder...")
-                    create_subfolder_action.triggered.connect(lambda: self._create_subfolder(item))
+                    # For Folder/Block compaction (Type 2), add a header for the folder part
+                    if compaction_type == 2:
+                        header = menu.addAction(self.style().standardIcon(QStyle.SP_DirIcon), f"FOLDER: {folder.name}")
+                        header.setEnabled(False)
 
-            menu.addSeparator()
+                    rename_folder_action = menu.addAction(self.style().standardIcon(QStyle.SP_FileDialogDetailedView), "Rename Folder...")
+                    rename_folder_action.triggered.connect(lambda checked=False, fid=folder.id, name=folder.name: self._rename_folder_by_id(fid, name))
+                    
+                    delete_folder_action = menu.addAction(self.style().standardIcon(QStyle.SP_TrashIcon), "Delete Folder")
+                    delete_folder_action.triggered.connect(lambda checked=False, itm=item, fid=folder.id: self._delete_folder_by_id(itm, fid))
+                    
+                    create_folder_action = menu.addAction(self.style().standardIcon(QStyle.SP_FileDialogNewFolder), "Create Subfolder...")
+                    create_folder_action.triggered.connect(lambda checked=False, fid=folder.id: self._create_subfolder_by_id(fid))
+                    
+                    menu.addSeparator()
 
         # 5. Block Actions (if it's a block or F/B compaction)
         if block_idx is not None:
@@ -309,22 +321,28 @@ class CustomTreeWidget(QTreeWidget):
             if hasattr(main_window, 'block_names'):
                  block_name = main_window.block_names.get(str(block_idx), f"Block {block_idx}")
 
-            # If it was a compaction, the text is "Folder / Block". Let's use just block name for block actions.
-            block_menu = menu.addMenu(f"Block: {block_name}") if (compaction_type == 2) else menu
-            
-            rename_action = block_menu.addAction(f"Rename Block")
+            # For Folder/Block compaction, add a header for the block part
+            if compaction_type == 2:
+                header = menu.addAction(self.style().standardIcon(QStyle.SP_FileIcon), f"BLOCK: {block_name}")
+                header.setEnabled(False)
+
+            rename_action = menu.addAction(self.style().standardIcon(QStyle.SP_FileDialogDetailedView), f"Rename Block")
             if hasattr(main_window, 'list_selection_handler') and hasattr(main_window.list_selection_handler, 'rename_block'):
                 rename_action.triggered.connect(lambda checked=False, item_to_rename=item: main_window.list_selection_handler.rename_block(item_to_rename))
 
-            block_menu.addSeparator()
+            # Specifically requested "Create Folder" for files too
+            create_folder_action = menu.addAction(self.style().standardIcon(QStyle.SP_FileDialogNewFolder), "Create Folder")
+            create_folder_action.triggered.connect(self._create_folder_at_cursor)
 
-            reveal_menu = block_menu.addMenu("Reveal in Explorer")
+            menu.addSeparator()
+
+            reveal_menu = menu.addMenu(self.style().standardIcon(QStyle.SP_DirOpenIcon), "Reveal in Explorer")
             orig_action = reveal_menu.addAction("Original")
             orig_action.triggered.connect(lambda checked=False, idx=block_idx: self._reveal_in_explorer(idx, is_translation=False))
             trans_action = reveal_menu.addAction("Translation")
             trans_action.triggered.connect(lambda checked=False, idx=block_idx: self._reveal_in_explorer(idx, is_translation=True))
 
-            block_menu.addSeparator()
+            menu.addSeparator()
 
             marker_definitions = {}
             if hasattr(main_window, 'current_game_rules') and main_window.current_game_rules:
@@ -333,41 +351,41 @@ class CustomTreeWidget(QTreeWidget):
             current_markers = main_window.block_handler.get_block_color_markers(block_idx)
             for color_name, q_color in self.color_marker_definitions.items():
                 label = marker_definitions.get(color_name, color_name.capitalize())
-                action = QAction(self._create_color_icon(q_color), f"Mark '{label}'", block_menu)
+                action = QAction(self._create_color_icon(q_color), f"Mark '{label}'", menu)
                 action.setCheckable(True)
                 action.setChecked(color_name in current_markers)
                 action.triggered.connect(lambda checked, b_idx=block_idx, c_name=color_name: main_window.block_handler.toggle_block_color_marker(b_idx, c_name))
-                block_menu.addAction(action)
+                menu.addAction(action)
 
-            block_menu.addSeparator()
+            menu.addSeparator()
 
             if hasattr(main_window, 'app_action_handler') and hasattr(main_window.app_action_handler, 'rescan_issues_for_single_block'):
-                rescan_action = block_menu.addAction(f"Rescan Issues")
+                rescan_action = menu.addAction(self.style().standardIcon(QStyle.SP_BrowserReload), f"Rescan Issues")
                 rescan_action.triggered.connect(lambda checked=False, idx=block_idx: main_window.issue_scan_handler.rescan_issues_for_single_block(idx))
 
             if hasattr(main_window, 'app_action_handler') and hasattr(main_window.app_action_handler, 'calculate_widths_for_block_action'):
-                calc_widths_action = block_menu.addAction(f"Calculate Line Widths")
+                calc_widths_action = menu.addAction(self.style().standardIcon(QStyle.SP_ComputerIcon), f"Calculate Line Widths")
                 calc_widths_action.triggered.connect(lambda checked=False, idx=block_idx: main_window.app_action_handler.calculate_widths_for_block_action(idx))
 
             # Spellcheck action
             spellchecker_manager = getattr(main_window, 'spellchecker_manager', None)
             if spellchecker_manager and spellchecker_manager.enabled:
-                block_menu.addSeparator()
-                spellcheck_action = block_menu.addAction(f"Spellcheck")
+                menu.addSeparator()
+                spellcheck_action = menu.addAction(self.style().standardIcon(QStyle.SP_DialogHelpButton), f"Spellcheck")
                 spellcheck_action.triggered.connect(lambda checked=False, idx=block_idx: self._open_spellcheck_for_block(idx))
 
             translator = getattr(main_window, 'translation_handler', None)
             if translator:
-                block_menu.addSeparator()
+                menu.addSeparator()
                 progress = translator.translation_progress.get(block_idx)
                 if progress and progress['completed_chunks'] and len(progress['completed_chunks']) < progress['total_chunks']:
-                    resume_action = block_menu.addAction(f"AI: Resume Translation")
+                    resume_action = menu.addAction(self.style().standardIcon(QStyle.SP_MediaPlay), f"AI: Resume Translation")
                     resume_action.triggered.connect(lambda checked=False, idx=block_idx: translator.resume_block_translation(idx))
                 else:
-                    translate_block = block_menu.addAction(f"AI: Translate Block (UA)")
+                    translate_block = menu.addAction(self.style().standardIcon(QStyle.SP_MessageBoxInformation), f"AI: Translate Block (UA)")
                     translate_block.triggered.connect(lambda checked=False, idx=block_idx: translator.translate_current_block(idx))
 
-                generate_glossary = block_menu.addAction(f"AI: Build Glossary")
+                generate_glossary = menu.addAction(self.style().standardIcon(QStyle.SP_FileDialogContentsView), f"AI: Build Glossary")
                 generate_glossary.triggered.connect(lambda checked=False, idx=block_idx: main_window.build_glossary_with_ai(idx))
 
         menu.exec_(self.mapToGlobal(pos))
