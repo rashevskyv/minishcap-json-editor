@@ -66,6 +66,7 @@ class CustomTreeWidget(QTreeWidget):
         
         self.itemExpanded.connect(self._handle_item_state_changed)
         self.itemCollapsed.connect(self._handle_item_state_changed)
+        self.itemChanged.connect(self._handle_item_changed)
         
     def mousePressEvent(self, event):
         # If right-clicking on an item that is ALREADY selected,
@@ -230,16 +231,16 @@ class CustomTreeWidget(QTreeWidget):
         main_window = self.window()
         menu = QMenu(self)
 
-        # "Add to Folder" for current selection
-        if selected_items:
+        # 1. "Add to Folder" for batch selection (at least 2 items)
+        if len(selected_items) > 1:
             add_to_folder_action = menu.addAction(f"Add {len(selected_items)} item(s) to Folder...")
             if hasattr(main_window, 'project_action_handler') and hasattr(main_window.project_action_handler, 'add_items_to_folder_action'):
                 add_to_folder_action.triggered.connect(main_window.project_action_handler.add_items_to_folder_action)
             menu.addSeparator()
 
-        # "Add Block" and "Add Directory" options
+        # 2. Global "Import" actions
         if hasattr(main_window, 'project_manager') and main_window.project_manager:
-            add_block_action = menu.addAction("Add Block...")
+            add_block_action = menu.addAction("Import Block...")
             if hasattr(main_window, 'app_action_handler') and hasattr(main_window.app_action_handler, 'import_block_action'):
                 add_block_action.triggered.connect(main_window.app_action_handler.import_block_action)
 
@@ -259,120 +260,234 @@ class CustomTreeWidget(QTreeWidget):
         from PyQt5.QtCore import QItemSelectionModel
         self.selectionModel().setCurrentIndex(self.indexFromItem(item), QItemSelectionModel.Current)
 
-        
-        # Check if it's a file block (has UserRole data)
+        # 3. Handle Item Specific Data
         block_idx = item.data(0, Qt.UserRole)
         folder_id = item.data(0, Qt.UserRole + 1)
+        merged_ids = item.data(0, Qt.UserRole + 2) or [] # For compacted items
+        compaction_type = item.data(0, Qt.UserRole + 3) # 1: F/F, 2: F/B
         
-        if block_idx is None and folder_id:
-            # It's a directory node (virtual folder)
-            rename_folder_action = menu.addAction("Rename Folder...")
-            rename_folder_action.triggered.connect(lambda: self._rename_folder(item))
-            
-            delete_folder_action = menu.addAction("Delete Folder")
-            delete_folder_action.triggered.connect(lambda: self._delete_folder(item))
-            
-            menu.addSeparator()
-            create_subfolder_action = menu.addAction("Create Subfolder...")
-            create_subfolder_action.triggered.connect(lambda: self._create_subfolder(item))
-            
-            menu.exec_(self.mapToGlobal(pos))
-            return
+        pm = getattr(main_window, 'project_manager', None)
         
-        if block_idx is None:
-            # It's a directory node (legacy/physical fallback)
-            menu.exec_(self.mapToGlobal(pos))
-            return
-
-        block_name = item.text(0)
-        if hasattr(main_window, 'block_names'):
-             block_name = main_window.block_names.get(str(block_idx), f"Block {block_idx}")
-
-        rename_action = menu.addAction(f"Rename '{block_name}'")
-        if hasattr(main_window, 'list_selection_handler') and hasattr(main_window.list_selection_handler, 'rename_block'):
-            rename_action.triggered.connect(lambda checked=False, item_to_rename=item: main_window.list_selection_handler.rename_block(item_to_rename))
-
-        menu.addSeparator()
-
-        reveal_menu = menu.addMenu("Reveal in Explorer")
-        
-        orig_action = reveal_menu.addAction("Original")
-        orig_action.triggered.connect(lambda checked=False, idx=block_idx: self._reveal_in_explorer(idx, is_translation=False))
-        
-        trans_action = reveal_menu.addAction("Translation")
-        trans_action.triggered.connect(lambda checked=False, idx=block_idx: self._reveal_in_explorer(idx, is_translation=True))
-
-        menu.addSeparator()
-
-        marker_definitions = {}
-        if hasattr(main_window, 'current_game_rules') and main_window.current_game_rules:
-            marker_definitions = main_window.current_game_rules.get_color_marker_definitions()
-
-        current_markers = main_window.block_handler.get_block_color_markers(block_idx)
-        for color_name, q_color in self.color_marker_definitions.items():
-            label = marker_definitions.get(color_name, color_name.capitalize())
-            action = QAction(self._create_color_icon(q_color), f"Mark '{label}'", menu)
-            action.setCheckable(True)
-            action.setChecked(color_name in current_markers)
-            action.triggered.connect(lambda checked, b_idx=block_idx, c_name=color_name: main_window.block_handler.toggle_block_color_marker(b_idx, c_name))
-            menu.addAction(action)
-
-        menu.addSeparator()
-
-        if hasattr(main_window, 'app_action_handler') and hasattr(main_window.app_action_handler, 'rescan_issues_for_single_block'):
-            rescan_action = menu.addAction(f"Rescan Issues in '{block_name}'")
-            rescan_action.triggered.connect(lambda checked=False, idx=block_idx: main_window.issue_scan_handler.rescan_issues_for_single_block(idx))
-
-        if hasattr(main_window, 'app_action_handler') and hasattr(main_window.app_action_handler, 'calculate_widths_for_block_action'):
-            calc_widths_action = menu.addAction(f"Calculate Line Widths for Block '{block_name}'")
-            calc_widths_action.triggered.connect(lambda checked=False, idx=block_idx: main_window.app_action_handler.calculate_widths_for_block_action(idx))
-
-        # Spellcheck action
-        spellchecker_manager = getattr(main_window, 'spellchecker_manager', None)
-        if spellchecker_manager and spellchecker_manager.enabled:
-            menu.addSeparator()
-            spellcheck_action = menu.addAction(f"Spellcheck Block '{block_name}'")
-            spellcheck_action.triggered.connect(lambda checked=False, idx=block_idx: self._open_spellcheck_for_block(idx))
-
-        translator = getattr(main_window, 'translation_handler', None)
-        if translator:
-            menu.addSeparator()
-
-            progress = translator.translation_progress.get(block_idx)
-            if progress and progress['completed_chunks'] and len(progress['completed_chunks']) < progress['total_chunks']:
-                resume_action = menu.addAction(f"Resume Translation for '{block_name}'")
-                resume_action.triggered.connect(lambda checked=False, idx=block_idx: translator.resume_block_translation(idx))
+        # 4. Folder Actions (for single or compacted folders)
+        if folder_id or merged_ids:
+            # If compacted, we show actions for EACH folder in the chain
+            if merged_ids:
+                for f_id in merged_ids:
+                    folder = pm.find_virtual_folder(f_id) if pm else None
+                    if folder:
+                        f_menu = menu.addMenu(f"Folder: {folder.name}")
+                        
+                        rename_folder_action = f_menu.addAction("Rename Folder...")
+                        # We need to capture f_id in a closure, but simpler to use lambda with default arg
+                        # Actually we need the tree item too for _rename_folder, but let's make it smarter
+                        # instead of lambda calling self._rename_folder(item), let's call it with f_id
+                        rename_folder_action.triggered.connect(lambda checked=False, fid=f_id, name=folder.name: self._rename_folder_by_id(fid, name))
+                        
+                        delete_folder_action = f_menu.addAction("Delete Folder")
+                        delete_folder_action.triggered.connect(lambda checked=False, itm=item, fid=f_id: self._delete_folder_by_id(itm, fid))
+                        
+                        create_subfolder_action = f_menu.addAction("Create Subfolder...")
+                        create_subfolder_action.triggered.connect(lambda checked=False, fid=f_id: self._create_subfolder_by_id(fid))
             else:
-                translate_block = menu.addAction(f"AI Translate Block '{block_name}' (UA)")
-                translate_block.triggered.connect(lambda checked=False, idx=block_idx: translator.translate_current_block(idx))
+                # Single folder fallback
+                folder = pm.find_virtual_folder(folder_id) if pm else None
+                if folder:
+                    rename_folder_action = menu.addAction(f"Rename Folder '{folder.name}'...")
+                    rename_folder_action.triggered.connect(lambda: self._rename_folder(item))
+                    
+                    delete_folder_action = menu.addAction("Delete Folder")
+                    delete_folder_action.triggered.connect(lambda: self._delete_folder(item))
+                    
+                    create_subfolder_action = menu.addAction("Create Subfolder...")
+                    create_subfolder_action.triggered.connect(lambda: self._create_subfolder(item))
 
-            generate_glossary = menu.addAction(f"AI Build Glossary for '{block_name}'")
-            generate_glossary.triggered.connect(lambda checked=False, idx=block_idx: main_window.build_glossary_with_ai(idx))
+            menu.addSeparator()
+
+        # 5. Block Actions (if it's a block or F/B compaction)
+        if block_idx is not None:
+            block_name = item.text(0)
+            if hasattr(main_window, 'block_names'):
+                 block_name = main_window.block_names.get(str(block_idx), f"Block {block_idx}")
+
+            # If it was a compaction, the text is "Folder / Block". Let's use just block name for block actions.
+            block_menu = menu.addMenu(f"Block: {block_name}") if (compaction_type == 2) else menu
+            
+            rename_action = block_menu.addAction(f"Rename Block")
+            if hasattr(main_window, 'list_selection_handler') and hasattr(main_window.list_selection_handler, 'rename_block'):
+                rename_action.triggered.connect(lambda checked=False, item_to_rename=item: main_window.list_selection_handler.rename_block(item_to_rename))
+
+            block_menu.addSeparator()
+
+            reveal_menu = block_menu.addMenu("Reveal in Explorer")
+            orig_action = reveal_menu.addAction("Original")
+            orig_action.triggered.connect(lambda checked=False, idx=block_idx: self._reveal_in_explorer(idx, is_translation=False))
+            trans_action = reveal_menu.addAction("Translation")
+            trans_action.triggered.connect(lambda checked=False, idx=block_idx: self._reveal_in_explorer(idx, is_translation=True))
+
+            block_menu.addSeparator()
+
+            marker_definitions = {}
+            if hasattr(main_window, 'current_game_rules') and main_window.current_game_rules:
+                marker_definitions = main_window.current_game_rules.get_color_marker_definitions()
+
+            current_markers = main_window.block_handler.get_block_color_markers(block_idx)
+            for color_name, q_color in self.color_marker_definitions.items():
+                label = marker_definitions.get(color_name, color_name.capitalize())
+                action = QAction(self._create_color_icon(q_color), f"Mark '{label}'", block_menu)
+                action.setCheckable(True)
+                action.setChecked(color_name in current_markers)
+                action.triggered.connect(lambda checked, b_idx=block_idx, c_name=color_name: main_window.block_handler.toggle_block_color_marker(b_idx, c_name))
+                block_menu.addAction(action)
+
+            block_menu.addSeparator()
+
+            if hasattr(main_window, 'app_action_handler') and hasattr(main_window.app_action_handler, 'rescan_issues_for_single_block'):
+                rescan_action = block_menu.addAction(f"Rescan Issues")
+                rescan_action.triggered.connect(lambda checked=False, idx=block_idx: main_window.issue_scan_handler.rescan_issues_for_single_block(idx))
+
+            if hasattr(main_window, 'app_action_handler') and hasattr(main_window.app_action_handler, 'calculate_widths_for_block_action'):
+                calc_widths_action = block_menu.addAction(f"Calculate Line Widths")
+                calc_widths_action.triggered.connect(lambda checked=False, idx=block_idx: main_window.app_action_handler.calculate_widths_for_block_action(idx))
+
+            # Spellcheck action
+            spellchecker_manager = getattr(main_window, 'spellchecker_manager', None)
+            if spellchecker_manager and spellchecker_manager.enabled:
+                block_menu.addSeparator()
+                spellcheck_action = block_menu.addAction(f"Spellcheck")
+                spellcheck_action.triggered.connect(lambda checked=False, idx=block_idx: self._open_spellcheck_for_block(idx))
+
+            translator = getattr(main_window, 'translation_handler', None)
+            if translator:
+                block_menu.addSeparator()
+                progress = translator.translation_progress.get(block_idx)
+                if progress and progress['completed_chunks'] and len(progress['completed_chunks']) < progress['total_chunks']:
+                    resume_action = block_menu.addAction(f"AI: Resume Translation")
+                    resume_action.triggered.connect(lambda checked=False, idx=block_idx: translator.resume_block_translation(idx))
+                else:
+                    translate_block = block_menu.addAction(f"AI: Translate Block (UA)")
+                    translate_block.triggered.connect(lambda checked=False, idx=block_idx: translator.translate_current_block(idx))
+
+                generate_glossary = block_menu.addAction(f"AI: Build Glossary")
+                generate_glossary.triggered.connect(lambda checked=False, idx=block_idx: main_window.build_glossary_with_ai(idx))
+
         menu.exec_(self.mapToGlobal(pos))
 
+    def _handle_item_changed(self, item, column):
+        if getattr(self, '_is_programmatic_expansion', False):
+            return
+            
+        new_name = item.text(column)
+        folder_id = item.data(column, Qt.UserRole + 1)
+        
+        if folder_id:
+            main_window = self.window()
+            pm = getattr(main_window, 'project_manager', None)
+            if pm:
+                folder = pm.find_virtual_folder(folder_id)
+                if folder and folder.name != new_name:
+                    log_debug(f"In-place rename folder {folder.name} -> {new_name}")
+                    undo_mgr = getattr(main_window, 'undo_manager', None)
+                    before = undo_mgr.get_project_snapshot() if undo_mgr else None
+                    
+                    folder.name = new_name
+                    pm.save()
+                    
+                    if undo_mgr and before is not None:
+                        undo_mgr.record_structural_action(before, 'RENAME_FOLDER', f"Rename folder to '{new_name}'")
+                    
+                    # We might want to refresh to update compaction/counters if needed,
+                    # but maybe it's cleaner to wait for next full refresh to avoid loop.
+                    # Actually, we should call it because name change might trigger/break compaction.
+                    QTimer.singleShot(0, main_window.ui_updater.populate_blocks)
+
+    def _create_folder_at_cursor(self):
+        main_window = self.window()
+        pm = getattr(main_window, 'project_manager', None)
+        if not pm or not pm.project:
+            return
+
+        current_item = self.currentItem()
+        parent_id = None
+        
+        if current_item:
+            # Check if it's a folder or block
+            b_idx = current_item.data(0, Qt.UserRole)
+            f_id = current_item.data(0, Qt.UserRole + 1)
+            
+            if f_id:
+                # If a folder is selected, create INSIDE it
+                parent_id = f_id
+            elif b_idx is not None:
+                # If a block is selected, create as SIBLING (same parent)
+                parent_item = current_item.parent()
+                if parent_item:
+                    parent_id = parent_item.data(0, Qt.UserRole + 1)
+        
+        default_name = self._get_next_unnamed_name(pm)
+        
+        undo_mgr = getattr(main_window, 'undo_manager', None)
+        before = undo_mgr.get_project_snapshot() if undo_mgr else None
+        
+        new_folder = pm.create_virtual_folder(default_name, parent_id=parent_id)
+        if new_folder:
+            pm.save()
+            if undo_mgr and before is not None:
+                undo_mgr.record_structural_action(before, 'ADD_FOLDER', f"Add folder '{default_name}'")
+            
+            # Refresh UI
+            main_window.ui_updater.populate_blocks()
+            
+            # Find the new item and trigger edit mode
+            # We need to iterate over the tree to find the item with this folder_id
+            from PyQt5.QtWidgets import QTreeWidgetItemIterator
+            it = QTreeWidgetItemIterator(self)
+            while it.value():
+                item = it.value()
+                if item.data(0, Qt.UserRole + 1) == new_folder.id:
+                    self.setCurrentItem(item)
+                    item.setSelected(True)
+                    self.scrollToItem(item)
+                    # Trigger Rename (using the editItem logic)
+                    QTimer.singleShot(100, lambda: self.editItem(item, 0))
+                    break
+                it += 1
+
     def _rename_folder(self, item):
-        new_name, ok = QInputDialog.getText(self, "Rename Folder", "Enter new folder name:", text=item.text(0))
+        # Trigger in-place edit instead of dialog
+        self.editItem(item, 0)
+
+    def _rename_folder_by_id(self, folder_id, current_name):
+        # For compacted items, we still need a dialog because there's no single row to edit
+        new_name, ok = QInputDialog.getText(self, "Rename Folder", "Enter new folder name:", text=current_name)
         if ok and new_name:
-            folder_id = item.data(0, Qt.UserRole + 1)
             main_window = self.window()
             undo_mgr = getattr(main_window, 'undo_manager', None)
             before = undo_mgr.get_project_snapshot() if undo_mgr else None
-            if main_window.project_manager.find_virtual_folder(folder_id):
-                folder = main_window.project_manager.find_virtual_folder(folder_id)
+            
+            folder = main_window.project_manager.find_virtual_folder(folder_id)
+            if folder:
                 folder.name = new_name
                 main_window.project_manager.save()
-                item.setText(0, new_name)
+                main_window.ui_updater.populate_blocks() # Refresh to update text/compaction
                 if undo_mgr and before is not None:
                     undo_mgr.record_structural_action(before, 'RENAME_FOLDER', f"Rename folder to '{new_name}'")
 
-    def _delete_folder(self, item):
+    def _delete_folder_by_id(self, item, folder_id):
+        # We need to temporarily set data so the handler knows WHICH folder to delete
+        # because the handler currently looks at currentItem().data(UserRole+1)
+        old_fid = item.data(0, Qt.UserRole + 1)
+        item.setData(0, Qt.UserRole + 1, folder_id)
         self.setCurrentItem(item)
+        
         main_window = self.window()
         if hasattr(main_window, 'project_action_handler'):
             main_window.project_action_handler.delete_block_action()
+        
+        # Restore if item still exists (handler might have deleted it)
+        if item is not self.invisibleRootItem():
+             item.setData(0, Qt.UserRole + 1, old_fid)
 
-    def _create_subfolder(self, item):
-        folder_id = item.data(0, Qt.UserRole + 1)
+    def _create_subfolder_by_id(self, folder_id):
         main_window = self.window()
         pm = main_window.project_manager
         default_name = self._get_next_unnamed_name(pm)
@@ -384,6 +499,16 @@ class CustomTreeWidget(QTreeWidget):
             main_window.ui_updater.populate_blocks()
             if undo_mgr and before is not None:
                 undo_mgr.record_structural_action(before, 'ADD_FOLDER', f"Create subfolder '{new_name}'")
+
+    def _delete_folder(self, item):
+        self.setCurrentItem(item)
+        main_window = self.window()
+        if hasattr(main_window, 'project_action_handler'):
+            main_window.project_action_handler.delete_block_action()
+
+    def _create_subfolder(self, item):
+        folder_id = item.data(0, Qt.UserRole + 1)
+        self._create_subfolder_by_id(folder_id)
 
 
     def startDrag(self, supportedActions):
@@ -753,6 +878,9 @@ class CustomTreeWidget(QTreeWidget):
                 f_obj = main_window.project_manager.find_virtual_folder(folder_id)
                 if f_obj:
                     f_obj.is_expanded = is_expanded
+            
+            # Save the project state so expansion is persistent
+            main_window.project_manager.save()
             
             # Use immediate refresh to avoid "expanding then renaming" flicker
             self.setUpdatesEnabled(False)

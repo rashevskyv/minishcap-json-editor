@@ -468,29 +468,8 @@ class ProjectActionHandler(BaseHandler):
 
     def add_folder_action(self):
         log_info("Add Folder action triggered.")
-        from PyQt5.QtWidgets import QInputDialog
-        # Generate the next "Unnamed N" default name
-        pm = getattr(self.mw, 'project_manager', None)
-        default_name = self.mw.block_list_widget._get_next_unnamed_name(pm) if hasattr(self.mw, 'block_list_widget') else "Unnamed 1"
-        name, ok = QInputDialog.getText(self.mw, "Add Folder", "Enter folder name:", text=default_name)
-        if ok and name:
-            undo_mgr = getattr(self.mw, 'undo_manager', None)
-            before = undo_mgr.get_project_snapshot() if undo_mgr else None
-
-            current_item = self.mw.block_list_widget.currentItem()
-            parent_id = None
-            if current_item:
-                parent_id = current_item.data(0, Qt.UserRole + 1) # If folder
-                if parent_id is None: # If block, get parent's folder id
-                    parent = current_item.parent()
-                    if parent:
-                        parent_id = parent.data(0, Qt.UserRole + 1)
-
-            self.mw.project_manager.create_virtual_folder(name, parent_id=parent_id)
-            self.ui_updater.populate_blocks()
-
-            if undo_mgr and before is not None:
-                undo_mgr.record_structural_action(before, 'ADD_FOLDER', f"Add folder '{name}'")
+        if hasattr(self.mw, 'block_list_widget'):
+            self.mw.block_list_widget._create_folder_at_cursor()
 
 
     def add_items_to_folder_action(self):

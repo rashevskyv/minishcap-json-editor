@@ -149,7 +149,6 @@ class UIUpdater:
             folder_item.setData(0, Qt.UserRole, block_idx_for_icon) # For indicator strips
             
         parent_item.addChild(folder_item)
-        folder_item.setExpanded(is_expanded)
         
         # Standard recursive children population
         for child in curr_for_children.children:
@@ -164,6 +163,9 @@ class UIUpdater:
                 if idx == current_selection_block_idx:
                     self.mw.block_list_widget.setCurrentItem(block_item)
                     block_item.setSelected(True)
+
+        # Apply expansion state AFTER children are added so Qt knows it's NOT a leaf
+        folder_item.setExpanded(is_expanded)
 
         # Restore folder selection
         if folder_id_to_select:
@@ -183,6 +185,7 @@ class UIUpdater:
         v_scroll = self.mw.block_list_widget.verticalScrollBar().value()
         
         # Don't let signals trigger more refreshes while we are rebuilding
+        self.mw.block_list_widget.blockSignals(True)
         self.mw.block_list_widget._is_programmatic_expansion = True
         self.mw.block_list_widget.setUpdatesEnabled(False)
         
@@ -270,6 +273,7 @@ class UIUpdater:
                         block_item.setSelected(True)
         finally:
             self.mw.block_list_widget._is_programmatic_expansion = False
+            self.mw.block_list_widget.blockSignals(False)
             self.mw.block_list_widget.setUpdatesEnabled(True)
             self.mw.block_list_widget.verticalScrollBar().setValue(v_scroll)
 
