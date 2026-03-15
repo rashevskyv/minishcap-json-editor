@@ -369,7 +369,7 @@ class ProjectActionHandler(BaseHandler):
                 pm.save()
                 if undo_mgr and before is not None:
                     undo_mgr.record_structural_action(before, 'DELETE_FOLDER_ONLY', f"Delete folder '{folder.name}' (keep contents)")
-                self._populate_blocks_from_project()
+                self.ui_updater.populate_blocks()
 
             elif action == 2:
                 # 2. DELETE FOLDER AND CONTENTS
