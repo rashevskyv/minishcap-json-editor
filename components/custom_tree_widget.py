@@ -1,7 +1,7 @@
 # --- START OF FILE components/custom_tree_widget.py ---
 from PyQt5.QtWidgets import QTreeWidget, QTreeWidgetItem, QMenu, QAction, QMessageBox, QTreeWidgetItemIterator, QApplication, QInputDialog, QToolTip
-from PyQt5.QtCore import Qt, QPoint, QEvent
-from PyQt5.QtGui import QColor, QIcon, QPixmap, QPainter
+from PyQt5.QtCore import Qt, QPoint, QEvent, QTimer, QRect
+from PyQt5.QtGui import QColor, QIcon, QPixmap, QPainter, QDrag, QFontMetrics
 from pathlib import Path
 
 from utils.logging_utils import log_debug, log_error
@@ -32,6 +32,8 @@ class CustomTreeWidget(QTreeWidget):
 
         # Snapshot of dragged items captured at startDrag() before Qt can change selection.
         self._pending_drag_items = []
+        self._custom_drop_target = None
+        self.setDropIndicatorShown(False)
         
         # Ensure the selected item retains a prominent highlight even when the widget loses focus (e.g. to the text editor)
         self.setStyleSheet("""
@@ -45,6 +47,13 @@ class CustomTreeWidget(QTreeWidget):
             }
             QTreeWidget::item:hover {
                 background-color: #37373d;
+            }
+            QTreeWidget::item:drop-on {
+                background-color: #0078D7 !important;
+                color: white !important;
+            }
+            QTreeView::drop-indicator {
+                color: #0078D7;
             }
         """)
 
@@ -259,19 +268,96 @@ class CustomTreeWidget(QTreeWidget):
     def startDrag(self, supportedActions):
         """Capture selected items BEFORE Qt can change hover/current state."""
         self._pending_drag_items = list(self.selectedItems())
-        super().startDrag(supportedActions)
+        
+        if not self._pending_drag_items:
+            return
+            
+        self._custom_drop_target = None
+        self.setDropIndicatorShown(False)
+        
+        # Create a compact, semi-transparent drag pixmap
+        text = self._pending_drag_items[0].text(0).split(" (")[0][:30]
+        if len(text) == 30: text += "..."
+        if len(self._pending_drag_items) > 1:
+            text += f" (+{len(self._pending_drag_items)-1})"
+            
+        font = self.font()
+        fm = QFontMetrics(font)
+        text_width = fm.horizontalAdvance(text)
+        rect = QRect(0, 0, text_width + 20, fm.height() + 10)
+        
+        pixmap = QPixmap(rect.size())
+        pixmap.fill(Qt.transparent)
+        
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.Antialiasing)
+        
+        # Semi-transparent background (blue #0078D7 with 200/255 alpha)
+        bg_color = QColor(0, 120, 215, 200)
+        painter.setBrush(bg_color)
+        painter.setPen(Qt.NoPen)
+        painter.drawRoundedRect(pixmap.rect(), 4, 4)
+        
+        # Draw text
+        painter.setPen(Qt.white)
+        painter.setFont(font)
+        painter.drawText(pixmap.rect(), Qt.AlignCenter, text)
+        painter.end()
+        
+        drag = QDrag(self)
+        drag.setMimeData(self.mimeData(self._pending_drag_items))
+        drag.setPixmap(pixmap)
+        drag.setHotSpot(QPoint(pixmap.width() // 2, pixmap.height() // 2))
+        
+        drag.exec_(supportedActions)
 
     def dragMoveEvent(self, event):
-        """Allow dropping ON items to trigger grouping."""
-        item = self.itemAt(event.pos())
-        if item and item.data(0, Qt.UserRole) is not None:
-            # We want to favor dropping ON a block to create a folder.
-            # We let QTreeWidget decide the indicator position (OnItem vs Above/Below)
-            # but we force acceptance so it draws properly.
-            event.acceptProposedAction()
         super().dragMoveEvent(event)
+        self._custom_drop_target = None
+        item = self.itemAt(event.pos())
+        
+        # Only do custom logic if dropping over a block or folder
+        if item and (item.data(0, Qt.UserRole) is not None or item.data(0, Qt.UserRole + 1) is not None):
+            rect = self.visualItemRect(item)
+            pct = (event.pos().y() - rect.top()) / max(rect.height(), 1)
+            
+            if pct < 0.2:
+                pos = "Above"
+            elif pct > 0.8:
+                pos = "Below"
+            else:
+                pos = "On"
+                
+            self._custom_drop_target = (item, pos)
+            event.acceptProposedAction()
+            
+        self.viewport().update()
+
+    def dragLeaveEvent(self, event):
+        self._custom_drop_target = None
+        super().dragLeaveEvent(event)
+        self.viewport().update()
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        target_info = getattr(self, '_custom_drop_target', None)
+        if target_info:
+            target_item, drop_pos = target_info
+            if drop_pos in ("Above", "Below"):
+                rect = self.visualItemRect(target_item)
+                painter = QPainter(self.viewport())
+                painter.setPen(Qt.NoPen)
+                painter.setBrush(QColor("#0078D7"))
+                
+                y = rect.top() if drop_pos == "Above" else rect.bottom()
+                painter.drawRect(rect.left(), y - 2, rect.width(), 4) # 4px thick line
+                painter.end()
 
     def dropEvent(self, event):
+        target_info = getattr(self, '_custom_drop_target', None)
+        self._custom_drop_target = None
+        self.viewport().update()
+        
         target_item = self.itemAt(event.pos())
         selected_items = self.selectedItems()
         main_window = self.window()
@@ -280,62 +366,131 @@ class CustomTreeWidget(QTreeWidget):
 
         drag_source_items = self._pending_drag_items or selected_items
         
-        # 1. Special case: Dropping a block ON another block -> Group into new folder
-        if target_item and drag_source_items and target_item not in drag_source_items:
-            target_b_idx = target_item.data(0, Qt.UserRole)
-            indicator = self.dropIndicatorPosition()
-
-            # We only group if Qt detected an "OnItem" drop (i.e. directly over the center of the target item)
-            if indicator == QTreeWidget.OnItem and target_b_idx is not None:
-                pm = main_window.project_manager
-                if not pm or not pm.project:
-                    super().dropEvent(event)
-                    self._pending_drag_items = []
-                    return
-
-                folder_name = self._get_next_unnamed_name(pm)
-                target_parent_id = None
-                parent_item = target_item.parent()
-                if parent_item:
-                    target_parent_id = parent_item.data(0, Qt.UserRole + 1)
-
-                new_folder = pm.create_virtual_folder(folder_name, parent_id=target_parent_id)
-                block_map = getattr(main_window, 'block_to_project_file_map', {})
-
-                # Move the target block into the new folder
-                proj_b_idx = block_map.get(target_b_idx, target_b_idx)
-                if proj_b_idx < len(pm.project.blocks):
-                    pm.move_block_to_folder(pm.project.blocks[proj_b_idx].id, new_folder.id)
-
-                # Move all dragged items into the new folder
-                for drag_item in drag_source_items:
-                    b_idx = drag_item.data(0, Qt.UserRole)
-                    f_id = drag_item.data(0, Qt.UserRole + 1)
-                    if b_idx is not None:
-                        proj_idx = block_map.get(b_idx, b_idx)
-                        if proj_idx < len(pm.project.blocks):
-                            pm.move_block_to_folder(pm.project.blocks[proj_idx].id, new_folder.id)
-                    elif f_id:
-                        folder = pm.find_virtual_folder(f_id)
-                        if folder:
-                            pm._remove_folder_from_anywhere(f_id)
-                            folder.parent_id = new_folder.id
-                            new_folder.children.append(folder)
-
-                pm.save()
-                main_window.ui_updater.populate_blocks()
-                event.accept()
-                if undo_mgr and before is not None:
-                    undo_mgr.record_structural_action(before, 'DRAG_DROP', f"Group into '{folder_name}'")
+        if target_info and drag_source_items:
+            target_item, drop_pos = target_info
+            
+            # Disallow dropping item on itself
+            valid_source_items = [i for i in drag_source_items if i != target_item]
+            if not valid_source_items:
+                super().dropEvent(event)
+                QTimer.singleShot(0, self.sync_tree_to_project_manager)
                 self._pending_drag_items = []
                 return
 
-        # 2. Default behavior (reorder within QTreeWidget)
-        super().dropEvent(event)
+            pm = main_window.project_manager
+            if not pm or not pm.project:
+                super().dropEvent(event)
+                self._pending_drag_items = []
+                return
+
+            if drop_pos == "On":
+                target_b_idx = target_item.data(0, Qt.UserRole)
+                target_f_id = target_item.data(0, Qt.UserRole + 1)
+                
+                # If target is block, we create folder and group
+                if target_b_idx is not None:
+                    folder_name = self._get_next_unnamed_name(pm)
+                    target_parent_id = target_item.parent().data(0, Qt.UserRole + 1) if target_item.parent() else None
+                    new_folder = pm.create_virtual_folder(folder_name, parent_id=target_parent_id)
+                    block_map = getattr(main_window, 'block_to_project_file_map', {})
+
+                    proj_b_idx = block_map.get(target_b_idx, target_b_idx)
+                    if proj_b_idx < len(pm.project.blocks):
+                        pm.move_block_to_folder(pm.project.blocks[proj_b_idx].id, new_folder.id)
+
+                    for drag_item in valid_source_items:
+                        b_idx = drag_item.data(0, Qt.UserRole)
+                        f_id = drag_item.data(0, Qt.UserRole + 1)
+                        if b_idx is not None:
+                            proj_idx = block_map.get(b_idx, b_idx)
+                            if proj_idx < len(pm.project.blocks):
+                                pm.move_block_to_folder(pm.project.blocks[proj_idx].id, new_folder.id)
+                        elif f_id:
+                            folder = pm.find_virtual_folder(f_id)
+                            if folder:
+                                pm._remove_folder_from_anywhere(f_id)
+                                folder.parent_id = new_folder.id
+                                new_folder.children.append(folder)
+                    
+                    undo_mgr_label = f"Group into '{folder_name}'"
+                
+                # If target is folder, we move items INTO the folder
+                elif target_f_id is not None:
+                    block_map = getattr(main_window, 'block_to_project_file_map', {})
+                    for drag_item in valid_source_items:
+                        b_idx = drag_item.data(0, Qt.UserRole)
+                        f_id = drag_item.data(0, Qt.UserRole + 1)
+                        if b_idx is not None:
+                            proj_idx = block_map.get(b_idx, b_idx)
+                            if proj_idx < len(pm.project.blocks):
+                                pm.move_block_to_folder(pm.project.blocks[proj_idx].id, target_f_id)
+                        elif f_id:
+                            folder = pm.find_virtual_folder(f_id)
+                            if folder:
+                                pm._remove_folder_from_anywhere(f_id)
+                                folder.parent_id = target_f_id
+                                pm.find_virtual_folder(target_f_id).children.append(folder)
+                                
+                    undo_mgr_label = f"Move into '{target_item.text(0)}'"
+
+            else: # "Above" or "Below"
+                # Custom reorder: explicit physical node replacement ensures predictability
+                # 1. Take children from tree
+                nodes = []
+                for item in reversed(valid_source_items) if drop_pos == "Above" else valid_source_items:
+                    p = item.parent() or self.invisibleRootItem()
+                    nodes.append(p.takeChild(p.indexOfChild(item)))
+                
+                # 2. Re-evaluate target_index since takeChild might have shifted it
+                parent_item = target_item.parent() or self.invisibleRootItem()
+                target_index = parent_item.indexOfChild(target_item)
+                insert_index = target_index if drop_pos == "Above" else target_index + 1
+                
+                # 3. Insert manually
+                for node in nodes:
+                    parent_item.insertChild(insert_index, node)
+                
+                self.sync_tree_to_project_manager()
+                QTimer.singleShot(0, main_window.ui_updater.populate_blocks)
+                event.accept()
+                if undo_mgr and before is not None:
+                    undo_mgr.record_structural_action(before, 'DRAG_DROP', 'Drag-drop reorder')
+                self._pending_drag_items = []
+                return
+            
+            pm.save()
+            QTimer.singleShot(0, main_window.ui_updater.populate_blocks)
+            event.accept()
+            if undo_mgr and before is not None:
+                undo_mgr.record_structural_action(before, 'DRAG_DROP', undo_mgr_label)
+            self._pending_drag_items = []
+            return
+        target_item = self.itemAt(event.pos())
+        selected_items = self.selectedItems()
+        main_window = self.window()
+        undo_mgr = getattr(main_window, 'undo_manager', None)
+        before = undo_mgr.get_project_snapshot() if undo_mgr else None
+
+        drag_source_items = self._pending_drag_items or selected_items
+        
+        # 2. Default behavior (empty space reorder - append to root)
+        root = self.invisibleRootItem()
+        nodes = []
+        for item in drag_source_items:
+            p = item.parent() or root
+            nodes.append(p.takeChild(p.indexOfChild(item)))
+            
+        for node in nodes:
+            root.addChild(node)
+            
         self.sync_tree_to_project_manager()
+        pm.save()
+        QTimer.singleShot(0, main_window.ui_updater.populate_blocks)
+        event.accept()
         if undo_mgr and before is not None:
             undo_mgr.record_structural_action(before, 'DRAG_DROP', 'Drag-drop reorder')
         self._pending_drag_items = []
+
 
 
     def sync_tree_to_project_manager(self):
