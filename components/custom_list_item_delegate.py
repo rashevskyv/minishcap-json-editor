@@ -91,9 +91,11 @@ class CustomListItemDelegate(QStyledItemDelegate):
         painter.setRenderHint(QPainter.Antialiasing)
 
         is_selected = option.state & QStyle.State_Selected
+        is_drag_hover = option.state & getattr(QStyle, 'State_DragDropHover', 0x4000)
         
-        if is_selected:
-            painter.fillRect(option.rect, option.palette.highlight())
+        if is_selected or is_drag_hover:
+            highlight_color = option.palette.highlight().color() if is_selected else QColor("#0078D7")
+            painter.fillRect(option.rect, highlight_color)
         else:
             is_alternate = option.features & QStyleOptionViewItem.Alternate
             bg_brush = option.palette.alternateBase() if is_alternate else option.palette.base()
@@ -108,11 +110,19 @@ class CustomListItemDelegate(QStyledItemDelegate):
         current_number_area_width = self._get_current_number_area_width(option)
 
         if theme == 'dark':
-            number_area_bg = QColor("#383838") if not is_selected else option.palette.highlight().color().darker(110)
-            number_text_color = QColor("#B0B0B0") if not is_selected else option.palette.color(QPalette.HighlightedText)
+            if is_selected or is_drag_hover:
+                number_area_bg = QColor("#0078D7").darker(110)
+                number_text_color = option.palette.color(QPalette.HighlightedText)
+            else:
+                number_area_bg = QColor("#383838")
+                number_text_color = QColor("#B0B0B0")
         else:
-            number_area_bg = QColor("#F0F0F0") if not is_selected else option.palette.highlight().color().darker(105)
-            number_text_color = QColor(Qt.darkGray) if not is_selected else QColor(Qt.black)
+            if is_selected or is_drag_hover:
+                number_area_bg = QColor("#0078D7").darker(105)
+                number_text_color = QColor(Qt.white)
+            else:
+                number_area_bg = QColor("#F0F0F0")
+                number_text_color = QColor(Qt.darkGray)
         
         active_color_markers_for_block = set()
         
@@ -258,14 +268,14 @@ class CustomListItemDelegate(QStyledItemDelegate):
                           item_rect.right() - text_start_x - count_width - 4,
                           item_rect.height())
 
-        painter.setPen(option.palette.color(QPalette.HighlightedText if is_selected else QPalette.Text))
+        painter.setPen(option.palette.color(QPalette.HighlightedText if (is_selected or is_drag_hover) else QPalette.Text))
 
         text_to_display = str(index.data(Qt.DisplayRole) or "")
         metrics = QFontMetrics(current_font)
         elided_text = metrics.elidedText(text_to_display, Qt.ElideRight, text_rect.width())
 
         if elided_text:
-            if " (" in elided_text and not is_selected:
+            if " (" in elided_text and not (is_selected or is_drag_hover):
                 main_p, detail_p = elided_text.split(" (", 1)
                 detail_p = " (" + detail_p
                 
