@@ -317,12 +317,26 @@ class ProjectActionHandler(BaseHandler):
             undo_mgr = getattr(self.mw, 'undo_manager', None)
             before = undo_mgr.get_project_snapshot() if undo_mgr else None
 
+            # PREPARE SELECTION RECOVERY
+            parent_item = current_item.parent() or self.mw.block_list_widget.invisibleRootItem()
+            idx = parent_item.indexOfChild(current_item)
+            neighbor = None
+            if parent_item.childCount() > 1:
+                if idx < parent_item.childCount() - 1: neighbor = parent_item.child(idx + 1)
+                else: neighbor = parent_item.child(idx - 1)
+            else:
+                neighbor = parent_item if parent_item != self.mw.block_list_widget.invisibleRootItem() else None
+
             success = pm.project.remove_block(block.id)
             if success:
                 pm.save()
                 if undo_mgr and before is not None:
                     undo_mgr.record_structural_action(before, 'DELETE_BLOCK', f"Delete block '{block_name}'")
                 log_info(f"Block '{block_name}' removed from project.")
+                
+                if neighbor:
+                    self.mw.block_list_widget.setCurrentItem(neighbor)
+                
                 self._populate_blocks_from_project()
             else:
                 QMessageBox.critical(self.mw, "Delete Error", "Failed to remove block.")
@@ -332,12 +346,45 @@ class ProjectActionHandler(BaseHandler):
             folder = pm.find_virtual_folder(folder_id)
             if not folder: return
             
-            dialog = FolderDeleteDialog(folder.name, self.mw)
-            dialog.exec_()
+            # If folder is empty, don't show the complex dialog
+            is_empty = not folder.block_ids and not folder.children
+            action = 0
             
-            action = dialog.result_action
+            if is_empty:
+                reply = QMessageBox.question(
+                    self.mw, 'Delete Folder',
+                    f"Are you sure you want to delete the empty folder '{folder.name}'?",
+                    QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+                )
+                if reply == QMessageBox.Yes:
+                    action = 2 # Delete all (which is none)
+            else:
+                dialog = FolderDeleteDialog(folder.name, self.mw)
+                dialog.exec_()
+                action = dialog.result_action
+            
             if action == 0: return # Cancel
             
+            # PREPARE SELECTION RECOVERY
+            # Find a neighbor to select after deletion so we don't jump to the bottom
+            new_selection_block_idx = None
+            new_selection_folder_id = None
+            
+            parent_item = current_item.parent() or self.mw.block_list_widget.invisibleRootItem()
+            idx = parent_item.indexOfChild(current_item)
+            neighbor = None
+            if parent_item.childCount() > 1:
+                if idx < parent_item.childCount() - 1:
+                    neighbor = parent_item.child(idx + 1)
+                else:
+                    neighbor = parent_item.child(idx - 1)
+            else:
+                neighbor = parent_item if parent_item != self.mw.block_list_widget.invisibleRootItem() else None
+            
+            if neighbor:
+                new_selection_block_idx = neighbor.data(0, Qt.UserRole)
+                new_selection_folder_id = neighbor.data(0, Qt.UserRole + 1)
+
             undo_mgr = getattr(self.mw, 'undo_manager', None)
             before = undo_mgr.get_project_snapshot() if undo_mgr else None
             
@@ -369,6 +416,17 @@ class ProjectActionHandler(BaseHandler):
                 pm.save()
                 if undo_mgr and before is not None:
                     undo_mgr.record_structural_action(before, 'DELETE_FOLDER_ONLY', f"Delete folder '{folder.name}' (keep contents)")
+                
+                # Apply suggested selection
+                if new_selection_block_idx is not None or new_selection_folder_id is not None:
+                    # We need to temporarily "fake" the selection so populate_blocks picks it up
+                    # Since item will be gone, we can't use setCurrentItem on it yet.
+                    # populate_blocks uses currentItem() as a source.
+                    # We'll rely on the fact that if we DON'T clear selection,
+                    # and we haven't called populate_blocks yet, currentItem is still our 'folder'.
+                    # But we want it to be the neighbor.
+                    self.mw.block_list_widget.setCurrentItem(neighbor)
+
                 self.ui_updater.populate_blocks()
 
             elif action == 2:
@@ -389,6 +447,10 @@ class ProjectActionHandler(BaseHandler):
                 pm.save()
                 if undo_mgr and before is not None:
                     undo_mgr.record_structural_action(before, 'DELETE_FOLDER_ALL', f"Delete folder '{folder.name}' AND its contents")
+                
+                if neighbor:
+                    self.mw.block_list_widget.setCurrentItem(neighbor)
+                
                 self._populate_blocks_from_project()
 
     def move_block_up_action(self):

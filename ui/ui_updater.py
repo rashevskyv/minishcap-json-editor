@@ -95,7 +95,7 @@ class UIUpdater:
             
         return item
 
-    def _add_virtual_folder_to_tree(self, parent_item, folder, problem_definitions, current_selection_block_idx, pre_aggregated_counts: dict = None):
+    def _add_virtual_folder_to_tree(self, parent_item, folder, problem_definitions, current_selection_block_idx, pre_aggregated_counts: dict = None, folder_id_to_select=None):
         """Recursively add virtual folders and their blocks to the tree with folder compaction (GitHub style)."""
         project = self.mw.project_manager.project
         if not project: return
@@ -145,7 +145,7 @@ class UIUpdater:
         folder_item.setExpanded(folder.is_expanded)
         
         for child in curr.children:
-            self._add_virtual_folder_to_tree(folder_item, child, problem_definitions, current_selection_block_idx, pre_aggregated_counts)
+            self._add_virtual_folder_to_tree(folder_item, child, problem_definitions, current_selection_block_idx, pre_aggregated_counts, folder_id_to_select=folder_id_to_select)
             
         id_to_idx = {b.id: idx for idx, b in enumerate(project.blocks)}
         for b_id in curr.block_ids:
@@ -157,14 +157,21 @@ class UIUpdater:
                     self.mw.block_list_widget.setCurrentItem(block_item)
                     block_item.setSelected(True)
 
+        # Restore folder selection
+        if folder_id_to_select and folder_id_to_select == curr.id:
+            self.mw.block_list_widget.setCurrentItem(folder_item)
+            folder_item.setSelected(True)
+
     def populate_blocks(self):
         current_selection_block_idx = None
+        current_selection_folder_id = None
         current_item = self.mw.block_list_widget.currentItem()
-        if current_item and current_item.data(0, Qt.UserRole) is not None:
+        if current_item:
             current_selection_block_idx = current_item.data(0, Qt.UserRole)
+            current_selection_folder_id = current_item.data(0, Qt.UserRole + 1)
         
         # Default to first block if nothing is selected and we have data
-        if current_selection_block_idx is None and self.mw.data:
+        if current_selection_block_idx is None and current_selection_folder_id is None and self.mw.data:
             current_selection_block_idx = 0
 
         self.mw.block_list_widget.clear()
@@ -198,7 +205,7 @@ class UIUpdater:
             
             # 1. Add virtual folders recursively
             for folder in project.virtual_folders:
-                self._add_virtual_folder_to_tree(root_item, folder, problem_definitions, current_selection_block_idx, pre_aggregated_counts)
+                self._add_virtual_folder_to_tree(root_item, folder, problem_definitions, current_selection_block_idx, pre_aggregated_counts, folder_id_to_select=current_selection_folder_id)
                 
             # 2. Add root blocks
             root_block_ids = project.metadata.get('root_block_ids', [])
