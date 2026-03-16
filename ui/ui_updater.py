@@ -247,6 +247,13 @@ class UIUpdater:
                 project = self.mw.project_manager.project
                 if project.virtual_folders or 'root_block_ids' in project.metadata:
                     has_virtual_structure = True
+            
+            # Show/hide categorization toggles based on project mode
+            is_project_mode = bool(hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project)
+            if hasattr(self.mw, 'highlight_categorized_checkbox'):
+                self.mw.highlight_categorized_checkbox.setVisible(is_project_mode)
+            if hasattr(self.mw, 'hide_categorized_checkbox'):
+                self.mw.hide_categorized_checkbox.setVisible(is_project_mode)
 
             # Compute aggregated problems for ALL blocks once (O(M) complexity instead of O(N*M))
             pre_aggregated_counts = {}
@@ -559,6 +566,20 @@ class UIUpdater:
         for preview_idx, real_idx in enumerate(displayed_indices):
             if self.mw.list_selection_handler._data_string_has_any_problem(block_idx, real_idx):
                 preview_edit.addProblemLineHighlight(preview_idx)
+        
+        # Highlight categorized strings if enabled
+        if getattr(self.mw, 'highlight_categorized', False) and not self.mw.current_category_name:
+            categorized_indices = self._get_all_categorized_indices_for_block(block_idx)
+            if categorized_indices:
+                preview_indices = []
+                for p_idx, r_idx in enumerate(displayed_indices):
+                    if r_idx in categorized_indices:
+                        preview_indices.append(p_idx)
+                if preview_indices:
+                    highlight_color = QColor(200, 230, 255, 60) # Light subtle blue
+                    preview_edit.highlightManager.setCategorizedLineHighlights(preview_indices, highlight_color)
+        else:
+            preview_edit.highlightManager.clearCategorizedLineHighlights()
 
     def _apply_highlights_to_editor(self, editor, block_idx: int, string_idx: int):
         if not editor or not hasattr(editor, 'highlightManager'):
@@ -597,6 +618,22 @@ class UIUpdater:
                      if self.mw.current_game_rules.problem_ids.PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY in problems:
                          editor.highlightManager.addEmptyOddSublineHighlight(i)
 
+    def _get_all_categorized_indices_for_block(self, block_idx: int) -> set:
+        """Get set of all string indices that are assigned to any virtual block (category)."""
+        if block_idx < 0: return set()
+        pm = getattr(self.mw, 'project_manager', None)
+        if not pm or not pm.project: return set()
+        
+        block_map = getattr(self.mw, 'block_to_project_file_map', {})
+        proj_b_idx = block_map.get(block_idx, block_idx)
+        if proj_b_idx >= len(pm.project.blocks): return set()
+        
+        block = pm.project.blocks[proj_b_idx]
+        categorized_indices = set()
+        for cat in block.categories:
+            categorized_indices.update(cat.line_indices)
+        return categorized_indices
+
     def populate_strings_for_block(self, block_idx, category_name=None):
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         original_edit = getattr(self.mw, 'original_text_edit', None)
@@ -630,9 +667,6 @@ class UIUpdater:
             self.mw.is_programmatically_changing_text = False 
             return
         
-        if block_changed:
-            self._apply_highlights_for_block(block_idx)
-        
         if preview_edit and self.mw.current_game_rules:
             # Determine which indices to show
             target_indices = []
@@ -648,13 +682,25 @@ class UIUpdater:
 
             if not target_indices and not category_name:
                 target_indices = list(range(len(self.mw.data[block_idx])))
+                # Filter out categorized if "Hide moved" is enabled
+                if getattr(self.mw, 'hide_categorized', False):
+                    categorized_indices = self._get_all_categorized_indices_for_block(block_idx)
+                    target_indices = [idx for idx in target_indices if idx not in categorized_indices]
             
             # Re-verify indices are within bounds
             target_indices = [i for i in target_indices if 0 <= i < len(self.mw.data[block_idx])]
+            
+            # Check if displayed indices actually changed (for "Hide moved" toggle)
+            old_indices = getattr(self.mw, 'displayed_string_indices', [])
+            displayed_indices_changed = (target_indices != old_indices)
+            
             self.mw.displayed_string_indices = target_indices
 
-            # We only generate full text if block changed
-            if block_changed:
+            # Apply highlights based on NEW displayed_string_indices
+            self._apply_highlights_for_block(block_idx)
+
+            # Generate full text if block changed OR if the subset of strings changed (e.g. Hide moved toggled)
+            if block_changed or displayed_indices_changed:
                 preview_lines = []
                 for real_idx in target_indices:
                     text_for_preview_raw, _ = self.data_processor.get_current_string_text(block_idx, real_idx)

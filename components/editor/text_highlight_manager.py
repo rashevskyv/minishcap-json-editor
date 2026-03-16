@@ -22,6 +22,7 @@ class TextHighlightManager:
         self._width_exceed_char_selections = [] 
         self._empty_odd_subline_selections = []
         self._zebra_selections = []
+        self._categorized_line_selections = []
         
         self._tag_highlight_timer = QTimer()
         self._tag_highlight_timer.setSingleShot(True)
@@ -76,6 +77,7 @@ class TextHighlightManager:
         
         if self._search_match_selections: all_selections.extend(list(self._search_match_selections))
         if self._width_exceed_char_selections: all_selections.extend(list(self._width_exceed_char_selections))
+        if self._categorized_line_selections: all_selections.extend(list(self._categorized_line_selections))
 
 
         if self._linked_cursor_selections: 
@@ -188,6 +190,23 @@ class TextHighlightManager:
     def clearPreviewSelectedLineHighlight(self):
         if self._preview_selected_line_selections:
             self._preview_selected_line_selections = []
+            self.applyHighlights()
+
+    def setCategorizedLineHighlights(self, line_numbers: List[int], color: QColor):
+        new_selections = []
+        doc = self.editor.document()
+        for line_number in line_numbers:
+            if 0 <= line_number < doc.blockCount():
+                block = doc.findBlockByNumber(line_number)
+                selection = self._create_block_background_selection(block, color, use_full_width=True)
+                if selection:
+                    new_selections.append(selection)
+        self._categorized_line_selections = new_selections
+        self.applyHighlights()
+
+    def clearCategorizedLineHighlights(self):
+        if self._categorized_line_selections:
+            self._categorized_line_selections = []
             self.applyHighlights()
 
     def addProblemLineHighlight(self, line_number: int):
@@ -345,6 +364,7 @@ class TextHighlightManager:
         self._width_exceed_char_selections = [] 
         self._empty_odd_subline_selections = []
         self._zebra_selections = [] # Added _zebra_selections
+        self._categorized_line_selections = []
         self.applyHighlights()
 
     def update_zebra_stripes(self):

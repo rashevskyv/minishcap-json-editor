@@ -121,6 +121,11 @@ class MainWindowEventHandler:
         if hasattr(self.mw, 'apply_width_button'):
             self.mw.apply_width_button.clicked.connect(self.mw.string_settings_handler.apply_settings_change)
 
+        if hasattr(self.mw, 'highlight_categorized_checkbox'):
+            self.mw.highlight_categorized_checkbox.toggled.connect(self.mw.list_selection_handler.toggle_highlight_categorized)
+        if hasattr(self.mw, 'hide_categorized_checkbox'):
+            self.mw.hide_categorized_checkbox.toggled.connect(self.mw.list_selection_handler.toggle_hide_categorized)
+
     def keyPressEvent(self, event: QKeyEvent):
         super(self.mw.__class__, self.mw).keyPressEvent(event)
         

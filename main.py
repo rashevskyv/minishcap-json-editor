@@ -356,6 +356,16 @@ class MainWindow(QMainWindow):
     def current_category_name(self, v): self.data_store.current_category_name = v
 
     @property
+    def highlight_categorized(self): return self.data_store.highlight_categorized
+    @highlight_categorized.setter
+    def highlight_categorized(self, v): self.data_store.highlight_categorized = v
+
+    @property
+    def hide_categorized(self): return self.data_store.hide_categorized
+    @hide_categorized.setter
+    def hide_categorized(self, v): self.data_store.hide_categorized = v
+
+    @property
     def unsaved_changes(self): return self.data_store.unsaved_changes
     @unsaved_changes.setter
     def unsaved_changes(self, v): self.data_store.unsaved_changes = v

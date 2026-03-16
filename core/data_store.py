@@ -29,6 +29,10 @@ class AppDataStore:
     displayed_string_indices: List[int] = field(default_factory=list) # Absolute indices of strings shown in preview
     current_category_name: Optional[str] = None
     
+    # Virtual Block Display Options
+    highlight_categorized: bool = False
+    hide_categorized: bool = False
+    
     # Analysis & Problems
     problems_per_subline: Dict[int, Set[str]] = field(default_factory=dict)
     

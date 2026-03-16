@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QSplitter,
-    QLabel, QPushButton, QStyle, QSpacerItem, QSizePolicy, QComboBox, QSpinBox, QMenu
+    QLabel, QPushButton, QStyle, QSpacerItem, QSizePolicy, QComboBox, QSpinBox, QMenu, QCheckBox
 )
 from PyQt5.QtCore import Qt
 from pathlib import Path
@@ -58,6 +58,7 @@ class LayoutBuilder:
 
         self.mw.block_list_widget = CustomTreeWidget(self.mw)
         self.mw.block_list_widget.setAlternatingRowColors(True)
+        
         block_list_container_layout.addWidget(self.mw.block_list_widget)
 
         # Block Toolbar
@@ -96,7 +97,27 @@ class LayoutBuilder:
         # Top Right (Preview)
         top_right_panel = QWidget()
         top_right_layout = QVBoxLayout(top_right_panel)
-        top_right_layout.addWidget(QLabel("Strings in block (click line to select):"))
+        
+        preview_header_layout = QHBoxLayout()
+        preview_header_layout.setContentsMargins(0, 0, 8, 0)
+        preview_header_layout.addWidget(QLabel("Strings in block (click line to select):"))
+        preview_header_layout.addStretch()
+        
+        self.mw.highlight_categorized_checkbox = QCheckBox("Highlight moved")
+        self.mw.highlight_categorized_checkbox.setToolTip("Highlight strings in the parent block that have already been moved to a virtual block (category). Helps you see what's left to organize.")
+        self.mw.highlight_categorized_checkbox.setCursor(Qt.PointingHandCursor)
+        self.mw.highlight_categorized_checkbox.hide()
+        preview_header_layout.addWidget(self.mw.highlight_categorized_checkbox)
+        
+        preview_header_layout.addSpacing(15)
+        
+        self.mw.hide_categorized_checkbox = QCheckBox("Hide moved")
+        self.mw.hide_categorized_checkbox.setToolTip("Filter out strings from the parent block view if they are already present in any virtual block. Useful for focused organizing.")
+        self.mw.hide_categorized_checkbox.setCursor(Qt.PointingHandCursor)
+        self.mw.hide_categorized_checkbox.hide()
+        preview_header_layout.addWidget(self.mw.hide_categorized_checkbox)
+        
+        top_right_layout.addLayout(preview_header_layout)
         self.mw.preview_text_edit = LineNumberedTextEdit(self.mw)
         self.mw.preview_text_edit.setObjectName("preview_text_edit")
         self.mw.preview_text_edit.setReadOnly(True)

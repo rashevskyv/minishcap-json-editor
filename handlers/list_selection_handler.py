@@ -555,6 +555,7 @@ class ListSelectionHandler(BaseHandler):
         
         # Update UI
         self.ui_updater.populate_blocks()
+        self.ui_updater.populate_strings_for_block(self.mw.current_block_idx, self.mw.current_category_name)
         
         # Re-select the block to show the new category (if we implement category display)
         # For now, just logging
@@ -598,3 +599,14 @@ class ListSelectionHandler(BaseHandler):
             self.ui_updater.populate_blocks()
 
 
+    def toggle_highlight_categorized(self, checked):
+        """Toggle highlighting of categorized strings in parent block."""
+        self.mw.highlight_categorized = checked
+        if self.mw.current_block_idx != -1:
+            self.ui_updater.populate_strings_for_block(self.mw.current_block_idx, self.mw.current_category_name)
+
+    def toggle_hide_categorized(self, checked):
+        """Toggle hiding of categorized strings in parent block."""
+        self.mw.hide_categorized = checked
+        if self.mw.current_block_idx != -1:
+            self.ui_updater.populate_strings_for_block(self.mw.current_block_idx, self.mw.current_category_name)
