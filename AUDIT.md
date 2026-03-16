@@ -200,10 +200,13 @@ class BaseHandler:
 **Рішення:**
 
 Розділити на 3–4 класи:
-- `GlossaryHandler` — вже частково є в `handlers/translation/glossary_builder_handler.py`, але основна логіка залишилася тут
-- `AISessionManager` — управління сесіями, промптами, retry-логіка
+- `GlossaryHandler` — винесено в `handlers/translation/glossary_handler.py`
+- `AILifecycleManager` — управління сесіями, промптами, retry-логіка
 - `TranslationExecutor` — виконання перекладу рядків/блоків/виділень
 - `TranslationHandler` — фасад, що делегує до трьох попередніх
+
+> [!NOTE]
+> ✅ **ЧАСТКОВО ВИРІШЕНО** (2026-03-16): `TranslationHandler` декомпоновано. Логіку глосарію винесено в `GlossaryHandler`, життєвий цикл AI та сесії — в `AILifecycleManager`. Промпти винесено в `AIPromptComposer`, а UI логіку — в `TranslationUIHandler`. Розмір файлу зменшено з 1329 до ~850 рядків.
 
 ---
 
