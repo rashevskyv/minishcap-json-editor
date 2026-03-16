@@ -1,55 +1,33 @@
-# --- START OF FILE core/settings_manager.py ---
 import json
 import os
 from pathlib import Path
-import base64
 from typing import Dict, Optional, List
-from PyQt5.QtCore import QByteArray, QRect, QTimer
-from PyQt5.QtWidgets import QMessageBox
-from PyQt5.QtGui import QFont
-from utils.logging_utils import log_debug, log_info, log_warning
-from utils.constants import (
-    DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS,
-    DEFAULT_LINE_WIDTH_WARNING_THRESHOLD
-)
+from PyQt5.QtCore import QTimer
+from utils.logging_utils import log_debug, log_info, log_error, log_warning
 
-from core.translation.config import build_default_translation_config, merge_translation_config
+from core.settings.global_settings import GlobalSettings
+from core.settings.plugin_settings import PluginSettings
+from core.settings.font_map_loader import FontMapLoader
+from core.settings.recent_projects_manager import RecentProjectsManager
 
 # Load environment variables from .env file
 try:
     from dotenv import load_dotenv
     load_dotenv()
 except ImportError:
-    pass  # python-dotenv not installed, using system env variables only
+    pass
 
 class SettingsManager:
     def __init__(self, main_window):
         self.mw = main_window
         self.settings_file_path = "settings.json"
         self._settings = {}
-
-    def _substitute_env_vars(self, data):
-        """
-        Recursively substitute environment variables in data structure.
-        Replaces strings matching ${VAR_NAME} with os.getenv('VAR_NAME').
-        """
-        import re
-
-        if isinstance(data, dict):
-            return {key: self._substitute_env_vars(value) for key, value in data.items()}
-        elif isinstance(data, list):
-            return [self._substitute_env_vars(item) for item in data]
-        elif isinstance(data, str):
-            # Match ${VAR_NAME} or $VAR_NAME patterns
-            def replace_env_var(match):
-                var_name = match.group(1) or match.group(2)
-                return os.getenv(var_name, match.group(0))  # Keep original if env var not found
-
-            # Pattern matches ${VAR_NAME} or $VAR_NAME
-            pattern = r'\$\{([^}]+)\}|\$([A-Z_][A-Z0-9_]*)'
-            return re.sub(pattern, replace_env_var, data)
-        else:
-            return data
+        
+        # Initialize specialized managers
+        self.global_settings = GlobalSettings(main_window, self.settings_file_path)
+        self.plugin_settings = PluginSettings(main_window)
+        self.font_map_loader = FontMapLoader(main_window)
+        self.recent_projects_manager = RecentProjectsManager(main_window)
 
     def get(self, key, default=None):
         """Get a setting value from the centralized storage."""
@@ -59,24 +37,16 @@ class SettingsManager:
         """Set a setting value in the centralized storage."""
         self._settings[key] = value
         # Update MainWindow attribute only if it's a plain attribute, not a property
-        # to avoid recursion.
         if hasattr(self.mw, key):
-            # Check if it's a property on the class
             cls = type(self.mw)
             attr = getattr(cls, key, None)
             if not isinstance(attr, property):
                 setattr(self.mw, key, value)
 
-    def _get_plugin_config_path(self):
-        plugin_name = getattr(self.mw, 'active_game_plugin', None)
-        if not plugin_name:
-            return None
-        return str(Path("plugins") / plugin_name / "config.json")
-
     def load_settings(self):
         log_info(f"Loading settings from {self.settings_file_path}...")
-        self._load_global_settings()
-        self._load_plugin_settings()
+        self.global_settings.load(self._settings)
+        self.plugin_settings.load(self._settings)
         
         # Apply logging settings
         from utils.logging_utils import update_logger_handlers, set_enabled_log_categories, default_log_file_path
@@ -87,7 +57,7 @@ class SettingsManager:
             self.get('log_file_path', default_log_file_path)
         )
         
-        self.load_all_font_maps()
+        self.font_map_loader.load_all_font_maps()
 
         self.mw.initial_load_path = getattr(self.mw, 'original_file_path', None)
         self.mw.initial_edited_load_path = getattr(self.mw, 'edited_file_path', None)
@@ -103,376 +73,10 @@ class SettingsManager:
 
         log_info("Settings loading finished.")
 
-    def _load_global_settings(self):
-        default_font_size = QFont().pointSize() if QFont().pointSize() > 0 else 10
-        defaults = {
-            "tree_font_size": default_font_size,
-            "preview_font_size": default_font_size,
-            "editors_font_size": default_font_size,
-            "font_size": default_font_size,
-            "active_game_plugin": "zelda_mc",
-            "show_multiple_spaces_as_dots": True,
-            "enable_console_logging": True,
-            "enable_file_logging": True,
-            "log_file_path": "",
-            "settings_window_width": 800,
-            "enabled_log_categories": ["general", "lifecycle", "file_ops", "settings", "ui_action", "ai", "scanner", "plugins"],
-            "space_dot_color_hex": "#BBBBBB",
-            "window_was_maximized": False,
-            "window_normal_geometry": None,
-            "main_splitter_state": None,
-            "right_splitter_state": None,
-            "bottom_right_splitter_state": None,
-            "theme": "auto",
-            "restore_unsaved_on_startup": False,
-            "prompt_editor_enabled": True,
-            "spellchecker_enabled": False,
-            "spellchecker_language": "uk",
-            "last_browse_dir": str(Path.home()),
-            "recent_projects": [],
-            "translation_ai": {
-                "provider": "OpenAI", "api_key": "", "model": "gpt-4o"
-            },
-            "glossary_ai": {
-                "provider": "OpenAI",
-                "api_key": "",
-                "use_translation_api_key": False,
-                "model": "gpt-4o",
-                "chunk_size": 8000
-            }
-        }
-        for key, value in defaults.items():
-            self._settings[key] = value
-            # Compatibility: only set if not property
-            cls = type(self.mw)
-            attr = getattr(cls, key, None)
-            if not isinstance(attr, property):
-                setattr(self.mw, key, value)
-        
-        self.mw.current_font_size = defaults['font_size']
-
-        if not Path(self.settings_file_path).exists():
-            return
-
-        try:
-            with open(self.settings_file_path, 'r', encoding='utf-8') as f:
-                settings_data = json.load(f)
-
-            for key, default_value in defaults.items():
-                loaded_value = settings_data.get(key, default_value)
-                if isinstance(default_value, dict):
-                    # Merge dictionaries to ensure all keys are present
-                    merged_value = default_value.copy()
-                    if isinstance(loaded_value, dict):
-                        merged_value.update(loaded_value)
-                    self._settings[key] = merged_value
-                    # Compatibility: only set if not property
-                    cls = type(self.mw)
-                    attr = getattr(cls, key, None)
-                    if not isinstance(attr, property):
-                        setattr(self.mw, key, merged_value)
-                else:
-                    self._settings[key] = loaded_value
-                    # Compatibility: only set if not property
-                    cls = type(self.mw)
-                    attr = getattr(cls, key, None)
-                    if not isinstance(attr, property):
-                        setattr(self.mw, key, loaded_value)
-
-            self.mw.editors_font_size = settings_data.get('editors_font_size', settings_data.get('font_size', default_font_size))
-            self.mw.tree_font_size = settings_data.get('tree_font_size', settings_data.get('font_size', default_font_size))
-            self.mw.preview_font_size = settings_data.get('preview_font_size', settings_data.get('font_size', default_font_size))
-            self.mw.current_font_size = settings_data.get('font_size', default_font_size)
-            self.mw.window_geometry_to_restore = settings_data.get("window_normal_geometry")
-            self.mw.window_was_maximized_at_save = settings_data.get("window_was_maximized", False)
-            log_debug("Global settings loaded.")
-        except Exception as e:
-            log_error(f"Error loading global settings: {e}", exc_info=True)
-
-    def _load_plugin_settings(self):
-        plugin_config_path = self._get_plugin_config_path()
-        defaults = {
-            "display_name": "Unknown Plugin", "default_tag_mappings": {}, "block_names": {}, "block_color_markers": {},
-            "string_metadata": {}, "default_font_file": "",
-            "newline_display_symbol": "↵", "newline_css": "color: #A020F0; font-weight: bold;",
-            "tag_css": "color: #808080; font-style: italic;",
-            "bracket_tag_color_hex": "#FF8C00",
-            "preview_wrap_lines": True, "editors_wrap_lines": False,
-            "game_dialog_max_width_pixels": DEFAULT_GAME_DIALOG_MAX_WIDTH_PIXELS,
-            "line_width_warning_threshold_pixels": DEFAULT_LINE_WIDTH_WARNING_THRESHOLD,
-            "lines_per_page": 4,
-            "original_file_path": None, "edited_file_path": None,
-            "last_selected_block_index": -1, "last_selected_string_index": -1,
-            "last_cursor_position_in_edited": 0, "last_edited_text_edit_scroll_value_v": 0,
-            "last_edited_text_edit_scroll_value_h": 0, "last_preview_text_edit_scroll_value_v": 0,
-            "last_original_text_edit_scroll_value_v": 0, "last_original_text_edit_scroll_value_h": 0,
-            "search_history": [],
-            "translation_config": build_default_translation_config(),
-            "autofix_enabled": {},
-            "detection_enabled": {},
-            "context_menu_tags": {"single_tags": [], "wrap_tags": []}
-        }
-        for key, value in defaults.items():
-             self._settings[key] = value
-             if key not in ["block_names", "block_color_markers", "default_tag_mappings", "string_metadata"]:
-                # Compatibility: only set if not property
-                cls = type(self.mw)
-                attr = getattr(cls, key, None)
-                if not isinstance(attr, property):
-                    setattr(self.mw, key, value)
-        
-        # Ensure new style fields exist
-        if not hasattr(self.mw, 'tag_color_rgba'): self.mw.tag_color_rgba = "#FF8C00"
-        if not hasattr(self.mw, 'tag_bold'): self.mw.tag_bold = True
-        if not hasattr(self.mw, 'tag_italic'): self.mw.tag_italic = False
-        if not hasattr(self.mw, 'tag_underline'): self.mw.tag_underline = False
-        if not hasattr(self.mw, 'newline_color_rgba'): self.mw.newline_color_rgba = "#A020F0"
-        if not hasattr(self.mw, 'newline_bold'): self.mw.newline_bold = True
-        if not hasattr(self.mw, 'newline_italic'): self.mw.newline_italic = False
-        if not hasattr(self.mw, 'newline_underline'): self.mw.newline_underline = False
-        
-        if not hasattr(self.mw, 'block_names'): self.mw.block_names = {}
-        if not hasattr(self.mw, 'block_color_markers'): self.mw.block_color_markers = {}
-        if not hasattr(self.mw, 'default_tag_mappings'): self.mw.default_tag_mappings = {}
-        if not hasattr(self.mw, 'string_metadata'): self.mw.string_metadata = {}
-        if not hasattr(self.mw, 'context_menu_tags'): self.mw.context_menu_tags = {"single_tags": [], "wrap_tags": []}
-        
-        self.mw.search_history_to_save = []
-
-        if not plugin_config_path or not Path(plugin_config_path).exists():
-            log_warning(f"Plugin config not found at '{plugin_config_path}'. Using defaults.")
-            return
-
-        try:
-            with open(plugin_config_path, 'r', encoding='utf-8') as f:
-                plugin_data = json.load(f)
-
-            # Substitute environment variables in plugin config
-            plugin_data = self._substitute_env_vars(plugin_data)
-
-            self.mw.block_names.update({str(k): v for k, v in plugin_data.get("block_names", {}).items()})
-            self.mw.block_color_markers.update({k: set(v) for k, v in plugin_data.get("block_color_markers", {}).items()})
-            self.mw.default_tag_mappings.update(plugin_data.get("default_tag_mappings", {}))
-            
-            loaded_metadata_str_keys = plugin_data.get("string_metadata", {})
-            try:
-                self.mw.string_metadata = {eval(k): v for k, v in loaded_metadata_str_keys.items()}
-            except Exception as e:
-                log_error(f"Error deserializing string_metadata keys: {e}. Metadata will be empty.", exc_info=True)
-                self.mw.string_metadata = {}
-            
-            for key, value in plugin_data.items():
-                if key in ["block_names", "block_color_markers", "default_tag_mappings", "string_metadata"]:
-                    continue
-                self._settings[key] = value
-                if hasattr(self.mw, key):
-                     # Compatibility: only set if not property
-                     cls = type(self.mw)
-                     attr = getattr(cls, key, None)
-                     if not isinstance(attr, property):
-                         setattr(self.mw, key, value)
-
-            # Migrate legacy CSS-based settings to new style fields if needed
-            if not hasattr(self.mw, 'tag_color_rgba') or not getattr(self.mw, 'tag_color_rgba', None):
-                legacy_color = plugin_data.get('bracket_tag_color_hex') or '#FF8C00'
-                self.mw.tag_color_rgba = legacy_color
-            if not hasattr(self.mw, 'tag_bold'):
-                # legacy: bracket tags were bold by default
-                self.mw.tag_bold = True
-            if not hasattr(self.mw, 'tag_italic'):
-                legacy_tag_css = plugin_data.get('tag_css', '')
-                self.mw.tag_italic = 'italic' in legacy_tag_css.lower() if isinstance(legacy_tag_css, str) else False
-            if not hasattr(self.mw, 'tag_underline'):
-                legacy_tag_css = plugin_data.get('tag_css', '')
-                self.mw.tag_underline = 'underline' in legacy_tag_css.lower() if isinstance(legacy_tag_css, str) else False
-
-            if not hasattr(self.mw, 'newline_color_rgba') or not getattr(self.mw, 'newline_color_rgba', None):
-                legacy_nl_css = plugin_data.get('newline_css', '')
-                # simple color extraction
-                nl_color = '#A020F0'
-                if isinstance(legacy_nl_css, str) and '#' in legacy_nl_css:
-                    try:
-                        hexpart = legacy_nl_css.split('#',1)[1].split(';',1)[0].strip()
-                        if len(hexpart) >= 6:
-                            nl_color = f"#{hexpart[:6]}"
-                    except Exception:
-                        pass
-                self.mw.newline_color_rgba = nl_color
-            if not hasattr(self.mw, 'newline_bold'):
-                legacy_nl_css = plugin_data.get('newline_css', '')
-                self.mw.newline_bold = 'bold' in legacy_nl_css.lower() if isinstance(legacy_nl_css, str) else True
-            if not hasattr(self.mw, 'newline_italic'):
-                legacy_nl_css = plugin_data.get('newline_css', '')
-                self.mw.newline_italic = 'italic' in legacy_nl_css.lower() if isinstance(legacy_nl_css, str) else False
-            if not hasattr(self.mw, 'newline_underline'):
-                legacy_nl_css = plugin_data.get('newline_css', '')
-                self.mw.newline_underline = 'underline' in legacy_nl_css.lower() if isinstance(legacy_nl_css, str) else False
-            
-            self.mw.search_history_to_save = plugin_data.get("search_history", [])
-            
-            loaded_autofix = plugin_data.get("autofix_enabled", {})
-            self.mw.autofix_enabled = loaded_autofix
-
-            loaded_detection = plugin_data.get("detection_enabled", {})
-            self.mw.detection_enabled = loaded_detection
-
-            loaded_translation = plugin_data.get("translation_config", {})
-            if isinstance(loaded_translation, dict):
-                self.mw.translation_config = merge_translation_config(
-                    build_default_translation_config(), loaded_translation
-                )
-            else:
-                self.mw.translation_config = build_default_translation_config()
-
-            log_debug(f"Plugin settings loaded from '{plugin_config_path}'.")
-        except Exception as e:
-            log_error(f"Error loading plugin settings from '{plugin_config_path}': {e}", exc_info=True)
-
     def save_settings(self):
         log_debug("Saving all settings...")
-        self._save_global_settings()
-        self._save_plugin_settings()
-
-    def _save_global_settings(self):
-        global_data = {}
-        try:
-            if Path(self.settings_file_path).exists():
-                with open(self.settings_file_path, 'r', encoding='utf-8') as f:
-                    global_data = json.load(f)
-        except Exception as e:
-             log_error(f"Could not read existing global settings, will create a new one. Error: {e}", exc_info=True)
-
-        global_data.update({
-            "tree_font_size": getattr(self.mw, 'tree_font_size', self.mw.current_font_size),
-            "preview_font_size": getattr(self.mw, 'preview_font_size', self.mw.current_font_size),
-            "editors_font_size": getattr(self.mw, 'editors_font_size', self.mw.current_font_size),
-            "font_size": self.mw.current_font_size,
-            "active_game_plugin": self.mw.active_game_plugin,
-            "show_multiple_spaces_as_dots": self.mw.show_multiple_spaces_as_dots,
-            "space_dot_color_hex": self.mw.space_dot_color_hex,
-            "window_was_maximized": self.mw.window_was_maximized_on_close,
-            "theme": getattr(self.mw, 'theme', 'auto'),
-            "restore_unsaved_on_startup": self.mw.restore_unsaved_on_startup,
-            "prompt_editor_enabled": getattr(self.mw, 'prompt_editor_enabled', True),
-            "recent_projects": getattr(self.mw, 'recent_projects', []),
-            "translation_ai": getattr(self.mw, 'translation_ai', {}),
-            "glossary_ai": getattr(self.mw, 'glossary_ai', {}),
-            "spellchecker_enabled": getattr(self.mw, 'spellchecker_enabled', False),
-            "spellchecker_language": getattr(self.mw, 'spellchecker_language', 'uk'),
-            "last_browse_dir": getattr(self.mw, 'last_browse_dir', str(Path.home())),
-            "enable_console_logging": getattr(self.mw, 'enable_console_logging', True),
-            "enable_file_logging": getattr(self.mw, 'enable_file_logging', True),
-            "settings_window_width": getattr(self.mw, 'settings_window_width', 800),
-            "log_file_path": getattr(self.mw, 'log_file_path', ""),
-            "enabled_log_categories": getattr(self.mw, 'enabled_log_categories', ["general", "lifecycle", "file_ops", "settings", "ui_action", "ai", "scanner", "plugins"])
-        })
-
-        if self.mw.restore_unsaved_on_startup and self.mw.edited_data:
-            serializable_edited_data = {str(k): v for k, v in self.mw.edited_data.items()}
-            global_data["unsaved_session_data"] = serializable_edited_data
-        elif "unsaved_session_data" in global_data:
-            del global_data["unsaved_session_data"]
-
-        if self.mw.window_normal_geometry_on_close:
-            geom = self.mw.window_normal_geometry_on_close
-            global_data["window_normal_geometry"] = {"x": geom.x(), "y": geom.y(), "width": geom.width(), "height": geom.height()}
-        
-        try:
-            if self.mw.main_splitter: global_data["main_splitter_state"] = base64.b64encode(self.mw.main_splitter.saveState().data()).decode('ascii')
-            if self.mw.right_splitter: global_data["right_splitter_state"] = base64.b64encode(self.mw.right_splitter.saveState().data()).decode('ascii')
-            if self.mw.bottom_right_splitter: global_data["bottom_right_splitter_state"] = base64.b64encode(self.mw.bottom_right_splitter.saveState().data()).decode('ascii')
-        except Exception as e: log_warning(f"Failed to save splitter state(s): {e}")
-
-        try:
-            with open(self.settings_file_path, 'w', encoding='utf-8') as f:
-                json.dump(global_data, f, indent=4, ensure_ascii=False)
-            log_debug("Global settings saved.")
-        except Exception as e:
-            log_error(f"ERROR saving global settings: {e}", exc_info=True)
-
-    def _save_plugin_settings(self):
-        plugin_config_path = self._get_plugin_config_path()
-        if not plugin_config_path: return
-
-        plugin_data = {}
-        try:
-            if Path(plugin_config_path).exists():
-                with open(plugin_config_path, 'r', encoding='utf-8') as f:
-                    plugin_data = json.load(f)
-        except Exception as e:
-            log_error(f"Could not read existing plugin config, will create a new one. Error: {e}", exc_info=True)
-
-        plugin_data_to_save = {
-            "default_tag_mappings": self.mw.default_tag_mappings,
-            "block_names": self.mw.block_names,
-            "block_color_markers": {k: list(v) for k, v in self.mw.block_color_markers.items()},
-            "string_metadata": {str(k): v for k, v in self.mw.string_metadata.items()},
-            "default_font_file": self.mw.default_font_file,
-            "newline_display_symbol": self.mw.newline_display_symbol,
-            # New style fields
-            "tag_color_rgba": getattr(self.mw, 'tag_color_rgba', "#FF8C00"),
-            "tag_bold": getattr(self.mw, 'tag_bold', True),
-            "tag_italic": getattr(self.mw, 'tag_italic', False),
-            "tag_underline": getattr(self.mw, 'tag_underline', False),
-            "newline_color_rgba": getattr(self.mw, 'newline_color_rgba', "#A020F0"),
-            "newline_bold": getattr(self.mw, 'newline_bold', True),
-            "newline_italic": getattr(self.mw, 'newline_italic', False),
-            "newline_underline": getattr(self.mw, 'newline_underline', False),
-            "preview_wrap_lines": self.mw.preview_wrap_lines,
-            "editors_wrap_lines": self.mw.editors_wrap_lines,
-            "game_dialog_max_width_pixels": self.mw.game_dialog_max_width_pixels,
-            "line_width_warning_threshold_pixels": self.mw.line_width_warning_threshold_pixels,
-            "lines_per_page": getattr(self.mw, 'lines_per_page', 4),
-            "original_file_path": self.mw.json_path,
-            "edited_file_path": self.mw.edited_json_path,
-            "last_selected_block_index": self.mw.last_selected_block_index,
-            "last_selected_string_index": self.mw.last_selected_string_index,
-            "last_cursor_position_in_edited": self.mw.last_cursor_position_in_edited,
-            "last_edited_text_edit_scroll_value_v": self.mw.last_edited_text_edit_scroll_value_v,
-            "last_edited_text_edit_scroll_value_h": self.mw.last_edited_text_edit_scroll_value_h,
-            "last_preview_text_edit_scroll_value_v": self.mw.last_preview_text_edit_scroll_value_v,
-            "last_original_text_edit_scroll_value_v": self.mw.last_original_text_edit_scroll_value_v,
-            "last_original_text_edit_scroll_value_h": self.mw.last_original_text_edit_scroll_value_h,
-            "search_history": self.mw.search_history_to_save,
-            "autofix_enabled": self.mw.autofix_enabled,
-            "detection_enabled": self.mw.detection_enabled,
-            "translation_config": self.mw.translation_config,
-            "context_menu_tags": getattr(self.mw, 'context_menu_tags', {"single_tags": [], "wrap_tags": []})
-        }
-        
-        plugin_data.update(plugin_data_to_save)
-        
-        try:
-            with open(plugin_config_path, 'w', encoding='utf-8') as f:
-                json.dump(plugin_data, f, indent=4, ensure_ascii=False)
-            log_debug(f"Plugin settings saved to '{plugin_config_path}'.")
-        except Exception as e:
-            log_error(f"ERROR saving plugin settings to '{plugin_config_path}': {e}", exc_info=True)
-            QMessageBox.critical(self.mw, "Save Error", f"Could not save plugin configuration to\n{plugin_config_path}")
-
-    def save_block_names(self):
-        plugin_config_path = self._get_plugin_config_path()
-        if not plugin_config_path:
-            log_debug("save_block_names: Cannot save, no plugin config path found.")
-            return
-
-        plugin_data = {}
-        try:
-            if Path(plugin_config_path).exists():
-                with open(plugin_config_path, 'r', encoding='utf-8') as f:
-                    plugin_data = json.load(f)
-        except Exception as e:
-            log_error(f"Could not read existing plugin config at {plugin_config_path} to save block names. A new one will be created. Error: {e}", exc_info=True)
-
-        plugin_data["block_names"] = self.mw.block_names
-        
-        try:
-            with open(plugin_config_path, 'w', encoding='utf-8') as f:
-                json.dump(plugin_data, f, indent=4, ensure_ascii=False)
-            log_debug(f"Block names saved successfully to '{plugin_config_path}'.")
-        except Exception as e:
-            log_error(f"ERROR saving block names to '{plugin_config_path}': {e}", exc_info=True)
-            QMessageBox.critical(self.mw, "Save Error", f"Could not save block names to\n{plugin_config_path}")
+        self.global_settings.save(self._settings)
+        self.plugin_settings.save()
 
     def load_unsaved_session(self):
         log_debug("Attempting to load unsaved session data...")
@@ -496,198 +100,27 @@ class SettingsManager:
                         QTimer.singleShot(0, self.mw.ui_updater.populate_blocks)
             else:
                 log_debug("Restore unsaved session is disabled in settings. Skipping load.")
-
         except Exception as e:
             log_error(f"Error loading unsaved session data: {e}", exc_info=True)
 
-    def _parse_new_font_format(self, font_data):
-        """Парсить новий формат файлу шрифту і повертає font_map."""
-        font_map = {}
-        if not isinstance(font_data, dict) or "glyphs" not in font_data:
-            log_debug("New font format error: 'glyphs' key not found or data is not a dict.")
-            return font_map
-        
-        for glyph_info in font_data["glyphs"]:
-            char = glyph_info.get("char")
-            width_info = glyph_info.get("width")
-            if char and isinstance(width_info, dict) and "char" in width_info:
-                font_map[char] = {"width": width_info["char"]}
-        
-        return font_map
-
+    # Delegation methods for backward compatibility
     def load_all_font_maps(self):
-        plugin_name = getattr(self.mw, 'active_game_plugin', None)
-        self.mw.font_map = {}
-        self.mw.all_font_maps = {}
-        self.mw.font_map_overrides = {}
-        self.mw.icon_sequences = []
-
-        if not plugin_name:
-            log_warning("No active plugin. Character width calculations will use fallback.")
-            return
-
-        fonts_dir = Path("plugins") / plugin_name / "fonts"
-        if not fonts_dir.is_dir():
-            log_warning(f"Fonts directory not found at '{fonts_dir}'. Skipping JSON font files loading.")
-        else:
-            log_debug(f"Loading all font maps from: {fonts_dir}")
-            for font_file in fonts_dir.iterdir():
-                if not font_file.is_file() or not font_file.suffix.lower() == ".json":
-                    continue
-    
-                font_map_path = font_file
-                try:
-                    with font_map_path.open('r', encoding='utf-8') as f:
-                        raw_font_data = json.load(f)
-    
-                    if "signature" in raw_font_data and raw_font_data["signature"] == "FFNT":
-                        parsed_map = self._parse_new_font_format(raw_font_data)
-                    else:
-                        parsed_map = raw_font_data
-                    
-                    self.mw.all_font_maps[font_file.name] = parsed_map
-                    log_debug(f"Successfully loaded font map '{font_file.name}'.")
-    
-                except Exception as e:
-                    log_error(f"Error reading or parsing font map file '{font_file.name}': {e}.", exc_info=True)
-
-        default_font_filename = getattr(self.mw, 'default_font_file', None)
-        if default_font_filename and default_font_filename in self.mw.all_font_maps:
-            self.mw.font_map = self.mw.all_font_maps[default_font_filename]
-            log_debug(f"Set default font_map to '{default_font_filename}'.")
-        elif self.mw.all_font_maps:
-            first_font = next(iter(self.mw.all_font_maps))
-            self.mw.font_map = self.mw.all_font_maps[first_font]
-            log_info(f"Default font file not found, using first available font as default: '{first_font}'.")
-        else:
-            log_warning("No font maps loaded for the plugin.")
-
-        overrides = self._load_font_overrides(plugin_name)
-        if overrides:
-            self._apply_font_overrides(overrides)
-        self._update_icon_sequences_cache()
-        self._refresh_icon_highlighting()
-
-
-    def _load_font_overrides(self, plugin_name: Optional[str]) -> Dict[str, dict]:
-        overrides: Dict[str, dict] = {}
-        if not plugin_name:
-            return overrides
-
-        override_path = Path('plugins') / (plugin_name or "") / 'font_map.json'
-        if not override_path.is_file():
-            return overrides
-
-        try:
-            with open(override_path, 'r', encoding='utf-8') as f:
-                raw_data = json.load(f)
-        except Exception as exc:
-            log_error(f"Failed to read font override map '{override_path}': {exc}", exc_info=True)
-            return overrides
-
-        if not isinstance(raw_data, dict):
-            log_warning(f"Font override map '{override_path}' is not a dict. Skipping.")
-            return overrides
-
-        for key, value in raw_data.items():
-            if not isinstance(key, str) or not isinstance(value, dict):
-                continue
-            width = value.get('width')
-            if isinstance(width, (int, float)):
-                overrides[key] = {'width': int(width)}
-        log_debug(f"Loaded {len(overrides)} font override entries from '{override_path}'.")
-        return overrides
-
-    def _apply_font_overrides(self, overrides: Dict[str, dict]) -> None:
-        if not overrides:
-            return
-        if not hasattr(self.mw, 'font_map') or self.mw.font_map is None:
-            self.mw.font_map = {}
-
-        for font_name, font_map in self.mw.all_font_maps.items():
-            if not isinstance(font_map, dict):
-                continue
-            for key, data in overrides.items():
-                font_map[key] = dict(data)
-
-        for key, data in overrides.items():
-            self.mw.font_map[key] = dict(data)
-
-        setattr(self.mw, 'font_map_overrides', overrides)
-        self._update_icon_sequences_cache()
-        self._refresh_icon_highlighting()
-        log_debug(f"Applied {len(overrides)} font override entries.")
-
-    def _refresh_icon_highlighting(self) -> None:
-        editors = []
-        for attr in ('original_text_edit', 'edited_text_edit', 'preview_text_edit'):
-            editor = getattr(self.mw, attr, None)
-            if editor and hasattr(editor, 'highlighter') and editor.highlighter:
-                editors.append(editor.highlighter)
-        for highlighter in editors:
-            if hasattr(highlighter, '_invalidate_icon_cache'):
-                highlighter._invalidate_icon_cache()
-            highlighter.rehighlight()
-
-    def _update_icon_sequences_cache(self) -> None:
-        sequences = set()
-        all_maps = getattr(self.mw, 'all_font_maps', {}) or {}
-        if isinstance(all_maps, dict):
-            for font_map in all_maps.values():
-                if not isinstance(font_map, dict):
-                    continue
-                for key, value in font_map.items():
-                    if not isinstance(key, str) or len(key) <= 1:
-                        continue
-                    if isinstance(value, dict) and 'width' in value:
-                        sequences.add(key)
-        
-        # Also include sequences directly from the active font_map (for overrides)
-        current_map = getattr(self.mw, 'font_map', {})
-        if isinstance(current_map, dict):
-            for key, value in current_map.items():
-                if isinstance(key, str) and len(key) > 1 and isinstance(value, dict) and 'width' in value:
-                    sequences.add(key)
-                    
-        self.mw.icon_sequences = sorted(sequences, key=len, reverse=True)
+        self.font_map_loader.load_all_font_maps()
 
     def add_recent_project(self, project_path: str, max_recent: int = 10):
-        """
-        Add a project to the recent projects list.
-
-        Args:
-            project_path: Absolute path to the project directory or .uiproj file
-            max_recent: Maximum number of recent projects to keep (default: 10)
-        """
-        if not hasattr(self.mw, 'recent_projects'):
-            self.mw.recent_projects = []
-
-        # Normalize path
-        project_path = str(Path(project_path).resolve())
-
-        # Remove if already in list
-        if project_path in self.mw.recent_projects:
-            self.mw.recent_projects.remove(project_path)
-
-        # Add to beginning
-        self.mw.recent_projects.insert(0, project_path)
-
-        # Limit to max_recent
-        self.mw.recent_projects = self.mw.recent_projects[:max_recent]
-
-        log_debug(f"Added '{project_path}' to recent projects")
+        self.recent_projects_manager.add_recent_project(project_path, max_recent)
 
     def remove_recent_project(self, project_path: str):
-        """Remove a project from the recent projects list."""
-        if not hasattr(self.mw, 'recent_projects'):
-            return
-
-        project_path = str(Path(project_path).resolve())
-        if project_path in self.mw.recent_projects:
-            self.mw.recent_projects.remove(project_path)
-            log_debug(f"Removed '{project_path}' from recent projects")
+        self.recent_projects_manager.remove_recent_project(project_path)
 
     def clear_recent_projects(self):
-        """Clear all recent projects."""
-        self.mw.recent_projects = []
-        log_debug("Cleared all recent projects")
+        self.recent_projects_manager.clear_recent_projects()
+
+    def save_block_names(self):
+        self.plugin_settings.save_block_names()
+
+    def _update_icon_sequences_cache(self):
+        self.font_map_loader.update_icon_sequences_cache()
+
+    def _refresh_icon_highlighting(self):
+        self.font_map_loader.refresh_icon_highlighting()

@@ -1,6 +1,6 @@
 {
     "font_size": 13,
-    "active_game_plugin": "pokemon_fr",
+    "active_game_plugin": "zelda_ww",
     "window_was_maximized": false,
     "window_normal_geometry": {
         "x": 641,
@@ -9,7 +9,7 @@
         "height": 1277
     },
     "main_splitter_state": "AAAA/wAAAAEAAAACAAAA/QAAAyAB/////wEAAAABAA==",
-    "right_splitter_state": "AAAA/wAAAAEAAAACAAAAlgAAAcIB/////wEAAAACAA==",
+    "right_splitter_state": "AAAA/wAAAAEAAAACAAACHgAAAmUB/////wEAAAACAA==",
     "bottom_right_splitter_state": "AAAA/wAAAAEAAAACAAABkAAAAa4B/////wEAAAABAA==",
     "show_multiple_spaces_as_dots": true,
     "space_dot_color_hex": "#808080",
@@ -41,9 +41,10 @@
     "spellchecker_enabled": true,
     "spellchecker_language": "uk",
     "recent_projects": [
+        "D:\\git\\WW\\Cemu_2.6\\Wind_Waker_Wii_U\\project.uiproj",
+        "D:\\git\\WW\\WindWaker\\project.uiproj",
         "C:\\Users\\Administrator\\Desktop\\PokemonRS\\Pokemon\\project.uiproj",
         "C:\\Users\\Administrator\\Desktop\\PokemonRS\\Pokemon\\Pokemon\\project.uiproj",
-        "D:\\git\\WW\\WindWaker\\project.uiproj",
         "C:\\Users\\Administrator\\Desktop\\pokemon\\Pokemon\\project.uiproj",
         "C:\\Users\\Administrator\\Desktop\\13\\project.uiproj"
     ],
@@ -60,8 +61,8 @@
         "plugins"
     ],
     "settings_window_width": 800,
-    "last_browse_dir": "C:/Users/Administrator/Desktop/PokemonRS/translation",
-    "tree_font_size": 13,
+    "last_browse_dir": "D:/git/WW/WindWaker/translation",
+    "tree_font_size": 12,
     "preview_font_size": 13,
-    "editors_font_size": 12
+    "editors_font_size": 13
 }

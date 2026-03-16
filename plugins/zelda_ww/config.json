@@ -2,7 +2,8 @@
     "display_name": "Zelda: The Wind Waker",
     "default_tag_mappings": {},
     "block_names": {
-        "0": "Block 0 (msg0)"
+        "0": "0x777e3c87e77639c9",
+        "1": "message_orig"
     },
     "block_color_markers": {},
     "newline_display_symbol": "↵",
@@ -15,44 +16,39 @@
     "editors_wrap_lines": false,
     "game_dialog_max_width_pixels": 869,
     "line_width_warning_threshold_pixels": 869,
-    "original_file_path": null,
-    "edited_file_path": null,
-    "last_selected_block_index": 0,
-    "last_selected_string_index": 0,
-    "last_cursor_position_in_edited": 0,
+    "original_file_path": "D:\\git\\WW\\WindWaker\\sources\\0x777e3c87e77639c9.txt",
+    "edited_file_path": "D:\\git\\WW\\WindWaker\\translation\\0x777e3c87e77639c9.txt",
+    "last_selected_block_index": 1,
+    "last_selected_string_index": 256,
+    "last_cursor_position_in_edited": 14,
     "last_edited_text_edit_scroll_value_v": 0,
     "last_edited_text_edit_scroll_value_h": 0,
-    "last_preview_text_edit_scroll_value_v": 0,
+    "last_preview_text_edit_scroll_value_v": 243,
     "last_original_text_edit_scroll_value_v": 0,
     "last_original_text_edit_scroll_value_h": 0,
     "search_history": [
-        "Осет",
-        "Sturgeon",
-        "осетр",
-        "orca",
-        "під час руху,",
-        "величезний вихор",
-        "Прошу ласкаво\\",
-        "Прошу ласкаво",
-        "ще вище лізти",
-        "Відомий по всьому",
-        "новий будинок",
-        "наршті можу",
-        "нарешті можу",
-        "мене викрив",
-        "суперництвом",
-        "Він грубо говорить та",
-        "початок підземелля",
-        "Любить тікати з замку",
         "Скаржиться, що через зайнятість",
-        "З гучним кукуріканням та милим"
+        "Любить тікати з замку",
+        "початок підземелля",
+        "Він грубо говорить та",
+        "суперництвом",
+        "мене викрив",
+        "нарешті можу",
+        "наршті можу",
+        "новий будинок",
+        "Відомий по всьому",
+        "ще вище лізти",
+        "Прошу ласкаво",
+        "Прошу ласкаво\\",
+        "величезний вихор",
+        "під час руху,",
+        "orca",
+        "осетр",
+        "Sturgeon",
+        "Осет",
+        "do"
     ],
     "autofix_enabled": {
-        "PKFR_WIDTH_EXCEEDED": true,
-        "PKFR_SHORT_LINE": true,
-        "PKFR_EMPTY_SUBLINE": true,
-        "PKFR_SINGLE_WORD_SUBLINE": false,
-        "PKFR_TAG_WARNING": false,
         "ZWW_TAG_WARNING": false,
         "ZWW_WIDTH_EXCEEDED": true,
         "ZWW_EMPTY_ODD_SUBLINE_LOGICAL": false,
@@ -62,11 +58,6 @@
         "ZWW_SHORT_LINE": false
     },
     "detection_enabled": {
-        "PKFR_WIDTH_EXCEEDED": true,
-        "PKFR_SHORT_LINE": true,
-        "PKFR_EMPTY_SUBLINE": true,
-        "PKFR_SINGLE_WORD_SUBLINE": true,
-        "PKFR_TAG_WARNING": true,
         "ZWW_TAG_WARNING": true,
         "ZWW_WIDTH_EXCEEDED": true,
         "ZWW_EMPTY_ODD_SUBLINE_LOGICAL": true,
@@ -76,7 +67,11 @@
         "ZWW_SHORT_LINE": true
     },
     "default_font_file": "",
-    "string_metadata": {},
+    "string_metadata": {
+        "(0, 4)": {
+            "width": 140
+        }
+    },
     "tag_color_rgba": "#ffa7a7b6",
     "tag_bold": false,
     "tag_italic": false,
@@ -153,7 +148,31 @@
     },
     "lines_per_page": 4,
     "context_menu_tags": {
-        "single_tags": [],
-        "wrap_tags": []
+        "single_tags": [
+            {
+                "display": "😁",
+                "tag": "{boba}"
+            },
+            {
+                "display": "1",
+                "tag": "<biba>"
+            },
+            {
+                "display": "#FFFF0000",
+                "tag": "{COLOR:Red}"
+            }
+        ],
+        "wrap_tags": [
+            {
+                "display": "😳",
+                "open": "<buba>",
+                "close": "</buba>"
+            },
+            {
+                "display": "#FF55AA7F",
+                "open": "{Color:Green}",
+                "close": "{Color:White}"
+            }
+        ]
     }
 }

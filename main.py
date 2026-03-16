@@ -577,6 +577,10 @@ class MainWindow(QMainWindow):
     def keyPressEvent(self, event: QKeyEvent):
         super().keyPressEvent(event)
 
+    def load_game_plugin(self):
+        """Proxy to plugin_handler for backward compatibility in handlers."""
+        self.plugin_handler.load_game_plugin()
+
     def nativeEvent(self, eventType, message):
         if hasattr(self, 'hotkey_manager'):
             handled, result = self.hotkey_manager.handle_native_event(eventType, message)
