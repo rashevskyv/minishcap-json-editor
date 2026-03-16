@@ -16,14 +16,14 @@
     "editors_wrap_lines": false,
     "game_dialog_max_width_pixels": 869,
     "line_width_warning_threshold_pixels": 869,
-    "original_file_path": null,
-    "edited_file_path": null,
-    "last_selected_block_index": -1,
-    "last_selected_string_index": -1,
-    "last_cursor_position_in_edited": 14,
+    "original_file_path": "D:\\git\\WW\\WindWaker\\sources\\0x777e3c87e77639c9.txt",
+    "edited_file_path": "D:\\git\\WW\\WindWaker\\translation\\0x777e3c87e77639c9.txt",
+    "last_selected_block_index": 1,
+    "last_selected_string_index": 61,
+    "last_cursor_position_in_edited": 190,
     "last_edited_text_edit_scroll_value_v": 0,
     "last_edited_text_edit_scroll_value_h": 0,
-    "last_preview_text_edit_scroll_value_v": 243,
+    "last_preview_text_edit_scroll_value_v": 55,
     "last_original_text_edit_scroll_value_v": 0,
     "last_original_text_edit_scroll_value_h": 0,
     "search_history": [
@@ -67,11 +67,7 @@
         "ZWW_SHORT_LINE": true
     },
     "default_font_file": "",
-    "string_metadata": {
-        "(0, 4)": {
-            "width": 140
-        }
-    },
+    "string_metadata": {},
     "tag_color_rgba": "#ffa7a7b6",
     "tag_bold": false,
     "tag_italic": false,

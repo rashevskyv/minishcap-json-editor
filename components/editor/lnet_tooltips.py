@@ -27,9 +27,16 @@ class LNETTooltipLogic:
 
         if is_preview:
             string_idx = line_idx_in_widget
-            for key, probs in getattr(main_window, 'problems_per_subline', {}).items():
-                if key[0] == block_idx and key[1] == string_idx:
-                    problems.update(probs)
+            if hasattr(main_window, 'displayed_string_indices') and main_window.displayed_string_indices:
+                if 0 <= line_idx_in_widget < len(main_window.displayed_string_indices):
+                    string_idx = main_window.displayed_string_indices[line_idx_in_widget]
+                else:
+                    string_idx = -1
+
+            if string_idx != -1:
+                for key, probs in getattr(main_window, 'problems_per_subline', {}).items():
+                    if key[0] == block_idx and key[1] == string_idx:
+                        problems.update(probs)
         else:
             if not hasattr(main_window, 'current_string_idx'):
                 return None

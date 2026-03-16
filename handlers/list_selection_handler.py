@@ -475,23 +475,27 @@ class ListSelectionHandler(BaseHandler):
 
             selected_lines = list(range(start_line, end_line + 1))
         
+        # Translate rel to abs
+        abs_indices = []
+        if hasattr(self.mw, 'displayed_string_indices') and self.mw.displayed_string_indices:
+            for rel in selected_lines:
+                if 0 <= rel < len(self.mw.displayed_string_indices):
+                    abs_indices.append(self.mw.displayed_string_indices[rel])
+        else:
+            abs_indices = selected_lines
+            
         # Save to app state
-        self.mw.selected_string_indices = selected_lines
+        self.mw.selected_string_indices = abs_indices
         
         # If only one selected, update current_string_idx
-        if len(selected_lines) == 1:
-            # We don't want to trigger another selection change loop if possible, 
-            # but string_selected_from_preview handles UI updates we might need.
-            # However, handle_preview_selection_changed is triggered BY selection.
-            # Avoid recursion.
-            
-            target_idx = selected_lines[0]
+        if len(abs_indices) == 1:
+            target_idx = abs_indices[0]
             if self.mw.current_string_idx != target_idx:
-                # We call string_selected_from_preview but it will try to set_selected_lines again
-                # self.string_selected_from_preview(target_idx)
-                # Instead, let's just update the internal state and trigger UI update manually if needed.
-                # Actually, let's see if we can just let it be.
-                pass
+                # Update current_string_idx so other views follow
+                self.mw.current_string_idx = target_idx
+                self.ui_updater.update_text_views()
+                if hasattr(self.mw, 'string_settings_updater'):
+                    self.mw.string_settings_updater.update_string_settings_panel()
 
         if preview_edit and hasattr(preview_edit, 'set_selected_lines'):
             preview_edit.set_selected_lines(selected_lines)

@@ -88,9 +88,15 @@ class LNETLineNumberAreaPaintLogic:
                     
                     if isinstance(main_window_ref, QMainWindow):
                         is_unsaved = False
+                        real_idx = current_q_block_number_in_editor_doc
+                        if is_preview and hasattr(main_window_ref, 'displayed_string_indices') and main_window_ref.displayed_string_indices:
+                            if 0 <= current_q_block_number_in_editor_doc < len(main_window_ref.displayed_string_indices):
+                                real_idx = main_window_ref.displayed_string_indices[current_q_block_number_in_editor_doc]
+                            else:
+                                real_idx = -1
+
                         if is_preview:
-                            data_line_idx = current_q_block_number_in_editor_doc
-                            is_unsaved = (current_block_idx_data_mw, data_line_idx) in main_window_ref.edited_data
+                            is_unsaved = (current_block_idx_data_mw, real_idx) in main_window_ref.edited_data
                         elif is_editor and current_string_idx_data_mw != -1:
                             is_unsaved = (current_block_idx_data_mw, current_string_idx_data_mw) in main_window_ref.edited_data
                         
@@ -192,7 +198,15 @@ class LNETLineNumberAreaPaintLogic:
                         elif is_preview and isinstance(main_window_ref, QMainWindow) and current_block_idx_data_mw != -1 and game_rules:
                             indicator_x_start = number_part_width + 2
                             
-                            string_meta = main_window_ref.string_metadata.get((current_block_idx_data_mw, current_q_block_number_in_editor_doc), {})
+                            # Use absolute index if possible
+                            real_idx = current_q_block_number_in_editor_doc
+                            if hasattr(main_window_ref, 'displayed_string_indices') and main_window_ref.displayed_string_indices:
+                                if 0 <= current_q_block_number_in_editor_doc < len(main_window_ref.displayed_string_indices):
+                                    real_idx = main_window_ref.displayed_string_indices[current_q_block_number_in_editor_doc]
+                                else:
+                                    real_idx = -1
+
+                            string_meta = main_window_ref.string_metadata.get((current_block_idx_data_mw, real_idx), {})
                             has_custom_font = "font_file" in string_meta
                             has_custom_width = "width" in string_meta
 
@@ -210,10 +224,9 @@ class LNETLineNumberAreaPaintLogic:
 
                             # 2. Warning Indicators (Consolidated with stripes)
                             aggregated_probs = set()
-                            preview_prob_key = (current_block_idx_data_mw, current_q_block_number_in_editor_doc)
-                            if hasattr(main_window_ref, 'problems_per_subline'):
+                            preview_prob_key = (current_block_idx_data_mw, real_idx)
+                            if real_idx != -1 and hasattr(main_window_ref, 'problems_per_subline'):
                                 for key, problems in main_window_ref.problems_per_subline.items():
-                                    # ВИПРАВЛЕНО: preview_problem_key замінено на preview_prob_key
                                     if key[0] == preview_prob_key[0] and key[1] == preview_prob_key[1]:
                                         aggregated_probs.update(problems)
 
