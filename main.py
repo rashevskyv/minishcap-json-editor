@@ -66,6 +66,8 @@ from ui.main_window.main_window_plugin_handler import MainWindowPluginHandler
 from ui.main_window.main_window_event_handler import MainWindowEventHandler
 from ui.main_window.main_window_block_handler import MainWindowBlockHandler
 
+from core.context import ProjectContext, UIProvider
+
 
 class MainWindow(QMainWindow):
     # --- State Properties (Proxy to StateManager) ---
@@ -389,6 +391,13 @@ class MainWindow(QMainWindow):
     def last_selected_string_index(self): return self.data_store.last_selected_string_index
     @last_selected_string_index.setter
     def last_selected_string_index(self, v): self.data_store.last_selected_string_index = v
+
+    @property
+    def ui_provider(self) -> UIProvider:
+        return self
+
+    def force_focus(self):
+        self.ui_handler.force_focus()
 
     def __init__(self):
         super().__init__()

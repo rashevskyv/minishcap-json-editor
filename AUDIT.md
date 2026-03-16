@@ -172,7 +172,10 @@ class BaseHandler:
 
 2. **Поступово замінювати** `self.mw` на типізований інтерфейс — хендлер буде бачити тільки те, що йому реально потрібно.
 
-3. **Першим кроком** (мінімальний) — винести стан даних (`data`, `edited_data`, `block_names`, `current_block_idx` тощо) у окремий `AppDataStore` клас, на який посилається і MainWindow і хендлери.
+3. **Першим кроком** (мінімальний) — винести стан даних (`data`, `edited_data`, `block_names`, `current_block_idx` тощо) у окремий `AppDataStore` клас, на який посилається і MainWindow і хендлери. 
+
+> [!NOTE]
+> ✅ **ЧАСТКОВО ВИРІШЕНО** (2026-03-16): Впроваджено `ProjectContext` (Protocol) у `core/context.py`. `BaseHandler` тепер використовує `self.ctx` замість прямого посилання на `MainWindow`. Це перший крок до повної декапсуляції.
 
 ---
 
@@ -204,18 +207,6 @@ class BaseHandler:
 
 ---
 
-### 2.4. Монолітний `SettingsManager` — 685 рядків, змішані обов'язки
-
-**Файл:** [settings_manager.py](file:///d:/git/dev/zeldamc/jsonreader/core/settings_manager.py)
-
-**Опис проблеми:**  
-Один клас відповідає за:
-- Глобальні налаштування (тема, шрифт, розмір вікна)
-- Налаштування плагінів (font maps, tag mappings, autofix rules)
-- Завантаження шрифтових карт (`load_all_font_maps`, `_parse_new_font_format`)
-- Кешування іконок (`_update_icon_sequences_cache`)
-- Менеджмент останніх проєктів (`add_recent_project`, `remove_recent_project`)
-- Збереження/відновлення сесій (`load_unsaved_session`)
 - Environment variables substitution
 
 **Рішення:**
@@ -226,14 +217,17 @@ class BaseHandler:
 - `FontMapLoader` — завантаження та парсинг шрифтових карт (вже логічно окрема задача)
 - `RecentProjectsManager` — список останніх проєктів
 
+> [!NOTE]
+> ✅ **ВИРІШЕНО** (2026-03-16): Клас `SettingsManager` декомпоновано. Створено пакет `core/settings/`, куди винесено окремі відповідальності. `SettingsManager` тепер є фасадом для цих підсистем.
+
 ---
 
 ### 2.5. `setup_main_window_ui` — 380-рядкова процедурна функція
 
-**Файл:** [ui_setup.py](file:///d:/git/dev/zeldamc/jsonreader/ui/ui_setup.py#L13-L380)
+**Файл:** [ui_setup.py](file:///d:/git/dev/zeldamc/jsonreader/ui/ui_setup.py)
 
 **Опис проблеми:**  
-Одна велика функція `setup_main_window_ui(main_window)` створює **весь** UI додатку: меню, тулбар, splitters, editors, status bar. Вона пряcмо модифікує атрибути main_window.
+Одна велика функція `setup_main_window_ui(main_window)` створювала **весь** UI додатку: меню, тулбар, splitters, editors, status bar. Вона напряму модифікувала атрибути main_window.
 
 **Рішення:**
 
@@ -242,6 +236,9 @@ class BaseHandler:
 - `ToolBarBuilder`
 - `EditorPanelBuilder`
 - `StatusBarBuilder`
+
+> [!NOTE]
+> ✅ **ВИРІШЕНО** (2026-03-16): Створено набір будівельників у `ui/builders/`. Побудова інтерфейсу тепер структурована та керована через `MainWindowUIHandler`.
 
 ---
 
@@ -534,6 +531,19 @@ if hasattr(self, 'spellchecker_manager'):
 - ✅ **Виправлено (2026-03-10):** Оновлено CSS `CustomTreeWidget` для персистентної підсвітки обраного елемента (`:selected`).
 - ✅ **Виправлено (2026-03-10):** Додано підменю "Reveal in Explorer -> Original/Translation".
 
+### 4.6. Проблеми управління Віртуальними Блоками та Renaming UI
+
+**Опис проблеми:**
+1. Неможливість приховати вже перенесені у віртуальні блоки рядки в основному списку.
+2. При перейменуванні блоку в поле редагування потрапляли лічильники помилок `(Width)`, що заважало швидкому редагуванню.
+3. Поле редагування (editor) зміщувалося вліво, перекриваючи іконки та стрілочки.
+
+**Рішення:**
+- ✅ **Виправлено (2026-03-16):** Додано опції "Highlight moved" та "Hide moved" для віртуальних блоків.
+- ✅ **Виправлено (2026-03-16):** Реалізовано `Qt.EditRole` для розділення тексту відображення та тексту редагування.
+- ✅ **Виправлено (2026-03-16):** Виправлено геометрію інлайн-редактора через `updateEditorGeometry` у делегаті.
+- ✅ **Виправлено (2026-03-16):** Додано дію "Remove Block" у контекстне меню дерева.
+
 ---
 
 ## 5. Проблеми тестового покриття
@@ -557,10 +567,10 @@ if hasattr(self, 'spellchecker_manager'):
 | 1 | 🔴 Критичний | 46 булевих прапорців стану | `StateManager` + enum + context manager | Висока |
 | 2 | 🔴 Критичний | Tight coupling через `self.mw` | Interfaces/Protocol, `AppDataStore` | Висока |
 | 3 | 🟡 Високий | `translation_handler.py` 1329 рядків | Розділити на 3-4 класи | Середня |
-| 4 | 🟡 Високий | `settings_manager.py` 685 рядків | Розділити на 4 класи | Середня |
+| 4 | ✅ Вирішено | `settings_manager.py` 685 рядків | Декомпоновано на пакет `core/settings/` | — |
 | 5 | ✅ Вирішено | `utils.py` імпортує з `pokemon_fr` | Перенесено маркери в `markers.py` | — |
 | 6 | ✅ Вирішено | 0% coverage pytest | Додано 125 тестів (pytest) | — |
-| 7 | 🟢 Середній | `setup_main_window_ui` 380 рядків | Розбити на builder-класи | Середня |
+| 7 | ✅ Вирішено | `setup_main_window_ui` 380 рядків | Розбито на `ui/builders/` | — |
 | 8 | 🟢 Середній | Дублювання App/Project ActionHandler | Об'єднати або прибрати делегування | Низька |
 | 9 | 🟢 Середній | `data_manager` показує QMessageBox | Відділити core від UI | Низька |
 | 10 | 🟢 Середній | `app_debug.txt` 9 МБ | RotatingFileHandler | Низька |
