@@ -357,6 +357,10 @@ class CustomTreeWidget(QTreeWidget):
             if hasattr(main_window, 'list_selection_handler') and hasattr(main_window.list_selection_handler, 'rename_block'):
                 rename_action.triggered.connect(lambda checked=False, item_to_rename=item: main_window.list_selection_handler.rename_block(item_to_rename))
 
+            delete_action = menu.addAction(self.style().standardIcon(QStyle.SP_TrashIcon), f"Remove Block")
+            if hasattr(main_window, 'project_action_handler') and hasattr(main_window.project_action_handler, 'delete_block_action'):
+                delete_action.triggered.connect(lambda checked=False: main_window.project_action_handler.delete_block_action())
+
             # Specifically requested "Create Folder" for files too
             create_folder_action = menu.addAction(self.style().standardIcon(QStyle.SP_FileDialogNewFolder), "Create Folder")
             create_folder_action.triggered.connect(self._create_folder_at_cursor)

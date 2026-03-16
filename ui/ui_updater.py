@@ -94,6 +94,8 @@ class UIUpdater:
             display_name_with_issues = f"{base_display_name} ({', '.join(issue_texts)})"
         
         item = self.mw.block_list_widget.create_item(display_name_with_issues, block_idx, Qt.UserRole)
+        item.setData(0, Qt.EditRole, base_display_name)
+        item.setData(0, Qt.UserRole + 4, base_display_name)
         
         # Add categories as children
         if hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project:
@@ -161,11 +163,16 @@ class UIUpdater:
         # 3. Add [f / b] counter only for non-compacted folders
         # Rule: Hide counter if the folder contains exactly ONE single child (folder or block)
         child_count = len(curr_for_children.children) + len(curr_for_children.block_ids)
+        
+        # Save name BEFORE adding counters for editing
+        clean_display_name = display_name
+        
         if compaction_type == 0 and child_count > 1:
             display_name += f" [{len(curr_for_children.children)} | {len(curr_for_children.block_ids)}]"
 
         # Create folder item
         folder_item = QTreeWidgetItem([display_name])
+        folder_item.setData(0, Qt.EditRole, clean_display_name)
         folder_item.setFlags(folder_item.flags() | Qt.ItemIsEditable)
         folder_item.setIcon(0, self.mw.style().standardIcon(QStyle.SP_DirIcon))
         
@@ -388,6 +395,7 @@ class UIUpdater:
             self.mw.block_list_widget.blockSignals(True)
             try:
                 item.setText(0, display_name_with_issues)
+                item.setData(0, Qt.EditRole, base_display_name)
             finally:
                 self.mw.block_list_widget.blockSignals(False)
 
@@ -696,9 +704,6 @@ class UIUpdater:
             
             self.mw.displayed_string_indices = target_indices
 
-            # Apply highlights based on NEW displayed_string_indices
-            self._apply_highlights_for_block(block_idx)
-
             # Generate full text if block changed OR if the subset of strings changed (e.g. Hide moved toggled)
             if block_changed or displayed_indices_changed:
                 preview_lines = []
@@ -710,6 +715,9 @@ class UIUpdater:
                 preview_full_text = "\n".join(preview_lines)
                 if preview_edit.toPlainText() != preview_full_text:
                     preview_edit.setPlainText(preview_full_text)
+
+            # Apply highlights based on NEW displayed_string_indices (MUST be after setPlainText)
+            self._apply_highlights_for_block(block_idx)
 
             # Map current_string_idx to preview index if possible
             preview_idx_to_select = -1

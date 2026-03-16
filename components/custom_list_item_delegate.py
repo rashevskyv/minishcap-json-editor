@@ -374,3 +374,12 @@ class CustomListItemDelegate(QStyledItemDelegate):
             self.handle_tooltip(event, view, option, index)
             return True
         return super().helpEvent(event, view, option, index)
+
+    def updateEditorGeometry(self, editor, option, index):
+        item_rect = option.rect
+        current_number_area_width = self._get_current_number_area_width(option)
+        text_start_x = item_rect.left() + current_number_area_width + self.padding_after_number_area
+        
+        # The editor should fill the space from the end of the gutter to the end of the item
+        editor_rect = QRect(text_start_x, item_rect.top(), item_rect.right() - text_start_x, item_rect.height())
+        editor.setGeometry(editor_rect)
