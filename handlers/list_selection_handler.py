@@ -35,6 +35,10 @@ class ListSelectionHandler(BaseHandler):
         if not current_item:
             return
 
+        old_block = self.mw.current_block_idx
+        old_string = self.mw.current_string_idx
+        old_category = getattr(self.mw, 'current_category_name', None)
+
         self.mw.is_programmatically_changing_text = True
         try:
             block_index = current_item.data(0, Qt.UserRole)
@@ -64,6 +68,15 @@ class ListSelectionHandler(BaseHandler):
                              target_string_idx = project.blocks[project_block_idx].last_selected_string_idx
                 
                 self.mw.current_string_idx = target_string_idx
+                
+                if hasattr(self.mw, 'undo_manager'):
+                    # Navigation recording
+                    self.mw.undo_manager.record_navigation(
+                        block_index, target_string_idx, 
+                        old_block, old_string,
+                        category_name, old_category
+                    )
+
                 self.ui_updater.populate_strings_for_block(block_index, category_name)
                 
                 if target_string_idx != -1:
@@ -180,7 +193,12 @@ class ListSelectionHandler(BaseHandler):
             self.mw.current_string_idx = real_idx
             
             if hasattr(self.mw, 'undo_manager') and not original_programmatic_state:
-                self.mw.undo_manager.record_navigation(self.mw.current_block_idx, real_idx, self.mw.current_block_idx, previous_string_idx)
+                cat = getattr(self.mw, 'current_category_name', None)
+                self.mw.undo_manager.record_navigation(
+                    self.mw.current_block_idx, real_idx, 
+                    self.mw.current_block_idx, previous_string_idx,
+                    cat, cat
+                )
 
             if previous_string_idx != self.mw.current_string_idx and previous_string_idx != -1:
                 self.ui_updater.update_block_item_text_with_problem_count(self.mw.current_block_idx)

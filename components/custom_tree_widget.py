@@ -205,12 +205,25 @@ class CustomTreeWidget(QTreeWidget):
             item.setData(0, role, block_idx)
         return item
 
-    def select_block_by_index(self, block_idx: int):
+    def select_block_by_index(self, block_idx: int, category: str = None):
         from PyQt5.QtWidgets import QTreeWidgetItemIterator
         iterator = QTreeWidgetItemIterator(self)
         while iterator.value():
             item = iterator.value()
-            if item.data(0, Qt.UserRole) == block_idx:
+            item_block_idx = item.data(0, Qt.UserRole)
+            item_category = item.data(0, Qt.UserRole + 10)
+            
+            match = False
+            if item_block_idx == block_idx:
+                if category:
+                    if item_category == category:
+                        match = True
+                else:
+                    if item_category is None:
+                        match = True
+            
+            if match:
+                self.clearSelection()
                 self.setCurrentItem(item)
                 item.setSelected(True)
                 self.scrollToItem(item)

@@ -29,25 +29,40 @@ class UIUpdater:
         
         editor.highlightManager.add_search_match_highlight(block_number, start_char, length)
 
-    def _get_aggregated_problems_for_block(self, block_idx: int, pre_aggregated_counts: dict = None) -> dict:
+    def _get_aggregated_problems_for_block(self, block_idx: int, pre_aggregated_counts: dict = None, category_name: str = None) -> dict:
         problem_counts = {}
         if not self.mw.current_game_rules or not (0 <= block_idx < len(self.mw.data)):
             return problem_counts
         
         problem_definitions = self.mw.current_game_rules.get_problem_definitions()
         
-        if pre_aggregated_counts is not None:
-            # Fast path: use the pre-calculated problem counts for this block
-            # Fill missing problem IDs with 0
+        if pre_aggregated_counts is not None and category_name is None:
+            # Fast path: use the pre-calculated problem counts for this block (only for full blocks)
             block_counts = pre_aggregated_counts.get(block_idx, {})
             return {pid: block_counts.get(pid, 0) for pid in problem_definitions.keys()}
         
-        # Slow path (fallback for single-item updates)
+        # Slow path/Category path
         problem_counts = {pid: 0 for pid in problem_definitions.keys()}
         detection_config = getattr(self.mw, 'detection_enabled', {})
         
+        # Determine which strings to check
+        target_indices = None
+        if category_name:
+            if hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project:
+                pm = self.mw.project_manager
+                block_map = getattr(self.mw, 'block_to_project_file_map', {})
+                proj_b_idx = block_map.get(block_idx, block_idx)
+                if proj_b_idx < len(pm.project.blocks):
+                    block = pm.project.blocks[proj_b_idx]
+                    category = next((c for c in block.categories if c.name == category_name), None)
+                    if category:
+                        target_indices = set(category.line_indices)
+
         for (b_idx, s_idx, subline_idx), problems in self.mw.problems_per_subline.items():
             if b_idx == block_idx:
+                if target_indices is not None and s_idx not in target_indices:
+                    continue
+                    
                 filtered_problems = {p_id for p_id in problems if detection_config.get(p_id, True)}
                 for p_id in filtered_problems:
                     if p_id in problem_counts:
@@ -187,6 +202,8 @@ class UIUpdater:
                 if idx == current_selection_block_idx:
                     self.mw.block_list_widget.setCurrentItem(block_item)
                     block_item.setSelected(True)
+                    if block_item.childCount() > 0:
+                        block_item.setExpanded(True)
 
         # Apply expansion state AFTER children are added so Qt knows it's NOT a leaf
         folder_item.setExpanded(is_expanded)
@@ -261,6 +278,8 @@ class UIUpdater:
                         if idx == current_selection_block_idx:
                             self.mw.block_list_widget.setCurrentItem(block_item)
                             block_item.setSelected(True)
+                            if block_item.childCount() > 0:
+                                block_item.setExpanded(True)
             else:
                 # Legacy / Physical structure fallback
                 dir_nodes = {"": self.mw.block_list_widget.invisibleRootItem()}
@@ -297,6 +316,8 @@ class UIUpdater:
                     if i == current_selection_block_idx:
                         self.mw.block_list_widget.setCurrentItem(block_item)
                         block_item.setSelected(True)
+                        if block_item.childCount() > 0:
+                            block_item.setExpanded(True)
         finally:
             self.mw.block_list_widget._is_programmatic_expansion = False
             self.mw.block_list_widget.blockSignals(False)

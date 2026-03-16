@@ -123,6 +123,8 @@ class CustomListItemDelegate(QStyledItemDelegate):
         
         active_color_markers_for_block = set()
         block_idx_data = index.data(Qt.UserRole)
+        category_name = index.data(Qt.UserRole + 10)
+        
         problem_definitions = {}
         block_problem_counts = {}
         has_unsaved_changes_in_block = False
@@ -138,7 +140,7 @@ class CustomListItemDelegate(QStyledItemDelegate):
                 problem_definitions = main_window.current_game_rules.get_problem_definitions()
 
             if hasattr(main_window, 'ui_updater') and hasattr(main_window.ui_updater, '_get_aggregated_problems_for_block'):
-                block_problem_counts = main_window.ui_updater._get_aggregated_problems_for_block(block_idx_data)
+                block_problem_counts = main_window.ui_updater._get_aggregated_problems_for_block(block_idx_data, category_name=category_name)
 
 
         # 1. Calculate Problem Colors Early
@@ -244,12 +246,25 @@ class CustomListItemDelegate(QStyledItemDelegate):
         string_count_text = ""
         count_width = 0
         if main_window and block_idx_data is not None and hasattr(main_window, 'data'):
-            if 0 <= block_idx_data < len(main_window.data):
+            count = 0
+            if category_name and hasattr(main_window, 'project_manager') and main_window.project_manager.project:
+                pm = main_window.project_manager
+                block_map = getattr(main_window, 'block_to_project_file_map', {})
+                proj_b_idx = block_map.get(block_idx_data, block_idx_data)
+                if proj_b_idx < len(pm.project.blocks):
+                    block = pm.project.blocks[proj_b_idx]
+                    category = next((c for c in block.categories if c.name == category_name), None)
+                    if category:
+                        count = len(category.line_indices)
+            elif 0 <= block_idx_data < len(main_window.data):
                 block_data = main_window.data[block_idx_data]
                 if isinstance(block_data, list):
-                    string_count_text = f"[{len(block_data)}]"
-                    metrics = QFontMetrics(current_font)
-                    count_width = metrics.horizontalAdvance(string_count_text) + 10
+                    count = len(block_data)
+
+            if count > 0 or not category_name:
+                string_count_text = f"[{count}]"
+                metrics = QFontMetrics(current_font)
+                count_width = metrics.horizontalAdvance(string_count_text) + 10
 
         if string_count_text:
             count_rect = QRect(item_rect.right() - count_width, item_rect.top(), count_width, item_rect.height())

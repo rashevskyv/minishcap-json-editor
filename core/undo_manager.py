@@ -193,22 +193,22 @@ class UndoManager:
         log_debug("UndoManager: Applied project snapshot.")
 
 
-    def record_navigation(self, block_idx: int, string_idx: int, prev_block_idx: int, prev_string_idx: int):
+    def record_navigation(self, block_idx: int, string_idx: int, prev_block_idx: int, prev_string_idx: int, category: str = None, prev_category: str = None):
         if self.is_undoing_redoing or self.current_group is not None:
             return
 
-        if block_idx == prev_block_idx and string_idx == prev_string_idx:
+        if block_idx == prev_block_idx and string_idx == prev_string_idx and category == prev_category:
             return
 
         # Check if last action was also a navigation to group them or avoid duplicates
         if self.undo_stack:
             last = self.undo_stack[-1]
             if isinstance(last, UndoAction) and last.action_type == 'NAVIGATE':
-                # If we just navigated multiple times, we only care about where we ended up relative to where we started before the sequence
-                # But actually, the user might want to undo each step. Let's keep them separate for now but allow threshold grouping.
                 if time.time() - last.timestamp < 0.5:
                      last.block_idx = block_idx
                      last.string_idx = string_idx
+                     if last.metadata:
+                         last.metadata['category'] = category
                      last.timestamp = time.time()
                      return
 
@@ -219,7 +219,12 @@ class UndoManager:
             old_text="",
             new_text="",
             timestamp=time.time(),
-            metadata={'prev_block': prev_block_idx, 'prev_string': prev_string_idx}
+            metadata={
+                'prev_block': prev_block_idx, 
+                'prev_string': prev_string_idx,
+                'category': category,
+                'prev_category': prev_category
+            }
         )
         self.undo_stack.append(action)
         self.redo_stack.clear()
@@ -241,7 +246,8 @@ class UndoManager:
                 if item.action_type == 'NAVIGATE':
                     prev_b = item.metadata.get('prev_block', -1)
                     prev_s = item.metadata.get('prev_string', -1)
-                    self._navigate_to(prev_b, prev_s)
+                    prev_cat = item.metadata.get('prev_category')
+                    self._navigate_to(prev_b, prev_s, prev_cat)
                 else:
                     # For non-navigate actions, we might need to navigate to THEIR location first if not there
                     # But the requirement was "movements are separate steps".
@@ -268,7 +274,8 @@ class UndoManager:
         try:
             if isinstance(item, UndoAction):
                 if item.action_type == 'NAVIGATE':
-                    self._navigate_to(item.block_idx, item.string_idx)
+                    cat = item.metadata.get('category')
+                    self._navigate_to(item.block_idx, item.string_idx, cat)
                 else:
                     self._apply_data(item.block_idx, item.string_idx, item.new_text, item.cursor_pos)
             elif isinstance(item, GroupAction):
@@ -291,7 +298,7 @@ class UndoManager:
             return item.actions[idx].block_idx, item.actions[idx].string_idx
         return -1, -1
 
-    def _navigate_to(self, block_idx: int, string_idx: int):
+    def _navigate_to(self, block_idx: int, string_idx: int, category: str = None):
         if block_idx == -1: return
 
         current_block = self.mw.current_block_idx
@@ -299,9 +306,9 @@ class UndoManager:
         
         needs_string_refresh = False
         
-        if current_block != block_idx:
+        if current_block != block_idx or getattr(self.mw, 'current_category_name', None) != category:
             if hasattr(self.mw, 'block_list_widget'):
-                self.mw.block_list_widget.select_block_by_index(block_idx)
+                self.mw.block_list_widget.select_block_by_index(block_idx, category)
             needs_string_refresh = True
             
         if current_string != string_idx or needs_string_refresh:
