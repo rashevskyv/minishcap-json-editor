@@ -25,6 +25,9 @@ class AppDataStore:
     # Selection State
     current_block_idx: int = -1
     current_string_idx: int = -1
+    selected_string_indices: List[int] = field(default_factory=list)
+    displayed_string_indices: List[int] = field(default_factory=list) # Absolute indices of strings shown in preview
+    current_category_name: Optional[str] = None
     
     # Analysis & Problems
     problems_per_subline: Dict[int, Set[str]] = field(default_factory=dict)

@@ -212,8 +212,13 @@ class LNETContextMenuLogic:
                     lambda: self.editor._open_spellcheck_dialog_for_selection(position_in_widget_coords)
                 )
 
-            if len(selected_lines) > 1:
+            if len(selected_lines) > 0:
                 num_selected = len(selected_lines)
+                menu.addSeparator()
+                
+                move_action = menu.addAction(f"Move {num_selected} Line(s) to Virtual Block...")
+                move_action.triggered.connect(main_window.list_selection_handler.move_selection_to_category)
+                
                 menu.addSeparator()
                 set_font_action = menu.addAction(f"Set Font for {num_selected} Lines...")
                 set_font_action.triggered.connect(self.editor.handle_mass_set_font)

@@ -315,6 +315,20 @@ class CustomTreeWidget(QTreeWidget):
                     
                     menu.addSeparator()
 
+        # 4b. Category Actions
+        category_name = item.data(0, Qt.UserRole + 10)
+        if category_name and block_idx is not None:
+            cat_header = menu.addAction(self.style().standardIcon(QStyle.SP_FileDialogDetailedView), f"VIRTUAL BLOCK: {category_name}")
+            cat_header.setEnabled(False)
+            
+            rename_cat_action = menu.addAction(self.style().standardIcon(QStyle.SP_FileDialogDetailedView), "Rename Virtual Block...")
+            rename_cat_action.triggered.connect(lambda checked=False, bidx=block_idx, cname=category_name: main_window.list_selection_handler.rename_category(bidx, cname))
+            
+            delete_cat_action = menu.addAction(self.style().standardIcon(QStyle.SP_TrashIcon), "Delete Virtual Block")
+            delete_cat_action.triggered.connect(lambda checked=False, bidx=block_idx, cname=category_name: main_window.list_selection_handler.delete_category(bidx, cname))
+            
+            menu.addSeparator()
+
         # 5. Block Actions (if it's a block or F/B compaction)
         if block_idx is not None:
             block_name = item.text(0)

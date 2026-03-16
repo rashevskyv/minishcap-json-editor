@@ -341,6 +341,21 @@ class MainWindow(QMainWindow):
     def current_string_idx(self, v): self.data_store.current_string_idx = v
 
     @property
+    def selected_string_indices(self): return self.data_store.selected_string_indices
+    @selected_string_indices.setter
+    def selected_string_indices(self, v): self.data_store.selected_string_indices = v
+
+    @property
+    def displayed_string_indices(self): return self.data_store.displayed_string_indices
+    @displayed_string_indices.setter
+    def displayed_string_indices(self, v): self.data_store.displayed_string_indices = v
+
+    @property
+    def current_category_name(self): return self.data_store.current_category_name
+    @current_category_name.setter
+    def current_category_name(self, v): self.data_store.current_category_name = v
+
+    @property
     def unsaved_changes(self): return self.data_store.unsaved_changes
     @unsaved_changes.setter
     def unsaved_changes(self, v): self.data_store.unsaved_changes = v

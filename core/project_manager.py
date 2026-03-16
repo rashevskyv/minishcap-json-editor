@@ -598,16 +598,42 @@ class ProjectManager:
             if folder.name == name:
                 log_debug(f"Folder '{name}' already exists at this level. Using existing folder {folder.id}")
                 return folder
-
+        
         new_folder = VirtualFolder(name=name, parent_id=parent_id)
-        if parent_id:
+        if parent_id is None:
+            self.project.virtual_folders.append(new_folder)
+        else:
             parent = self.find_virtual_folder(parent_id)
             if parent:
                 parent.children.append(new_folder)
-        else:
-            self.project.virtual_folders.append(new_folder)
-        self.save()
         return new_folder
+
+    def move_strings_to_category(self, block_idx: int, string_indices: List[int], category_name: str):
+        """Group specific strings within a block into a named virtual category."""
+        if not self.project or block_idx < 0 or block_idx >= len(self.project.blocks):
+            return
+            
+        from .project_models import Category
+        block = self.project.blocks[block_idx]
+        
+        # Find or create target category
+        target_category = next((c for c in block.categories if c.name == category_name), None)
+        if not target_category:
+            target_category = Category(name=category_name)
+            block.categories.append(target_category)
+            
+        # Update indices
+        indices_to_add = set(string_indices)
+        target_category.line_indices = sorted(list(set(target_category.line_indices) | indices_to_add))
+        
+        # Remove from other categories
+        for cat in block.categories:
+            if cat is not target_category:
+                cat.line_indices = [i for i in cat.line_indices if i not in indices_to_add]
+        
+        # Cleanup empty categories
+        block.categories = [c for c in block.categories if c.line_indices]
+        self.save()
 
     def merge_folders(self, source_id: str, target_id: str):
         """Move all contents from source folder to target folder and delete source."""

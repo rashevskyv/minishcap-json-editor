@@ -24,76 +24,69 @@ class ListSelectionHandler(BaseHandler):
         self.mw.block_list_widget.navigate_folders(direction)
 
     def block_selected(self, current_item, previous_item):
-        if self.mw.is_loading_data or self.mw.is_programmatically_changing_text:
+        if self.mw.is_loading_data or self._restoring_selection:
             return
-            
+
+        if previous_item:
+            previous_block_idx = previous_item.data(0, Qt.UserRole)
+            if previous_block_idx is not None:
+                self.ui_updater.update_block_item_text_with_problem_count(previous_block_idx)
+
+        if not current_item:
+            return
+
         self.mw.is_programmatically_changing_text = True
         try:
-            preview_edit = getattr(self.mw, 'preview_text_edit', None)
-            
-            if previous_item:
-                previous_block_idx = previous_item.data(0, Qt.UserRole)
-                if previous_block_idx is not None:
-                    self.ui_updater.update_block_item_text_with_problem_count(previous_block_idx)
-
-            if not current_item:
-                if not self.mw.is_loading_data:
-                    if not self._restoring_selection and self.mw.current_block_idx != -1:
-                        self._restoring_selection = True
-                        QTimer.singleShot(0, self._restore_block_selection)
-                
-                self.mw.current_block_idx = -1
-                self.mw.current_string_idx = -1
-                self.ui_updater.populate_strings_for_block(-1)
-                if hasattr(self.mw, 'string_settings_updater'):
-                    self.mw.string_settings_updater.update_string_settings_panel()
-                self._update_block_toolbar_button_states(-1)
-                return
-
             block_index = current_item.data(0, Qt.UserRole)
+            category_name = current_item.data(0, Qt.UserRole + 10)
+            
             if block_index is None:
                 self.mw.current_block_idx = -1
                 self.mw.current_string_idx = -1
+                self.mw.current_category_name = None
                 self.ui_updater.populate_strings_for_block(-1)
                 if hasattr(self.mw, 'string_settings_updater'):
                     self.mw.string_settings_updater.update_string_settings_panel()
                 self._update_block_toolbar_button_states(-1)
                 return
-            
-            if self.mw.current_block_idx != block_index:
-                old_block = self.mw.current_block_idx
-                old_string = self.mw.current_string_idx
+
+            if self.mw.current_block_idx != block_index or self.mw.current_category_name != category_name:
                 self.mw.current_block_idx = block_index
+                self.mw.current_category_name = category_name
                 
-                # Restore selection if project
-                restored_s_idx = 0
+                # Restore selection logic
+                target_string_idx = -1
                 if hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project:
                     project = self.mw.project_manager.project
                     if hasattr(self.mw, 'block_to_project_file_map'):
-                        project_block_idx = self.mw.block_to_project_file_map.get(block_index)
-                        if project_block_idx is not None and project_block_idx < len(project.blocks):
-                            restored_s_idx = project.blocks[project_block_idx].last_selected_string_idx
-
-                self.mw.current_string_idx = restored_s_idx
+                         project_block_idx = self.mw.block_to_project_file_map.get(block_index)
+                         if project_block_idx is not None and project_block_idx < len(project.blocks):
+                             target_string_idx = project.blocks[project_block_idx].last_selected_string_idx
                 
-                if hasattr(self.mw, 'undo_manager'):
-                    self.mw.undo_manager.record_navigation(block_index, restored_s_idx, old_block, old_string)
-
-                # Use QTimer to ensure populate_strings_for_block has finished before selecting string
-                # Only schedule timer-based string selection if not currently undoing/redoing.
-                # During undo, _navigate_to will call string_selected_from_preview directly;
-                # the timer would fire after is_undoing_redoing=False and corrupt the selection.
-                undo_mgr = getattr(self.mw, 'undo_manager', None)
-                if not (undo_mgr and undo_mgr.is_undoing_redoing):
-                    QTimer.singleShot(0, lambda idx=restored_s_idx: self.string_selected_from_preview(idx))
-
+                self.mw.current_string_idx = target_string_idx
+                self.ui_updater.populate_strings_for_block(block_index, category_name)
                 
-            self.ui_updater.populate_strings_for_block(block_index)
+                if target_string_idx != -1:
+                    rel_idx = -1
+                    if hasattr(self.mw, 'displayed_string_indices') and target_string_idx in self.mw.displayed_string_indices:
+                        rel_idx = self.mw.displayed_string_indices.index(target_string_idx)
+                    
+                    if rel_idx != -1:
+                        # Schedule selection to avoid recursion issues
+                        from PyQt5.QtCore import QTimer
+                        QTimer.singleShot(0, lambda ridx=rel_idx: self.string_selected_from_preview(ridx))
+                else:
+                    self.ui_updater.update_text_views()
+                    if hasattr(self.mw, 'string_settings_updater'):
+                        self.mw.string_settings_updater.update_string_settings_panel()
+                
+                self.ui_updater.update_statusbar_paths()
+                self.ui_updater.update_block_item_text_with_problem_count(block_index)
+
             if hasattr(self.mw, 'string_settings_updater'):
                 self.mw.string_settings_updater.update_font_combobox()
                 self.mw.string_settings_updater.update_string_settings_panel()
 
-            # Update toolbar button states
             self._update_block_toolbar_button_states(block_index)
         finally:
             self.mw.is_programmatically_changing_text = False
@@ -153,7 +146,15 @@ class ListSelectionHandler(BaseHandler):
         original_programmatic_state = self.mw.is_programmatically_changing_text
         self.mw.is_programmatically_changing_text = True
 
-        if self.mw.current_block_idx == -1:
+        # Translate relative preview line_number to absolute data index
+        real_idx = line_number
+        if hasattr(self.mw, 'displayed_string_indices') and self.mw.displayed_string_indices:
+            if 0 <= line_number < len(self.mw.displayed_string_indices):
+                real_idx = self.mw.displayed_string_indices[line_number]
+            else:
+                real_idx = -1
+
+        if self.mw.current_block_idx == -1 or real_idx == -1:
             self.mw.current_string_idx = -1
             if preview_edit and hasattr(preview_edit, 'highlightManager'):
                  preview_edit.highlightManager.clearPreviewSelectedLineHighlight()
@@ -166,7 +167,7 @@ class ListSelectionHandler(BaseHandler):
         is_valid_line = False
         if 0 <= self.mw.current_block_idx < len(self.mw.data) and \
            isinstance(self.mw.data[self.mw.current_block_idx], list) and \
-           0 <= line_number < len(self.mw.data[self.mw.current_block_idx]):
+           0 <= real_idx < len(self.mw.data[self.mw.current_block_idx]):
             is_valid_line = True
         
         previous_string_idx = self.mw.current_string_idx
@@ -176,15 +177,15 @@ class ListSelectionHandler(BaseHandler):
             if preview_edit and hasattr(preview_edit, 'highlightManager'):
                 preview_edit.highlightManager.clearPreviewSelectedLineHighlight()
         else:
-            self.mw.current_string_idx = line_number
+            self.mw.current_string_idx = real_idx
             
             if hasattr(self.mw, 'undo_manager') and not original_programmatic_state:
-                self.mw.undo_manager.record_navigation(self.mw.current_block_idx, line_number, self.mw.current_block_idx, previous_string_idx)
+                self.mw.undo_manager.record_navigation(self.mw.current_block_idx, real_idx, self.mw.current_block_idx, previous_string_idx)
 
             if previous_string_idx != self.mw.current_string_idx and previous_string_idx != -1:
                 self.ui_updater.update_block_item_text_with_problem_count(self.mw.current_block_idx)
             
-            self.ui_updater.populate_strings_for_block(self.mw.current_block_idx) 
+            self.ui_updater.populate_strings_for_block(self.mw.current_block_idx, getattr(self.mw, 'current_category_name', None)) 
             
             # Save selection to project
             if hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project:
@@ -192,7 +193,7 @@ class ListSelectionHandler(BaseHandler):
                 if hasattr(self.mw, 'block_to_project_file_map'):
                     project_block_idx = self.mw.block_to_project_file_map.get(self.mw.current_block_idx)
                     if project_block_idx is not None and project_block_idx < len(project.blocks):
-                        project.blocks[project_block_idx].last_selected_string_idx = line_number
+                        project.blocks[project_block_idx].last_selected_string_idx = real_idx
 
         self.ui_updater.update_text_views()
         if hasattr(self.mw, 'string_settings_updater'):
@@ -201,17 +202,24 @@ class ListSelectionHandler(BaseHandler):
         self.mw.is_programmatically_changing_text = original_programmatic_state
 
         if preview_edit and self.mw.current_string_idx != -1 and \
-           0 <= self.mw.current_string_idx < preview_edit.document().blockCount():
-            if hasattr(preview_edit, 'set_selected_lines'): 
-                preview_edit.set_selected_lines([self.mw.current_string_idx])
+           0 <= self.mw.current_string_idx < len(self.mw.data[self.mw.current_block_idx]):
             
-            block_to_show = preview_edit.document().findBlockByNumber(self.mw.current_string_idx)
-            if block_to_show.isValid():
-                cursor = QTextCursor(block_to_show)
-                preview_edit.setTextCursor(cursor)
-                # Use a small timer to ensure the widget has finished layout after potential text updates
-                from PyQt5.QtCore import QTimer
-                QTimer.singleShot(10, lambda: preview_edit.ensureCursorVisible())
+            # Find relative index for preview
+            rel_idx = -1
+            if hasattr(self.mw, 'displayed_string_indices') and self.mw.current_string_idx in self.mw.displayed_string_indices:
+                rel_idx = self.mw.displayed_string_indices.index(self.mw.current_string_idx)
+
+            if rel_idx != -1 and hasattr(preview_edit, 'set_selected_lines'): 
+                preview_edit.set_selected_lines([rel_idx])
+            
+            if rel_idx != -1:
+                block_to_show = preview_edit.document().findBlockByNumber(rel_idx)
+                if block_to_show.isValid():
+                    cursor = QTextCursor(block_to_show)
+                    preview_edit.setTextCursor(cursor)
+                    # Use a small timer to ensure the widget has finished layout after potential text updates
+                    from PyQt5.QtCore import QTimer
+                    QTimer.singleShot(10, lambda: preview_edit.ensureCursorVisible())
         elif preview_edit and hasattr(preview_edit, 'highlightManager'): 
             preview_edit.highlightManager.clearPreviewSelectedLineHighlight()
             
@@ -437,36 +445,134 @@ class ListSelectionHandler(BaseHandler):
 
             self.mw.is_programmatically_changing_text = original_programmatic_state
 
-    def handle_preview_selection_changed(self):
+    def handle_preview_selection_changed(self, selected_lines=None):
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         if not preview_edit or not preview_edit.hasFocus() or self.mw.is_programmatically_changing_text:
             return
             
-        cursor = preview_edit.textCursor()
-        if not cursor.hasSelection():
-            if self.mw.current_string_idx != -1:
-                if hasattr(preview_edit, 'set_selected_lines'):
-                    preview_edit.set_selected_lines([self.mw.current_string_idx])
-            return
+        if selected_lines is None:
+            cursor = preview_edit.textCursor()
+            if not cursor.hasSelection():
+                if self.mw.current_string_idx != -1:
+                    if hasattr(preview_edit, 'set_selected_lines'):
+                        preview_edit.set_selected_lines([self.mw.current_string_idx])
+                return
 
-        start_pos = cursor.selectionStart()
-        end_pos = cursor.selectionEnd()
-        
-        start_block = self.mw.preview_text_edit.document().findBlock(start_pos)
-        end_block = self.mw.preview_text_edit.document().findBlock(end_pos)
-        
-        start_line = start_block.blockNumber()
-        end_line = end_block.blockNumber()
-        
-        if end_pos > start_pos and end_pos == end_block.position() and start_block.blockNumber() != end_block.blockNumber():
-            end_line -= 1
+            start_pos = cursor.selectionStart()
+            end_pos = cursor.selectionEnd()
             
-        if end_line < start_line:
-            end_line = start_line
+            start_block = self.mw.preview_text_edit.document().findBlock(start_pos)
+            end_block = self.mw.preview_text_edit.document().findBlock(end_pos)
+            
+            start_line = start_block.blockNumber()
+            end_line = end_block.blockNumber()
+            
+            if end_pos > start_pos and end_pos == end_block.position() and start_block.blockNumber() != end_block.blockNumber():
+                end_line -= 1
+                
+            if end_line < start_line:
+                end_line = start_line
 
-        selected_lines = list(range(start_line, end_line + 1))
+            selected_lines = list(range(start_line, end_line + 1))
         
+        # Save to app state
+        self.mw.selected_string_indices = selected_lines
+        
+        # If only one selected, update current_string_idx
+        if len(selected_lines) == 1:
+            # We don't want to trigger another selection change loop if possible, 
+            # but string_selected_from_preview handles UI updates we might need.
+            # However, handle_preview_selection_changed is triggered BY selection.
+            # Avoid recursion.
+            
+            target_idx = selected_lines[0]
+            if self.mw.current_string_idx != target_idx:
+                # We call string_selected_from_preview but it will try to set_selected_lines again
+                # self.string_selected_from_preview(target_idx)
+                # Instead, let's just update the internal state and trigger UI update manually if needed.
+                # Actually, let's see if we can just let it be.
+                pass
+
         if preview_edit and hasattr(preview_edit, 'set_selected_lines'):
             preview_edit.set_selected_lines(selected_lines)
+
+    def move_selection_to_category(self):
+        """Move selected strings to a virtual block (Category)."""
+        selected_indices = getattr(self.mw, 'selected_string_indices', [])
+        if not selected_indices:
+            from PyQt5.QtWidgets import QMessageBox
+            QMessageBox.warning(self.mw, "Move to Virtual Block", "No strings selected in preview.")
+            return
+        
+        if self.mw.current_block_idx == -1:
+            return
+            
+        pm = self.mw.project_manager
+        if not pm or not pm.project:
+             log_debug("No project loaded, cannot create virtual blocks.")
+             return
+             
+        # Find the project block index
+        block_map = getattr(self.mw, 'block_to_project_file_map', {})
+        proj_b_idx = block_map.get(self.mw.current_block_idx, self.mw.current_block_idx)
+        if proj_b_idx >= len(pm.project.blocks):
+            return
+            
+        block = pm.project.blocks[proj_b_idx]
+        
+        # Get existing categories names
+        existing_names = [c.name for c in block.categories]
+        
+        # Simple input dialog for now
+        from PyQt5.QtWidgets import QInputDialog
+        name, ok = QInputDialog.getText(self.mw, "Move to Virtual Block", "Enter Category Name:", text="New Category")
+        if not ok or not name.strip():
+            return
+            
+        pm.move_strings_to_category(proj_b_idx, selected_indices, name.strip())
+        
+        # Update UI
+        self.ui_updater.populate_blocks()
+        
+        # Re-select the block to show the new category (if we implement category display)
+        # For now, just logging
+        log_debug(f"Moved {len(selected_indices)} strings to Category '{name}' in Block {proj_b_idx}")
+
+    def rename_category(self, block_idx: int, old_name: str):
+        """Rename a virtual block."""
+        from PyQt5.QtWidgets import QInputDialog
+        new_name, ok = QInputDialog.getText(self.mw, "Rename Virtual Block", "Enter new name:", text=old_name)
+        if not ok or not new_name.strip() or new_name == old_name:
+            return
+            
+        pm = self.mw.project_manager
+        block_map = getattr(self.mw, 'block_to_project_file_map', {})
+        proj_b_idx = block_map.get(block_idx, block_idx)
+        
+        if proj_b_idx < len(pm.project.blocks):
+            block = pm.project.blocks[proj_b_idx]
+            for cat in block.categories:
+                if cat.name == old_name:
+                    cat.name = new_name.strip()
+                    break
+            pm.save()
+            self.ui_updater.populate_blocks()
+
+    def delete_category(self, block_idx: int, category_name: str):
+        """Remove a virtual block (the strings remain in the block)."""
+        from PyQt5.QtWidgets import QMessageBox
+        reply = QMessageBox.question(self.mw, "Delete Virtual Block", f"Are you sure you want to delete virtual block '{category_name}'?\n\n(Strings will not be deleted from the block itself.)", QMessageBox.Yes | QMessageBox.No)
+        if reply != QMessageBox.Yes:
+            return
+            
+        pm = self.mw.project_manager
+        block_map = getattr(self.mw, 'block_to_project_file_map', {})
+        proj_b_idx = block_map.get(block_idx, block_idx)
+        
+        if proj_b_idx < len(pm.project.blocks):
+            block = pm.project.blocks[proj_b_idx]
+            block.categories = [c for c in block.categories if c.name != category_name]
+            pm.save()
+            self.ui_updater.populate_blocks()
 
 

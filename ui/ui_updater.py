@@ -80,6 +80,20 @@ class UIUpdater:
         
         item = self.mw.block_list_widget.create_item(display_name_with_issues, block_idx, Qt.UserRole)
         
+        # Add categories as children
+        if hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project:
+            pm = self.mw.project_manager
+            block_map = getattr(self.mw, 'block_to_project_file_map', {})
+            proj_b_idx = block_map.get(block_idx, block_idx)
+            if proj_b_idx < len(pm.project.blocks):
+                block = pm.project.blocks[proj_b_idx]
+                for cat in block.categories:
+                    cat_item = QTreeWidgetItem([cat.name])
+                    cat_item.setData(0, Qt.UserRole, block_idx)
+                    cat_item.setData(0, Qt.UserRole + 10, cat.name)
+                    cat_item.setIcon(0, self.mw.style().standardIcon(QStyle.SP_FileDialogDetailedView))
+                    item.addChild(cat_item)
+        
         # Tooltip logic
         tooltip_lines = []
         for problem_id in sorted_problem_ids_for_display:
@@ -516,9 +530,14 @@ class UIUpdater:
         if not (0 <= block_idx < len(self.mw.data)):
             return
 
-        for data_str_idx in range(len(self.mw.data[block_idx])):
-            if self.mw.list_selection_handler._data_string_has_any_problem(block_idx, data_str_idx):
-                preview_edit.addProblemLineHighlight(data_str_idx)
+        displayed_indices = getattr(self.mw, 'displayed_string_indices', [])
+        if not displayed_indices:
+             # If no filtering is active, use all
+             displayed_indices = list(range(len(self.mw.data[block_idx])))
+
+        for preview_idx, real_idx in enumerate(displayed_indices):
+            if self.mw.list_selection_handler._data_string_has_any_problem(block_idx, real_idx):
+                preview_edit.addProblemLineHighlight(preview_idx)
 
     def _apply_highlights_to_editor(self, editor, block_idx: int, string_idx: int):
         if not editor or not hasattr(editor, 'highlightManager'):
@@ -557,7 +576,7 @@ class UIUpdater:
                      if self.mw.current_game_rules.problem_ids.PROBLEM_EMPTY_ODD_SUBLINE_DISPLAY in problems:
                          editor.highlightManager.addEmptyOddSublineHighlight(i)
 
-    def populate_strings_for_block(self, block_idx):
+    def populate_strings_for_block(self, block_idx, category_name=None):
         preview_edit = getattr(self.mw, 'preview_text_edit', None)
         original_edit = getattr(self.mw, 'original_text_edit', None)
         edited_edit = getattr(self.mw, 'edited_text_edit', None)
@@ -565,18 +584,23 @@ class UIUpdater:
         old_preview_scrollbar_value = preview_edit.verticalScrollBar().value() if preview_edit else 0
         
         self.mw.is_programmatically_changing_text = True
+        self.mw.current_category_name = category_name
 
         # Use a local cache of the last populated block to avoid redundant full resets
         last_block_idx = getattr(self, '_last_populated_block_idx', -999)
-        block_changed = (block_idx != last_block_idx)
+        last_category_name = getattr(self, '_last_populated_category_name', None)
+        
+        block_changed = (block_idx != last_block_idx) or (category_name != last_category_name)
         
         if block_changed:
             if preview_edit: preview_edit.reset_selection_state()
             if original_edit: original_edit.reset_selection_state()
             if edited_edit: edited_edit.reset_selection_state()
             self._last_populated_block_idx = block_idx
+            self._last_populated_category_name = category_name
 
         if block_idx < 0 or not self.mw.data or block_idx >= len(self.mw.data) or not isinstance(self.mw.data[block_idx], list):
+            self.mw.displayed_string_indices = []
             if preview_edit: preview_edit.setPlainText("")
             if original_edit: original_edit.setPlainText("")
             if edited_edit: edited_edit.setPlainText("")
@@ -589,11 +613,30 @@ class UIUpdater:
             self._apply_highlights_for_block(block_idx)
         
         if preview_edit and self.mw.current_game_rules:
+            # Determine which indices to show
+            target_indices = []
+            if category_name and hasattr(self.mw, 'project_manager') and self.mw.project_manager and self.mw.project_manager.project:
+                pm = self.mw.project_manager
+                block_map = getattr(self.mw, 'block_to_project_file_map', {})
+                proj_b_idx = block_map.get(block_idx, block_idx)
+                if proj_b_idx < len(pm.project.blocks):
+                    block = pm.project.blocks[proj_b_idx]
+                    category = next((c for c in block.categories if c.name == category_name), None)
+                    if category:
+                        target_indices = category.line_indices
+
+            if not target_indices and not category_name:
+                target_indices = list(range(len(self.mw.data[block_idx])))
+            
+            # Re-verify indices are within bounds
+            target_indices = [i for i in target_indices if 0 <= i < len(self.mw.data[block_idx])]
+            self.mw.displayed_string_indices = target_indices
+
             # We only generate full text if block changed
             if block_changed:
                 preview_lines = []
-                for i in range(len(self.mw.data[block_idx])):
-                    text_for_preview_raw, _ = self.data_processor.get_current_string_text(block_idx, i)
+                for real_idx in target_indices:
+                    text_for_preview_raw, _ = self.data_processor.get_current_string_text(block_idx, real_idx)
                     preview_line_text = self.mw.current_game_rules.get_text_representation_for_preview(str(text_for_preview_raw))
                     preview_lines.append(preview_line_text)
 
@@ -601,10 +644,15 @@ class UIUpdater:
                 if preview_edit.toPlainText() != preview_full_text:
                     preview_edit.setPlainText(preview_full_text)
 
-            if self.mw.current_string_idx != -1 and \
+            # Map current_string_idx to preview index if possible
+            preview_idx_to_select = -1
+            if self.mw.current_string_idx in target_indices:
+                preview_idx_to_select = target_indices.index(self.mw.current_string_idx)
+
+            if preview_idx_to_select != -1 and \
                hasattr(preview_edit, 'set_selected_lines') and \
-               0 <= self.mw.current_string_idx < preview_edit.document().blockCount(): 
-                preview_edit.set_selected_lines([self.mw.current_string_idx])
+               0 <= preview_idx_to_select < preview_edit.document().blockCount(): 
+                preview_edit.set_selected_lines([preview_idx_to_select])
 
             # Only restore scroll value if block changed AND we are NOT intentionally selecting a string
             # (If we are selecting a string, ensureCursorVisible will be called later in string_selected_from_preview)
