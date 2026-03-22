@@ -1,13 +1,15 @@
 {
     "D:\\git\\WW\\Cemu_2.6\\Wind_Waker_Wii_U\\project.uiproj": {
-        "expanded_ids": [],
+        "expanded_ids": [
+            "block_0"
+        ],
         "selected_id": "block_0",
         "selected_type": "block",
-        "selected_string_idx": 160,
-        "cursor_pos": 178,
+        "selected_string_idx": 184,
+        "cursor_pos": 212,
         "v_scroll": 0,
         "h_scroll": 0,
-        "preview_v_scroll": 168,
+        "preview_v_scroll": 177,
         "original_v_scroll": 0
     },
     "C:\\Users\\Administrator\\Desktop\\PokemonRS\\Pokemon\\project.uiproj": {
