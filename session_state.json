@@ -3,8 +3,8 @@
         "expanded_ids": [
             "block_0"
         ],
-        "selected_id": "cat_0_123",
-        "selected_type": "category",
+        "selected_id": "block_0",
+        "selected_type": "block",
         "selected_string_idx": -1,
         "cursor_pos": 10,
         "v_scroll": 0,
