@@ -1,10 +1,12 @@
 {
     "D:\\git\\WW\\Cemu_2.6\\Wind_Waker_Wii_U\\project.uiproj": {
-        "expanded_ids": [],
-        "selected_id": "block_0",
-        "selected_type": "block",
-        "selected_string_idx": -1,
-        "cursor_pos": 56,
+        "expanded_ids": [
+            "block_0"
+        ],
+        "selected_id": "cat_0_New Category",
+        "selected_type": "category",
+        "selected_string_idx": 5,
+        "cursor_pos": 61,
         "v_scroll": 0,
         "h_scroll": 0,
         "preview_v_scroll": 0,
